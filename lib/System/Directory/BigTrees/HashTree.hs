@@ -128,10 +128,11 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
              }
 
 -- try to read as binary, and fall back to text if it fails
+-- TODO why did i have it like this before: fmap BL.fromStrict $ B8.readFile path
 readTree :: Maybe Int -> FilePath -> IO (ProdTree)
 readTree md path = catchAny
                     (B8.readFile path >>= decodeIO)
-                    (\_ -> fmap (deserializeTree md) $ fmap ZL.decompress $ fmap BL.fromStrict $ B8.readFile path)
+                    (\_ -> fmap (deserializeTree md) $ fmap ZL.decompress $ BL.readFile path)
 --   (do
 --      (hs :: [HashLine]) <- decodeIO =<< B8.readFile path
 --      return $ snd $ head $ foldr accTrees [] hs)
