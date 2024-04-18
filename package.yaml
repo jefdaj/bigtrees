@@ -1,0 +1,53 @@
+name:                bigtrees
+description:         Performant hash trees to dedup large collections of files.
+version:             1.0.0.0
+author:              jefdaj
+maintainer:          jefdaj@users.noreply.github.com
+copyright:           "AGPL-3.0-only"
+
+dependencies:
+  - base
+  - docopt
+  - tasty
+  - tasty-discover
+  - tasty-hunit
+  - tasty-quickcheck
+  - text
+
+library:
+  source-dirs: lib
+  exposed-modules:
+  - System.Directory.BigTrees
+  - System.Directory.BigTrees.DupeMap
+  - System.Directory.BigTrees.HashTree
+  - System.Directory.BigTrees.HashForest
+  - System.Directory.BigTrees.HashLine
+  - System.Directory.BigTrees.Util
+  - System.Directory.BigTrees.Hash
+  - System.Directory.BigTrees.Delta
+  # System.Directory.Tree
+
+# executable:
+#   source-dirs: app
+#   main: Main.hs
+#   dependencies:
+#   - bigtrees
+
+# tests:
+
+  # test-lib:
+  #   source-dirs:
+  #   - "test/lib"
+  #   - "lib"
+  #   main: "Test.hs"
+  #   dependencies:
+  #   - "base"
+
+  # test-app:
+  #   source-dirs:
+  #   - "test/app"
+  #   - "app"
+  #   main: "Test.hs"
+  #   dependencies:
+  #   - "base"
+  #   - "bigtrees"
