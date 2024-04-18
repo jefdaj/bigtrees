@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.Gander.HashLine
+module Data.BigTrees.HashLine
   ( TreeType(..)
   , IndentLevel(..)
   , HashLine(..)
@@ -19,7 +19,7 @@ module Data.Gander.HashLine
 
 -- import Debug.Trace
 
-import Data.Gander.Hash
+import Data.BigTrees.Hash
 
 import qualified Data.ByteString.Char8 as B8 -- TODO switch to Word8?
 import qualified Data.ByteString.Short as BS

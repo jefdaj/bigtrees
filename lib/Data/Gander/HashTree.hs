@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Data.Gander.HashTree
+module Data.BigTrees.HashTree
   ( HashTree(..)
   , ProdTree(..)
   , HashLine(..)
@@ -35,8 +35,8 @@ module Data.Gander.HashTree
 
 -- import Debug.Trace
 
-import Data.Gander.Hash
-import Data.Gander.HashLine
+import Data.BigTrees.Hash
+import Data.BigTrees.HashLine
 
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS

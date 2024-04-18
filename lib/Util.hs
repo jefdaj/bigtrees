@@ -24,7 +24,7 @@ module Util
   where
 
 -- TODO remove this from Util
--- import Gander.Config (Config(..))
+-- import BigTrees.Config (Config(..))
 
 import Prelude hiding (log)
 

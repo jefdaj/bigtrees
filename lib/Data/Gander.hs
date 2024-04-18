@@ -1,4 +1,4 @@
-module Data.Gander
+module Data.BigTrees
   -- hash
   ( Hash(..)
   , prettyHash
@@ -65,9 +65,9 @@ module Data.Gander
   )
   where
 
-import Data.Gander.Delta
-import Data.Gander.DupeMap
-import Data.Gander.Hash
-import Data.Gander.HashLine
-import Data.Gander.HashTree
-import Data.Gander.HashForest
+import Data.BigTrees.Delta
+import Data.BigTrees.DupeMap
+import Data.BigTrees.Hash
+import Data.BigTrees.HashLine
+import Data.BigTrees.HashTree
+import Data.BigTrees.HashForest

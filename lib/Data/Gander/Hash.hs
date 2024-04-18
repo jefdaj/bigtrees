@@ -8,7 +8,7 @@
 -- TODO should it also hash filenames?
 -- TODO convert everything here to UTF-8?
 
-module Data.Gander.Hash
+module Data.BigTrees.Hash
   ( Hash(..)
   , digestLength
   , prettyHash
@@ -52,7 +52,7 @@ import GHC.Generics
 newtype Hash = Hash { unHash :: BS.ShortByteString }
   deriving (Eq, Read, Show, Ord, Generic, NFData)
 
--- This is unrelated to Gander's hashing. It's required to use Data.HashMap
+-- This is unrelated to BigTrees's hashing. It's required to use Data.HashMap
 instance Hashable Hash
   where
     hashWithSalt n h = hashWithSalt n (unHash h)

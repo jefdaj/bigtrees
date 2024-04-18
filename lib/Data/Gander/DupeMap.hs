@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Data.Gander.DupeMap
+module Data.BigTrees.DupeMap
   ( DupeSet
   , DupeMap
   , allDupes
@@ -33,14 +33,14 @@ import qualified Data.List                as L
 import qualified Data.Massiv.Array        as A
 
 -- TODO are the paths getting messed up somewhere in here?
--- like this: myfirstdedup/home/user/gander/demo/myfirstdedup/unsorted/backup/backup
+-- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup
 
 import qualified Data.HashMap.Strict as M
 
-import Data.Gander.Hash
-import Data.Gander.HashLine
-import Data.Gander.HashTree
-import Data.Gander.HashForest
+import Data.BigTrees.Hash
+import Data.BigTrees.HashLine
+import Data.BigTrees.HashTree
+import Data.BigTrees.HashForest
 import Util (n2p)
 
 import Data.List       (sort, isPrefixOf)

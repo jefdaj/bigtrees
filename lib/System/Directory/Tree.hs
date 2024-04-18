@@ -144,7 +144,7 @@ CHANGES:
             zipper usage!
 -}
 
--- A hack to prevent symlink cycles, which only works for gander's particular use case
+-- A hack to prevent symlink cycles, which only works for bigtrees's particular use case
 -- TODO make a separat "Annex Utils" module for this?
 import Util (isNonAnnexSymlink, n2p, p2n, FileName(..))
 -- import qualified Data.ByteString.Short as BS
