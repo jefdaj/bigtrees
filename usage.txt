@@ -1,0 +1,17 @@
+Usage:
+  bigtrees info <tree>
+  bigtrees hash <src> [-o <tree>]
+  bigtrees update <tree> [-i <src>]
+  bigtrees find <tree> [<condition>..]
+  bigtrees cut <tree> <branch> [-o <tree>]
+  bigtrees graft <tree> <branch> [-i <tree>]
+  bigtrees diff <old> <new>
+  bigtrees dupes <tree> [<condition>..] [-s <sortby>] [-n <nhits>] [-p <branch>] [-d <script>]
+
+Conditions:
+  type (file, dir, graft)
+  mindepth, maxdepth
+  minsize, maxsize
+  minfiles, maxfiles
+  glob
+  regex
