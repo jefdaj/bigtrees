@@ -1,0 +1,39 @@
+The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
+
+Usage:
+  gander [-vc]  cat    <path>...
+  gander [-vc]  hash   [-e <exclude>] [-t <txt>] [-b <bin>] <path>...
+  gander [-vc]  diff   <old> <new>
+  gander [-vc]  dupes  [-t <txt>] [-m <maxdepth>] <hashes>...
+  gander [-vfc] update <main> <sub> <path>
+  gander [-vc]  test   <path>...
+
+Options:
+  -f, --force    Change existing files without requiring confirmation.
+  -v, --verbose  Explain each step as it runs.
+  -c, --check    Afterwards, re-hash to check that all files are as expected.
+  -e <exclude>   Read a list of globs and exclude any files matching it.
+                 If none given, the list defaults to [".git*"]
+  -t <txt>       Stream output to a text file rather than stdout.
+  -b <bin>       Before exit, write a binary <hashes> file for fast reloading.
+                 Text will still stream to stdout as usual.
+  -m <maxdepth>  Look for dupes only <maxdepth> levels into the folder structure.
+                 Drastically reduces time and memory use when reading hashes
+                 from a file, without affecting accuracy up to the max depth.
+                 WARNING: only works on a saved hashes file. No effect on
+                 binary data or when reading a tree of files and deduping them
+                 at the same time.
+
+Commands:
+  cat     Decodes and prints each <path> if hashes, and hashes + prints if not.
+  hash    Reads files + folders and prints their hashes to stdout.
+  dupes   List duplicate files + folders in <hashes>.
+  diff    Print changes in <new> relative to <old>. TODO take hashes here too!
+  update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
+  test    Run tests on the given directories.
+
+Examples:
+
+  gander hash "/media/jeff/WD My Book"  > mybook-orig-hashes.txt
+  gander hash  /media/jeff/dedup/mybook > mybook-dedup-hashes.txt
+  gander diff mybook-{orig,dedup}-hashes.txt
