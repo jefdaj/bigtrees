@@ -1,7 +1,6 @@
-# bigtrees
+# BigTrees
 
-Performant hash trees to dedup large collections of files.
-
-A rewrite of [gander][1] that splits the data structure and app into separate packages.
+A rewrite of [gander][1] focusing less on my "dedup backups" use case and more
+on clarity and re-use of the data structures as a library.
 
 [1]: https://github.com/jefdaj/gander
