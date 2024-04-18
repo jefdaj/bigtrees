@@ -42,7 +42,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
 
-import Util (pathComponents, FileName, p2n, n2p)
+import System.Directory.BigTrees.Util (pathComponents, FileName, p2n, n2p)
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (msum)

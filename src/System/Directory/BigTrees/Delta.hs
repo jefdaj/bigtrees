@@ -22,7 +22,7 @@ module System.Directory.BigTrees.Delta
 
 -- import BigTrees.Config
 import System.Directory.BigTrees.HashTree
-import Util (n2p)
+import System.Directory.BigTrees.Util (n2p)
 import qualified Data.ByteString.Char8 as B
 
 import Control.Monad       (when, foldM)

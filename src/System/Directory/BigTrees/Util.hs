@@ -3,7 +3,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Util
+module System.Directory.BigTrees.Util
   ( absolutize
   , dropDir
   , dropDir'

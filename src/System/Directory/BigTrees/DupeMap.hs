@@ -41,7 +41,7 @@ import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.HashForest
-import Util (n2p)
+import System.Directory.BigTrees.Util (n2p)
 
 import Data.List       (sort, isPrefixOf)
 import System.FilePath ((</>), splitDirectories)
