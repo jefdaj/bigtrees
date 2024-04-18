@@ -41,7 +41,6 @@ dependencies:
   - unix
   - unordered-containers
   - utf8-string
-  - zstd
 
 library:
   source-dirs: lib
