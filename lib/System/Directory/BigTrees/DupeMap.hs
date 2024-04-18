@@ -106,8 +106,7 @@ mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
 mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 
 -- TODO is this reasonable?
--- TODO get newer stack resolver that has A.BN
-type DupeSetVec = A.Array A.N A.Ix1 DupeSet
+type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
 dupesByNFiles :: (forall s. ST s (DupeTable s)) -> [DupeList]
 dupesByNFiles ht = simplifyDupes $ Prelude.map fixElem sortedL
