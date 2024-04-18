@@ -6,13 +6,45 @@ maintainer:          jefdaj@users.noreply.github.com
 copyright:           "AGPL-3.0-only"
 
 dependencies:
+  # - -- cryptohash
+  # - ansi-terminal
+  # - byteable
+  # - directory-tree
+  # - docopt
+  # - pretty-simple
+  # - process
+  # - tasty
+  # - tasty-discover
+  # - tasty-hunit
+  # - tasty-quickcheck
+  # - text
+  # - with-utf8
+  - Glob
+  - MissingH
+  - attoparsec
   - base
-  - docopt
-  - tasty
-  - tasty-discover
-  - tasty-hunit
-  - tasty-quickcheck
+  - base64-bytestring
+  - bytestring
+  - crypton # TODO cryptonite... did the name change? does this substitute?
+  - deepseq
+  - directory
+  - filepath
+  - hashable
+  - hashtables
+  - massiv
+  - monad-parallel
+  - safe-exceptions
+  - split
+  - store
+  - streaming
+  - streaming-bytestring
+  - system-filepath
   - text
+  - th-utilities
+  - unix
+  - unordered-containers
+  - utf8-string
+  - zstd
 
 library:
   source-dirs: lib

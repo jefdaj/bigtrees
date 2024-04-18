@@ -1,0 +1,59 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           bigtrees
+version:        1.0.0.0
+description:    Performant hash trees to dedup large collections of files.
+author:         jefdaj
+maintainer:     jefdaj@users.noreply.github.com
+copyright:      AGPL-3.0-only
+license:        AGPL-3
+license-file:   LICENSE
+build-type:     Simple
+
+library
+  exposed-modules:
+      System.Directory.BigTrees
+      System.Directory.BigTrees.DupeMap
+      System.Directory.BigTrees.HashTree
+      System.Directory.BigTrees.HashForest
+      System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.Util
+      System.Directory.BigTrees.Hash
+      System.Directory.BigTrees.Delta
+  other-modules:
+      System.Directory.Tree
+      Paths_bigtrees
+  hs-source-dirs:
+      lib
+  build-depends:
+      Glob
+    , MissingH
+    , attoparsec
+    , base
+    , base64-bytestring
+    , bytestring
+    , crypton
+    , deepseq
+    , directory
+    , filepath
+    , hashable
+    , hashtables
+    , massiv
+    , monad-parallel
+    , safe-exceptions
+    , split
+    , store
+    , streaming
+    , streaming-bytestring
+    , system-filepath
+    , text
+    , th-utilities
+    , unix
+    , unordered-containers
+    , utf8-string
+    , zstd
+  default-language: Haskell2010
