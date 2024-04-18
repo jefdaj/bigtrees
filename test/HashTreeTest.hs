@@ -160,7 +160,7 @@ prop_roundtrip_prodtree_to_bytestring :: ProdTree -> Bool
 prop_roundtrip_prodtree_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
-    t' = deserializeTree Nothing $ BL.fromStrict bs
+    t' = deserializeTree Nothing bs
 
 -- TODO round-trip to binary files too
 
