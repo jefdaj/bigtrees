@@ -3,7 +3,7 @@ module BigTrees.Cmd.Diff where
 -- TODO guess and check hashes
 
 import BigTrees.Config (Config(..))
-import Data.BigTrees   (readOrBuildTree, renameRoot, diff, printDeltas)
+import System.Directory.BigTrees   (readOrBuildTree, renameRoot, diff, printDeltas)
 
 cmdDiff :: Config -> FilePath -> FilePath -> IO ()
 cmdDiff cfg old new = do

@@ -1,6 +1,6 @@
 module BigTrees.Cmd.Test where
 
-import Data.BigTrees
+import System.Directory.BigTrees
 import Prelude hiding (log)
 
 import Text.Pretty.Simple (pPrint)

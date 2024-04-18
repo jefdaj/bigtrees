@@ -2,7 +2,7 @@ module BigTrees.Cmd.Init where
 
 -- TODO guess and check hashes
 
--- import Data.BigTrees
+-- import System.Directory.BigTrees
 -- import BigTrees.Cmd.Hash (updateAnnexHashes)
 -- import Util     (absolutize)
 -- import BigTrees.Config (log)

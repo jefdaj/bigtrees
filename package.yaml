@@ -10,8 +10,6 @@ dependencies:
   # - ansi-terminal
   # - byteable
   # - directory-tree
-  # - docopt
-  # - pretty-simple
   # - process
   # - tasty
   # - tasty-discover
@@ -59,11 +57,14 @@ library:
   - System.Directory.BigTrees.Delta
   # System.Directory.Tree
 
-# executable:
-#   source-dirs: app
-#   main: Main.hs
-#   dependencies:
-#   - bigtrees
+executable:
+  source-dirs: app
+  main: BigTrees.hs
+  dependencies:
+  - bigtrees
+  - pretty-simple
+  - setlocale
+  - docopt
 
 # tests:
 

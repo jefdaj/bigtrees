@@ -57,3 +57,56 @@ library
     , utf8-string
     , zstd
   default-language: Haskell2010
+
+executable bigtrees
+  main-is: BigTrees.hs
+  other-modules:
+      BigTrees.Cmd
+      BigTrees.Cmd.Add
+      BigTrees.Cmd.Cat
+      BigTrees.Cmd.Dedup
+      BigTrees.Cmd.Diff
+      BigTrees.Cmd.Dupes
+      BigTrees.Cmd.Hash
+      BigTrees.Cmd.Init
+      BigTrees.Cmd.Mv
+      BigTrees.Cmd.Rm
+      BigTrees.Cmd.Test
+      BigTrees.Cmd.Update
+      BigTrees.Config
+      BigTrees.Run
+      Paths_bigtrees
+  hs-source-dirs:
+      app
+  build-depends:
+      Glob
+    , MissingH
+    , attoparsec
+    , base
+    , base64-bytestring
+    , bigtrees
+    , bytestring
+    , crypton
+    , deepseq
+    , directory
+    , docopt
+    , filepath
+    , hashable
+    , hashtables
+    , massiv
+    , monad-parallel
+    , pretty-simple
+    , safe-exceptions
+    , setlocale
+    , split
+    , store
+    , streaming
+    , streaming-bytestring
+    , system-filepath
+    , text
+    , th-utilities
+    , unix
+    , unordered-containers
+    , utf8-string
+    , zstd
+  default-language: Haskell2010

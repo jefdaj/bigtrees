@@ -2,7 +2,7 @@ module BigTrees.Cmd.Hash where
 
 -- TODO guess and check hashes
 
-import Data.BigTrees
+import System.Directory.BigTrees
 import BigTrees.Config (Config(..), log)
 -- import BigTrees.Run    (runGit, runGitCommit)
 

@@ -2,7 +2,7 @@ module BigTrees.Cmd.Add where
 
 -- TODO is the dst path being duplicated a bit? like unsorted/u1/u1?
 
--- import Data.BigTrees
+-- import System.Directory.BigTrees
 -- import BigTrees.Config (Config(..))
 -- import BigTrees.Run    (safeRunDeltas, runRsync)
 

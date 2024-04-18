@@ -17,7 +17,7 @@ module BigTrees.Run
   where
 
 -- import BigTrees.Config
--- import Data.BigTrees
+-- import System.Directory.BigTrees
 -- import Util
 
 -- import Prelude hiding (log)

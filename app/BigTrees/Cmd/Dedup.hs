@@ -4,7 +4,7 @@ module BigTrees.Cmd.Dedup where
 -- TODO have a separate dedup command that only does the rm part without moving stuff?
 -- TODO need to start a new file ignore.txt or something for hashes to ignore
 
--- import Data.BigTrees
+-- import System.Directory.BigTrees
 -- import BigTrees.Cmd.Hash (updateAnnexHashes)
 -- import Util     (userSaysYes)
 -- import BigTrees.Run      (runGitMv, runGitRm, runGitCommit)
