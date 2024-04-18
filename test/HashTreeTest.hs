@@ -9,6 +9,7 @@ module HashTreeTest where
 
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString.Char8            as B8
+import qualified Data.ByteString.Lazy.Char8       as BL
 -- import qualified Data.Text                        as T
 
 import Test.QuickCheck
@@ -159,7 +160,7 @@ prop_roundtrip_prodtree_to_bytestring :: ProdTree -> Bool
 prop_roundtrip_prodtree_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
-    t' = deserializeTree Nothing bs
+    t' = deserializeTree Nothing $ BL.fromStrict bs
 
 -- TODO round-trip to binary files too
 

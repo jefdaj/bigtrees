@@ -38,7 +38,7 @@ module System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashLine
 
-import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Char8 as B8 -- TODO is this just regular ByteString?
 import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
 

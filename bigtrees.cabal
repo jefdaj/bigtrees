@@ -111,7 +111,7 @@ executable bigtrees
     , zstd
   default-language: Haskell2010
 
-test-suite old-tests
+test-suite test-old
   type: exitcode-stdio-1.0
   main-is: Test.hs
   other-modules:
