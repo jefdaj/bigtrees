@@ -10,7 +10,6 @@ dependencies:
   # - ansi-terminal
   # - byteable
   # - directory-tree
-  # - process
   # - tasty
   # - tasty-discover
   # - tasty-hunit
@@ -59,15 +58,38 @@ library:
 
 executable:
   source-dirs: app
-  main: BigTrees.hs
+  main: Main.hs
   dependencies:
   - bigtrees
   - pretty-simple
   - setlocale
   - docopt
 
-# tests:
-
+tests:
+  test-old:
+    source-dirs:
+    - "lib"
+    - "app"
+    - "test"
+    main: "Test.hs"
+    # ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
+    dependencies:
+    - HUnit
+    - QuickCheck
+    - bigtrees
+    - hspec
+    - quickcheck-instances
+    - quickcheck-unicode
+    - tasty
+    - tasty-discover
+    - tasty-hspec
+    - tasty-hunit
+    - tasty-quickcheck
+    - temporary
+    - process
+    - pretty-simple
+ 
+  # TODO convert tests to git-kaizen style:
   # test-lib:
   #   source-dirs:
   #   - "test/lib"
@@ -75,7 +97,6 @@ executable:
   #   main: "Test.hs"
   #   dependencies:
   #   - "base"
-
   # test-app:
   #   source-dirs:
   #   - "test/app"
