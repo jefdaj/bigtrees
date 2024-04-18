@@ -25,7 +25,7 @@ dependencies:
   - base
   - base64-bytestring
   - bytestring
-  - crypton # TODO cryptonite... did the name change? does this substitute?
+  - crypton
   - deepseq
   - directory
   - filepath
