@@ -24,9 +24,10 @@ unit_hash_file_contents = do
   h <- hashFile False f
   unHash h @=? "MTVjMzcwNmJjODQzYTg0"
 
+-- TODO should the source code really be used this way?
 unit_hash_image :: Assertion
 unit_hash_image = do
-  h <- hashFile False "bigtrees.png"
+  h <- hashFile False "gander.png"
   unHash h @=? "NWMwYjNlN2FiZTQ5OWZj"
 
 -- TODO unit_hash_dir
