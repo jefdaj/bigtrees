@@ -77,6 +77,7 @@ executable bigtrees
       Paths_bigtrees
   hs-source-dirs:
       app
+  ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Glob
     , MissingH
@@ -133,6 +134,7 @@ test-suite test-old
   hs-source-dirs:
       lib
       test
+  ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Glob
     , HUnit

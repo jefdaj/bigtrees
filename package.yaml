@@ -58,6 +58,8 @@ library:
 executable:
   source-dirs: app
   main: BigTrees.hs
+  # TODO which of these options really help?
+  ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
   dependencies:
   - bigtrees
   - pretty-simple
@@ -70,7 +72,8 @@ tests:
     - "lib"
     - "test"
     main: "Test.hs"
-    # ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
+    # TODO which of these options really help?
+    ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
     dependencies:
     - HUnit
     - QuickCheck
