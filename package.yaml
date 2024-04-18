@@ -58,7 +58,7 @@ library:
 
 executable:
   source-dirs: app
-  main: Main.hs
+  main: BigTrees.hs
   dependencies:
   - bigtrees
   - pretty-simple
@@ -66,10 +66,9 @@ executable:
   - docopt
 
 tests:
-  test-old:
+  old-tests:
     source-dirs:
     - "lib"
-    - "app"
     - "test"
     main: "Test.hs"
     # ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
