@@ -1,12 +1,12 @@
-module Gander.Cmd.Test where
+module BigTrees.Cmd.Test where
 
-import Data.Gander
+import Data.BigTrees
 import Prelude hiding (log)
 
 import Text.Pretty.Simple (pPrint)
 
 -- TODO remove because this shouldn't depend on the app target?
-import Gander.Config      (Config(..), log)
+import BigTrees.Config      (Config(..), log)
 
 import qualified Data.ByteString.Char8 as B
 

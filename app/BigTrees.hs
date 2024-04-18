@@ -5,9 +5,9 @@ module Main where
 -- TODO sort by how many links deduping would save: files per dupe * (dupes - 1)
 -- TODO figure out how to read files + compute hashes in parallel
 
-import Gander.Cmd
+import BigTrees.Cmd
 -- import Util           (absolutize)
-import Gander.Config         (Config(..), defaultConfig)
+import BigTrees.Config         (Config(..), defaultConfig)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg, getAllArgs,
                               shortOption, command, argument)

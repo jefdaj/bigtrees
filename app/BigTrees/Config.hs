@@ -1,4 +1,4 @@
-module Gander.Config
+module BigTrees.Config
   ( Config(..)
   , defaultConfig
   , log

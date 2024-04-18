@@ -1,10 +1,10 @@
-module Gander.Cmd.Add where
+module BigTrees.Cmd.Add where
 
 -- TODO is the dst path being duplicated a bit? like unsorted/u1/u1?
 
--- import Data.Gander
--- import Gander.Config (Config(..))
--- import Gander.Run    (safeRunDeltas, runRsync)
+-- import Data.BigTrees
+-- import BigTrees.Config (Config(..))
+-- import BigTrees.Run    (safeRunDeltas, runRsync)
 
 -- import Data.Maybe      (fromJust)
 -- import System.FilePath ((</>))
@@ -20,7 +20,7 @@ module Gander.Cmd.Add where
 --     Just s  -> rsyncAndHash cfg s dstAbs -- TODO aha! safeRunDeltas doesn't take this into account
 --     -- is there any need to --check when adding anyway? maybe need some extra logic for it
 --   let ds  = [Add dstRoot dstTree]
---       msg = unwords ["gander add", dst] -- TODO sanitize!
+--       msg = unwords ["bigtrees add", dst] -- TODO sanitize!
 --   safeRunDeltas cfg ds msg
 
 -- rsyncAndHash :: Config -> FilePath -> FilePath -> IO (HashTree ())

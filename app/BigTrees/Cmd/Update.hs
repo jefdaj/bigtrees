@@ -1,10 +1,10 @@
-module Gander.Cmd.Update where
+module BigTrees.Cmd.Update where
 
 -- TODO guess and check hashes? not sure if that makes sense here
 -- TODO make an operation to replace a subtree (insert despite it existing, then diff)
 
-import Gander.Config (Config(..))
-import Data.Gander   (readOrBuildTree, addSubTree, printTree)
+import BigTrees.Config (Config(..))
+import Data.BigTrees   (readOrBuildTree, addSubTree, printTree)
 
 cmdUpdate :: Config -> FilePath -> FilePath -> FilePath -> IO ()
 cmdUpdate cfg root sub path = do

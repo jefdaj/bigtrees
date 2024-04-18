@@ -1,4 +1,4 @@
-module Gander.Run
+module BigTrees.Run
 --   ( runGitAnnexAdd -- TODO don't export?
 --   , findAnnex -- TODO don't export?
 --   , runGitAdd -- TODO don't export
@@ -16,8 +16,8 @@ module Gander.Run
 --   )
   where
 
--- import Gander.Config
--- import Data.Gander
+-- import BigTrees.Config
+-- import Data.BigTrees
 -- import Util
 
 -- import Prelude hiding (log)

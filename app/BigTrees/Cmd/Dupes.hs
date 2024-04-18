@@ -1,11 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
 
-module Gander.Cmd.Dupes where
+module BigTrees.Cmd.Dupes where
 
 -- TODO guess and check hashes
 
-import Gander.Config (Config(..))
-import Data.Gander   (HashForest(..), readOrBuildTrees, pathsByHash, dupesByNFiles, printDupes, writeDupes)
+import BigTrees.Config (Config(..))
+import Data.BigTrees   (HashForest(..), readOrBuildTrees, pathsByHash, dupesByNFiles, printDupes, writeDupes)
 
 cmdDupes :: Config -> [FilePath] -> IO ()
 cmdDupes cfg paths = do

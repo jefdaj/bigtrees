@@ -1,10 +1,10 @@
-module Gander.Cmd.Hash where
+module BigTrees.Cmd.Hash where
 
 -- TODO guess and check hashes
 
-import Data.Gander
-import Gander.Config (Config(..), log)
--- import Gander.Run    (runGit, runGitCommit)
+import Data.BigTrees
+import BigTrees.Config (Config(..), log)
+-- import BigTrees.Run    (runGit, runGitCommit)
 
 import Prelude hiding (log)
 

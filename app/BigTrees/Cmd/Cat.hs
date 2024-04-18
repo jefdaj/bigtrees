@@ -1,7 +1,7 @@
-module Gander.Cmd.Cat where
+module BigTrees.Cmd.Cat where
 
-import Gander.Config (Config(..))
-import Data.Gander   (readOrBuildTrees, printForest, writeForest)
+import BigTrees.Config (Config(..))
+import Data.BigTrees   (readOrBuildTrees, printForest, writeForest)
 
 cmdCat :: Config -> [FilePath] -> IO ()
 cmdCat cfg paths = do
