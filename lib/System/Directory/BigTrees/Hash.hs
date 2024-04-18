@@ -29,7 +29,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Short as BS
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Lazy.Char8 as BL
-import qualified Data.ByteString.Streaming.Char8 as Q
+import qualified Streaming.ByteString.Char8 as Q
 
 import Data.List          (isInfixOf, isPrefixOf)
 import Data.List.Split    (splitOn)
