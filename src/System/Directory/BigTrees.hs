@@ -1,4 +1,4 @@
-module Data.BigTrees
+module System.Directory.BigTrees
   -- hash
   ( Hash(..)
   , prettyHash
@@ -65,9 +65,9 @@ module Data.BigTrees
   )
   where
 
-import Data.BigTrees.Delta
-import Data.BigTrees.DupeMap
-import Data.BigTrees.Hash
-import Data.BigTrees.HashLine
-import Data.BigTrees.HashTree
-import Data.BigTrees.HashForest
+import System.Directory.BigTrees.Delta
+import System.Directory.BigTrees.DupeMap
+import System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.HashLine
+import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.HashForest

@@ -2,7 +2,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Data.BigTrees.HashForest
+module System.Directory.BigTrees.HashForest
   ( HashForest(..)
   , ProdForest
   , readTrees
@@ -17,9 +17,9 @@ module Data.BigTrees.HashForest
   )
   where
 
--- import Data.BigTrees.Hash
-import Data.BigTrees.HashLine (parseHashes)
-import Data.BigTrees.HashTree
+-- import System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.HashLine (parseHashes)
+import System.Directory.BigTrees.HashTree
 
 import TH.Derive
 import Data.Store             (Store(..), encode, decodeIO)

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.BigTrees.Delta
+module System.Directory.BigTrees.Delta
   ( Delta(..)
   , diff
   , prettyDelta
@@ -21,15 +21,15 @@ module Data.BigTrees.Delta
  -}
 
 -- import BigTrees.Config
-import Data.BigTrees.HashTree
+import System.Directory.BigTrees.HashTree
 import Util (n2p)
 import qualified Data.ByteString.Char8 as B
 
 import Control.Monad       (when, foldM)
 import Data.List           (find)
 import Data.Maybe          (fromJust)
---import Data.BigTrees.DupeMap (listLostFiles)
--- import Data.BigTrees.Hash    (prettyHash)
+--import System.Directory.BigTrees.DupeMap (listLostFiles)
+-- import System.Directory.BigTrees.Hash    (prettyHash)
 import System.FilePath     ((</>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves

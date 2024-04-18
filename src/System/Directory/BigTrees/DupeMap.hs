@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Data.BigTrees.DupeMap
+module System.Directory.BigTrees.DupeMap
   ( DupeSet
   , DupeMap
   , allDupes
@@ -37,10 +37,10 @@ import qualified Data.Massiv.Array        as A
 
 import qualified Data.HashMap.Strict as M
 
-import Data.BigTrees.Hash
-import Data.BigTrees.HashLine
-import Data.BigTrees.HashTree
-import Data.BigTrees.HashForest
+import System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.HashLine
+import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.HashForest
 import Util (n2p)
 
 import Data.List       (sort, isPrefixOf)

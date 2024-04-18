@@ -8,7 +8,7 @@
 -- TODO should it also hash filenames?
 -- TODO convert everything here to UTF-8?
 
-module Data.BigTrees.Hash
+module System.Directory.BigTrees.Hash
   ( Hash(..)
   , digestLength
   , prettyHash

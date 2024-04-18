@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Data.BigTrees.HashTree
+module System.Directory.BigTrees.HashTree
   ( HashTree(..)
   , ProdTree(..)
   , HashLine(..)
@@ -35,8 +35,8 @@ module Data.BigTrees.HashTree
 
 -- import Debug.Trace
 
-import Data.BigTrees.Hash
-import Data.BigTrees.HashLine
+import System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.HashLine
 
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
