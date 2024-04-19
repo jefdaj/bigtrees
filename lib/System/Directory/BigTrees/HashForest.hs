@@ -1,21 +1,25 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module System.Directory.BigTrees.HashForest
-  ( HashForest(..)
-  , ProdForest
-  , readTrees
-  , buildForest
-  , readForest
-  , readOrBuildTrees
-  , serializeForest
-  , deserializeForest
-  , printForest
-  , writeForest
-  , writeBinForest
-  )
-  where
+module System.Directory.BigTrees.HashForest where
+  -- ( HashForest(..)
+  -- , ProdForest
+  -- , readTrees
+  -- , buildForest
+  -- , readForest
+  -- , readOrBuildTrees
+  -- , serializeForest
+  -- , deserializeForest
+  -- , printForest
+  -- , writeForest
+  -- , writeBinForest
+  -- )
+  -- where
 
 -- import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashLine (parseHashes)
@@ -27,6 +31,12 @@ import System.FilePath.Glob (Pattern)
 import qualified Data.ByteString.Char8 as B8
 import System.IO            (withFile, IOMode(..))
 import Control.Exception.Safe (catchAny)
+
+import Test.QuickCheck
+import Test.QuickCheck.Monadic
+-- import qualified Data.ByteString.Char8            as B8
+import System.IO (hClose) -- IOMode(..), withFile
+import System.IO.Temp
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the
@@ -63,7 +73,7 @@ buildForest beVerbose excludes paths = HashForest <$> mapM (buildProdTree beVerb
 
 -- TODO be clearer: this works on trees, but you could also read a forest directly
 readOrBuildTrees :: Bool -> Maybe Int -> [Pattern] -> [FilePath] -> IO (HashForest ())
-readOrBuildTrees verbose mmaxdepth excludes paths = HashForest <$> mapM (readOrBuildTree verbose mmaxdepth excludes) paths
+readOrBuildTrees vrb mmaxdepth excludes paths = HashForest <$> mapM (readOrBuildTree vrb mmaxdepth excludes) paths
 
 -- TODO is there a reason this doesn't join lines?
 serializeForest :: HashForest () -> [B8.ByteString]
@@ -83,3 +93,47 @@ writeForest path forest = withFile path WriteMode $ \h ->
 
 writeBinForest :: FilePath -> HashForest () -> IO ()
 writeBinForest path forest = B8.writeFile path $ encode forest
+
+-----------
+-- tests --
+-----------
+
+type TestForest = HashForest B8.ByteString
+
+instance Arbitrary TestForest where
+  arbitrary = HashForest <$> resize 3 arbitrary
+  shrink (HashForest xs) = HashForest <$> shrink xs
+
+instance Arbitrary ProdForest where
+  arbitrary = HashForest <$> arbitrary
+  shrink (HashForest ts) = HashForest <$> shrink ts
+
+prop_roundtrip_hashforest_to_bytestring :: HashForest () -> Bool
+prop_roundtrip_hashforest_to_bytestring t = t' == t
+  where
+    bs = B8.unlines $ serializeForest t -- TODO why didn't it include the unlines part again?
+    t' = deserializeForest Nothing bs
+
+roundtrip_hashforest_to_hashes :: HashForest () -> IO (HashForest ())
+roundtrip_hashforest_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+  hClose hdl
+  writeForest path t
+  readForest Nothing path
+
+prop_roundtrip_hashforest_to_hashes :: Property
+prop_roundtrip_hashforest_to_hashes = monadicIO $ do
+  t1 <- pick arbitrary
+  t2 <- run $ roundtrip_hashforest_to_hashes t1
+  assert $ t2 == t1
+
+roundtrip_hashforest_to_binary_hashes :: HashForest () -> IO (HashForest ())
+roundtrip_hashforest_to_binary_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+  hClose hdl
+  writeBinForest path t
+  readForest Nothing path
+
+prop_roundtrip_hashforest_to_binary_hashes :: Property
+prop_roundtrip_hashforest_to_binary_hashes = monadicIO $ do
+  t1 <- pick arbitrary
+  t2 <- run $ roundtrip_hashforest_to_binary_hashes t1
+  assert $ t2 == t1

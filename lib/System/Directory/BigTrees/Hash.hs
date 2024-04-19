@@ -3,20 +3,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- TODO hashHashes should be hashDir
 -- TODO should it also hash filenames?
 -- TODO convert everything here to UTF-8?
 
-module System.Directory.BigTrees.Hash
-  ( Hash(..)
-  , digestLength
-  , prettyHash
-  , hashBytes
-  , hashString
-  , hashFile
-  )
-  where
+module System.Directory.BigTrees.Hash where
+  -- ( Hash(..)
+  -- , digestLength
+  -- , prettyHash
+  -- , hashBytes
+  -- , hashString
+  -- , hashFile
+  -- )
+  -- where
 
 import qualified Crypto.Hash as CH
 
@@ -42,6 +43,9 @@ import TH.Derive
 import Data.Store (Store(..))
 import Control.DeepSeq
 import GHC.Generics
+
+import System.IO.Temp
+import Test.HUnit
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -129,3 +133,31 @@ hashFile _ path = do
   case sHash of
     Just h  -> return h
     Nothing -> hashFileContentsStreaming path
+
+-- note: no need to explicitly match against sha256sum because the manual examples cover that
+-- TODO but make sure they match manually! how to handle the base64 encoding part?
+
+unit_hash_bytestring :: Assertion
+unit_hash_bytestring = unHash (hashBytes "a bytestring") @=? "YTI3MDBmODFhZWE2ZjBm"
+
+unit_hash_empty_file :: Assertion
+unit_hash_empty_file = do
+  f <- emptySystemTempFile "empty"
+  h <- hashFile False f
+  unHash h @=? "ZTNiMGM0NDI5OGZjMWMx"
+
+unit_hash_file_contents :: Assertion
+unit_hash_file_contents = do
+  f <- writeSystemTempFile "filename should not matter" "file contents should be hashed"
+  h <- hashFile False f
+  unHash h @=? "MTVjMzcwNmJjODQzYTg0"
+
+-- TODO should the source code really be used this way?
+unit_hash_image :: Assertion
+unit_hash_image = do
+  h <- hashFile False "gander.png"
+  unHash h @=? "NWMwYjNlN2FiZTQ5OWZj"
+
+-- TODO unit_hash_dir
+-- TODO unit_hash_dir_random_filenames
+-- TODO unit_hash_empty_dir

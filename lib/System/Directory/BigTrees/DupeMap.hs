@@ -246,3 +246,10 @@ listLostFiles before after = filesLost
     filesLost    = sort $ S.toList $ S.unions $ M.elems
                  $ M.map (\(_,_,fs) -> fs)
                  $ M.filter (\(_,t,_) -> t == F) hashesLost
+
+-----------
+-- tests --
+-----------
+
+-- TODO property: if you dedup a list of the same dir 2+ times, there should only be one big overall dupe
+-- TODO property: adding to the dupe set should be idempotent

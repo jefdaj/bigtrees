@@ -31,7 +31,9 @@ library
       lib
   build-depends:
       Glob
+    , HUnit
     , MissingH
+    , QuickCheck
     , attoparsec
     , base
     , base64-bytestring
@@ -42,14 +44,25 @@ library
     , filepath
     , hashable
     , hashtables
+    , hspec
     , massiv
     , monad-parallel
+    , pretty-simple
+    , process
+    , quickcheck-instances
+    , quickcheck-unicode
     , safe-exceptions
     , split
     , store
     , streaming
     , streaming-bytestring
     , system-filepath
+    , tasty
+    , tasty-discover
+    , tasty-hspec
+    , tasty-hunit
+    , tasty-quickcheck
+    , temporary
     , text
     , th-utilities
     , unix
@@ -80,7 +93,9 @@ executable bigtrees
   ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Glob
+    , HUnit
     , MissingH
+    , QuickCheck
     , attoparsec
     , base
     , base64-bytestring
@@ -93,9 +108,13 @@ executable bigtrees
     , filepath
     , hashable
     , hashtables
+    , hspec
     , massiv
     , monad-parallel
     , pretty-simple
+    , process
+    , quickcheck-instances
+    , quickcheck-unicode
     , safe-exceptions
     , setlocale
     , split
@@ -103,6 +122,12 @@ executable bigtrees
     , streaming
     , streaming-bytestring
     , system-filepath
+    , tasty
+    , tasty-discover
+    , tasty-hspec
+    , tasty-hunit
+    , tasty-quickcheck
+    , temporary
     , text
     , th-utilities
     , unix
@@ -110,7 +135,7 @@ executable bigtrees
     , utf8-string
   default-language: Haskell2010
 
-test-suite test-old
+test-suite test-lib
   type: exitcode-stdio-1.0
   main-is: Test.hs
   other-modules:
@@ -123,17 +148,10 @@ test-suite test-old
       System.Directory.BigTrees.HashTree
       System.Directory.BigTrees.Util
       System.Directory.Tree
-      DeltaTest
-      DupeSetTest
-      FileNameTest
-      HashForestTest
-      HashTest
-      HashTreeTest
-      UtilTest
       Paths_bigtrees
   hs-source-dirs:
       lib
-      test
+      test/lib
   ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Glob

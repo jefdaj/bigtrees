@@ -41,7 +41,20 @@ dependencies:
   - unix
   - unordered-containers
   - utf8-string
-
+  - HUnit
+  - QuickCheck
+  - hspec
+  - quickcheck-instances
+  - quickcheck-unicode
+  - tasty
+  - tasty-discover
+  - tasty-hspec
+  - tasty-hunit
+  - tasty-quickcheck
+  - temporary
+  - process
+  - pretty-simple
+ 
 library:
   source-dirs: lib
   exposed-modules:
@@ -67,29 +80,16 @@ executable:
   - docopt
 
 tests:
-  test-old:
+  test-lib:
     source-dirs:
     - "lib"
-    - "test"
+    - "test/lib"
     main: "Test.hs"
     # TODO which of these options really help?
     ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
     dependencies:
-    - HUnit
-    - QuickCheck
     - bigtrees
-    - hspec
-    - quickcheck-instances
-    - quickcheck-unicode
-    - tasty
-    - tasty-discover
-    - tasty-hspec
-    - tasty-hunit
-    - tasty-quickcheck
-    - temporary
-    - process
-    - pretty-simple
- 
+
   # TODO convert tests to git-kaizen style:
   # test-lib:
   #   source-dirs:

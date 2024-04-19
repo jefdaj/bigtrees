@@ -1,17 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 
-module System.Directory.BigTrees.Delta
-  ( Delta(..)
-  , diff
-  , prettyDelta
-  , printDeltas
-  -- , safeDelta
-  -- , safeDeltas
-  , simDelta
-  , simDeltas
-  , assertSameTrees -- TODO rename to mention diff
-  )
-  where
+module System.Directory.BigTrees.Delta where
+  -- ( Delta(..)
+  -- , diff
+  -- , prettyDelta
+  -- , printDeltas
+  -- -- , safeDelta
+  -- -- , safeDeltas
+  -- , simDelta
+  -- , simDeltas
+  -- , assertSameTrees -- TODO rename to mention diff
+  -- )
+  -- where
 
 {- This module calculates what a HashTree should look like after doing some git
  - operations, represented as Deltas. It's dramatically faster to update the
@@ -31,6 +32,10 @@ import Data.Maybe          (fromJust)
 --import System.Directory.BigTrees.DupeMap (listLostFiles)
 -- import System.Directory.BigTrees.Hash    (prettyHash)
 import System.FilePath     ((</>))
+
+-- import Test.QuickCheck
+-- import Test.QuickCheck.Monadic
+-- import           Control.Applicative     ((<$>), (<*>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
 --      maybe only some of them are needed: add and edit. and edit only needs one.
@@ -141,3 +146,34 @@ assertSameTrees (msg1, tree1) (msg2, tree2) = do
   when (not $ null wrong) $ do
     putStrLn $ unwords ["error!", msg1, "and", msg2, "should be identical, but aren't:"]
     printDeltas wrong
+
+-----------
+-- tests --
+-----------
+
+-- I seem to have accidentally written something like an "HashTreeAction",
+-- as described here:
+--
+-- https://jaspervdj.be/posts/2015-03-13-practical-testing-in-haskell.html
+--
+-- So I might as well add the rest of the scaffolding to use it in the
+-- HashTree Arbitrary instance.
+--
+-- TODO also rename it to HashTreeAction?
+
+-- data Delta
+--   = Add  FilePath HashTree
+--   | Rm   FilePath
+--   | Mv   FilePath FilePath
+--   | Edit FilePath HashTree -- TODO remove in favor of subtle use of Add?
+--   deriving (Read, Show, Eq)
+
+-- TODO hm, is this not the best way because of how the actions need existing trees?
+
+-- instance Arbitrary Delta where
+--   arbitrary = oneof
+--     [ Add  <$> arbitrary <*> arbitrary
+--     , Rm   <$> undefined -- TODO how to pick one of the existing things to delete?
+--     , Mv   <$> undefined <*> undefined -- TODO how to pick an existing thing?
+--     , Edit <$> undefined <*> arbitrary -- TODO same
+--     ]
