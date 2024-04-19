@@ -4,8 +4,10 @@ Usage:
   bigtrees update <tree> [-i <src>]
   bigtrees find <tree> [<condition>..]
   bigtrees cut <tree> <branch> [-o <tree>]
+  bigtrees rm <tree> <branch>
   bigtrees graft <tree> <branch> [-i <tree>]
-  bigtrees diff <old> <new>
+  bigtrees mv <tree> <oldbranch> <newbranch>
+  bigtrees diff <oldtree> <newtree>
   bigtrees dupes <tree> [<condition>..] [-s <sortby>] [-n <nhits>] [-p <branch>] [-d <script>]
 
 Conditions:
