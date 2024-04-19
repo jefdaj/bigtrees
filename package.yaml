@@ -10,6 +10,9 @@ dependencies:
   # - ansi-terminal
   # - byteable
   # - directory-tree
+  # - hspec
+  # - pretty-simple
+  # - process
   # - tasty
   # - tasty-discover
   # - tasty-hunit
@@ -17,7 +20,9 @@ dependencies:
   # - text
   # - with-utf8
   - Glob
+  - HUnit
   - MissingH
+  - QuickCheck
   - attoparsec
   - base
   - base64-bytestring
@@ -30,30 +35,25 @@ dependencies:
   - hashtables
   - massiv
   - monad-parallel
+  - quickcheck-instances
+  - quickcheck-unicode
   - safe-exceptions
   - split
   - store
   - streaming
   - streaming-bytestring
   - system-filepath
-  - text
-  - th-utilities
-  - unix
-  - unordered-containers
-  - utf8-string
-  - HUnit
-  - QuickCheck
-  - hspec
-  - quickcheck-instances
-  - quickcheck-unicode
   - tasty
   - tasty-discover
   - tasty-hspec
   - tasty-hunit
   - tasty-quickcheck
   - temporary
-  - process
-  - pretty-simple
+  - text
+  - th-utilities
+  - unix
+  - unordered-containers
+  - utf8-string
  
 library:
   source-dirs: lib
@@ -89,20 +89,3 @@ tests:
     ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
     dependencies:
     - bigtrees
-
-  # TODO convert tests to git-kaizen style:
-  # test-lib:
-  #   source-dirs:
-  #   - "test/lib"
-  #   - "lib"
-  #   main: "Test.hs"
-  #   dependencies:
-  #   - "base"
-  # test-app:
-  #   source-dirs:
-  #   - "test/app"
-  #   - "app"
-  #   main: "Test.hs"
-  #   dependencies:
-  #   - "base"
-  #   - "bigtrees"

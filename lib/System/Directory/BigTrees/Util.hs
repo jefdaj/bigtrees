@@ -59,7 +59,7 @@ import GHC.Generics
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 import Test.HUnit (Assertion, (@=?))
-import Test.Hspec
+-- import Test.Hspec
 import System.Directory (getHomeDirectory)
 import Control.Monad.IO.Class (liftIO)
 import Control.Exception (evaluate)
@@ -216,7 +216,9 @@ p2n = FileName . (if os == "darwin"
 -- bs2n :: BU.ByteString -> FileName
 -- bs2n = p2n . BU.toString
 
+-----------
 -- tests --
+-----------
 
 {- My `FileName` type is defined in `Util` as `Text` for efficiency, but
  - what it really means is "Text without slashes or null chars". So I have to
@@ -249,10 +251,6 @@ prop_roundtrip_filename_to_name_of_tmpfile = monadicIO $ do
   n <- pick arbitrary
   run $ roundtrip_filename_to_name_of_tmpfile n
   assert True
-
------------
--- tests --
------------
 
 -- describe "Util" $ do
 --   describe "absolutize" $ do

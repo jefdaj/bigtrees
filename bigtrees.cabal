@@ -44,11 +44,8 @@ library
     , filepath
     , hashable
     , hashtables
-    , hspec
     , massiv
     , monad-parallel
-    , pretty-simple
-    , process
     , quickcheck-instances
     , quickcheck-unicode
     , safe-exceptions
@@ -108,11 +105,9 @@ executable bigtrees
     , filepath
     , hashable
     , hashtables
-    , hspec
     , massiv
     , monad-parallel
     , pretty-simple
-    , process
     , quickcheck-instances
     , quickcheck-unicode
     , safe-exceptions
@@ -169,11 +164,8 @@ test-suite test-lib
     , filepath
     , hashable
     , hashtables
-    , hspec
     , massiv
     , monad-parallel
-    , pretty-simple
-    , process
     , quickcheck-instances
     , quickcheck-unicode
     , safe-exceptions
