@@ -1,10 +1,10 @@
-module BigTrees.Cmd.Hash where
+module Cmd.Hash where
 
 -- TODO guess and check hashes
 
 import System.Directory.BigTrees
-import BigTrees.Config (Config(..), log)
--- import BigTrees.Run    (runGit, runGitCommit)
+import Config (Config(..), log)
+-- import Run    (runGit, runGitCommit)
 
 import Prelude hiding (log)
 

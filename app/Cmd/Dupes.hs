@@ -1,10 +1,10 @@
 {-# LANGUAGE BangPatterns #-}
 
-module BigTrees.Cmd.Dupes where
+module Cmd.Dupes where
 
 -- TODO guess and check hashes
 
-import BigTrees.Config (Config(..))
+import Config (Config(..))
 import System.Directory.BigTrees   (HashForest(..), readOrBuildTrees, pathsByHash, dupesByNFiles, printDupes, writeDupes)
 
 cmdDupes :: Config -> [FilePath] -> IO ()

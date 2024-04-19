@@ -1,9 +1,9 @@
-module BigTrees.Cmd.Update where
+module Cmd.Update where
 
 -- TODO guess and check hashes? not sure if that makes sense here
 -- TODO make an operation to replace a subtree (insert despite it existing, then diff)
 
-import BigTrees.Config (Config(..))
+import Config (Config(..))
 import System.Directory.BigTrees   (readOrBuildTree, addSubTree, printTree)
 
 cmdUpdate :: Config -> FilePath -> FilePath -> FilePath -> IO ()

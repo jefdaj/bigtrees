@@ -1,4 +1,4 @@
-module BigTrees.Cmd.Rm where
+module Cmd.Rm where
 
 -- TODO guess and check hashes
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D
@@ -8,11 +8,11 @@ module BigTrees.Cmd.Rm where
 -- import Prelude hiding (log)
 
 -- import Text.Pretty.Simple (pPrint)
--- import BigTrees.Run    (safeRunDeltas)
+-- import Run    (safeRunDeltas)
 -- import Util   (log)
--- import BigTrees.Run    (safeRunDeltas)
+-- import Run    (safeRunDeltas)
 -- import Util   (userSaysYes)
--- import BigTrees.Config (Config(..))
+-- import Config (Config(..))
 -- import Data.Maybe    (fromJust)
 
 -- import qualified Data.ByteString as B

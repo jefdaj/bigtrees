@@ -5,6 +5,10 @@ author:              jefdaj
 maintainer:          jefdaj@users.noreply.github.com
 copyright:           "AGPL-3.0-only"
 
+data-files:
+  - examples/*.sh
+  - examples/*.txt
+
 dependencies:
   # - -- cryptohash
   # - ansi-terminal
@@ -45,6 +49,7 @@ dependencies:
   - system-filepath
   - tasty
   - tasty-discover
+  - tasty-golden
   - tasty-hspec
   - tasty-hunit
   - tasty-quickcheck
@@ -70,7 +75,7 @@ library:
 
 executable:
   source-dirs: app
-  main: BigTrees.hs
+  main: Main.hs
   # TODO which of these options really help?
   ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
   dependencies:
@@ -80,6 +85,7 @@ executable:
   - docopt
 
 tests:
+
   test-lib:
     source-dirs:
     - "lib"
@@ -88,4 +94,18 @@ tests:
     # TODO which of these options really help?
     ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
     dependencies:
+    - bigtrees
+
+  test-app:
+    source-dirs:
+    - "test/app"
+    - "app"
+    main: "Test.hs"
+    # TODO which of these options really help?
+    ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
+    # TODO extract a common list of exe dependencies
+    dependencies:
+    - pretty-simple
+    - setlocale
+    - docopt
     - bigtrees

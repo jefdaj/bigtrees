@@ -1,4 +1,4 @@
-module BigTrees.Run
+module Run
 --   ( runGitAnnexAdd -- TODO don't export?
 --   , findAnnex -- TODO don't export?
 --   , runGitAdd -- TODO don't export
@@ -16,7 +16,7 @@ module BigTrees.Run
 --   )
   where
 
--- import BigTrees.Config
+-- import Config
 -- import System.Directory.BigTrees
 -- import Util
 

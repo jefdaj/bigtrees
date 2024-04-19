@@ -1,10 +1,10 @@
-module BigTrees.Cmd.Add where
+module Cmd.Add where
 
 -- TODO is the dst path being duplicated a bit? like unsorted/u1/u1?
 
 -- import System.Directory.BigTrees
--- import BigTrees.Config (Config(..))
--- import BigTrees.Run    (safeRunDeltas, runRsync)
+-- import Config (Config(..))
+-- import Run    (safeRunDeltas, runRsync)
 
 -- import Data.Maybe      (fromJust)
 -- import System.FilePath ((</>))

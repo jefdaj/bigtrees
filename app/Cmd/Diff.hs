@@ -1,8 +1,8 @@
-module BigTrees.Cmd.Diff where
+module Cmd.Diff where
 
 -- TODO guess and check hashes
 
-import BigTrees.Config (Config(..))
+import Config (Config(..))
 import System.Directory.BigTrees   (readOrBuildTree, renameRoot, diff, printDeltas)
 
 cmdDiff :: Config -> FilePath -> FilePath -> IO ()

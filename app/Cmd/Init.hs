@@ -1,18 +1,18 @@
-module BigTrees.Cmd.Init where
+module Cmd.Init where
 
 -- TODO guess and check hashes
 
 -- import System.Directory.BigTrees
--- import BigTrees.Cmd.Hash (updateAnnexHashes)
+-- import Cmd.Hash (updateAnnexHashes)
 -- import Util     (absolutize)
--- import BigTrees.Config (log)
--- import BigTrees.Run      (runGit, runGitCommit)
+-- import Config (log)
+-- import Run      (runGit, runGitCommit)
 
 -- import Prelude hiding (log)
 
 -- import System.FilePath  (takeFileName, (</>))
 -- import System.Directory (createDirectoryIfMissing)
--- import BigTrees.Config    (Config(..))
+-- import Config    (Config(..))
 
 -- import Data.Maybe (fromJust)
 

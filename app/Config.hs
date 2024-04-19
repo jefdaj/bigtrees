@@ -1,4 +1,4 @@
-module BigTrees.Config
+module Config
   ( Config(..)
   , defaultConfig
   , log

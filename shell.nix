@@ -27,6 +27,7 @@ in
 pkgs.mkShell {
   buildInputs = [
     stack-wrapped
+    pkgs.tree # for test scripts
     pkgs.zlib
   ];
 
