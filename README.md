@@ -1,5 +1,7 @@
 # BigTrees
 
+<img align="right" src="bigtrees.png"></img>
+
 A rewrite of [gander][1] focusing more on clarity and re-use of the data
 structures as a library, rather than on my own "dedup backups" use case.
 

@@ -159,8 +159,8 @@ unit_hash_file_contents = do
 -- TODO should the source code really be used this way?
 unit_hash_image :: Assertion
 unit_hash_image = do
-  h <- hashFile False "gander.png"
-  unHash h @=? "NWMwYjNlN2FiZTQ5OWZj"
+  h <- hashFile False "bigtrees.png"
+  unHash h @=? "NzdkN2M0OGYxZGViOTY5"
 
 -- TODO unit_hash_dir
 -- TODO unit_hash_dir_random_filenames
