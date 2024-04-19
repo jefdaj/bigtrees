@@ -26,7 +26,7 @@ import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
 
 import System.Directory.BigTrees.Util (pathComponents, FileName, p2n, n2p, FileName(..))
-import qualified System.Directory.Tree as DT
+-- import qualified System.Directory.Tree as DT
 
 import Control.Monad        (msum)
 import qualified Control.Monad.Parallel as P

@@ -416,6 +416,10 @@ type TestTree = HashTree B8.ByteString
 parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
 parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")
 
+-----------
+-- tests --
+-----------
+
 instance Arbitrary TreeType where
 
   arbitrary = do

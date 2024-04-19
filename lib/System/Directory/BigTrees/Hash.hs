@@ -137,6 +137,10 @@ hashFile _ path = do
 -- note: no need to explicitly match against sha256sum because the manual examples cover that
 -- TODO but make sure they match manually! how to handle the base64 encoding part?
 
+-----------
+-- tests --
+-----------
+
 unit_hash_bytestring :: Assertion
 unit_hash_bytestring = unHash (hashBytes "a bytestring") @=? "YTI3MDBmODFhZWE2ZjBm"
 
