@@ -3,7 +3,7 @@ module Cmd.Hash where
 -- TODO guess and check hashes
 
 import System.Directory.BigTrees
-import Config (Config(..), log)
+import Config (Config(..), log, defaultConfig)
 -- import Run    (runGit, runGitCommit)
 
 import Prelude hiding (log)
@@ -11,7 +11,10 @@ import Prelude hiding (log)
 import Control.Monad    (when)
 import Data.Maybe       (fromJust)
 import System.Directory (doesFileExist)
-import System.FilePath  ((</>))
+import System.FilePath  ((</>), (<.>))
+
+import Test.Tasty (TestTree, testGroup, testGroup)
+import Test.Tasty.Golden (goldenVsFile, findByExtension)
 
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...
@@ -57,3 +60,27 @@ guardHash = undefined
   -- TODO run guardInit here?
   -- TODO run guardStatus here?
   -- TODO check that hashes.txt exists
+
+-----------
+-- tests --
+-----------
+
+-- TODO harness: untar, run test, then remove dir
+
+hash_to_txt :: FilePath -> FilePath -> IO ()
+hash_to_txt inPath txtPath = cmdHash cfg [inPath]
+  where
+    cfg = defaultConfig { txt = Just txtPath } -- TODO is this reasonable?
+
+-- TODO random names? or all one bigtrees dir?
+test_hash_demo1_dir :: TestTree
+test_hash_demo1_dir =
+    let
+       dirPath = "test/app/demo1.dir"
+       txtPath = "test/app/demo1.dir.bigtree" -- TODO .txt?
+       gldPath = "test/app/demo1.dir.bigtree.golden" -- TODO .txt?
+       testAction = goldenVsFile
+         "hash demo1 dir"
+         gldPath txtPath
+         (hash_to_txt dirPath txtPath)
+    in testGroup "hash tests" [testAction]
