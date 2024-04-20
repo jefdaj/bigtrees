@@ -287,7 +287,7 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
-deserializeTree md = snd . head . foldr accTrees [] . parseHashes md
+deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: HashTree a -> Int
 countFiles (File _ _ _  ) = 1
