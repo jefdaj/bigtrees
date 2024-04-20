@@ -5,9 +5,9 @@ author:              jefdaj
 maintainer:          jefdaj@users.noreply.github.com
 copyright:           "AGPL-3.0-only"
 
-data-files:
-  - examples/*.sh
-  - examples/*.txt
+# data-files:
+#   - examples/*.sh
+#   - examples/*.txt
 
 dependencies:
   # - -- cryptohash
