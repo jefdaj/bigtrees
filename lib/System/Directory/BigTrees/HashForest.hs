@@ -6,6 +6,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+-- TODO are forests even needed?
+
 module System.Directory.BigTrees.HashForest where
   -- ( HashForest(..)
   -- , ProdForest

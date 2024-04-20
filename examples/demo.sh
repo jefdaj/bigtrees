@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO rewrite this as haskell unit tests and explain separately
+
 # TODO test runner should provide a temporary working dir
 # TODO add tree to nix-shell, or use find instead
 
