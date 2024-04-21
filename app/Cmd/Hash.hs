@@ -10,7 +10,7 @@ import Prelude hiding (log)
 
 import Control.Monad    (when)
 import Data.Maybe       (fromJust)
-import System.Directory (doesFileExist, getCurrentDirectory)
+import System.Directory (doesFileExist)
 import System.FilePath  ((</>), (<.>), takeBaseName, dropExtension)
 
 import Test.Tasty (TestTree, testGroup, testGroup)
@@ -21,6 +21,7 @@ import System.IO (stdout, stderr)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (readCreateProcess, proc, cwd)
+import System.Directory.BigTrees.Util (absolutize)
 
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...
@@ -72,24 +73,29 @@ guardHash = undefined
 -----------
 
 -- TODO random names? or all one bigtrees dir? or prefixed as it is?
-untar_and_hash_to_bs :: FilePath -> IO BLU.ByteString
-untar_and_hash_to_bs xzPath = do
-  wd <- getCurrentDirectory
-  let xzPath' = wd </> xzPath
+hashTarXzAction :: FilePath -> IO BLU.ByteString
+hashTarXzAction xzPath = do
+  (Just xzPath') <- absolutize xzPath
   withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
-    let dPath = tmpDir </> dropExtension (takeBaseName xzPath')
+    let dPath = tmpDir </> dropExtension (takeBaseName xzPath') -- assumes .tar.something
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xzPath']) {cwd = Just tmpDir}) ""
     (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig [dPath]
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 
-test_hash_demo1_dir :: TestTree
-test_hash_demo1_dir = testGroup "hash tests" [testAction]
-  where
-    dirPath = "test/app/demo1.tar.xz"
-    gldPath = "test/app/demo1.golden" -- TODO .txt?
-    testAction = goldenVsString
-      "hash demo1 dir"
-      gldPath
-      (untar_and_hash_to_bs dirPath)
+mkHashTarXzTest :: FilePath -> TestTree
+mkHashTarXzTest xzPath =
+  let gldPath = dropExtension (dropExtension xzPath) <.> "bigtree"
+  in goldenVsString
+       ("hash files extracted from " ++ xzPath)
+       gldPath
+       (hashTarXzAction xzPath)
+
+test_hash_tarxz :: IO TestTree
+test_hash_tarxz = do
+  xzPaths <- findByExtension [".xz"] "test/app" -- TODO file bug about .tar.xz failing?
+  -- putStrLn $ show xzPaths
+  return $ testGroup
+    "hash files extracted from tarballs"
+    [mkHashTarXzTest p | p <- xzPaths]
