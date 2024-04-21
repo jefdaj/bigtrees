@@ -88,7 +88,7 @@ mkHashTarXzTest :: FilePath -> TestTree
 mkHashTarXzTest xzPath =
   let gldPath = dropExtension (dropExtension xzPath) <.> "bigtree"
   in goldenVsString
-       ("hash files extracted from " ++ xzPath)
+       xzPath
        gldPath
        (hashTarXzAction xzPath)
 
