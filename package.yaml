@@ -13,22 +13,7 @@ dependencies:
   - Glob
   - base
   - bytestring
-  - crypton
-  - deepseq
-  - directory
   - filepath
-  - hashable
-  - hashtables
-  - massiv
-  - monad-parallel
-  - quickcheck-instances
-  - quickcheck-unicode
-  - safe-exceptions
-  - split
-  - store
-  - streaming
-  - streaming-bytestring
-  - system-filepath
   - tasty
   - tasty-discover
   - tasty-golden
@@ -36,12 +21,8 @@ dependencies:
   - tasty-hunit
   - tasty-quickcheck
   - temporary
-  - text
-  - th-utilities
-  - unix
-  - unordered-containers
   - utf8-string
- 
+
 library:
   source-dirs: lib
   exposed-modules:
@@ -60,7 +41,26 @@ library:
   - QuickCheck
   - attoparsec
   - base64-bytestring
-
+  - crypton
+  - deepseq
+  - directory
+  - hashable
+  - hashtables
+  - massiv
+  - monad-parallel
+  - quickcheck-instances
+  - quickcheck-unicode
+  - safe-exceptions
+  - split
+  - store
+  - streaming
+  - streaming-bytestring
+  - system-filepath
+  - text
+  - th-utilities
+  - unix
+  - unordered-containers
+ 
 executable:
   source-dirs: app
   main: Main.hs
@@ -68,12 +68,12 @@ executable:
   ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
   dependencies:
   - bigtrees
-  - pretty-simple
-  - setlocale
   - docopt
-  - unbounded-delays
-  - silently
+  - pretty-simple
   - process
+  - setlocale
+  - silently
+  - unbounded-delays
 
 tests:
 
@@ -102,13 +102,32 @@ tests:
     - "-Wmissing-deriving-strategies"
     - "-Wunused-packages"
     dependencies:
-    - bigtrees
     - HUnit
     - MissingH
     - QuickCheck
     - attoparsec
     - base64-bytestring
-
+    - bigtrees
+    - crypton
+    - deepseq
+    - directory
+    - hashable
+    - hashtables
+    - massiv
+    - monad-parallel
+    - quickcheck-instances
+    - quickcheck-unicode
+    - safe-exceptions
+    - split
+    - store
+    - streaming
+    - streaming-bytestring
+    - system-filepath
+    - text
+    - th-utilities
+    - unix
+    - unordered-containers
+ 
   test-app:
     source-dirs:
     - "test/app"
@@ -135,13 +154,13 @@ tests:
     - "-Wunused-packages"
     # TODO extract a common list of exe dependencies
     dependencies:
-    - pretty-simple
-    - setlocale
-    - docopt
     - bigtrees
-    - unbounded-delays
-    - silently
+    - docopt
+    - pretty-simple
     - process
+    - setlocale
+    - silently
+    - unbounded-delays
 
   test-doctests:
     source-dirs:
@@ -170,16 +189,35 @@ tests:
     - "-Wunused-packages"
     # TODO extract a common list of exe dependencies
     dependencies:
-    - pretty-simple
-    - setlocale
-    - docopt
-    - bigtrees
-    - unbounded-delays
-    - silently
-    - process
-    - doctest-parallel
     - HUnit
     - MissingH
     - QuickCheck
     - attoparsec
     - base64-bytestring
+    - bigtrees
+    - crypton
+    - deepseq
+    - directory
+    - docopt
+    - doctest-parallel
+    - hashable
+    - hashtables
+    - massiv
+    - monad-parallel
+    - pretty-simple
+    - process
+    - quickcheck-instances
+    - quickcheck-unicode
+    - safe-exceptions
+    - setlocale
+    - silently
+    - split
+    - store
+    - streaming
+    - streaming-bytestring
+    - system-filepath
+    - text
+    - th-utilities
+    - unbounded-delays
+    - unix
+    - unordered-containers

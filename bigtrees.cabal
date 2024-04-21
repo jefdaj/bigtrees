@@ -94,27 +94,12 @@ executable bigtrees
     , base
     , bigtrees
     , bytestring
-    , crypton
-    , deepseq
-    , directory
     , docopt
     , filepath
-    , hashable
-    , hashtables
-    , massiv
-    , monad-parallel
     , pretty-simple
     , process
-    , quickcheck-instances
-    , quickcheck-unicode
-    , safe-exceptions
     , setlocale
     , silently
-    , split
-    , store
-    , streaming
-    , streaming-bytestring
-    , system-filepath
     , tasty
     , tasty-discover
     , tasty-golden
@@ -122,11 +107,7 @@ executable bigtrees
     , tasty-hunit
     , tasty-quickcheck
     , temporary
-    , text
-    , th-utilities
     , unbounded-delays
-    , unix
-    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
@@ -159,27 +140,12 @@ test-suite test-app
     , base
     , bigtrees
     , bytestring
-    , crypton
-    , deepseq
-    , directory
     , docopt
     , filepath
-    , hashable
-    , hashtables
-    , massiv
-    , monad-parallel
     , pretty-simple
     , process
-    , quickcheck-instances
-    , quickcheck-unicode
-    , safe-exceptions
     , setlocale
     , silently
-    , split
-    , store
-    , streaming
-    , streaming-bytestring
-    , system-filepath
     , tasty
     , tasty-discover
     , tasty-golden
@@ -187,11 +153,7 @@ test-suite test-app
     , tasty-hunit
     , tasty-quickcheck
     , temporary
-    , text
-    , th-utilities
     , unbounded-delays
-    , unix
-    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
