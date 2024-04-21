@@ -9,20 +9,6 @@ copyright:           "AGPL-3.0-only"
 #   - examples/*.sh
 #   - examples/*.txt
 
-dependencies:
-  - Glob
-  - base
-  - bytestring
-  - filepath
-  - tasty
-  - tasty-discover
-  - tasty-golden
-  - tasty-hspec
-  - tasty-hunit
-  - tasty-quickcheck
-  - temporary
-  - utf8-string
-
 library:
   source-dirs: lib
   exposed-modules:
@@ -36,14 +22,18 @@ library:
   - System.Directory.BigTrees.Delta
   # System.Directory.Tree
   dependencies:
+  - Glob
   - HUnit
   - MissingH
   - QuickCheck
   - attoparsec
+  - base
   - base64-bytestring
+  - bytestring
   - crypton
   - deepseq
   - directory
+  - filepath
   - hashable
   - hashtables
   - massiv
@@ -56,10 +46,18 @@ library:
   - streaming
   - streaming-bytestring
   - system-filepath
+  - tasty
+  - tasty-discover
+  - tasty-golden
+  - tasty-hspec
+  - tasty-hunit
+  - tasty-quickcheck
+  - temporary
   - text
   - th-utilities
   - unix
   - unordered-containers
+  - utf8-string
  
 executable:
   source-dirs: app
@@ -67,13 +65,25 @@ executable:
   # TODO which of these options really help?
   ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
   dependencies:
+  - Glob
+  - base
   - bigtrees
+  - bytestring
   - docopt
+  - filepath
   - pretty-simple
   - process
   - setlocale
   - silently
+  - tasty
+  - tasty-discover
+  - tasty-golden
+  - tasty-hspec
+  - tasty-hunit
+  - tasty-quickcheck
+  - temporary
   - unbounded-delays
+  - utf8-string
 
 tests:
 
@@ -102,27 +112,34 @@ tests:
     - "-Wmissing-deriving-strategies"
     - "-Wunused-packages"
     dependencies:
+    - Glob
     - HUnit
     - MissingH
     - QuickCheck
     - attoparsec
+    - base
     - base64-bytestring
     - bigtrees
+    - bytestring
     - crypton
     - deepseq
     - directory
+    - filepath
     - hashable
     - hashtables
     - massiv
     - monad-parallel
     - quickcheck-instances
-    - quickcheck-unicode
     - safe-exceptions
     - split
     - store
     - streaming
     - streaming-bytestring
     - system-filepath
+    - tasty
+    - tasty-hunit
+    - tasty-quickcheck
+    - temporary
     - text
     - th-utilities
     - unix
@@ -154,13 +171,19 @@ tests:
     - "-Wunused-packages"
     # TODO extract a common list of exe dependencies
     dependencies:
+    - Glob
+    - base
     - bigtrees
-    - docopt
+    - bytestring
+    - filepath
     - pretty-simple
     - process
-    - setlocale
     - silently
+    - tasty
+    - tasty-golden
+    - temporary
     - unbounded-delays
+    - utf8-string
 
   test-doctests:
     source-dirs:
@@ -189,17 +212,20 @@ tests:
     - "-Wunused-packages"
     # TODO extract a common list of exe dependencies
     dependencies:
+    - Glob
     - HUnit
     - MissingH
     - QuickCheck
     - attoparsec
+    - base
     - base64-bytestring
     - bigtrees
+    - bytestring
     - crypton
     - deepseq
     - directory
-    - docopt
     - doctest-parallel
+    - filepath
     - hashable
     - hashtables
     - massiv
@@ -207,17 +233,19 @@ tests:
     - pretty-simple
     - process
     - quickcheck-instances
-    - quickcheck-unicode
     - safe-exceptions
-    - setlocale
     - silently
     - split
     - store
     - streaming
     - streaming-bytestring
     - system-filepath
+    - tasty
+    - tasty-golden
+    - temporary
     - text
     - th-utilities
     - unbounded-delays
     - unix
     - unordered-containers
+    - utf8-string
