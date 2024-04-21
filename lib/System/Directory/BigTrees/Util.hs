@@ -283,6 +283,10 @@ instance Arbitrary ValidFilePath where
     let path = joinPath (prefix:comps)
     return $ ValidFilePath $ if null path then "/" else path
 
+-- |
+-- >>> let x = 23
+-- >>> x + 42
+-- 65
 unit_absolutize_expands_tildes :: Assertion
 unit_absolutize_expands_tildes = do
   home <- getHomeDirectory
