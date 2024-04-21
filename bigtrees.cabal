@@ -63,7 +63,6 @@ library
     , temporary
     , text
     , th-utilities
-    , turtle
     , unix
     , unordered-containers
     , utf8-string
@@ -114,6 +113,7 @@ executable bigtrees
     , quickcheck-unicode
     , safe-exceptions
     , setlocale
+    , silently
     , split
     , store
     , streaming
@@ -128,7 +128,7 @@ executable bigtrees
     , temporary
     , text
     , th-utilities
-    , turtle
+    , unbounded-delays
     , unix
     , unordered-containers
     , utf8-string
@@ -182,6 +182,7 @@ test-suite test-app
     , quickcheck-unicode
     , safe-exceptions
     , setlocale
+    , silently
     , split
     , store
     , streaming
@@ -196,7 +197,7 @@ test-suite test-app
     , temporary
     , text
     , th-utilities
-    , turtle
+    , unbounded-delays
     , unix
     , unordered-containers
     , utf8-string
@@ -255,7 +256,6 @@ test-suite test-lib
     , temporary
     , text
     , th-utilities
-    , turtle
     , unix
     , unordered-containers
     , utf8-string

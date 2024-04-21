@@ -14,7 +14,11 @@ import System.Directory (doesFileExist)
 import System.FilePath  ((</>), (<.>))
 
 import Test.Tasty (TestTree, testGroup, testGroup)
-import Test.Tasty.Golden (goldenVsFile, findByExtension)
+import Test.Tasty.Golden (goldenVsString, findByExtension)
+import qualified Control.Concurrent.Thread.Delay as D
+import qualified Data.ByteString.Lazy.UTF8 as BLU
+import System.IO (stdout, stderr)
+import System.IO.Silently (hCapture)
 
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...
@@ -67,20 +71,20 @@ guardHash = undefined
 
 -- TODO harness: untar, run test, then remove dir
 
-hash_to_txt :: FilePath -> FilePath -> IO ()
-hash_to_txt inPath txtPath = cmdHash cfg [inPath]
-  where
-    cfg = defaultConfig { txt = Just txtPath } -- TODO is this reasonable?
+hash_to_bs :: FilePath -> IO BLU.ByteString
+hash_to_bs inPath = do
+  D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
+  (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig [inPath]
+  D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
+  return $ BLU.fromString out
 
 -- TODO random names? or all one bigtrees dir?
 test_hash_demo1_dir :: TestTree
-test_hash_demo1_dir =
-    let
-       dirPath = "test/app/demo1.dir"
-       txtPath = "test/app/demo1.dir.bigtree" -- TODO .txt?
-       gldPath = "test/app/demo1.dir.bigtree.golden" -- TODO .txt?
-       testAction = goldenVsFile
-         "hash demo1 dir"
-         gldPath txtPath
-         (hash_to_txt dirPath txtPath)
-    in testGroup "hash tests" [testAction]
+test_hash_demo1_dir = testGroup "hash tests" [testAction]
+  where
+    dirPath = "test/app/demo1.dir"
+    gldPath = "test/app/demo1.dir.golden" -- TODO .txt?
+    testAction = goldenVsString
+      "hash demo1 dir"
+      gldPath
+      (hash_to_bs dirPath)
