@@ -36,4 +36,7 @@ pkgs.mkShell {
   # `ghc` argument to pass in `nix/stack-integration.nix`
   # See https://nixos.org/nixos/nix-pills/nix-search-paths.html for more information
   NIX_PATH = "nixpkgs=" + pkgs.path;
+
+  # This seems to be necessary when running tests that capture stdout/stderr
+  TASTY_NUM_THREADS = 1;
 }
