@@ -77,7 +77,7 @@ executable:
   source-dirs: app
   main: Main.hs
   # TODO which of these options really help?
-  ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
+  ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
   dependencies:
   - bigtrees
   - pretty-simple
@@ -95,7 +95,7 @@ tests:
     - "test/lib"
     main: "Test.hs"
     # TODO which of these options really help?
-    ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
+    ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
     dependencies:
     - bigtrees
 
@@ -105,7 +105,7 @@ tests:
     - "app"
     main: "Test.hs"
     # TODO which of these options really help?
-    ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N"
+    ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
     # TODO extract a common list of exe dependencies
     dependencies:
     - pretty-simple

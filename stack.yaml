@@ -4,6 +4,7 @@ packages:
   - .
 
 # for weeder
+# note that this also has to be added to each target in package.yaml?
 ghc-options:
   "$locals": -fwrite-ide-info
 

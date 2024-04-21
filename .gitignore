@@ -8,3 +8,6 @@ result*
 *.hi
 *.o
 .stack*
+
+# misc
+*.log
