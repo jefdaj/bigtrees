@@ -76,8 +76,8 @@ diff' a t1@(Dir _ h1 os _) (Dir _ h2 ns _)
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where
-    adds  = [Add (a </> n2p (name x)) x | x <- ns, notElem (name x) (map name os)]
-    rms   = [Rm  (a </> n2p (name x))   | x <- os, notElem (name x) (map name ns)]
+    adds  = [Add (a </> n2p (name x)) x | x <- ns, name x `notElem` map name os]
+    rms   = [Rm  (a </> n2p (name x))   | x <- os, name x `notElem` map name ns]
     edits = concat [diff' (a </> n2p (name o)) o n | o <- os, n <- ns,
                                                o /= n, name o == name n]
 

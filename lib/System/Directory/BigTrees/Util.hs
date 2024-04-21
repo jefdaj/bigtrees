@@ -51,8 +51,6 @@ import Data.Store             (encode, decodeIO, Store(..))
 import TH.Derive
 import System.Info (os)
 
-import qualified Data.ByteString.Char8 as B8
-
 import Control.DeepSeq
 import GHC.Generics
 
@@ -63,14 +61,10 @@ import Test.HUnit (Assertion, (@=?))
 import System.Directory (getHomeDirectory)
 import Control.Monad.IO.Class (liftIO)
 import Control.Exception (evaluate)
-import qualified Data.Text as T
-
-import Test.QuickCheck
 import Test.QuickCheck.Instances
 
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString.Char8            as B
-import qualified Data.Text                        as T
 import System.IO.Temp          (withSystemTempDirectory)
 import Test.QuickCheck.Unicode (list, char)
 
@@ -274,7 +268,8 @@ newtype ValidFilePath = ValidFilePath FilePath
 instance Arbitrary ValidFilePath where
   arbitrary = do
     prefix <- oneof $ map pure ["", ".", "..", "~"]
-    comps  <- (fmap . map) (\(FileName t) -> T.unpack t) $ listOf (arbitrary :: Gen FileName)
+    comps  <- map (\ (FileName t) -> T.unpack t)
+      <$> listOf (arbitrary :: Gen FileName)
     let path = joinPath (prefix:comps)
     return $ ValidFilePath $ if null path then "/" else path
 

@@ -32,7 +32,7 @@ main = do
       short n = getArgOrExitWith ptns args $ shortOption n
       flag  n = isPresent args $ shortOption n
   eList <- if flag 'e'
-             then (short 'e' >>= readFile) <&> (map compile . lines)
+             then short 'e' >>= readFile <&> map compile . lines
              else return $ exclude defaultConfig
   let cfg = Config
         { bin      = getArg args $ shortOption 'b'

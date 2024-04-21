@@ -29,7 +29,7 @@ testSerialization cfg forest1 = do
       forest2 = deserializeForest (maxdepth cfg) string1
       string2 = B.unlines $ serializeForest forest2
   let tests = [forest1 == forest2, show forest1 == show forest2, string1 == string2]
-  if all id tests then explain "round-tripped hashforest to string:" $ printForest forest1
+  if and tests then explain "round-tripped hashforest to string:" $ printForest forest1
   else do
     putStrLn "failed to round-trip hashforest to string!"
     print string1

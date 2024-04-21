@@ -49,10 +49,9 @@ import qualified System.Directory.Tree as DT
 import Control.Monad ( msum, when )
 import qualified Control.Monad.Parallel as P
 import qualified Control.Monad          as M
-import Data.List            (find, delete, sort)
+import Data.List ( find, delete, sort, partition, sortBy, nubBy )
 import Data.Maybe           (isJust, catMaybes)
 import Data.Function        (on)
-import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
@@ -92,8 +91,6 @@ import System.Directory.BigTrees.HashLine
 import System.FilePath.Glob (Pattern)
 
 import Control.DeepSeq (force)
-
-import Data.List (nubBy)
 import System.Info (os)
 import Data.Char (toLower)
 
