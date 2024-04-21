@@ -27,7 +27,6 @@ module System.Directory.BigTrees.Util where
   -- where
 
 -- TODO remove this from Util
--- import BigTrees.Config (Config(..))
 
 import Prelude hiding (log)
 
@@ -40,10 +39,7 @@ import System.IO (hFlush, stdout)
 import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
--- import qualified Data.ByteString.Char8 as B
--- import qualified Data.ByteString.Short as BS
 import qualified Data.ByteString.Char8 as B8
--- import qualified Data.ByteString.UTF8 as BU
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 
@@ -55,18 +51,14 @@ import TH.Derive
 import Control.DeepSeq
 import GHC.Generics
 
+import Control.Monad.IO.Class (liftIO)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck
-import Test.QuickCheck.Monadic
--- import Test.Hspec
--- import Control.Exception (evaluate)
-import Control.Monad.IO.Class (liftIO)
 import Test.QuickCheck.Instances ()
+import Test.QuickCheck.Monadic
 
--- import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString.Char8 as B
 import System.IO.Temp (withSystemTempDirectory)
--- import Test.QuickCheck.Unicode (char, list)
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)

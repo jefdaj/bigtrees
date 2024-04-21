@@ -4,18 +4,8 @@ module Cmd.Rm where
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
--- import System.Directory.BigTrees
--- import Prelude hiding (log)
 
--- import Text.Pretty.Simple (pPrint)
--- import Run    (safeRunDeltas)
--- import Util   (log)
--- import Run    (safeRunDeltas)
--- import Util   (userSaysYes)
--- import Config (Config(..))
--- import Data.Maybe    (fromJust)
 
--- import qualified Data.ByteString as B
 
 -- TODO list files with no duplicates when confirming
 -- TODO aha! ok to be missing folder hashes, just not files

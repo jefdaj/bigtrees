@@ -147,7 +147,6 @@ CHANGES:
 -- A hack to prevent symlink cycles, which only works for bigtrees's particular use case
 -- TODO make a separat "Annex Utils" module for this?
 import System.Directory.BigTrees.Util (isNonAnnexSymlink, n2p, p2n, FileName(..))
--- import qualified Data.ByteString.Short as BS
 import qualified Data.Text as T
 
 import System.Directory

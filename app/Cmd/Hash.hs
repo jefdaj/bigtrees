@@ -4,13 +4,8 @@ module Cmd.Hash where
 
 import Config (Config (..), defaultConfig)
 import System.Directory.BigTrees
--- import Run    (runGit, runGitCommit)
 
--- import Prelude hiding (log)
 
--- import Control.Monad (when)
--- import Data.Maybe (fromJust)
--- import System.Directory (doesFileExist)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 
 import qualified Control.Concurrent.Thread.Delay as D

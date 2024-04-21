@@ -6,13 +6,11 @@ module Main where
 -- TODO figure out how to read files + compute hashes in parallel
 
 import Cmd
--- import Util           (absolutize)
 import Config (Config (..), defaultConfig)
+import Data.Functor ((<&>))
 import System.Console.Docopt (argument, command, docoptFile, getAllArgs, getArg, getArgOrExitWith,
                               isPresent, parseArgsOrExit, shortOption)
 import System.Environment (getArgs, setEnv)
--- import System.FilePath       ((</>))
-import Data.Functor ((<&>))
 import System.FilePath.Glob (compile)
 import System.Locale.SetLocale
 

@@ -16,18 +16,8 @@ module Run
 --   )
   where
 
--- import Config
--- import System.Directory.BigTrees
--- import Util
 
--- import Prelude hiding (log)
 
--- import Data.Maybe       (fromJust)
--- import Control.Monad    (when, mapM_)
--- import System.Directory (createDirectoryIfMissing)
--- import System.FilePath  (dropFileName)
--- import System.FilePath  ((</>))
--- import System.Process   (readProcess, readCreateProcess, proc)
 
 -- TODO add other options for robustness?
 -- runRsync :: Config -> FilePath -> FilePath -> IO ()

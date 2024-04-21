@@ -21,7 +21,6 @@ module System.Directory.BigTrees.Delta where
  - --check flag. Code to actually run Deltas lives in the Run module.
  -}
 
--- import BigTrees.Config
 import qualified Data.ByteString.Char8 as B
 import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.Util (n2p)
@@ -30,12 +29,8 @@ import Control.Monad (foldM, unless)
 import Data.List (find)
 import Data.Maybe (fromJust)
 --import System.Directory.BigTrees.DupeMap (listLostFiles)
--- import System.Directory.BigTrees.Hash    (prettyHash)
 import System.FilePath ((</>))
 
--- import Test.QuickCheck
--- import Test.QuickCheck.Monadic
--- import           Control.Applicative     ((<$>), (<*>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
 --      maybe only some of them are needed: add and edit. and edit only needs one.

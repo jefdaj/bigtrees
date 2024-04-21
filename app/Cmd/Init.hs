@@ -2,19 +2,9 @@ module Cmd.Init where
 
 -- TODO guess and check hashes
 
--- import System.Directory.BigTrees
--- import Cmd.Hash (updateAnnexHashes)
--- import Util     (absolutize)
--- import Config (log)
--- import Run      (runGit, runGitCommit)
 
--- import Prelude hiding (log)
 
--- import System.FilePath  (takeFileName, (</>))
--- import System.Directory (createDirectoryIfMissing)
--- import Config    (Config(..))
 
--- import Data.Maybe (fromJust)
 
 -- cmdInit :: Config -> FilePath -> IO ()
 -- cmdInit cfg dir = do

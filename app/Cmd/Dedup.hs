@@ -4,23 +4,8 @@ module Cmd.Dedup where
 -- TODO have a separate dedup command that only does the rm part without moving stuff?
 -- TODO need to start a new file ignore.txt or something for hashes to ignore
 
--- import System.Directory.BigTrees
--- import Cmd.Hash (updateAnnexHashes)
--- import Util     (userSaysYes)
--- import Run      (runGitMv, runGitRm, runGitCommit)
--- import qualified Data.ByteString.Char8 as B
 
--- import qualified Data.HashSet as S
 
--- import Control.Monad       (when)
--- import Data.Foldable       (toList)
--- import Data.List           (delete)
--- import Data.Maybe          (fromJust)
--- import Config       (Config(..))
--- import System.Console.ANSI (clearScreen, cursorUp)
--- import System.Exit         (exitSuccess)
--- import System.FilePath     ((</>), makeRelative)
--- import System.IO           (hFlush, stdout)
 
 -- cmdDedup :: Config -> IO ()
 -- cmdDedup cfg = do
