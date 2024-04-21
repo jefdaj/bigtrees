@@ -7,6 +7,6 @@ import System.Directory.BigTrees   (readOrBuildTree, renameRoot, diff, printDelt
 
 cmdDiff :: Config -> FilePath -> FilePath -> IO ()
 cmdDiff cfg old new = do
-  tree1 <- fmap (renameRoot "old") $ readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) old
-  tree2 <- fmap (renameRoot "new") $ readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) new
+  tree1 <- renameRoot "old" <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) old
+  tree2 <- renameRoot "new" <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) new
   printDeltas $ diff tree1 tree2

@@ -95,7 +95,7 @@ mkHashTarXzTest xzPath =
 
 test_hash_tarxz :: IO TestTree
 test_hash_tarxz = do
-  xzPaths <- fmap sort $ findByExtension [".xz"] "test/app" -- TODO file bug about .tar.xz failing?
+  xzPaths <- sort <$> findByExtension [".xz"] "test/app" -- TODO file bug about .tar.xz failing?
   -- putStrLn $ show xzPaths
   return $ testGroup
     "hash files extracted from tarballs"

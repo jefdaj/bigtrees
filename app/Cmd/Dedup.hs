@@ -112,7 +112,7 @@ module Cmd.Dedup where
 --       then return $ Just $ "sorted" </> answer
 --       else do
 --         userPicks sorted (n, t, undefined) -- repeat the question
- 
+
 -- listDupes :: Int -> [FilePath] -> IO ()
 -- listDupes howMany paths = putStrLn $ unlines numbered
 --   where

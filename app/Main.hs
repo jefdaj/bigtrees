@@ -11,12 +11,11 @@ import Config         (Config(..), defaultConfig)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg, getAllArgs,
                               shortOption, command, argument)
-import System.Environment    (getArgs)
+import System.Environment ( getArgs, setEnv )
 -- import System.FilePath       ((</>))
 import System.FilePath.Glob (compile)
-
-import System.Environment (setEnv)
 import System.Locale.SetLocale
+import Data.Functor ((<&>))
 
 main :: IO ()
 main = do
@@ -32,8 +31,8 @@ main = do
       lst   n = getAllArgs args $ argument n
       short n = getArgOrExitWith ptns args $ shortOption n
       flag  n = isPresent args $ shortOption n
-  eList <- if (flag 'e')
-             then short 'e' >>= readFile >>= return . map compile . lines
+  eList <- if flag 'e'
+             then (short 'e' >>= readFile) <&> (map compile . lines)
              else return $ exclude defaultConfig
   let cfg = Config
         { bin      = getArg args $ shortOption 'b'

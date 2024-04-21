@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+
 
 module Cmd.Dupes where
 
