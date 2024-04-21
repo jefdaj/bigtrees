@@ -5,9 +5,9 @@ module Config
   )
   where
 
-import           Control.Monad        (when)
-import           Prelude              hiding (log)
-import           System.FilePath.Glob (Pattern, compile)
+import Control.Monad (when)
+import Prelude hiding (log)
+import System.FilePath.Glob (Pattern, compile)
 
 {- Parsed command line args
  - TODO add other stuff from usage.txt, or revise that

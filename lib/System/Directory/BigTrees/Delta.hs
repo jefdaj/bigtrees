@@ -22,16 +22,16 @@ module System.Directory.BigTrees.Delta where
  -}
 
 -- import BigTrees.Config
-import qualified Data.ByteString.Char8              as B
-import           System.Directory.BigTrees.HashTree
-import           System.Directory.BigTrees.Util     (n2p)
+import qualified Data.ByteString.Char8 as B
+import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.Util (n2p)
 
-import           Control.Monad                      (foldM, unless, when)
-import           Data.List                          (find)
-import           Data.Maybe                         (fromJust)
+import Control.Monad (foldM, unless, when)
+import Data.List (find)
+import Data.Maybe (fromJust)
 --import System.Directory.BigTrees.DupeMap (listLostFiles)
 -- import System.Directory.BigTrees.Hash    (prettyHash)
-import           System.FilePath                    ((</>))
+import System.FilePath ((</>))
 
 -- import Test.QuickCheck
 -- import Test.QuickCheck.Monadic

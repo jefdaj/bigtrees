@@ -2,9 +2,8 @@ module Cmd.Diff where
 
 -- TODO guess and check hashes
 
-import           Config                    (Config (..))
-import           System.Directory.BigTrees (diff, printDeltas, readOrBuildTree,
-                                            renameRoot)
+import Config (Config (..))
+import System.Directory.BigTrees (diff, printDeltas, readOrBuildTree, renameRoot)
 
 cmdDiff :: Config -> FilePath -> FilePath -> IO ()
 cmdDiff cfg old new = do

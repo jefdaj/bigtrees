@@ -2,30 +2,27 @@ module Cmd.Hash where
 
 -- TODO guess and check hashes
 
-import           Config                          (Config (..), defaultConfig,
-                                                  log)
-import           System.Directory.BigTrees
+import Config (Config (..), defaultConfig, log)
+import System.Directory.BigTrees
 -- import Run    (runGit, runGitCommit)
 
-import           Prelude                         hiding (log)
+import Prelude hiding (log)
 
-import           Control.Monad                   (when)
-import           Data.Maybe                      (fromJust)
-import           System.Directory                (doesFileExist)
-import           System.FilePath                 (dropExtension, takeBaseName,
-                                                  (<.>), (</>))
+import Control.Monad (when)
+import Data.Maybe (fromJust)
+import System.Directory (doesFileExist)
+import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 
 import qualified Control.Concurrent.Thread.Delay as D
-import qualified Data.ByteString.Lazy.UTF8       as BLU
-import           Data.List                       (sort)
-import           System.Directory.BigTrees.Util  (absolutize)
-import           System.IO                       (stderr, stdout)
-import           System.IO.Silently              (hCapture)
-import           System.IO.Temp                  (withSystemTempDirectory)
-import           System.Process                  (cwd, proc, readCreateProcess)
-import           Test.Tasty                      (TestTree, testGroup)
-import           Test.Tasty.Golden               (findByExtension,
-                                                  goldenVsString)
+import qualified Data.ByteString.Lazy.UTF8 as BLU
+import Data.List (sort)
+import System.Directory.BigTrees.Util (absolutize)
+import System.IO (stderr, stdout)
+import System.IO.Silently (hCapture)
+import System.IO.Temp (withSystemTempDirectory)
+import System.Process (cwd, proc, readCreateProcess)
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.Golden (findByExtension, goldenVsString)
 
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...

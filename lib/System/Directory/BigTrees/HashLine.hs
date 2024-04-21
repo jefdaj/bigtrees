@@ -18,44 +18,39 @@ module System.Directory.BigTrees.HashLine
 
 -- import Debug.Trace
 
-import           System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.Hash
 
-import qualified Data.ByteString.Char8            as B8
-import qualified Data.ByteString.Short            as BS
-import qualified Data.Text.Encoding               as T
+import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Short as BS
+import qualified Data.Text.Encoding as T
 
-import           System.Directory.BigTrees.Util   (FileName (..), n2p, p2n,
-                                                   pathComponents)
+import System.Directory.BigTrees.Util (FileName (..), n2p, p2n, pathComponents)
 -- import qualified System.Directory.Tree as DT
 
-import           Control.Monad                    (msum)
-import qualified Control.Monad                    as M
-import qualified Control.Monad.Parallel           as P
-import           Data.Either                      (fromRight)
-import           Data.Function                    (on)
-import           Data.List                        (delete, find, partition,
-                                                   sort, sortBy)
-import           Data.Maybe                       (catMaybes, isJust)
-import           Data.Ord                         (compare)
-import           System.Directory                 (doesDirectoryExist,
-                                                   doesFileExist)
-import           System.FilePath                  (joinPath, splitPath, (</>))
-import           System.FilePath.Glob             (MatchOptions (..), Pattern,
-                                                   matchWith)
-import           System.IO                        (IOMode (..), hFlush, stdout,
-                                                   withFile)
-import           System.IO.Unsafe                 (unsafeInterleaveIO)
+import Control.Monad (msum)
+import qualified Control.Monad as M
+import qualified Control.Monad.Parallel as P
+import Data.Either (fromRight)
+import Data.Function (on)
+import Data.List (delete, find, partition, sort, sortBy)
+import Data.Maybe (catMaybes, isJust)
+import Data.Ord (compare)
+import System.Directory (doesDirectoryExist, doesFileExist)
+import System.FilePath (joinPath, splitPath, (</>))
+import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
+import System.IO (IOMode (..), hFlush, stdout, withFile)
+import System.IO.Unsafe (unsafeInterleaveIO)
 
-import           Data.Attoparsec.ByteString       (skipWhile)
-import           Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile)
-import           Data.Attoparsec.Combinator
-import           Prelude                          hiding (take)
+import Data.Attoparsec.ByteString (skipWhile)
+import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile)
+import Data.Attoparsec.Combinator
+import Prelude hiding (take)
 
-import           Control.Exception.Safe           (catchAny)
-import           Data.Store                       (Store (..), decodeIO, encode)
-import           TH.Derive
+import Control.Exception.Safe (catchAny)
+import Data.Store (Store (..), decodeIO, encode)
+import TH.Derive
 
-import           Control.DeepSeq
+import Control.DeepSeq
 
 -- for distinguishing beween files and dirs
 data TreeType = D | F

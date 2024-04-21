@@ -1,8 +1,7 @@
 module Cmd.Cat where
 
-import           Config                    (Config (..))
-import           System.Directory.BigTrees (printForest, readOrBuildTrees,
-                                            writeForest)
+import Config (Config (..))
+import System.Directory.BigTrees (printForest, readOrBuildTrees, writeForest)
 
 cmdCat :: Config -> [FilePath] -> IO ()
 cmdCat cfg paths = do

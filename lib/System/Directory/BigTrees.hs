@@ -65,9 +65,9 @@ module System.Directory.BigTrees
   )
   where
 
-import           System.Directory.BigTrees.Delta
-import           System.Directory.BigTrees.DupeMap
-import           System.Directory.BigTrees.Hash
-import           System.Directory.BigTrees.HashForest
-import           System.Directory.BigTrees.HashLine
-import           System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.Delta
+import System.Directory.BigTrees.DupeMap
+import System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.HashForest
+import System.Directory.BigTrees.HashLine
+import System.Directory.BigTrees.HashTree
