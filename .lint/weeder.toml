@@ -1,0 +1,33 @@
+# TODO should this be true?
+# seems important for a library, but removes most of my warnings
+type-class-roots = true
+
+unused-types = true
+
+roots = [
+
+  "^Main.main$",
+  "^Paths_bigtrees.*",
+
+  # tasty-discover tests
+  "^*.prop_*",
+  "^*.scprop_*",
+  "^*.hprop_*",
+  "^*.unit_*",
+  "^*.spec_*",
+  "^*.test_*",
+  "^*.tasty_*",
+
+  # ignore this to minimize diff with upstream
+  "^System.Directory.Tree.*",
+
+]
+
+root-instances = [
+
+  # from default config
+  # TODO how does this work?
+  # { class = "\\.IsString$" },
+  # { class = "\\.IsList$" },
+
+]
