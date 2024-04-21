@@ -109,6 +109,7 @@ executable bigtrees
     , massiv
     , monad-parallel
     , pretty-simple
+    , process
     , quickcheck-instances
     , quickcheck-unicode
     , safe-exceptions
@@ -178,6 +179,7 @@ test-suite test-app
     , massiv
     , monad-parallel
     , pretty-simple
+    , process
     , quickcheck-instances
     , quickcheck-unicode
     , safe-exceptions

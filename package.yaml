@@ -85,6 +85,7 @@ executable:
   - docopt
   - unbounded-delays
   - silently
+  - process
 
 tests:
 
@@ -113,3 +114,4 @@ tests:
     - bigtrees
     - unbounded-delays
     - silently
+    - process

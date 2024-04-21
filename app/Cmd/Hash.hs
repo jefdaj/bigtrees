@@ -10,8 +10,8 @@ import Prelude hiding (log)
 
 import Control.Monad    (when)
 import Data.Maybe       (fromJust)
-import System.Directory (doesFileExist)
-import System.FilePath  ((</>), (<.>))
+import System.Directory (doesFileExist, getCurrentDirectory)
+import System.FilePath  ((</>), (<.>), takeBaseName, dropExtension)
 
 import Test.Tasty (TestTree, testGroup, testGroup)
 import Test.Tasty.Golden (goldenVsString, findByExtension)
@@ -19,6 +19,8 @@ import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import System.IO (stdout, stderr)
 import System.IO.Silently (hCapture)
+import System.IO.Temp (withSystemTempDirectory)
+import System.Process (readCreateProcess, proc, cwd)
 
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...
@@ -69,22 +71,25 @@ guardHash = undefined
 -- tests --
 -----------
 
--- TODO harness: untar, run test, then remove dir
+-- TODO random names? or all one bigtrees dir? or prefixed as it is?
+untar_and_hash_to_bs :: FilePath -> IO BLU.ByteString
+untar_and_hash_to_bs xzPath = do
+  wd <- getCurrentDirectory
+  let xzPath' = wd </> xzPath
+  withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
+    let dPath = tmpDir </> dropExtension (takeBaseName xzPath')
+    D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
+    _ <- readCreateProcess ((proc "tar" ["-xf", xzPath']) {cwd = Just tmpDir}) ""
+    (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig [dPath]
+    D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
+    return $ BLU.fromString out
 
-hash_to_bs :: FilePath -> IO BLU.ByteString
-hash_to_bs inPath = do
-  D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
-  (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig [inPath]
-  D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
-  return $ BLU.fromString out
-
--- TODO random names? or all one bigtrees dir?
 test_hash_demo1_dir :: TestTree
 test_hash_demo1_dir = testGroup "hash tests" [testAction]
   where
-    dirPath = "test/app/demo1.dir"
-    gldPath = "test/app/demo1.dir.golden" -- TODO .txt?
+    dirPath = "test/app/demo1.tar.xz"
+    gldPath = "test/app/demo1.golden" -- TODO .txt?
     testAction = goldenVsString
       "hash demo1 dir"
       gldPath
-      (hash_to_bs dirPath)
+      (untar_and_hash_to_bs dirPath)
