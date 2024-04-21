@@ -7,7 +7,8 @@ LOG='lint.log'
 rm -f "$LOG"
 rm -rf .stack-work/
 
-stack build 2>&1 | tee -a "$LOG"
+# generates .hie files, tests that build works before any changes
+stack test 2>&1 | tee -a "$LOG"
 
 find * -name '*.hs' | while read hs; do
   # TODO can it be auto-accepted? the prompts don't show through tee
@@ -21,6 +22,7 @@ git checkout lib/System/Directory/Tree.hs
 
 weeder --config .lint/weeder.toml 2>&1 | tee -a "$LOG"
 
+# tests that build works after any changes
 stack test 2>&1 | tee -a "$LOG"
 
 git status 2>&1 | tee -a "$LOG"
