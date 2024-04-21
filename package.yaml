@@ -11,9 +11,7 @@ copyright:           "AGPL-3.0-only"
 
 dependencies:
   - Glob
-  - attoparsec
   - base
-  - base64-bytestring
   - bytestring
   - crypton
   - deepseq
@@ -60,6 +58,8 @@ library:
   - HUnit
   - MissingH
   - QuickCheck
+  - attoparsec
+  - base64-bytestring
 
 executable:
   source-dirs: app
@@ -106,6 +106,8 @@ tests:
     - HUnit
     - MissingH
     - QuickCheck
+    - attoparsec
+    - base64-bytestring
 
   test-app:
     source-dirs:
@@ -179,3 +181,5 @@ tests:
     - HUnit
     - MissingH
     - QuickCheck
+    - attoparsec
+    - base64-bytestring

@@ -91,9 +91,7 @@ executable bigtrees
   ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info
   build-depends:
       Glob
-    , attoparsec
     , base
-    , base64-bytestring
     , bigtrees
     , bytestring
     , crypton
@@ -158,9 +156,7 @@ test-suite test-app
   ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info -hiedir=.hie -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages
   build-depends:
       Glob
-    , attoparsec
     , base
-    , base64-bytestring
     , bigtrees
     , bytestring
     , crypton
