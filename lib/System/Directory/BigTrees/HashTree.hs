@@ -151,7 +151,6 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
              }
 
 -- try to read as binary, and fall back to text if it fails
--- TODO why did i have it like this before: fmap BL.fromStrict $ B8.readFile path
 readTree :: Maybe Int -> FilePath -> IO (ProdTree)
 readTree md path = catchAny
                     (B8.readFile path >>= decodeIO)
