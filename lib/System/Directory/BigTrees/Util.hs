@@ -69,7 +69,6 @@ import           Test.QuickCheck.Monadic
 -- import Test.Hspec
 import           Control.Exception                (evaluate)
 import           Control.Monad.IO.Class           (liftIO)
-import           System.Directory                 (getHomeDirectory)
 import           Test.QuickCheck.Instances
 
 import qualified Data.Attoparsec.ByteString.Char8 as A8

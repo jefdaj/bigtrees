@@ -55,8 +55,12 @@ import           Data.List                            (delete, find, nubBy,
                                                        partition, sort, sortBy)
 import           Data.Maybe                           (catMaybes, isJust)
 import           Data.Ord                             (compare)
-import           System.Directory                     (doesDirectoryExist,
-                                                       doesFileExist)
+import           System.Directory                     (createDirectoryIfMissing,
+                                                       doesDirectoryExist,
+                                                       doesFileExist,
+                                                       doesPathExist,
+                                                       listDirectory,
+                                                       removePathForcibly)
 import           System.FilePath                      (joinPath, splitPath,
                                                        (</>))
 import           System.FilePath.Glob                 (MatchOptions (..),
@@ -83,25 +87,18 @@ import qualified Data.ByteString.Char8                as B8
 import qualified Data.ByteString.Lazy.Char8           as BL
 -- import qualified Data.Text                        as T
 
+import           System.FilePath
 import           System.IO                            (IOMode (..), hClose,
                                                        withFile)
 import           System.IO.Temp
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances.ByteString ()
 import           Test.QuickCheck.Monadic
-
-import           System.Directory                     (createDirectoryIfMissing,
-                                                       doesPathExist,
-                                                       listDirectory,
-                                                       removePathForcibly)
-import           System.FilePath
 -- import System.Directory.Tree (writeJustDirs)
+import           Data.Char                            (toLower)
 import           System.Directory.BigTrees.Hash
 import           System.Directory.BigTrees.HashLine
 import           System.FilePath.Glob                 (Pattern)
-
-import           Control.DeepSeq                      (force)
-import           Data.Char                            (toLower)
 import           System.Info                          (os)
 
 {- A tree of file names matching (a subdirectory of) the annex,
