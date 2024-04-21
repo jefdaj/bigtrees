@@ -46,7 +46,7 @@ module Cmd.Rm where
 --       if confirm
 --         then rm
 --         else putStrLn $ "not removing '" ++ rmPath' ++ "'"
--- 
+--
 -- -- Should this go in HashTree.hs?
 -- okToRm :: Config -> HashTree -> FilePath -> IO Bool
 -- okToRm _ tree rmPath = do

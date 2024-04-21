@@ -1,9 +1,8 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 -- TODO hashHashes should be hashDir
 -- TODO should it also hash filenames?
@@ -19,33 +18,33 @@ module System.Directory.BigTrees.Hash where
   -- )
   -- where
 
-import qualified Crypto.Hash as CH
+import qualified Crypto.Hash                as CH
 
-import Streaming (Stream, Of)
-import qualified Streaming.Prelude as S
-import Crypto.Hash.Algorithms
-import Crypto.Hash.IO
+import           Crypto.Hash.Algorithms
+import           Crypto.Hash.IO
+import           Streaming                  (Of, Stream)
+import qualified Streaming.Prelude          as S
 
-import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Short as BS
-import qualified Data.ByteString.Base64 as B64
+import qualified Data.ByteString.Base64     as B64
+import qualified Data.ByteString.Char8      as B
 import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.ByteString.Short      as BS
 import qualified Streaming.ByteString.Char8 as Q
 
-import Data.List          (isInfixOf, isPrefixOf)
-import Data.List.Split    (splitOn)
-import System.FilePath    (takeBaseName)
-import System.Directory   (pathIsSymbolicLink)
-import System.Posix.Files (readSymbolicLink)
-import Data.Hashable      (Hashable(..))
+import           Data.Hashable              (Hashable (..))
+import           Data.List                  (isInfixOf, isPrefixOf)
+import           Data.List.Split            (splitOn)
+import           System.Directory           (pathIsSymbolicLink)
+import           System.FilePath            (takeBaseName)
+import           System.Posix.Files         (readSymbolicLink)
 
-import TH.Derive
-import Data.Store (Store(..))
-import Control.DeepSeq
-import GHC.Generics
+import           Control.DeepSeq
+import           Data.Store                 (Store (..))
+import           GHC.Generics
+import           TH.Derive
 
-import System.IO.Temp
-import Test.HUnit
+import           System.IO.Temp
+import           Test.HUnit
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -53,8 +52,9 @@ import Test.HUnit
  - TODO would adding timestamps or number of files help?
  - note: regular bytestrings here cause memory fragmentation/space leaks
  -}
-newtype Hash = Hash { unHash :: BS.ShortByteString }
-  deriving (Eq, Read, Show, Ord, Generic, NFData)
+newtype Hash
+  = Hash { unHash :: BS.ShortByteString }
+  deriving (Eq, Generic, NFData, Ord, Read, Show)
 
 -- This is unrelated to BigTrees's hashing. It's required to use Data.HashMap
 instance Hashable Hash

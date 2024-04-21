@@ -1,9 +1,9 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module System.Directory.BigTrees.Util where
@@ -29,44 +29,53 @@ module System.Directory.BigTrees.Util where
 -- TODO remove this from Util
 -- import BigTrees.Config (Config(..))
 
-import Prelude hiding (log)
+import           Prelude                          hiding (log)
 
-import Data.List             (isPrefixOf, isInfixOf)
-import Data.Maybe            (fromJust)
-import System.Directory      (getCurrentDirectory, getHomeDirectory, doesDirectoryExist, canonicalizePath)
-import System.FilePath       (pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName, addTrailingPathSeparator, normalise)
-import System.Path.NameManip (guess_dotdot, absolute_path)
-import System.IO ( hFlush, stdout, hClose )
-import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
+import           Data.List                        (isInfixOf, isPrefixOf)
+import           Data.Maybe                       (fromJust)
+import           System.Directory                 (canonicalizePath,
+                                                   doesDirectoryExist,
+                                                   getCurrentDirectory,
+                                                   getHomeDirectory)
+import           System.FilePath                  (addTrailingPathSeparator,
+                                                   joinPath, normalise,
+                                                   pathSeparator, splitPath,
+                                                   takeBaseName, takeDirectory,
+                                                   (</>))
+import           System.IO                        (hClose, hFlush, stdout)
+import           System.Path.NameManip            (absolute_path, guess_dotdot)
+import           System.Posix.Files               (getSymbolicLinkStatus,
+                                                   isSymbolicLink,
+                                                   readSymbolicLink)
 
 -- import qualified Data.ByteString.Char8 as B
 -- import qualified Data.ByteString.Short as BS
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
+import qualified Data.ByteString.Char8            as B8
 import qualified Data.ByteString.UTF8             as BU
-import qualified Data.ByteString.Char8 as B8
+import qualified Data.Text                        as T
+import qualified Data.Text.Encoding               as TE
 
-import qualified Filesystem.Path.CurrentOS as OS
-import Data.Store             (encode, decodeIO, Store(..))
-import TH.Derive
-import System.Info (os)
+import           Data.Store                       (Store (..), decodeIO, encode)
+import qualified Filesystem.Path.CurrentOS        as OS
+import           System.Info                      (os)
+import           TH.Derive
 
-import Control.DeepSeq
-import GHC.Generics
+import           Control.DeepSeq
+import           GHC.Generics
 
-import Test.QuickCheck
-import Test.QuickCheck.Monadic
-import Test.HUnit (Assertion, (@=?))
+import           Test.HUnit                       (Assertion, (@=?))
+import           Test.QuickCheck
+import           Test.QuickCheck.Monadic
 -- import Test.Hspec
-import System.Directory (getHomeDirectory)
-import Control.Monad.IO.Class (liftIO)
-import Control.Exception (evaluate)
-import Test.QuickCheck.Instances
+import           Control.Exception                (evaluate)
+import           Control.Monad.IO.Class           (liftIO)
+import           System.Directory                 (getHomeDirectory)
+import           Test.QuickCheck.Instances
 
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString.Char8            as B
-import System.IO.Temp          (withSystemTempDirectory)
-import Test.QuickCheck.Unicode (list, char)
+import           System.IO.Temp                   (withSystemTempDirectory)
+import           Test.QuickCheck.Unicode          (char, list)
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -92,7 +101,7 @@ absolutize' aPath
         return $ Just $ normalise $ addTrailingPathSeparator homePath
                              ++ tail aPath
     | otherwise = do
-        -- let aPath' = guess_dotdot aPath 
+        -- let aPath' = guess_dotdot aPath
         aPath' <- absolute_path aPath
         case guess_dotdot aPath' of
           Nothing -> return $ Just aPath
@@ -111,7 +120,7 @@ dropDir = joinPath . tail . splitPath
 dropDir' :: FilePath -> FilePath
 dropDir' path = case path of
   ('/':p) -> dropDir p
-  p -> dropDir p
+  p       -> dropDir p
 
 noSlash :: FilePath -> FilePath
 noSlash = reverse . dropWhile (== '/') . reverse
@@ -178,8 +187,9 @@ isNonAnnexSymlink path = do
 -- | an element in a FilePath:
 -- The newtype is needed to prevent overlapping with the standard Arbitrary
 -- Text instance in the tests
-newtype FileName = FileName T.Text
-  deriving (Eq, Ord, Read, Show, Generic)
+newtype FileName
+  = FileName T.Text
+  deriving (Eq, Generic, Ord, Read, Show)
 
 deriving instance NFData FileName
 
@@ -245,24 +255,25 @@ prop_roundtrip_filename_to_name_of_tmpfile = monadicIO $ do
 --   describe "absolutize" $ do
 --       it "strips dots from paths" pending
 --       it "does not follow symlinks" pending
--- 
+--
 --     describe "findAnnex" $ do
 --       it "returns Nothing if given a nonexistent path" pending
 --       it "returns Nothing if given a non-annex path" pending
 --       it "returns (Just path) if path is an annex" pending
 --       it "returns only absolute paths" pending
--- 
+--
 --     describe "isAnnexSymlink" $ do
 --       it "returns False if given a non-symlink" pending
 --       it "returns True if given a symlink pointing into a .git/annex/objects dir" pending
 --       it "returns False if given a symlink pointing somewhere else" pending
--- 
+--
 --     describe "isNonAnnexSymlink" $ do
 --       it "returns False if given a non-symlink" pending
 --       it "returns False if given a symlink pointing into a .git/annex/objects dir" pending
 --       it "returns True if given a symlink pointing somewhere else" pending
 
-newtype ValidFilePath = ValidFilePath FilePath
+newtype ValidFilePath
+  = ValidFilePath FilePath
   deriving (Eq, Ord, Read, Show)
 
 instance Arbitrary ValidFilePath where

@@ -2,27 +2,30 @@ module Cmd.Hash where
 
 -- TODO guess and check hashes
 
-import System.Directory.BigTrees
-import Config (Config(..), log, defaultConfig)
+import           Config                          (Config (..), defaultConfig,
+                                                  log)
+import           System.Directory.BigTrees
 -- import Run    (runGit, runGitCommit)
 
-import Prelude hiding (log)
+import           Prelude                         hiding (log)
 
-import Control.Monad    (when)
-import Data.Maybe       (fromJust)
-import System.Directory (doesFileExist)
-import System.FilePath  ((</>), (<.>), takeBaseName, dropExtension)
+import           Control.Monad                   (when)
+import           Data.Maybe                      (fromJust)
+import           System.Directory                (doesFileExist)
+import           System.FilePath                 (dropExtension, takeBaseName,
+                                                  (<.>), (</>))
 
-import Test.Tasty (TestTree, testGroup, testGroup)
-import Test.Tasty.Golden (goldenVsString, findByExtension)
 import qualified Control.Concurrent.Thread.Delay as D
-import qualified Data.ByteString.Lazy.UTF8 as BLU
-import System.IO (stdout, stderr)
-import System.IO.Silently (hCapture)
-import System.IO.Temp (withSystemTempDirectory)
-import System.Process (readCreateProcess, proc, cwd)
-import System.Directory.BigTrees.Util (absolutize)
-import Data.List (sort)
+import qualified Data.ByteString.Lazy.UTF8       as BLU
+import           Data.List                       (sort)
+import           System.Directory.BigTrees.Util  (absolutize)
+import           System.IO                       (stderr, stdout)
+import           System.IO.Silently              (hCapture)
+import           System.IO.Temp                  (withSystemTempDirectory)
+import           System.Process                  (cwd, proc, readCreateProcess)
+import           Test.Tasty                      (TestTree, testGroup)
+import           Test.Tasty.Golden               (findByExtension,
+                                                  goldenVsString)
 
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...
@@ -37,7 +40,7 @@ cmdHash cfg targets = do
     Just p  -> writeForest p f
   case bin cfg of
     Nothing -> return ()
-    Just p -> writeBinForest p f
+    Just p  -> writeBinForest p f
 
 -- updateAnnexHashes :: Config -> HashTree () -> IO ()
 -- updateAnnexHashes cfg new = do

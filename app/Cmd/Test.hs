@@ -1,14 +1,14 @@
 module Cmd.Test where
 
-import System.Directory.BigTrees
-import Prelude hiding (log)
+import           Prelude                   hiding (log)
+import           System.Directory.BigTrees
 
-import Text.Pretty.Simple (pPrint)
+import           Text.Pretty.Simple        (pPrint)
 
 -- TODO remove because this shouldn't depend on the app target?
-import Config      (Config(..), log)
+import           Config                    (Config (..), log)
 
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8     as B
 
 cmdTest :: Config -> [FilePath] -> IO ()
 cmdTest cfg paths = do

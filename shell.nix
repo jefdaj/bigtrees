@@ -37,6 +37,7 @@ pkgs.mkShell {
     # analyze/lint
     pkgs.hlint
     pkgs.haskellPackages.apply-refact
+    pkgs.stylish-haskell
 
   ];
 

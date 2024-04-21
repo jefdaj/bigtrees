@@ -5,23 +5,24 @@ module Config
   )
   where
 
-import Prelude hiding (log)
-import System.FilePath.Glob (compile, Pattern)
-import Control.Monad (when)
+import           Control.Monad        (when)
+import           Prelude              hiding (log)
+import           System.FilePath.Glob (Pattern, compile)
 
 {- Parsed command line args
  - TODO add other stuff from usage.txt, or revise that
  -}
 -- TODO remove from non-Cmd modules
-data Config = Config
-  { bin      :: Maybe FilePath
-  , txt      :: Maybe FilePath
-  , maxdepth :: Maybe Int
-  , verbose  :: Bool
-  , force    :: Bool
-  , check    :: Bool
-  , exclude  :: [Pattern]
-  }
+data Config
+  = Config
+      { bin      :: Maybe FilePath
+      , txt      :: Maybe FilePath
+      , maxdepth :: Maybe Int
+      , verbose  :: Bool
+      , force    :: Bool
+      , check    :: Bool
+      , exclude  :: [Pattern]
+      }
   deriving (Read, Show)
 
 defaultConfig :: Config

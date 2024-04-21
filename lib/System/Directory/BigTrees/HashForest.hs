@@ -1,8 +1,7 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell    #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -24,27 +23,29 @@ module System.Directory.BigTrees.HashForest where
   -- where
 
 -- import System.Directory.BigTrees.Hash
-import System.Directory.BigTrees.HashLine (parseHashes)
-import System.Directory.BigTrees.HashTree
+import           System.Directory.BigTrees.HashLine (parseHashes)
+import           System.Directory.BigTrees.HashTree
 
-import TH.Derive
-import Data.Store             (Store(..), encode, decodeIO)
-import System.FilePath.Glob (Pattern)
-import qualified Data.ByteString.Char8 as B8
-import System.IO            (withFile, IOMode(..))
-import Control.Exception.Safe (catchAny)
+import           Control.Exception.Safe             (catchAny)
+import qualified Data.ByteString.Char8              as B8
+import           Data.Store                         (Store (..), decodeIO,
+                                                     encode)
+import           System.FilePath.Glob               (Pattern)
+import           System.IO                          (IOMode (..), withFile)
+import           TH.Derive
 
-import Test.QuickCheck
-import Test.QuickCheck.Monadic
+import           Test.QuickCheck
+import           Test.QuickCheck.Monadic
 -- import qualified Data.ByteString.Char8            as B8
-import System.IO (hClose) -- IOMode(..), withFile
-import System.IO.Temp
+import           System.IO                          (hClose)
+import           System.IO.Temp
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the
  - command line.
  -}
-newtype HashForest a = HashForest [HashTree a]
+newtype HashForest a
+  = HashForest [HashTree a]
   -- deriving (Eq, Show, Read)
 
 type ProdForest = HashForest ()

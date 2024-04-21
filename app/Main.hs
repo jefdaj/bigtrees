@@ -5,17 +5,18 @@ module Main where
 -- TODO sort by how many links deduping would save: files per dupe * (dupes - 1)
 -- TODO figure out how to read files + compute hashes in parallel
 
-import Cmd
+import           Cmd
 -- import Util           (absolutize)
-import Config         (Config(..), defaultConfig)
-import System.Console.Docopt (docoptFile, parseArgsOrExit,
-                              getArgOrExitWith, isPresent, getArg, getAllArgs,
-                              shortOption, command, argument)
-import System.Environment ( getArgs, setEnv )
+import           Config                  (Config (..), defaultConfig)
+import           System.Console.Docopt   (argument, command, docoptFile,
+                                          getAllArgs, getArg, getArgOrExitWith,
+                                          isPresent, parseArgsOrExit,
+                                          shortOption)
+import           System.Environment      (getArgs, setEnv)
 -- import System.FilePath       ((</>))
-import System.FilePath.Glob (compile)
-import System.Locale.SetLocale
-import Data.Functor ((<&>))
+import           Data.Functor            ((<&>))
+import           System.FilePath.Glob    (compile)
+import           System.Locale.SetLocale
 
 main :: IO ()
 main = do

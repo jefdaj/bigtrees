@@ -1,9 +1,9 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -39,60 +39,70 @@ module System.Directory.BigTrees.HashTree where
 
 -- import Debug.Trace
 
-import qualified Data.ByteString.Char8 as B8 -- TODO is this just regular ByteString?
-import qualified Data.ByteString.Short as BS
-import qualified Data.Text.Encoding as T
+import qualified Data.ByteString.Char8                as B8
+import qualified Data.ByteString.Short                as BS
+import qualified Data.Text.Encoding                   as T
 
-import System.Directory.BigTrees.Util -- (pathComponents, FileName, p2n, n2p)
-import qualified System.Directory.Tree as DT
+import           System.Directory.BigTrees.Util
+import qualified System.Directory.Tree                as DT
 
-import Control.Monad ( msum, when )
-import qualified Control.Monad.Parallel as P
-import qualified Control.Monad          as M
-import Data.List ( find, delete, sort, partition, sortBy, nubBy )
-import Data.Maybe           (isJust, catMaybes)
-import Data.Function        (on)
-import Data.Either          (fromRight)
-import Data.Ord             (compare)
-import System.Directory     (doesFileExist, doesDirectoryExist)
-import System.FilePath      ((</>), splitPath, joinPath)
-import System.FilePath.Glob (matchWith, Pattern, MatchOptions(..))
-import System.IO            (hFlush, stdout, withFile, IOMode(..))
-import System.IO.Unsafe     (unsafeInterleaveIO)
+import           Control.Monad                        (msum, when)
+import qualified Control.Monad                        as M
+import qualified Control.Monad.Parallel               as P
+import           Data.Either                          (fromRight)
+import           Data.Function                        (on)
+import           Data.List                            (delete, find, nubBy,
+                                                       partition, sort, sortBy)
+import           Data.Maybe                           (catMaybes, isJust)
+import           Data.Ord                             (compare)
+import           System.Directory                     (doesDirectoryExist,
+                                                       doesFileExist)
+import           System.FilePath                      (joinPath, splitPath,
+                                                       (</>))
+import           System.FilePath.Glob                 (MatchOptions (..),
+                                                       Pattern, matchWith)
+import           System.IO                            (IOMode (..), hFlush,
+                                                       stdout, withFile)
+import           System.IO.Unsafe                     (unsafeInterleaveIO)
 
-import Prelude hiding (take)
-import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile)
-import Data.Attoparsec.ByteString (skipWhile)
-import Data.Attoparsec.Combinator
+import           Data.Attoparsec.ByteString           (skipWhile)
+import           Data.Attoparsec.ByteString.Char8     hiding (D, skipWhile)
+import           Data.Attoparsec.Combinator
+import           Prelude                              hiding (take)
 
-import Data.Store             (encode, decodeIO, Store(..))
-import Control.Exception.Safe (catchAny)
-import TH.Derive
+import           Control.Exception.Safe               (catchAny)
+import           Data.Store                           (Store (..), decodeIO,
+                                                       encode)
+import           TH.Derive
 
-import Control.DeepSeq
-import GHC.Generics (Generic)
+import           Control.DeepSeq
+import           GHC.Generics                         (Generic)
 
-import qualified Data.Attoparsec.ByteString.Char8 as A8
-import qualified Data.ByteString.Char8            as B8
-import qualified Data.ByteString.Lazy.Char8       as BL
+import qualified Data.Attoparsec.ByteString.Char8     as A8
+import qualified Data.ByteString.Char8                as B8
+import qualified Data.ByteString.Lazy.Char8           as BL
 -- import qualified Data.Text                        as T
 
-import Test.QuickCheck
-import Test.QuickCheck.Monadic
-import Test.QuickCheck.Instances.ByteString ()
-import System.IO.Temp
-import System.IO (hClose, IOMode(..), withFile)
+import           System.IO                            (IOMode (..), hClose,
+                                                       withFile)
+import           System.IO.Temp
+import           Test.QuickCheck
+import           Test.QuickCheck.Instances.ByteString ()
+import           Test.QuickCheck.Monadic
 
-import System.FilePath
-import System.Directory (createDirectoryIfMissing, listDirectory, removePathForcibly, doesPathExist)
+import           System.Directory                     (createDirectoryIfMissing,
+                                                       doesPathExist,
+                                                       listDirectory,
+                                                       removePathForcibly)
+import           System.FilePath
 -- import System.Directory.Tree (writeJustDirs)
-import System.Directory.BigTrees.Hash
-import System.Directory.BigTrees.HashLine
-import System.FilePath.Glob (Pattern)
+import           System.Directory.BigTrees.Hash
+import           System.Directory.BigTrees.HashLine
+import           System.FilePath.Glob                 (Pattern)
 
-import Control.DeepSeq (force)
-import System.Info (os)
-import Data.Char (toLower)
+import           Control.DeepSeq                      (force)
+import           Data.Char                            (toLower)
+import           System.Info                          (os)
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -103,9 +113,18 @@ import Data.Char (toLower)
 --   deriving (Eq, Read, Show)
 --   TODO rename name -> path?
 data HashTree a
-  = File { name :: !FileName, hash :: !Hash, fileData :: !a }
-  | Dir  { name :: !FileName, hash :: Hash, contents :: [HashTree a], nFiles :: Int }
-  deriving (Read, Show, Ord, Generic) -- TODO switch to hash-based equality after testing
+  = File
+      { name     :: !FileName
+      , hash     :: !Hash
+      , fileData :: !a
+      }
+  | Dir
+      { name     :: !FileName
+      , hash     :: Hash
+      , contents :: [HashTree a]
+      , nFiles   :: Int
+      }
+  deriving (Generic, Ord, Read, Show)
 
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
@@ -135,7 +154,7 @@ excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
   where
     keep a (DT.Dir  n _) = keepPath excludes (a </> n2p n)
     keep a (DT.File n _) = keepPath excludes (a </> n2p n)
-    keep a b = True
+    keep a b             = True
 
 keepPath :: [Pattern] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
@@ -285,7 +304,7 @@ deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: HashTree a -> Int
-countFiles (File {}  ) = 1
+countFiles (File {}  )    = 1
 countFiles (Dir  _ _ _ n) = n
 
 {- This one is confusing! It accumulates a list of trees and their indent
@@ -360,7 +379,7 @@ wrapInEmptyDir n t = Dir { name = p2n n, hash = h, contents = cs, nFiles = nFile
 wrapInEmptyDirs :: FilePath -> ProdTree -> ProdTree
 wrapInEmptyDirs p t = case pathComponents p of
   []     -> error "wrapInEmptyDirs needs at least one dir"
-  [n] -> wrapInEmptyDir n t
+  [n]    -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
@@ -498,7 +517,7 @@ instance Arbitrary ProdTree where
 -- TODO rewrite this in terms of a generic map/fold so it works with other types
 dropFileData :: TestTree -> ProdTree
 dropFileData d@(Dir {contents = cs}) = d {contents = map dropFileData cs}
-dropFileData f@(File {}) = f {fileData = ()}
+dropFileData f@(File {})             = f {fileData = ()}
 
 -- TODO test tree in haskell
 -- TODO test dir
@@ -512,7 +531,7 @@ dropFileData f@(File {}) = f {fileData = ()}
 -- TODO write_tree_binary?
 -- TODO flatten_tree
 
--- prop_roundtrip_prodtree_to_hashes :: 
+-- prop_roundtrip_prodtree_to_hashes ::
 
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
@@ -520,7 +539,7 @@ dropFileData f@(File {}) = f {fileData = ()}
 
 confirmFileHashes :: TestTree -> Bool
 confirmFileHashes (File {fileData = f, hash = h}) = hashBytes f == h
-confirmFileHashes (Dir {contents = cs}) = all confirmFileHashes cs
+confirmFileHashes (Dir {contents = cs})           = all confirmFileHashes cs
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes

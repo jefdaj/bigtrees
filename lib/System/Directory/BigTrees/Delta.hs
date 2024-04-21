@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module System.Directory.BigTrees.Delta where
   -- ( Delta(..)
@@ -22,16 +22,16 @@ module System.Directory.BigTrees.Delta where
  -}
 
 -- import BigTrees.Config
-import System.Directory.BigTrees.HashTree
-import System.Directory.BigTrees.Util (n2p)
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8              as B
+import           System.Directory.BigTrees.HashTree
+import           System.Directory.BigTrees.Util     (n2p)
 
-import Control.Monad       (when, foldM, unless)
-import Data.List           (find)
-import Data.Maybe          (fromJust)
+import           Control.Monad                      (foldM, unless, when)
+import           Data.List                          (find)
+import           Data.Maybe                         (fromJust)
 --import System.Directory.BigTrees.DupeMap (listLostFiles)
 -- import System.Directory.BigTrees.Hash    (prettyHash)
-import System.FilePath     ((</>))
+import           System.FilePath                    ((</>))
 
 -- import Test.QuickCheck
 -- import Test.QuickCheck.Monadic
@@ -40,11 +40,11 @@ import System.FilePath     ((</>))
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
 --      maybe only some of them are needed: add and edit. and edit only needs one.
 data Delta a
-  = Add  FilePath (HashTree a)
-  | Rm   FilePath
-  | Mv   FilePath FilePath
+  = Add FilePath (HashTree a)
+  | Rm FilePath
+  | Mv FilePath FilePath
   | Edit FilePath (HashTree a) (HashTree a) -- TODO remove in favor of subtle use of Add?
-  deriving (Read, Show, Eq)
+  deriving (Eq, Read, Show)
 
 ------------------------
 -- diff two hashtrees --
@@ -97,8 +97,8 @@ fixMoves :: ProdTree -> [Delta ()] -> [Delta ()]
 fixMoves _ [] = []
 fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
   Just d2@(Add f2 _) -> Mv f1 f2 : let ds' = filter (/= d2) ds in fixMoves t ds'
-  Just d2 -> error $ "findMv returned a non-add: " ++ show d2
-  Nothing -> d1 : fixMoves t ds
+  Just d2            -> error $ "findMv returned a non-add: " ++ show d2
+  Nothing            -> d1 : fixMoves t ds
 fixMoves t (d:ds) = d : fixMoves t ds
 
 --------------------------------------------
@@ -114,7 +114,7 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -- TODO in order to apply, need actual tree rather than just the hash!
 -- safeDelta :: HashTree -> Delta -> Bool
 -- safeDelta t d = safeDeltas t [d]
--- 
+--
 -- safeDeltas :: HashTree -> [Delta] -> Bool
 -- safeDeltas t ds = case simDeltas t ds of
 --   Left  _  -> False

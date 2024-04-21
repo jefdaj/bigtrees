@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
 
 module System.Directory.BigTrees.DupeMap
   ( DupeSet
@@ -21,30 +21,30 @@ module System.Directory.BigTrees.DupeMap
   )
   where
 
-import Control.Monad.ST
+import           Control.Monad.ST
 -- import Data.Hashable (Hashable(..))
 -- import Control.DeepSeq
 
-import qualified Data.ByteString.Char8    as B
-import qualified Data.HashSet             as S
-import qualified Data.HashTable.Class     as H
-import qualified Data.HashTable.ST.Cuckoo as C
-import qualified Data.List                as L
-import qualified Data.Massiv.Array        as A
+import qualified Data.ByteString.Char8                as B
+import qualified Data.HashSet                         as S
+import qualified Data.HashTable.Class                 as H
+import qualified Data.HashTable.ST.Cuckoo             as C
+import qualified Data.List                            as L
+import qualified Data.Massiv.Array                    as A
 
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup
 
-import qualified Data.HashMap.Strict as M
+import qualified Data.HashMap.Strict                  as M
 
-import System.Directory.BigTrees.Hash
-import System.Directory.BigTrees.HashLine
-import System.Directory.BigTrees.HashTree
-import System.Directory.BigTrees.HashForest
-import System.Directory.BigTrees.Util (n2p)
+import           System.Directory.BigTrees.Hash
+import           System.Directory.BigTrees.HashForest
+import           System.Directory.BigTrees.HashLine
+import           System.Directory.BigTrees.HashTree
+import           System.Directory.BigTrees.Util       (n2p)
 
-import Data.List       (sort, isPrefixOf)
-import System.FilePath ((</>), splitDirectories)
+import           Data.List                            (isPrefixOf, sort)
+import           System.FilePath                      (splitDirectories, (</>))
 
 -- TODO replace every HashTree in here with HashForest?
 
