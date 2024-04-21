@@ -39,6 +39,7 @@ pkgs.mkShell {
     pkgs.haskellPackages.apply-refact
     pkgs.stylish-haskell
     pkgs.haskellPackages.weeder
+    pkgs.haskellPackages.stan
 
   ];
 

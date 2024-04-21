@@ -22,6 +22,8 @@ git checkout lib/System/Directory/Tree.hs
 
 weeder --config .lint/weeder.toml 2>&1 | tee -a "$LOG"
 
+stan --hiedir .stack-work --config-file .lint/stan.toml report 2>&1 | tee -a "$LOG"
+
 # tests that build works after any changes
 stack test 2>&1 | tee -a "$LOG"
 
