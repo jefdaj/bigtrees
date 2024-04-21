@@ -205,6 +205,87 @@ test-suite test-app
     , utf8-string
   default-language: Haskell2010
 
+test-suite test-doctests
+  type: exitcode-stdio-1.0
+  main-is: doctest.hs
+  other-modules:
+      System.Directory.BigTrees
+      System.Directory.BigTrees.Delta
+      System.Directory.BigTrees.DupeMap
+      System.Directory.BigTrees.Hash
+      System.Directory.BigTrees.HashForest
+      System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.HashTree
+      System.Directory.BigTrees.Util
+      System.Directory.Tree
+      Cmd
+      Cmd.Add
+      Cmd.Cat
+      Cmd.Dedup
+      Cmd.Diff
+      Cmd.Dupes
+      Cmd.Hash
+      Cmd.Init
+      Cmd.Mv
+      Cmd.Rm
+      Cmd.Test
+      Cmd.Update
+      Config
+      Main
+      Run
+      Paths_bigtrees
+  hs-source-dirs:
+      test/doc
+      lib
+      app
+  ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info
+  build-depends:
+      Glob
+    , HUnit
+    , MissingH
+    , QuickCheck
+    , attoparsec
+    , base
+    , base64-bytestring
+    , bigtrees
+    , bytestring
+    , crypton
+    , deepseq
+    , directory
+    , docopt
+    , doctest-parallel
+    , filepath
+    , hashable
+    , hashtables
+    , massiv
+    , monad-parallel
+    , pretty-simple
+    , process
+    , quickcheck-instances
+    , quickcheck-unicode
+    , safe-exceptions
+    , setlocale
+    , silently
+    , split
+    , store
+    , streaming
+    , streaming-bytestring
+    , system-filepath
+    , tasty
+    , tasty-discover
+    , tasty-golden
+    , tasty-hspec
+    , tasty-hunit
+    , tasty-quickcheck
+    , temporary
+    , text
+    , th-utilities
+    , unbounded-delays
+    , unix
+    , unordered-containers
+    , utf8-string
+  default-language: Haskell2010
+
 test-suite test-lib
   type: exitcode-stdio-1.0
   main-is: Test.hs

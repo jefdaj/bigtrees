@@ -115,3 +115,22 @@ tests:
     - unbounded-delays
     - silently
     - process
+
+  test-doctests:
+    source-dirs:
+    - "test/doc"
+    - "lib"
+    - "app"
+    main: "doctest.hs"
+    # TODO which of these options really help?
+    ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
+    # TODO extract a common list of exe dependencies
+    dependencies:
+    - pretty-simple
+    - setlocale
+    - docopt
+    - bigtrees
+    - unbounded-delays
+    - silently
+    - process
+    - doctest-parallel
