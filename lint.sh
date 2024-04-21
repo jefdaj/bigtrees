@@ -22,11 +22,11 @@ stylish-haskell --config stylish-haskell.yaml -r -i .. 2>&1 | tee -a "$LOG"
 # TODO add to ignores instead?
 git checkout ../lib/System/Directory/Tree.hs
 
-weeder .. --config weeder.toml 2>&1 | tee -a "$LOG"
-
 stan --hiedir ../.stack-work --config-file stan.toml report 2>&1 | tee -a "$LOG"
 
 popd
+
+weeder --config .lint/weeder.toml 2>&1 | tee -a "$LOG"
 
 # tests that build works after any changes
 stack test 2>&1 | tee -a "$LOG"
