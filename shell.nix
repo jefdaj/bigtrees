@@ -29,6 +29,7 @@ pkgs.mkShell {
     stack-wrapped
     pkgs.tree # for test scripts
     pkgs.zlib
+    pkgs.hlint
   ];
 
   # Configure the Nix path to our own `pkgs`, to ensure Stack-with-Nix uses the
