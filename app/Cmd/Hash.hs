@@ -22,6 +22,7 @@ import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (readCreateProcess, proc, cwd)
 import System.Directory.BigTrees.Util (absolutize)
+import Data.List (sort)
 
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...
@@ -94,7 +95,7 @@ mkHashTarXzTest xzPath =
 
 test_hash_tarxz :: IO TestTree
 test_hash_tarxz = do
-  xzPaths <- findByExtension [".xz"] "test/app" -- TODO file bug about .tar.xz failing?
+  xzPaths <- fmap sort $ findByExtension [".xz"] "test/app" -- TODO file bug about .tar.xz failing?
   -- putStrLn $ show xzPaths
   return $ testGroup
     "hash files extracted from tarballs"
