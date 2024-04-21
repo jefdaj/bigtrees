@@ -38,6 +38,7 @@ pkgs.mkShell {
     pkgs.hlint
     pkgs.haskellPackages.apply-refact
     pkgs.stylish-haskell
+    pkgs.haskellPackages.weeder
 
   ];
 
