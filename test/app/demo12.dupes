@@ -1,0 +1,9 @@
+# deduping these 2 files would remove 1:
+demo1/folder1/file3.txt
+demo2/folder1/folder2/file3.txt
+
+# deduping these 2 files would remove 1:
+demo1/file1.txt
+demo2/file1.txt
+
+
