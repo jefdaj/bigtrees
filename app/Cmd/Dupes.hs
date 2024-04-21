@@ -5,8 +5,8 @@ module Cmd.Dupes where
 -- TODO guess and check hashes
 
 import Config (Config (..))
-import System.Directory.BigTrees (HashForest (..), dupesByNFiles, pathsByHash, printDupes,
-                                  readOrBuildTrees, writeDupes)
+import System.Directory.BigTrees (dupesByNFiles, pathsByHash, printDupes, readOrBuildTrees,
+                                  writeDupes)
 
 cmdDupes :: Config -> [FilePath] -> IO ()
 cmdDupes cfg paths = do

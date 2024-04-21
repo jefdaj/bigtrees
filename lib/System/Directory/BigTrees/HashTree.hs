@@ -41,28 +41,28 @@ module System.Directory.BigTrees.HashTree where
 
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
-import qualified Data.Text.Encoding as T
+-- import qualified Data.Text.Encoding as T
 
 import System.Directory.BigTrees.Util
 import qualified System.Directory.Tree as DT
 
 import Control.Monad (msum, when)
-import qualified Control.Monad as M
+-- import qualified Control.Monad as M
 import qualified Control.Monad.Parallel as P
 import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, nubBy, partition, sort, sortBy)
-import Data.Maybe (catMaybes, isJust)
-import Data.Ord (compare)
+import Data.Maybe (isJust)
+-- import Data.Ord (compare)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, doesPathExist,
-                         listDirectory, removePathForcibly)
+                         removePathForcibly)
 import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
 import System.IO (IOMode (..), hClose, hFlush, stdout, withFile)
 import System.IO.Unsafe (unsafeInterleaveIO)
 
-import Data.Attoparsec.ByteString (skipWhile)
-import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile)
-import Data.Attoparsec.Combinator
+-- import Data.Attoparsec.ByteString (skipWhile)
+-- import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile)
+-- import Data.Attoparsec.Combinator
 import Prelude hiding (take)
 
 import Control.Exception.Safe (catchAny)
@@ -73,7 +73,7 @@ import Control.DeepSeq
 import GHC.Generics (Generic)
 
 import qualified Data.Attoparsec.ByteString.Char8 as A8
-import qualified Data.ByteString.Lazy.Char8 as BL
+-- import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.Text                        as T
 
 import System.FilePath

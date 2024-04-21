@@ -14,7 +14,7 @@ pushd .lint
 
 find ../* -name '*.hs' | while read hs; do
   # TODO can it be auto-accepted? the prompts don't show through tee
-  hlint --hint hlint.yml "$hs" --refactor --refactor-options="-i -s" 2>&1 | tee -a "$LOG"
+  hlint --hint hlint.yml "$hs" --refactor --refactor-options="-i" 2>&1 | tee -a "$LOG"
 done
 
 stylish-haskell --config stylish-haskell.yaml -r -i .. 2>&1 | tee -a "$LOG"

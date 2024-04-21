@@ -26,7 +26,7 @@ import qualified Data.ByteString.Char8 as B
 import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.Util (n2p)
 
-import Control.Monad (foldM, unless, when)
+import Control.Monad (foldM, unless)
 import Data.List (find)
 import Data.Maybe (fromJust)
 --import System.Directory.BigTrees.DupeMap (listLostFiles)

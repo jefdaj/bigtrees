@@ -33,22 +33,21 @@ import Prelude hiding (log)
 
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Maybe (fromJust)
-import System.Directory (canonicalizePath, doesDirectoryExist, getCurrentDirectory,
-                         getHomeDirectory)
+import System.Directory (canonicalizePath, doesDirectoryExist, getHomeDirectory)
 import System.FilePath (addTrailingPathSeparator, joinPath, normalise, pathSeparator, splitPath,
                         takeBaseName, takeDirectory, (</>))
-import System.IO (hClose, hFlush, stdout)
+import System.IO (hFlush, stdout)
 import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
 -- import qualified Data.ByteString.Char8 as B
 -- import qualified Data.ByteString.Short as BS
 import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.UTF8 as BU
+-- import qualified Data.ByteString.UTF8 as BU
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 
-import Data.Store (Store (..), decodeIO, encode)
+import Data.Store (Store (..))
 import qualified Filesystem.Path.CurrentOS as OS
 import System.Info (os)
 import TH.Derive
@@ -60,14 +59,14 @@ import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 -- import Test.Hspec
-import Control.Exception (evaluate)
+-- import Control.Exception (evaluate)
 import Control.Monad.IO.Class (liftIO)
-import Test.QuickCheck.Instances
+import Test.QuickCheck.Instances ()
 
-import qualified Data.Attoparsec.ByteString.Char8 as A8
+-- import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString.Char8 as B
 import System.IO.Temp (withSystemTempDirectory)
-import Test.QuickCheck.Unicode (char, list)
+-- import Test.QuickCheck.Unicode (char, list)
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
