@@ -10,23 +10,7 @@ copyright:           "AGPL-3.0-only"
 #   - examples/*.txt
 
 dependencies:
-  # - -- cryptohash
-  # - ansi-terminal
-  # - byteable
-  # - directory-tree
-  # - hspec
-  # - pretty-simple
-  # - process
-  # - tasty
-  # - tasty-discover
-  # - tasty-hunit
-  # - tasty-quickcheck
-  # - text
-  # - with-utf8
   - Glob
-  - HUnit
-  - MissingH
-  - QuickCheck
   - attoparsec
   - base
   - base64-bytestring
@@ -72,6 +56,10 @@ library:
   - System.Directory.BigTrees.Hash
   - System.Directory.BigTrees.Delta
   # System.Directory.Tree
+  dependencies:
+  - HUnit
+  - MissingH
+  - QuickCheck
 
 executable:
   source-dirs: app
@@ -115,6 +103,9 @@ tests:
     - "-Wunused-packages"
     dependencies:
     - bigtrees
+    - HUnit
+    - MissingH
+    - QuickCheck
 
   test-app:
     source-dirs:
@@ -185,3 +176,6 @@ tests:
     - silently
     - process
     - doctest-parallel
+    - HUnit
+    - MissingH
+    - QuickCheck
