@@ -26,7 +26,7 @@ import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.Util (n2p)
 import qualified Data.ByteString.Char8 as B
 
-import Control.Monad       (when, foldM)
+import Control.Monad       (when, foldM, unless)
 import Data.List           (find)
 import Data.Maybe          (fromJust)
 --import System.Directory.BigTrees.DupeMap (listLostFiles)
@@ -76,8 +76,8 @@ diff' a t1@(Dir _ h1 os _) (Dir _ h2 ns _)
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where
-    adds  = [Add (a </> n2p (name x)) x | x <- ns, not $ name x `elem` map name os]
-    rms   = [Rm  (a </> n2p (name x))   | x <- os, not $ name x `elem` map name ns]
+    adds  = [Add (a </> n2p (name x)) x | x <- ns, notElem (name x) (map name os)]
+    rms   = [Rm  (a </> n2p (name x))   | x <- os, notElem (name x) (map name ns)]
     edits = concat [diff' (a </> n2p (name o)) o n | o <- os, n <- ns,
                                                o /= n, name o == name n]
 
@@ -96,7 +96,7 @@ findMv _ _ _ = False
 fixMoves :: ProdTree -> [Delta ()] -> [Delta ()]
 fixMoves _ [] = []
 fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
-  Just d2@(Add f2 _) -> (Mv f1 f2) : let ds' = filter (/= d2) ds in fixMoves t ds'
+  Just d2@(Add f2 _) -> Mv f1 f2 : let ds' = filter (/= d2) ds in fixMoves t ds'
   Just d2 -> error $ "findMv returned a non-add: " ++ show d2
   Nothing -> d1 : fixMoves t ds
 fixMoves t (d:ds) = d : fixMoves t ds
@@ -125,7 +125,7 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -----------------------------
 
 -- TODO think through how to report results more!
-simDelta :: ProdTree -> Delta () -> Either String (ProdTree)
+simDelta :: ProdTree -> Delta () -> Either String ProdTree
 simDelta t (Rm   p    ) = rmSubTree t p
 simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
 simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p
@@ -133,7 +133,7 @@ simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
   Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?
 
-simDeltas :: ProdTree -> [Delta ()] -> Either String (ProdTree)
+simDeltas :: ProdTree -> [Delta ()] -> Either String ProdTree
 simDeltas = foldM simDelta
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
@@ -143,7 +143,7 @@ simDeltas = foldM simDelta
 assertSameTrees :: (String, ProdTree) -> (String, ProdTree) -> IO ()
 assertSameTrees (msg1, tree1) (msg2, tree2) = do
   let wrong = diff tree1 tree2
-  when (not $ null wrong) $ do
+  unless (null wrong) $ do
     putStrLn $ unwords ["error!", msg1, "and", msg2, "should be identical, but aren't:"]
     printDeltas wrong
 

@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module System.Directory.BigTrees.HashTree where
@@ -46,7 +46,7 @@ import qualified Data.Text.Encoding as T
 import System.Directory.BigTrees.Util -- (pathComponents, FileName, p2n, n2p)
 import qualified System.Directory.Tree as DT
 
-import Control.Monad        (msum)
+import Control.Monad ( msum, when )
 import qualified Control.Monad.Parallel as P
 import qualified Control.Monad          as M
 import Data.List            (find, delete, sort)
@@ -96,7 +96,6 @@ import Control.DeepSeq (force)
 import Data.List (nubBy)
 import System.Info (os)
 import Data.Char (toLower)
-import Control.Monad (when)
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -135,7 +134,7 @@ $($(derive [d|
 
 excludeGlobs :: [Pattern]
              -> (DT.AnchoredDirTree a -> DT.AnchoredDirTree a)
-excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir (keep a) tree)
+excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
   where
     keep a (DT.Dir  n _) = keepPath excludes (a </> n2p n)
     keep a (DT.File n _) = keepPath excludes (a </> n2p n)
@@ -151,10 +150,10 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
              }
 
 -- try to read as binary, and fall back to text if it fails
-readTree :: Maybe Int -> FilePath -> IO (ProdTree)
+readTree :: Maybe Int -> FilePath -> IO ProdTree
 readTree md path = catchAny
                     (B8.readFile path >>= decodeIO)
-                    (\_ -> fmap (deserializeTree md) $ B8.readFile path)
+                    (\_ -> deserializeTree md <$> B8.readFile path)
 --   (do
 --      (hs :: [HashLine]) <- decodeIO =<< B8.readFile path
 --      return $ snd $ head $ foldr accTrees [] hs)
@@ -258,7 +257,7 @@ printTree :: ProdTree -> IO ()
 printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
-    printLine l = (putStrLn $ B8.unpack $ prettyHashLine l) >> hFlush stdout
+    printLine l = putStrLn (B8.unpack $ prettyHashLine l) >> hFlush stdout
 
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
@@ -289,7 +288,7 @@ deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: HashTree a -> Int
-countFiles (File _ _ _  ) = 1
+countFiles (File {}  ) = 1
 countFiles (Dir  _ _ _ n) = n
 
 {- This one is confusing! It accumulates a list of trees and their indent
@@ -306,8 +305,8 @@ countFiles (Dir  _ _ _ n) = n
 --   | otherwise  = accTrees' hl cs
 
 accTrees :: HashLine -> [(IndentLevel, ProdTree)] -> [(IndentLevel, ProdTree)]
-accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
-  F -> cs ++ [((IndentLevel i), File p h ())]
+accTrees (HashLine (t, IndentLevel i, h, p)) cs = case t of
+  F -> cs ++ [(IndentLevel i, File p h ())]
   D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
            dir = Dir p h (map snd children)
                          (sum $ map (countFiles . snd) children)
@@ -331,7 +330,7 @@ accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
 treeContainsPath :: ProdTree -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
-dropTo :: ProdTree -> FilePath -> Maybe (ProdTree)
+dropTo :: ProdTree -> FilePath -> Maybe ProdTree
 dropTo t@(File f1 _ ()  ) f2 = if n2p f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2p f1 == f2 = Just t
@@ -340,13 +339,13 @@ dropTo t@(Dir  f1 _ cs _) f2
                     f2' = joinPath $ tail $ pathComponents f2
                 in if f1 /= n
                   then Nothing
-                  else msum $ map (\c -> dropTo c f2') cs
+                  else msum $ map (`dropTo` f2') cs
 
 treeContainsHash :: ProdTree -> Hash -> Bool
 treeContainsHash (File _ h1 ()  ) h2 = h1 == h2
 treeContainsHash (Dir  _ h1 cs _) h2
   | h1 == h2 = True
-  | otherwise = any (\c -> treeContainsHash c h2) cs
+  | otherwise = any (`treeContainsHash` h2) cs
 
 -- TODO if tree contains path, be able to extract it! need for rm
 
@@ -356,8 +355,7 @@ treeContainsHash (Dir  _ h1 cs _) h2
 
 -- TODO use this to implement hashing multiple trees at once?
 wrapInEmptyDir :: FilePath -> ProdTree -> ProdTree
-wrapInEmptyDir n t = do
-  Dir { name = p2n n, hash = h, contents = cs, nFiles = nFiles t }
+wrapInEmptyDir n t = Dir { name = p2n n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
     h = hashContents cs
@@ -365,12 +363,12 @@ wrapInEmptyDir n t = do
 wrapInEmptyDirs :: FilePath -> ProdTree -> ProdTree
 wrapInEmptyDirs p t = case pathComponents p of
   []     -> error "wrapInEmptyDirs needs at least one dir"
-  (n:[]) -> wrapInEmptyDir n t
+  [n] -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: ProdTree -> ProdTree -> FilePath -> ProdTree
-addSubTree (File _ _ ()) _ _ = error $ "attempt to insert tree into a file"
+addSubTree (File _ _ ()) _ _ = error "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
@@ -379,7 +377,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
     cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= p2n p1) (contents main) ++ [newSub]
-    n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
+    n'     = nFiles main + nFiles newSub - maybe 0 nFiles oldSub
     sub'   = sub { name = p2n $ last comps }
     oldSub = find (\c -> name c == p2n p1) (contents main)
     newSub = if length comps == 1
@@ -398,7 +396,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
  - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
  - TODO does this actually solve nFiles too?
  -}
-rmSubTree :: ProdTree -> FilePath -> Either String (ProdTree)
+rmSubTree :: ProdTree -> FilePath -> Either String ProdTree
 rmSubTree (File _ _ ()) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
@@ -429,7 +427,7 @@ instance Arbitrary TreeType where
   shrink _ = []
 
 instance Arbitrary IndentLevel where
-  arbitrary = fmap IndentLevel $ ((arbitrary :: Gen Int) `suchThat` (>= 0))
+  arbitrary = IndentLevel <$> ((arbitrary :: Gen Int) `suchThat` (>= 0))
   shrink _ = []
 
 instance Arbitrary Hash where
@@ -470,7 +468,7 @@ instance Arbitrary TestTree where
     if i == 0
 
       then do
-        !cs <- fmap (nubBy duplicateFilenames) $ resize 5 (arbitrary :: Gen [TestTree])
+        !cs <- nubBy duplicateFilenames <$> resize 5 (arbitrary :: Gen [TestTree])
         return $ Dir { name     = n
                      , hash     = hashContents cs
                      , contents = cs
@@ -541,7 +539,7 @@ prop_roundtrip_prodtree_to_bytestring t = t' == t
 
 -- TODO round-trip to binary files too
 
-roundtrip_prodtree_to_hashes :: ProdTree -> IO (ProdTree)
+roundtrip_prodtree_to_hashes :: ProdTree -> IO ProdTree
 roundtrip_prodtree_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeTree path t
@@ -554,7 +552,7 @@ prop_roundtrip_prodtree_to_hashes = monadicIO $ do
   assert $ t2 == t1
 
 -- TODO separate thing for test and production trees here?
-roundtrip_prodtree_to_bin_hashes :: ProdTree -> IO (ProdTree)
+roundtrip_prodtree_to_bin_hashes :: ProdTree -> IO ProdTree
 roundtrip_prodtree_to_bin_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeBinTree path t
@@ -589,7 +587,7 @@ writeTestTreeDir root (Dir {name = n, contents = cs}) = do
   mapM_ (writeTestTreeDir root') cs
 
 readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree
-readTestTree md verbose excludes path = buildTree B8.readFile verbose excludes path
+readTestTree md = buildTree B8.readFile
 
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk

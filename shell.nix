@@ -26,10 +26,18 @@ let
 in
 pkgs.mkShell {
   buildInputs = [
+
+    # build
     stack-wrapped
-    pkgs.tree # for test scripts
     pkgs.zlib
+
+    # test
+    pkgs.tree
+
+    # analyze/lint
     pkgs.hlint
+    pkgs.haskellPackages.apply-refact
+
   ];
 
   # Configure the Nix path to our own `pkgs`, to ensure Stack-with-Nix uses the

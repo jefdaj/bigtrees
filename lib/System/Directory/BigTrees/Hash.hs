@@ -108,7 +108,7 @@ hashSymlink path = do
     else do
       link <- readSymbolicLink path
       return $ Just $ if ".git/annex/objects/" `isInfixOf` link
-                      && "SHA256E-" `isPrefixOf` (takeBaseName link)
+                      && "SHA256E-" `isPrefixOf` takeBaseName link
         then Hash $ compress $ B.pack $ last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
         else hashString link -- TODO should this be a user-facing error instead?
 

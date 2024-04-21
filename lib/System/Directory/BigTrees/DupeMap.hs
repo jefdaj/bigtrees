@@ -85,7 +85,7 @@ pathsByHash (HashForest ts) = do
 
 -- inserts all nodes from a tree into an existing dupemap in ST s
 addToDupeMap :: DupeTable s -> ProdTree -> ST s ()
-addToDupeMap ht t = addToDupeMap' ht "" t
+addToDupeMap ht = addToDupeMap' ht ""
 
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> FilePath -> ProdTree -> ST s ()
@@ -124,9 +124,9 @@ dupesByNFiles ht = simplifyDupes $ Prelude.map fixElem sortedL
  -}
 scoreSets :: C.HashTable s Hash DupeSet -> ST s [DupeSet]
 scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
-  return $ if length fs > 1 then ((negate $ score v,t,fs):vs) else vs) []
+  return $ if length fs > 1 then (negate $ score v,t,fs):vs else vs) []
   where
-    score (n, D, fs) = n - (n `div` length fs)
+    score (n, D, fs) = n - n `div` length fs
     score (n, F, _ ) = n - 1
 
 -- TODO could this be faster than quicksorting everything even though single threaded?
@@ -146,12 +146,12 @@ scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
  -}
 simplifyDupes :: [DupeList] -> [DupeList]
 simplifyDupes [] = []
-simplifyDupes (d@((_,_,fs)):ds) = d : filter (not . redundantSet) ds
+simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
   where
     redundantSet (_,_,fs') = all redundant fs'
-    redundant e' = any id [(splitDirectories e)
-                           `isPrefixOf`
-                           (splitDirectories $ B.unpack e') | e <- map B.unpack fs]
+    redundant e' = or [splitDirectories e
+                       `isPrefixOf`
+                       splitDirectories (B.unpack e') | e <- map B.unpack fs]
 
 -- sorts paths by shallowest (fewest dirs down), then length of filename,
 -- then finally alphabetical
@@ -189,16 +189,13 @@ explainDupes md = B.unlines . map explainGroup
 
     explainGroup :: DupeList -> B.ByteString
     explainGroup (n, t, paths) = B.unlines
-      $ [header t n (length paths) `B.append` ":"]
-      ++ sort paths
+      $ (header t n (length paths) `B.append` ":") : sort paths
 
     header :: TreeType -> Int -> Int -> B.ByteString
-    header F n fs = B.intercalate " " $
-      [ "# deduping these"  , B.pack (show fs)
+    header F n fs = B.intercalate " " [ "# deduping these"  , B.pack (show fs)
       , "files would remove", B.append (B.pack (show n )) (disclaimer md)
       ]
-    header D n ds = B.intercalate " " $
-      [ "# deduping these" , B.pack (show ds)
+    header D n ds = B.intercalate " " [ "# deduping these" , B.pack (show ds)
       , "dirs would remove", B.pack (show n )
       , B.append "files" (disclaimer md)
       ]
@@ -221,8 +218,8 @@ listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n2p n
 anotherCopy :: Hash -> DupeMap -> DupeMap -> Bool
 anotherCopy h mainMap subMap = nMain > nSub
   where
-    (Just nMain) = fmap (\(n,_,_) -> n) $ M.lookup h mainMap
-    (Just nSub ) = fmap (\(n,_,_) -> n) $ M.lookup h subMap
+    (Just nMain) = (\(n,_,_) -> n) <$> M.lookup h mainMap
+    (Just nSub ) = (\(n,_,_) -> n) <$> M.lookup h subMap
 
 -- TODO finish this
 allDupes :: ProdTree -> ProdTree -> Bool

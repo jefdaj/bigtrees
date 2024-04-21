@@ -36,7 +36,7 @@ import Data.Maybe            (fromJust)
 import System.Directory      (getCurrentDirectory, getHomeDirectory, doesDirectoryExist, canonicalizePath)
 import System.FilePath       (pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName, addTrailingPathSeparator, normalise)
 import System.Path.NameManip (guess_dotdot, absolute_path)
-import System.IO        (hFlush, stdout)
+import System.IO ( hFlush, stdout, hClose )
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
 -- import qualified Data.ByteString.Char8 as B
@@ -71,13 +71,8 @@ import Test.QuickCheck.Instances
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString.Char8            as B
 import qualified Data.Text                        as T
-
-import System.IO               (hClose)
 import System.IO.Temp          (withSystemTempDirectory)
-import Test.QuickCheck.Monadic (run, assert, pick, monadicIO)
 import Test.QuickCheck.Unicode (list, char)
-
-import qualified Filesystem.Path.CurrentOS as OS
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -91,7 +86,7 @@ absolutize path = do
   case path' of
     Nothing -> return Nothing
     Just p' -> if p' == path
-                 then fmap Just $ canonicalizePath p'
+                 then Just <$> canonicalizePath p'
                  else absolutize p'
 
 -- based on: schoolofhaskell.com/user/dshevchenko/cookbook
@@ -140,12 +135,12 @@ userSaysYes question = do
 -- TODO should this return the main dir or .git/annex inside it?
 findAnnex :: FilePath -> IO (Maybe FilePath)
 findAnnex path = do
-  absPath <- fmap fromJust $ absolutize path -- TODO can this fail?
+  absPath <- fromJust <$> absolutize path -- TODO can this fail?
   let aPath = absPath </> ".git" </> "annex"
   foundIt <- doesDirectoryExist aPath
   if foundIt
     then return $ Just $ takeDirectory $ takeDirectory aPath
-    else if (null $ pathComponents absPath)
+    else if null $ pathComponents absPath
       then return Nothing
       else findAnnex $ takeDirectory absPath
 
@@ -170,7 +165,7 @@ isAnnexSymlink path = do
     then return False
     else do
       l <- readSymbolicLink path
-      return $ ".git/annex/objects/" `isInfixOf` l && "SHA256E-" `isPrefixOf` (takeBaseName l)
+      return $ ".git/annex/objects/" `isInfixOf` l && "SHA256E-" `isPrefixOf` takeBaseName l
 
 
 -- We treat these as files rather than following to avoid infinite cycles
@@ -182,7 +177,7 @@ isNonAnnexSymlink path = do
     else do
       link <- readSymbolicLink path
       return $ not $ (".git/annex/objects/" `isInfixOf` link)
-                  && ("SHA256E-" `isPrefixOf` (takeBaseName link))
+                  && ("SHA256E-" `isPrefixOf` takeBaseName link)
 
 -- from System.Directory.Tree --
 
@@ -232,7 +227,7 @@ instance Arbitrary FileName where
   shrink (FileName t) = FileName <$> filter validFileName (shrink t)
 
 validFileName :: T.Text -> Bool
-validFileName t = not (t `elem` ["", ".", ".."])
+validFileName t = notElem t ["", ".", ".."]
                && (not . T.any (== '/')) t -- no separators
                && (OS.valid . OS.fromText) t
 
@@ -279,7 +274,7 @@ newtype ValidFilePath = ValidFilePath FilePath
 instance Arbitrary ValidFilePath where
   arbitrary = do
     prefix <- oneof $ map pure ["", ".", "..", "~"]
-    comps  <- (fmap . map) (\(FileName t) -> T.unpack t) $ listOf $ (arbitrary :: Gen FileName)
+    comps  <- (fmap . map) (\(FileName t) -> T.unpack t) $ listOf (arbitrary :: Gen FileName)
     let path = joinPath (prefix:comps)
     return $ ValidFilePath $ if null path then "/" else path
 

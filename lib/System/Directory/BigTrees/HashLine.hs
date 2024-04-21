@@ -31,10 +31,9 @@ import System.Directory.BigTrees.Util (pathComponents, FileName, p2n, n2p, FileN
 import Control.Monad        (msum)
 import qualified Control.Monad.Parallel as P
 import qualified Control.Monad          as M
-import Data.List            (find, delete, sort)
+import Data.List ( find, delete, sort, partition, sortBy )
 import Data.Maybe           (isJust, catMaybes)
 import Data.Function        (on)
-import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
@@ -75,7 +74,7 @@ newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B8.ByteString
-prettyHashLine (HashLine (t, (IndentLevel n), h, FileName p)) = B8.unwords
+prettyHashLine (HashLine (t, IndentLevel n, h, FileName p)) = B8.unwords
   [B8.pack $ show t, B8.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2p, p2n?
 
 typeP :: Parser TreeType

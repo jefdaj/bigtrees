@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- TODO are forests even needed?
@@ -67,7 +67,7 @@ readTrees md paths = HashForest <$> mapM (readTree md) paths
 readForest :: Maybe Int -> FilePath -> IO (HashForest ())
 readForest md path = catchAny
                       (B8.readFile path >>= decodeIO)
-                      (\_ -> fmap (deserializeForest md) $ B8.readFile path)
+                      (\_ -> deserializeForest md <$> B8.readFile path)
 
 -- TODO how should errors propagate?
 buildForest :: Bool -> [Pattern] -> [FilePath] -> IO (HashForest ())
@@ -79,7 +79,7 @@ readOrBuildTrees vrb mmaxdepth excludes paths = HashForest <$> mapM (readOrBuild
 
 -- TODO is there a reason this doesn't join lines?
 serializeForest :: HashForest () -> [B8.ByteString]
-serializeForest (HashForest ts) = concatMap serializeTree ts 
+serializeForest (HashForest ts) = concatMap serializeTree ts
 
 deserializeForest :: Maybe Int -> B8.ByteString -> HashForest ()
 deserializeForest md = HashForest <$> fmap snd . foldr accTrees [] . reverse . parseHashes md
