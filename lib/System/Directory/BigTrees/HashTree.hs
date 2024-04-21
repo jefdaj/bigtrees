@@ -61,12 +61,10 @@ import           System.Directory                     (createDirectoryIfMissing,
                                                        doesPathExist,
                                                        listDirectory,
                                                        removePathForcibly)
-import           System.FilePath                      (joinPath, splitPath,
-                                                       (</>))
 import           System.FilePath.Glob                 (MatchOptions (..),
                                                        Pattern, matchWith)
-import           System.IO                            (IOMode (..), hFlush,
-                                                       stdout, withFile)
+import           System.IO                            (IOMode (..), hClose,
+                                                       hFlush, stdout, withFile)
 import           System.IO.Unsafe                     (unsafeInterleaveIO)
 
 import           Data.Attoparsec.ByteString           (skipWhile)
@@ -83,13 +81,10 @@ import           Control.DeepSeq
 import           GHC.Generics                         (Generic)
 
 import qualified Data.Attoparsec.ByteString.Char8     as A8
-import qualified Data.ByteString.Char8                as B8
 import qualified Data.ByteString.Lazy.Char8           as BL
 -- import qualified Data.Text                        as T
 
 import           System.FilePath
-import           System.IO                            (IOMode (..), hClose,
-                                                       withFile)
 import           System.IO.Temp
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances.ByteString ()
@@ -98,7 +93,6 @@ import           Test.QuickCheck.Monadic
 import           Data.Char                            (toLower)
 import           System.Directory.BigTrees.Hash
 import           System.Directory.BigTrees.HashLine
-import           System.FilePath.Glob                 (Pattern)
 import           System.Info                          (os)
 
 {- A tree of file names matching (a subdirectory of) the annex,
