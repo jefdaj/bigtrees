@@ -2,8 +2,6 @@ module Cmd.Add where
 
 -- TODO is the dst path being duplicated a bit? like unsorted/u1/u1?
 
-
-
 -- TODO ensure that dst is a valid relative path, or trust the user?
 -- cmdAdd :: Config -> FilePath -> Maybe FilePath -> IO ()
 -- cmdAdd cfg dst mSrc = do

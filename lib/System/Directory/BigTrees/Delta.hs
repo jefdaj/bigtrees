@@ -21,14 +21,12 @@ module System.Directory.BigTrees.Delta where
  - --check flag. Code to actually run Deltas lives in the Run module.
  -}
 
-import qualified Data.ByteString.Char8 as B
-import System.Directory.BigTrees.HashTree
-import System.Directory.BigTrees.Util (n2p)
-
 import Control.Monad (foldM, unless)
+import qualified Data.ByteString.Char8 as B
 import Data.List (find)
 import Data.Maybe (fromJust)
---import System.Directory.BigTrees.DupeMap (listLostFiles)
+import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.Util (n2p)
 import System.FilePath ((</>))
 
 

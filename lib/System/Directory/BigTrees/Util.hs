@@ -28,37 +28,31 @@ module System.Directory.BigTrees.Util where
 
 -- TODO remove this from Util
 
-import Prelude hiding (log)
-
+import Control.DeepSeq
+import Control.Monad.IO.Class (liftIO)
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as B8
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Maybe (fromJust)
+import Data.Store (Store (..))
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import qualified Filesystem.Path.CurrentOS as OS
+import GHC.Generics
+import Prelude hiding (log)
 import System.Directory (canonicalizePath, doesDirectoryExist, getHomeDirectory)
 import System.FilePath (addTrailingPathSeparator, joinPath, normalise, pathSeparator, splitPath,
                         takeBaseName, takeDirectory, (</>))
+import System.Info (os)
 import System.IO (hFlush, stdout)
+import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
-
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-
-import Data.Store (Store (..))
-import qualified Filesystem.Path.CurrentOS as OS
-import System.Info (os)
-import TH.Derive
-
-import Control.DeepSeq
-import GHC.Generics
-
-import Control.Monad.IO.Class (liftIO)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic
-
-import qualified Data.ByteString.Char8 as B
-import System.IO.Temp (withSystemTempDirectory)
+import TH.Derive
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)

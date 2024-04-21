@@ -16,27 +16,20 @@ module System.Directory.BigTrees.HashLine
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
-
-import System.Directory.BigTrees.Hash
-
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Short as BS
-import qualified Data.Text.Encoding as T
-
-import System.Directory.BigTrees.Util (FileName (..), p2n)
-
-import Data.Either (fromRight)
-import Data.Maybe (catMaybes)
-
+import Control.DeepSeq
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile)
 import Data.Attoparsec.Combinator
-import Prelude hiding (take)
-
+import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Short as BS
+import Data.Either (fromRight)
+import Data.Maybe (catMaybes)
 import Data.Store (Store (..))
+import qualified Data.Text.Encoding as T
+import Prelude hiding (take)
+import System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.Util (FileName (..), p2n)
 import TH.Derive
-
-import Control.DeepSeq
 
 -- for distinguishing beween files and dirs
 data TreeType = D | F

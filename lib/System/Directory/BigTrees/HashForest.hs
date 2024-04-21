@@ -22,20 +22,17 @@ module System.Directory.BigTrees.HashForest where
   -- )
   -- where
 
-import System.Directory.BigTrees.HashLine (parseHashes)
-import System.Directory.BigTrees.HashTree
-
 import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.Store (Store (..), decodeIO, encode)
+import System.Directory.BigTrees.HashLine (parseHashes)
+import System.Directory.BigTrees.HashTree
 import System.FilePath.Glob (Pattern)
-import System.IO (IOMode (..), withFile)
-import TH.Derive
-
-import System.IO (hClose)
+import System.IO (IOMode (..), hClose, withFile)
 import System.IO.Temp
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
+import TH.Derive
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the

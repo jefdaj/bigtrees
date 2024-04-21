@@ -18,33 +18,28 @@ module System.Directory.BigTrees.Hash where
   -- )
   -- where
 
+import Control.DeepSeq
 import qualified Crypto.Hash as CH
-
 import Crypto.Hash.Algorithms
 import Crypto.Hash.IO
-import Streaming (Of, Stream)
-import qualified Streaming.Prelude as S
-
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Short as BS
-import qualified Streaming.ByteString.Char8 as Q
-
 import Data.Hashable (Hashable (..))
 import Data.List (isInfixOf, isPrefixOf)
 import Data.List.Split (splitOn)
-import System.Directory (pathIsSymbolicLink)
-import System.FilePath (takeBaseName)
-import System.Posix.Files (readSymbolicLink)
-
-import Control.DeepSeq
 import Data.Store (Store (..))
 import GHC.Generics
-import TH.Derive
-
+import Streaming (Of, Stream)
+import qualified Streaming.ByteString.Char8 as Q
+import qualified Streaming.Prelude as S
+import System.Directory (pathIsSymbolicLink)
+import System.FilePath (takeBaseName)
 import System.IO.Temp
+import System.Posix.Files (readSymbolicLink)
 import Test.HUnit
+import TH.Derive
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.

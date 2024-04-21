@@ -4,9 +4,6 @@ module Cmd.Dedup where
 -- TODO have a separate dedup command that only does the rm part without moving stuff?
 -- TODO need to start a new file ignore.txt or something for hashes to ignore
 
-
-
-
 -- cmdDedup :: Config -> IO ()
 -- cmdDedup cfg = do
 --   let aPath    = fromJust $ annex cfg

@@ -2,10 +2,6 @@ module Cmd.Init where
 
 -- TODO guess and check hashes
 
-
-
-
-
 -- cmdInit :: Config -> FilePath -> IO ()
 -- cmdInit cfg dir = do
 --   dir' <- fmap fromJust $ absolutize dir -- TODO can this fail?

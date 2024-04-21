@@ -4,9 +4,6 @@ module Cmd.Rm where
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
-
-
-
 -- TODO list files with no duplicates when confirming
 -- TODO aha! ok to be missing folder hashes, just not files
 -- cmdRm :: Config -> FilePath -> FilePath -> FilePath -> IO ()
