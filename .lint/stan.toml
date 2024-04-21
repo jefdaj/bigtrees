@@ -1,2 +1,6 @@
 [[remove]]
 file = "lib/System/Directory/Tree.hs"
+
+# TODO why doesn't this work?
+# [[remove]]
+# file = ".stack-work/dist/x86_64-linux-nix/ghc-9.6.4/build/autogen/Paths_bigtrees.hs"

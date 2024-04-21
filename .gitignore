@@ -9,6 +9,6 @@ result*
 *.o
 .stack*
 
-# misc
-*.log
-*.html
+# linting
+.lint/*.log
+.lint/*.html
