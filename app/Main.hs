@@ -8,8 +8,7 @@ module Main where
 import Cmd
 import Config (Config (..), defaultConfig)
 import Data.Functor ((<&>))
-import System.Console.Docopt (argument, command, docoptFile, getAllArgs, getArg, getArgOrExitWith,
-                              isPresent, parseArgsOrExit, shortOption)
+import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
 import System.FilePath.Glob (compile)
 import System.Locale.SetLocale
@@ -21,20 +20,20 @@ main = do
   setEnv "LANG" "en_US.UTF-8"
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
 
-  let ptns = [docoptFile|app/usage.txt|]
-  args <- parseArgsOrExit ptns =<< getArgs
-  let cmd   n = isPresent args $ command n
-      arg   n = getArgOrExitWith ptns args $ argument n
-      lst   n = getAllArgs args $ argument n
-      short n = getArgOrExitWith ptns args $ shortOption n
-      flag  n = isPresent args $ shortOption n
+  let ptns = [D.docoptFile|app/usage.txt|]
+  args <- D.parseArgsOrExit ptns =<< getArgs
+  let cmd   n = D.isPresent args $ D.command n
+      arg   n = D.getArgOrExitWith ptns args $ D.argument n
+      lst   n = D.getAllArgs args $ D.argument n
+      short n = D.getArgOrExitWith ptns args $ D.shortOption n
+      flag  n = D.isPresent args $ D.shortOption n
   eList <- if flag 'e'
              then short 'e' >>= readFile <&> map compile . lines
              else return $ exclude defaultConfig
   let cfg = Config
-        { bin      = getArg args $ shortOption 'b'
-        , txt      = getArg args $ shortOption 't'
-        , maxdepth = fmap (read :: String -> Int) $ getArg args $ shortOption 'm'
+        { bin      = D.getArg args $ D.shortOption 'b'
+        , txt      = D.getArg args $ D.shortOption 't'
+        , maxdepth = fmap (read :: String -> Int) $ D.getArg args $ D.shortOption 'm'
         , verbose  = flag 'v'
         , force    = flag 'f'
         , check    = flag 'c'

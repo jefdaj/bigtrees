@@ -16,9 +16,6 @@ module Run
 --   )
   where
 
-
-
-
 -- TODO add other options for robustness?
 -- runRsync :: Config -> FilePath -> FilePath -> IO ()
 -- runRsync cfg src dest = do

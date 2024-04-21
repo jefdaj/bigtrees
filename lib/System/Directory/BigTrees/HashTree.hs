@@ -53,8 +53,7 @@ import Data.Maybe (isJust)
 import Data.Store (Store (..), decodeIO, encode)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
-import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, doesPathExist,
-                         removePathForcibly)
+import qualified System.Directory as SD
 import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.Util
@@ -213,8 +212,8 @@ hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash
 -- TODO don't assume??
 readOrBuildTree :: Bool -> Maybe Int -> [Pattern] -> FilePath -> IO ProdTree
 readOrBuildTree verbose mmaxdepth excludes path = do
-  isDir  <- doesDirectoryExist path
-  isFile <- doesFileExist      path
+  isDir  <- SD.doesDirectoryExist path
+  isFile <- SD.doesFileExist      path
   if      isFile then readTree mmaxdepth path
   else if isDir then buildProdTree verbose excludes path
   else error $ "No such file: '" ++ path ++ "'"
@@ -550,7 +549,7 @@ prop_roundtrip_prodtree_to_bin_hashes = monadicIO $ do
 -- (happened once because of macos filename case-insensitivity)
 assertNoFile :: FilePath -> IO ()
 assertNoFile path = do
-  exists <- doesPathExist path
+  exists <- SD.doesPathExist path
   when exists $ error $ "duplicate write to: '" ++ path ++ "'"
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
@@ -565,7 +564,7 @@ writeTestTreeDir root (Dir {name = n, contents = cs}) = do
   let root' = root </> n2p n
   assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'
-  createDirectoryIfMissing True root' -- TODO false here
+  SD.createDirectoryIfMissing True root' -- TODO false here
   mapM_ (writeTestTreeDir root') cs
 
 readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree
@@ -577,9 +576,9 @@ readTestTree md = buildTree B8.readFile
 roundtrip_testtree_to_dir :: TestTree -> IO TestTree
 roundtrip_testtree_to_dir t = withSystemTempDirectory "roundtriptemp" $ \root -> do
   let tmpRoot = "/tmp/round-trip-tests" -- TODO replace with actual root
-  createDirectoryIfMissing True tmpRoot -- TODO False?
+  SD.createDirectoryIfMissing True tmpRoot -- TODO False?
   let treePath = tmpRoot </> n2p (name t)
-  removePathForcibly treePath -- TODO remove
+  SD.removePathForcibly treePath -- TODO remove
   writeTestTreeDir tmpRoot t
   -- putStrLn $ "treePath: " ++ treePath
   readTestTree Nothing False [] treePath

@@ -41,8 +41,8 @@ import qualified Filesystem.Path.CurrentOS as OS
 import GHC.Generics
 import Prelude hiding (log)
 import System.Directory (canonicalizePath, doesDirectoryExist, getHomeDirectory)
-import System.FilePath (addTrailingPathSeparator, joinPath, normalise, pathSeparator, splitPath,
-                        takeBaseName, takeDirectory, (</>))
+import qualified System.FilePath as SF
+import System.FilePath ((</>))
 import System.Info (os)
 import System.IO (hFlush, stdout)
 import System.IO.Temp (withSystemTempDirectory)
@@ -56,8 +56,8 @@ import TH.Derive
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
-                 $ map (filter (/= pathSeparator))
-                 $ splitPath f
+                 $ map (filter (/= SF.pathSeparator))
+                 $ SF.splitPath f
 
 -- TODO is there a potential for infinite recursion bugs here?
 absolutize :: FilePath -> IO (Maybe FilePath)
@@ -75,7 +75,7 @@ absolutize' aPath
     | null aPath = return Nothing
     | "~" `isPrefixOf` aPath = do
         homePath <- getHomeDirectory
-        return $ Just $ normalise $ addTrailingPathSeparator homePath
+        return $ Just $ SF.normalise $ SF.addTrailingPathSeparator homePath
                              ++ tail aPath
     | otherwise = do
         -- let aPath' = guess_dotdot aPath
@@ -92,7 +92,7 @@ absolutize' aPath
 
 -- TODO this fails on the leading / in a full path?
 dropDir :: FilePath -> FilePath
-dropDir = joinPath . tail . splitPath
+dropDir = SF.joinPath . tail . SF.splitPath
 
 dropDir' :: FilePath -> FilePath
 dropDir' path = case path of
@@ -119,10 +119,10 @@ findAnnex path = do
   let aPath = absPath </> ".git" </> "annex"
   foundIt <- doesDirectoryExist aPath
   if foundIt
-    then return $ Just $ takeDirectory $ takeDirectory aPath
+    then return $ Just $ SF.takeDirectory $ SF.takeDirectory aPath
     else if null $ pathComponents absPath
       then return Nothing
-      else findAnnex $ takeDirectory absPath
+      else findAnnex $ SF.takeDirectory absPath
 
 inAnnex :: FilePath -> IO Bool
 inAnnex = fmap (not . null) . findAnnex
@@ -145,7 +145,7 @@ isAnnexSymlink path = do
     then return False
     else do
       l <- readSymbolicLink path
-      return $ ".git/annex/objects/" `isInfixOf` l && "SHA256E-" `isPrefixOf` takeBaseName l
+      return $ ".git/annex/objects/" `isInfixOf` l && "SHA256E-" `isPrefixOf` SF.takeBaseName l
 
 
 -- We treat these as files rather than following to avoid infinite cycles
@@ -157,7 +157,7 @@ isNonAnnexSymlink path = do
     else do
       link <- readSymbolicLink path
       return $ not $ (".git/annex/objects/" `isInfixOf` link)
-                  && ("SHA256E-" `isPrefixOf` takeBaseName link)
+                  && ("SHA256E-" `isPrefixOf` SF.takeBaseName link)
 
 -- from System.Directory.Tree --
 
@@ -258,7 +258,7 @@ instance Arbitrary ValidFilePath where
     prefix <- oneof $ map pure ["", ".", "..", "~"]
     comps  <- map (\ (FileName t) -> T.unpack t)
       <$> listOf (arbitrary :: Gen FileName)
-    let path = joinPath (prefix:comps)
+    let path = SF.joinPath (prefix:comps)
     return $ ValidFilePath $ if null path then "/" else path
 
 -- |
@@ -290,7 +290,7 @@ prop_absolutize_is_idempotent (ValidFilePath path) = monadicIO $ do
 
 prop_absolutize_strips_redundant_dotdot :: ValidFilePath -> Property
 prop_absolutize_strips_redundant_dotdot (ValidFilePath path) = monadicIO $ do
-  (Just a ) <- fmap (fmap takeDirectory) $ liftIO $ absolutize path
+  (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolutize path
   (Just a') <- liftIO $ absolutize $ path </> ".."
   assert $ a == a'
 

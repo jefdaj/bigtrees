@@ -3,16 +3,15 @@ module Cmd.Dupes where
 -- TODO guess and check hashes
 
 import Config (Config (..))
-import System.Directory.BigTrees (dupesByNFiles, pathsByHash, printDupes, readOrBuildTrees,
-                                  writeDupes)
+import qualified System.Directory.BigTrees as BT
 
 cmdDupes :: Config -> [FilePath] -> IO ()
 cmdDupes cfg paths = do
-  forest <- readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
+  forest <- BT.readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
   -- TODO rewrite sorting with lower memory usage
-  -- let dupes = runST $ dupesByNFiles =<< pathsByHash tree
-  -- printDupes $ map sortDupePaths $ simplifyDupes dupes
-  let ds = dupesByNFiles $ pathsByHash forest
+  -- let dupes = runST $ BT.dupesByNFiles =<< BT.pathsByHash tree
+  -- printDupes $ map sortDupePaths $ simplifyDupes BT.dupes
+  let ds = BT.dupesByNFiles $ BT.pathsByHash forest
   case txt cfg of
-    Nothing -> printDupes (maxdepth cfg) ds
-    Just p  -> writeDupes (maxdepth cfg) p ds
+    Nothing -> BT.printDupes (maxdepth cfg) ds
+    Just p  -> BT.writeDupes (maxdepth cfg) p ds
