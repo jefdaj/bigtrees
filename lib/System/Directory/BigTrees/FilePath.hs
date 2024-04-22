@@ -1,15 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 {-|
-Description : Short description
+Description: Custom FilePath type
 
-This is the long description.
-This is the long description.
-This is the long description.
-This is the long description.
-This is the long description.
-This is the long description.
+I've had issues properly encoding some filenames using the standard libraries.
+This fixes most of them.
 -}
+
+-- TODO am I just using the standard ones wrong?
 
 module System.Directory.BigTrees.FilePath where
 
@@ -44,6 +42,7 @@ p2n = FileName . (if os == "darwin"
                     then TE.decodeUtf8 . B.pack
                     else T.pack)
 
+-- TODO FilePath?
 prop_roundtrip_filename_to_bytestring :: FileName -> Bool
 prop_roundtrip_filename_to_bytestring n = p2n (n2p n) == n
 
@@ -88,18 +87,18 @@ pathComponents f = filter (not . null)
 -- TODO own section
 -- TODO haddocks
 -- TODO is there a potential for infinite recursion bugs here?
-absolutize :: FilePath -> IO (Maybe FilePath)
-absolutize path = do
-  path' <- absolutize' path
+absolute :: FilePath -> IO (Maybe FilePath)
+absolute path = do
+  path' <- absolute' path
   case path' of
     Nothing -> return Nothing
     Just p' -> if p' == path
                  then Just <$> canonicalizePath p'
-                 else absolutize p'
+                 else absolute p'
 
 -- based on: schoolofhaskell.com/user/dshevchenko/cookbook
-absolutize' :: FilePath -> IO (Maybe FilePath)
-absolutize' aPath
+absolute' :: FilePath -> IO (Maybe FilePath)
+absolute' aPath
     | null aPath = return Nothing
     | "~" `isPrefixOf` aPath = do
         homePath <- getHomeDirectory
@@ -113,8 +112,8 @@ absolutize' aPath
           Just p  -> return $ Just p
         -- return $ guess_dotdot pathMaybeWithDots -- TODO this is totally wrong sometimes!
 
--- absolutize :: FilePath -> IO FilePath
--- absolutize p = do
+-- absolute :: FilePath -> IO FilePath
+-- absolute p = do
 --   wd <- getCurrentDirectory
 --   canonicalizePath (wd </> p)
 
@@ -143,7 +142,7 @@ absolutize' aPath
 -- TODO should this return the main dir or .git/annex inside it?
 -- findAnnex :: FilePath -> IO (Maybe FilePath)
 -- findAnnex path = do
---   absPath <- fromJust <$> absolutize path -- TODO can this fail?
+--   absPath <- fromJust <$> absolute path -- TODO can this fail?
 --   let aPath = absPath </> ".git" </> "annex"
 --   foundIt <- doesDirectoryExist aPath
 --   if foundIt
@@ -193,7 +192,7 @@ isNonAnnexSymlink path = do
 -- tests --
 -----------
 -- describe "Util" $ do
---   describe "absolutize" $ do
+--   describe "absolute" $ do
 --       it "strips dots from paths" pending
 --       it "does not follow symlinks" pending
 --
@@ -217,37 +216,37 @@ isNonAnnexSymlink path = do
 -- >>> let x = 23
 -- >>> x + 42
 -- 65
-unit_absolutize_expands_tildes :: Assertion
-unit_absolutize_expands_tildes = do
+unit_absolute_expands_tildes :: Assertion
+unit_absolute_expands_tildes = do
   home <- getHomeDirectory
   let explicit = home </> "xyz"
-  (Just implicit) <- absolutize "~/xyz"
+  (Just implicit) <- absolute "~/xyz"
   implicit @=? explicit
 
-unit_absolutize_rejects_the_null_path :: Assertion
-unit_absolutize_rejects_the_null_path = do
-  reject <- absolutize ""
+unit_absolute_rejects_the_null_path :: Assertion
+unit_absolute_rejects_the_null_path = do
+  reject <- absolute ""
   reject @=? Nothing
 
-unit_absolutize_fixes_invalid_dotdot_path :: Assertion
-unit_absolutize_fixes_invalid_dotdot_path = do
-  fixed <- absolutize "/.." -- one level above / is invalid
+unit_absolute_fixes_invalid_dotdot_path :: Assertion
+unit_absolute_fixes_invalid_dotdot_path = do
+  fixed <- absolute "/.." -- one level above / is invalid
   fixed @=? Just "/"
 
-prop_absolutize_is_idempotent :: ValidFilePath -> Property
-prop_absolutize_is_idempotent (ValidFilePath path) = monadicIO $ do
-  (Just path' ) <- liftIO $ absolutize path
-  (Just path'') <- liftIO $ absolutize path'
+prop_absolute_is_idempotent :: ValidFilePath -> Property
+prop_absolute_is_idempotent (ValidFilePath path) = monadicIO $ do
+  (Just path' ) <- liftIO $ absolute path
+  (Just path'') <- liftIO $ absolute path'
   assert $ path' == path''
 
-prop_absolutize_strips_redundant_dotdot :: ValidFilePath -> Property
-prop_absolutize_strips_redundant_dotdot (ValidFilePath path) = monadicIO $ do
-  (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolutize path
-  (Just a') <- liftIO $ absolutize $ path </> ".."
+prop_absolute_strips_redundant_dotdot :: ValidFilePath -> Property
+prop_absolute_strips_redundant_dotdot (ValidFilePath path) = monadicIO $ do
+  (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
+  (Just a') <- liftIO $ absolute $ path </> ".."
   assert $ a == a'
 
-prop_absolutize_strips_redundant_dot :: ValidFilePath -> Property
-prop_absolutize_strips_redundant_dot (ValidFilePath path) = monadicIO $ do
-  (Just a ) <- liftIO $ absolutize path
-  (Just a') <- liftIO $ absolutize $ path </> "."
+prop_absolute_strips_redundant_dot :: ValidFilePath -> Property
+prop_absolute_strips_redundant_dot (ValidFilePath path) = monadicIO $ do
+  (Just a ) <- liftIO $ absolute path
+  (Just a') <- liftIO $ absolute $ path </> "."
   assert $ a == a'

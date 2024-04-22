@@ -7,7 +7,7 @@ import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory.BigTrees as BT
 import System.Directory.BigTrees (diff, printDeltas, readOrBuildTree, renameRoot)
-import System.Directory.BigTrees.FilePath (absolutize)
+import System.Directory.BigTrees.FilePath (absolute)
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -33,8 +33,8 @@ cmdDupes cfg paths = do
 
 dupesTarXz :: FilePath -> FilePath -> IO BLU.ByteString
 dupesTarXz xz1 xz2 = do
-  (Just xz1') <- absolutize xz1
-  (Just xz2') <- absolutize xz2
+  (Just xz1') <- absolute xz1
+  (Just xz2') <- absolute xz2
   withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
     let d1 = tmpDir </> dropExtension (takeBaseName xz1')
     let d2 = tmpDir </> dropExtension (takeBaseName xz2')

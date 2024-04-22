@@ -7,7 +7,7 @@ import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (sort)
 import System.Directory.BigTrees
-import System.Directory.BigTrees.FilePath (absolutize)
+import System.Directory.BigTrees.FilePath (absolute)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -68,7 +68,7 @@ guardHash = undefined
 -- TODO random names? or all one bigtrees dir? or prefixed as it is?
 hashTarXzAction :: FilePath -> IO BLU.ByteString
 hashTarXzAction xzPath = do
-  (Just xzPath') <- absolutize xzPath
+  (Just xzPath') <- absolute xzPath
   withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
     let dPath = tmpDir </> dropExtension (takeBaseName xzPath') -- assumes .tar.something
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty

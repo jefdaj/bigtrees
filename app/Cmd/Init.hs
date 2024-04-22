@@ -4,7 +4,7 @@ module Cmd.Init where
 
 -- cmdInit :: Config -> FilePath -> IO ()
 -- cmdInit cfg dir = do
---   dir' <- fmap fromJust $ absolutize dir -- TODO can this fail?
+--   dir' <- fmap fromJust $ absolute dir -- TODO can this fail?
 --   -- TODO check the root folder doesn't exist yet, or abort
 --   -- TODO guards: git, git-annex on path
 --   -- TODO abort if any exit code nonzero

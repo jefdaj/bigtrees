@@ -5,15 +5,15 @@
 {-# LANGUAGE TemplateHaskell            #-}
 
 {-|
-Description : Short description
+Description: Custom FileName type
 
-This is the long description.
-This is the long description.
-This is the long description.
-This is the long description.
-This is the long description.
-This is the long description.
+My `FileName` type is defined as `Text` for efficiency, but what it really
+means is "Text without slashes or null chars". So I have to define my own
+Arbitrary instance here.
 -}
+
+-- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
+-- TODO wait, is the empty string also a valid filename?
 
 module System.Directory.BigTrees.FileName where
 
@@ -42,13 +42,6 @@ $($(derive [d|
   instance Deriving (Store FileName)
   |]))
 
-{- My `FileName` type is defined as `Text` for efficiency, but
- - what it really means is "Text without slashes or null chars". So I have to
- - define my own Arbitrary instance here.
- -
- - TODO why is the not . null thing required to prevent empty strings? list1 should be enough
- - TODO wait, is the empty string also a valid filename?
- -}
 instance Arbitrary FileName where
   arbitrary = FileName <$> (arbitrary :: Gen T.Text) `suchThat` validFileName
   shrink (FileName t) = FileName <$> filter validFileName (shrink t)
