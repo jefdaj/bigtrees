@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 {-|
 Description: FilePath handling
@@ -53,13 +54,14 @@ import Test.QuickCheck
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
--- * Convert `Name`s to/from `FilePath`s
+-- * Convert paths to/from names
 --
--- $nameconversion
+-- $convertnamespaths
 --
 -- Functions for converting between `Name`s and (regular Haskell) `FilePath`s.
 -- They should work on Linux and MacOS.
 
+-- | Convert a `Name` to a `FilePath`
 n2fp :: Name -> FilePath
 n2fp (Name t) = (if os == "darwin"
                       then B.unpack . TE.encodeUtf8
@@ -67,6 +69,7 @@ n2fp (Name t) = (if os == "darwin"
 
 -- TODO this should actually convert to a list of names, right?
 -- TODO and does that make it more like pathComponents?
+-- | Convert a `FilePath` to a `Name`
 fp2n :: FilePath -> Name
 fp2n = Name . (if os == "darwin"
                     then TE.decodeUtf8 . B.pack
@@ -74,6 +77,7 @@ fp2n = Name . (if os == "darwin"
 
 -- TODO haddocks
 -- TODO fp2ns?
+-- | Split a `FilePath` into a list of `Name`s
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
                  $ map (filter (/= SF.pathSeparator))
@@ -115,9 +119,9 @@ instance Arbitrary ValidFilePath where
     let path = SF.joinPath (prefix:comps)
     return $ ValidFilePath $ if null path then "/" else path
 
--- * Canonical `FilePath`s
+-- * Canonical paths
 --
--- $canonicalfilepaths
+-- $canonicalpaths
 --
 -- Resolve various `FilePath`s to their "real" absolute paths,
 
@@ -149,7 +153,6 @@ absolute' aPath
           Just p  -> return $ Just p
         -- return $ guess_dotdot pathMaybeWithDots -- TODO this is totally wrong sometimes!
 
--- | Tildes should expand to the user's home directory.
 -- >>> let x = 23
 -- >>> x + 42
 -- 65
@@ -166,41 +169,37 @@ unit_absolute_rejects_null_path = do
   reject <- absolute ""
   reject @=? Nothing
 
--- | Paths shouldn't be able to point outside the root directory.
 unit_absolute_fixes_invalid_dotdot :: Assertion
 unit_absolute_fixes_invalid_dotdot = do
   fixed <- absolute "/.."
   fixed @=? Just "/"
 
--- | Applying `absolute` more than once shouldn't change the result.
 prop_absolute_is_idempotent :: ValidFilePath -> Property
 prop_absolute_is_idempotent (ValidFilePath path) = monadicIO $ do
   (Just path' ) <- liftIO $ absolute path
   (Just path'') <- liftIO $ absolute path'
   assert $ path' == path''
 
--- | Path components that point into and then back out of a dir should be stripped.
 prop_absolute_strips_redundant_dotdot :: ValidFilePath -> Property
 prop_absolute_strips_redundant_dotdot (ValidFilePath path) = monadicIO $ do
   (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
   (Just a') <- liftIO $ absolute $ path </> ".."
   assert $ a == a'
 
--- | Single dots in an absolute path should be stripped.
 prop_absolute_strips_redundant_dot :: ValidFilePath -> Property
 prop_absolute_strips_redundant_dot (ValidFilePath path) = monadicIO $ do
   (Just a ) <- liftIO $ absolute path
   (Just a') <- liftIO $ absolute $ path </> "."
   assert $ a == a'
 
----- * git-annex symlinks
+-- * git-annex paths
 --
--- $gitannexsymlinks
+-- $gitannexpaths
 --
 -- Special handling of git-annex symlinks. If we trust the links, we can
 -- read sha256sums from them rather than re-hashing the referenced files.
 
--- We treat these as files rather than following to avoid infinite cycles
+-- | We treat these as files rather than following to avoid infinite cycles
 -- TODO refactor to use isAnnexSymlink?
 isNonAnnexSymlink :: FilePath -> IO Bool
 isNonAnnexSymlink path = do

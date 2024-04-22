@@ -3,13 +3,12 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 {-|
 Description: Custom Name type
 
-My `Name` type is defined as `Text` for efficiency, but what it really
-means is "Text without slashes or null chars". So I have to define my own
-Arbitrary instance here.
+Long description here.
 -}
 
 -- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
@@ -26,11 +25,14 @@ import Test.QuickCheck
 import Test.QuickCheck.Instances ()
 import TH.Derive
 
--- from System.Directory.Tree --
 
--- | an element in a FilePath:
+-- | An element in a FilePath.
+-- My `Name` type is defined as `Text` for efficiency, but what it really
+-- means is "Text without slashes or null chars".
+-- Based on the one in `System.Directory.Tree`.
 -- The newtype is needed to prevent overlapping with the standard Arbitrary
--- Text instance in the tests
+-- Text instance in the tests.
+-- TODO why doesn't the tree link work right
 newtype Name
   = Name T.Text
   deriving (Eq, Generic, Ord, Read, Show)
@@ -47,6 +49,7 @@ instance Arbitrary Name where
   shrink (Name t) = Name <$> filter validName (shrink t)
 
 -- TODO is there ever another separator, except on windows?
+-- TODO use this in the arbitrary filepath instance too?
 validName :: T.Text -> Bool
 validName t = notElem t ["", ".", ".."]
                && (not . T.any (== '/')) t -- no separators
