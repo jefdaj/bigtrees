@@ -7,44 +7,22 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module System.Directory.BigTrees.Util where
-  -- ( absolutize
-  -- , dropDir
-  -- , dropDir'
-  -- , findAnnex
-  -- , inAnnex
-  -- , noSlash
-  -- , pathComponents
-  -- , userSaysYes
-  -- , withAnnex
-  -- , isAnnexSymlink
-  -- , isNonAnnexSymlink
-  -- , FileName(..)
-  -- , n2p
-  -- , p2n
-  -- -- , n2bs
-  -- -- , bs2n
-  -- )
-  -- where
-
--- TODO remove this from Util
 
 import Control.DeepSeq
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Char8 as B8
 import Data.List (isInfixOf, isPrefixOf)
-import Data.Maybe (fromJust)
 import Data.Store (Store (..))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Filesystem.Path.CurrentOS as OS
 import GHC.Generics
 import Prelude hiding (log)
-import System.Directory (canonicalizePath, doesDirectoryExist, getHomeDirectory)
+import System.Directory (canonicalizePath, getHomeDirectory)
 import qualified System.FilePath as SF
 import System.FilePath ((</>))
 import System.Info (os)
-import System.IO (hFlush, stdout)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
@@ -54,11 +32,14 @@ import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic
 import TH.Derive
 
+-- TODO haddocks
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
                  $ map (filter (/= SF.pathSeparator))
                  $ SF.splitPath f
 
+-- TODO own section
+-- TODO haddocks
 -- TODO is there a potential for infinite recursion bugs here?
 absolutize :: FilePath -> IO (Maybe FilePath)
 absolutize path = do
@@ -91,64 +72,66 @@ absolutize' aPath
 --   canonicalizePath (wd </> p)
 
 -- TODO this fails on the leading / in a full path?
-dropDir :: FilePath -> FilePath
-dropDir = SF.joinPath . tail . SF.splitPath
+-- dropDir :: FilePath -> FilePath
+-- dropDir path = case path of
+--   ('/':p) -> dropDirHelper p
+--   p       -> dropDirHelper p
 
-dropDir' :: FilePath -> FilePath
-dropDir' path = case path of
-  ('/':p) -> dropDir p
-  p       -> dropDir p
+-- dropDirHelper :: FilePath -> FilePath
+-- dropDirHelper = SF.joinPath . tail . SF.splitPath
 
-noSlash :: FilePath -> FilePath
-noSlash = reverse . dropWhile (== '/') . reverse
+-- noSlash :: FilePath -> FilePath
+-- noSlash = reverse . dropWhile (== '/') . reverse
 
-userSaysYes :: String -> IO Bool
-userSaysYes question = do
-  putStr $ question ++ " (yes/no) "
-  hFlush stdout
-  let answers = [("yes", True), ("no", False)]
-  answer <- getLine
-  case lookup answer answers of
-    Nothing -> userSaysYes question
-    Just b  -> return b
+-- userSaysYes :: String -> IO Bool
+-- userSaysYes question = do
+--   putStr $ question ++ " (yes/no) "
+--   hFlush stdout
+--   let answers = [("yes", True), ("no", False)]
+--   answer <- getLine
+--   case lookup answer answers of
+--     Nothing -> userSaysYes question
+--     Just b  -> return b
 
 -- TODO should this return the main dir or .git/annex inside it?
-findAnnex :: FilePath -> IO (Maybe FilePath)
-findAnnex path = do
-  absPath <- fromJust <$> absolutize path -- TODO can this fail?
-  let aPath = absPath </> ".git" </> "annex"
-  foundIt <- doesDirectoryExist aPath
-  if foundIt
-    then return $ Just $ SF.takeDirectory $ SF.takeDirectory aPath
-    else if null $ pathComponents absPath
-      then return Nothing
-      else findAnnex $ SF.takeDirectory absPath
+-- findAnnex :: FilePath -> IO (Maybe FilePath)
+-- findAnnex path = do
+--   absPath <- fromJust <$> absolutize path -- TODO can this fail?
+--   let aPath = absPath </> ".git" </> "annex"
+--   foundIt <- doesDirectoryExist aPath
+--   if foundIt
+--     then return $ Just $ SF.takeDirectory $ SF.takeDirectory aPath
+--     else if null $ pathComponents absPath
+--       then return Nothing
+--       else findAnnex $ SF.takeDirectory absPath
 
-inAnnex :: FilePath -> IO Bool
-inAnnex = fmap (not . null) . findAnnex
+-- inAnnex :: FilePath -> IO Bool
+-- inAnnex = fmap (not . null) . findAnnex
 
-withAnnex :: FilePath -> (FilePath -> IO a) -> IO a
-withAnnex path fn = do
-  aPath <- findAnnex path
-  case aPath of
-    Nothing -> error $ "'" ++ path ++ "' is not in a git-annex repo"
-    Just dir -> do
-      -- log cfg $ "using git-annex repo '" ++ dir ++ "'"
-      fn dir
+-- withAnnex :: FilePath -> (FilePath -> IO a) -> IO a
+-- withAnnex path fn = do
+--   aPath <- findAnnex path
+--   case aPath of
+--     Nothing -> error $ "'" ++ path ++ "' is not in a git-annex repo"
+--     Just dir -> do
+--       -- log cfg $ "using git-annex repo '" ++ dir ++ "'"
+--       fn dir
 
 -- We reuse the existing SHA256SUM from the link
 -- TODO is this less efficient than putting all the logic in one function?
-isAnnexSymlink :: FilePath -> IO Bool
-isAnnexSymlink path = do
-  status <- getSymbolicLinkStatus path
-  if not (isSymbolicLink status)
-    then return False
-    else do
-      l <- readSymbolicLink path
-      return $ ".git/annex/objects/" `isInfixOf` l && "SHA256E-" `isPrefixOf` SF.takeBaseName l
+-- isAnnexSymlink :: FilePath -> IO Bool
+-- isAnnexSymlink path = do
+--   status <- getSymbolicLinkStatus path
+--   if not (isSymbolicLink status)
+--     then return False
+--     else do
+--       l <- readSymbolicLink path
+--       return $ ".git/annex/objects/" `isInfixOf` l && "SHA256E-" `isPrefixOf` SF.takeBaseName l
 
 
+-- TODO haddocks
 -- We treat these as files rather than following to avoid infinite cycles
+-- TODO refactor to use isAnnexSymlink?
 isNonAnnexSymlink :: FilePath -> IO Bool
 isNonAnnexSymlink path = do
   status <- getSymbolicLinkStatus path
