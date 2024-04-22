@@ -4,6 +4,12 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
 
+{-|
+Description: Hashes and hash digests.
+
+Long description here.
+-}
+
 -- TODO hashHashes should be hashDir
 -- TODO should it also hash filenames?
 -- TODO convert everything here to UTF-8?
