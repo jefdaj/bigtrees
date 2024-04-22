@@ -25,8 +25,8 @@ import Control.Monad (foldM, unless)
 import qualified Data.ByteString.Char8 as B
 import Data.List (find)
 import Data.Maybe (fromJust)
+import System.Directory.BigTrees.FilePath (n2p)
 import System.Directory.BigTrees.HashTree
-import System.Directory.BigTrees.Util (n2p)
 import System.FilePath ((</>))
 
 

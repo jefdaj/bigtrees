@@ -54,6 +54,7 @@ import Data.Store (Store (..), decodeIO, encode)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import qualified System.Directory as SD
+import System.Directory.BigTrees.FilePath (FileName (..), n2p, p2n)
 import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.Util
