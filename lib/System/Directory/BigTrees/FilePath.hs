@@ -121,9 +121,9 @@ instance Arbitrary ValidFilePath where
 --
 -- Resolve various `FilePath`s to their "real" absolute paths,
 
--- TODO own section
--- TODO haddocks
+-- TODO rename it cleanPath?
 -- TODO is there a potential for infinite recursion bugs here?
+-- | Do some IO and return the canonical absolute path.
 absolute :: FilePath -> IO (Maybe FilePath)
 absolute path = do
   path' <- absolute' path
@@ -149,7 +149,7 @@ absolute' aPath
           Just p  -> return $ Just p
         -- return $ guess_dotdot pathMaybeWithDots -- TODO this is totally wrong sometimes!
 
--- |
+-- | Tildes should expand to the user's home directory.
 -- >>> let x = 23
 -- >>> x + 42
 -- 65
@@ -160,37 +160,38 @@ unit_absolute_expands_tildes = do
   (Just implicit) <- absolute "~/xyz"
   implicit @=? explicit
 
+-- TODO is the empty string a valid relative path?
 unit_absolute_rejects_null_path :: Assertion
 unit_absolute_rejects_null_path = do
   reject <- absolute ""
   reject @=? Nothing
 
+-- | Paths shouldn't be able to point outside the root directory.
 unit_absolute_fixes_invalid_dotdot :: Assertion
 unit_absolute_fixes_invalid_dotdot = do
-  fixed <- absolute "/.." -- one level above / is invalid
+  fixed <- absolute "/.."
   fixed @=? Just "/"
 
+-- | Applying `absolute` more than once shouldn't change the result.
 prop_absolute_is_idempotent :: ValidFilePath -> Property
 prop_absolute_is_idempotent (ValidFilePath path) = monadicIO $ do
   (Just path' ) <- liftIO $ absolute path
   (Just path'') <- liftIO $ absolute path'
   assert $ path' == path''
 
+-- | Path components that point into and then back out of a dir should be stripped.
 prop_absolute_strips_redundant_dotdot :: ValidFilePath -> Property
 prop_absolute_strips_redundant_dotdot (ValidFilePath path) = monadicIO $ do
   (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
   (Just a') <- liftIO $ absolute $ path </> ".."
   assert $ a == a'
 
+-- | Single dots in an absolute path should be stripped.
 prop_absolute_strips_redundant_dot :: ValidFilePath -> Property
 prop_absolute_strips_redundant_dot (ValidFilePath path) = monadicIO $ do
   (Just a ) <- liftIO $ absolute path
   (Just a') <- liftIO $ absolute $ path </> "."
   assert $ a == a'
-
--------------------------------
--- handle git-annex symlinks --
--------------------------------
 
 ---- * git-annex symlinks
 --
