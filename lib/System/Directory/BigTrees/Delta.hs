@@ -25,7 +25,7 @@ import Control.Monad (foldM, unless)
 import qualified Data.ByteString.Char8 as B
 import Data.List (find)
 import Data.Maybe (fromJust)
-import System.Directory.BigTrees.FilePath (n2p)
+import System.Directory.BigTrees.FilePath (n2fp)
 import System.Directory.BigTrees.HashTree
 import System.FilePath ((</>))
 
@@ -59,19 +59,19 @@ diff = diff' ""
 diff' :: FilePath -> ProdTree -> ProdTree -> [Delta ()]
 diff' a t1@(File f1 h1 ()) t2@(File f2 h2 ())
   | f1 == f2 && h1 == h2 = []
-  | f1 /= f2 && h1 == h2 = [Mv (a </> n2p f1) (a </> n2p f2)]
-  | f1 == f2 && h1 /= h2 = [Edit (if a == n2p f1 then n2p f1 else a </> n2p f1) t1 t2]
+  | f1 /= f2 && h1 == h2 = [Mv (a </> n2fp f1) (a </> n2fp f2)]
+  | f1 == f2 && h1 /= h2 = [Edit (if a == n2fp f1 then n2fp f1 else a </> n2fp f1) t1 t2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
-diff' a (File _ _ ()) t2@(Dir  d _ _ _) = [Rm a, Add (a </> n2p d) t2]
+diff' a (File _ _ ()) t2@(Dir  d _ _ _) = [Rm a, Add (a </> n2fp d) t2]
 -- TODO wait is this a Mv?
-diff' a (Dir  d _ _ _) t2@(File _ _ ()) = [Rm (a </> n2p d), Add (a </> n2p d) t2]
+diff' a (Dir  d _ _ _) t2@(File _ _ ()) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
 diff' a t1@(Dir _ h1 os _) (Dir _ h2 ns _)
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where
-    adds  = [Add (a </> n2p (name x)) x | x <- ns, name x `notElem` map name os]
-    rms   = [Rm  (a </> n2p (name x))   | x <- os, name x `notElem` map name ns]
-    edits = concat [diff' (a </> n2p (name o)) o n | o <- os, n <- ns,
+    adds  = [Add (a </> n2fp (name x)) x | x <- ns, name x `notElem` map name os]
+    rms   = [Rm  (a </> n2fp (name x))   | x <- os, name x `notElem` map name ns]
+    edits = concat [diff' (a </> n2fp (name o)) o n | o <- os, n <- ns,
                                                o /= n, name o == name n]
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?

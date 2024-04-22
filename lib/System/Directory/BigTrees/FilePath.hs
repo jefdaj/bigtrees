@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 {-|
-Description: Custom FilePath type
+Description: FilePath handling
 
 I've had issues properly encoding some filenames using the standard libraries.
 This fixes most of them.
+It uses the standard FilePath (String) type, just with custom functions to and from `Name`s.
 -}
 
 -- TODO am I just using the standard ones wrong?
@@ -18,7 +19,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Prelude hiding (log)
 import System.Directory (canonicalizePath, getHomeDirectory)
-import System.Directory.BigTrees.FileName
+import System.Directory.BigTrees.Name
 import qualified System.FilePath as SF
 import System.FilePath ((</>))
 import System.Info (os)
@@ -31,24 +32,26 @@ import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
 -- TODO name this something less confusing
-n2p :: FileName -> FilePath
-n2p (FileName t) = (if os == "darwin"
+n2fp :: Name -> FilePath
+n2fp (Name t) = (if os == "darwin"
                       then B.unpack . TE.encodeUtf8
                       else T.unpack) t
 
 -- TODO name this something less confusing
-p2n :: FilePath -> FileName
-p2n = FileName . (if os == "darwin"
+-- TODO this should actually convert to a list of names, right?
+-- TODO and does that make it more like pathComponents?
+fp2n :: FilePath -> Name
+fp2n = Name . (if os == "darwin"
                     then TE.decodeUtf8 . B.pack
                     else T.pack)
 
 -- TODO FilePath?
-prop_roundtrip_filename_to_bytestring :: FileName -> Bool
-prop_roundtrip_filename_to_bytestring n = p2n (n2p n) == n
+prop_roundtrip_filename_to_bytestring :: Name -> Bool
+prop_roundtrip_filename_to_bytestring n = fp2n (n2fp n) == n
 
-roundtrip_filename_to_name_of_tmpfile :: FileName -> IO ()
+roundtrip_filename_to_name_of_tmpfile :: Name -> IO ()
 roundtrip_filename_to_name_of_tmpfile n = withSystemTempDirectory "roundtriptemp" $ \d -> do
-  let f = d </> n2p n
+  let f = d </> n2fp n
   B.writeFile f "this is a test"
   _ <- B.readFile f
   return ()
@@ -59,12 +62,12 @@ prop_roundtrip_filename_to_name_of_tmpfile = monadicIO $ do
   run $ roundtrip_filename_to_name_of_tmpfile n
   assert True
 
--- n2bs :: FileName -> BU.ByteString
--- n2bs = BU.fromString . n2p
+-- n2bs :: Name -> BU.ByteString
+-- n2bs = BU.fromString . n2fp
 
 -- TODO should this have the option for a decoding error?
--- bs2n :: BU.ByteString -> FileName
--- bs2n = p2n . BU.toString
+-- bs2n :: BU.ByteString -> Name
+-- bs2n = fp2n . BU.toString
 
 newtype ValidFilePath
   = ValidFilePath FilePath
@@ -73,8 +76,8 @@ newtype ValidFilePath
 instance Arbitrary ValidFilePath where
   arbitrary = do
     prefix <- oneof $ map pure ["", ".", "..", "~"]
-    comps  <- map (\ (FileName t) -> T.unpack t)
-      <$> listOf (arbitrary :: Gen FileName)
+    comps  <- map (\ (Name t) -> T.unpack t)
+      <$> listOf (arbitrary :: Gen Name)
     let path = SF.joinPath (prefix:comps)
     return $ ValidFilePath $ if null path then "/" else path
 

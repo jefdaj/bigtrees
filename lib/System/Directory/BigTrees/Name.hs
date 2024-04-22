@@ -5,9 +5,9 @@
 {-# LANGUAGE TemplateHaskell            #-}
 
 {-|
-Description: Custom FileName type
+Description: Custom Name type
 
-My `FileName` type is defined as `Text` for efficiency, but what it really
+My `Name` type is defined as `Text` for efficiency, but what it really
 means is "Text without slashes or null chars". So I have to define my own
 Arbitrary instance here.
 -}
@@ -15,7 +15,7 @@ Arbitrary instance here.
 -- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
 -- TODO wait, is the empty string also a valid filename?
 
-module System.Directory.BigTrees.FileName where
+module System.Directory.BigTrees.Name where
 
 import Control.DeepSeq
 import Data.Store (Store (..))
@@ -31,22 +31,22 @@ import TH.Derive
 -- | an element in a FilePath:
 -- The newtype is needed to prevent overlapping with the standard Arbitrary
 -- Text instance in the tests
-newtype FileName
-  = FileName T.Text
+newtype Name
+  = Name T.Text
   deriving (Eq, Generic, Ord, Read, Show)
 
-deriving instance NFData FileName
+deriving instance NFData Name
 
 -- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
 $($(derive [d|
-  instance Deriving (Store FileName)
+  instance Deriving (Store Name)
   |]))
 
-instance Arbitrary FileName where
-  arbitrary = FileName <$> (arbitrary :: Gen T.Text) `suchThat` validFileName
-  shrink (FileName t) = FileName <$> filter validFileName (shrink t)
+instance Arbitrary Name where
+  arbitrary = Name <$> (arbitrary :: Gen T.Text) `suchThat` validName
+  shrink (Name t) = Name <$> filter validName (shrink t)
 
-validFileName :: T.Text -> Bool
-validFileName t = notElem t ["", ".", ".."]
+validName :: T.Text -> Bool
+validName t = notElem t ["", ".", ".."]
                && (not . T.any (== '/')) t -- no separators
                && (OS.valid . OS.fromText) t

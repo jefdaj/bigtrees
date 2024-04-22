@@ -54,8 +54,8 @@ import Data.Store (Store (..), decodeIO, encode)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import qualified System.Directory as SD
-import System.Directory.BigTrees.FileName (FileName (..))
-import System.Directory.BigTrees.FilePath (n2p, p2n, pathComponents)
+import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.FilePath (n2fp, fp2n, pathComponents)
 import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashLine
 import qualified System.Directory.Tree as DT
@@ -80,12 +80,12 @@ import TH.Derive
 --   TODO rename name -> path?
 data HashTree a
   = File
-      { name     :: !FileName
+      { name     :: !Name
       , hash     :: !Hash
       , fileData :: !a
       }
   | Dir
-      { name     :: !FileName
+      { name     :: !Name
       , hash     :: Hash
       , contents :: [HashTree a]
       , nFiles   :: Int
@@ -118,8 +118,8 @@ excludeGlobs :: [Pattern]
              -> (DT.AnchoredDirTree a -> DT.AnchoredDirTree a)
 excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
   where
-    keep a (DT.Dir  n _) = keepPath excludes (a </> n2p n)
-    keep a (DT.File n _) = keepPath excludes (a </> n2p n)
+    keep a (DT.Dir  n _) = keepPath excludes (a </> n2fp n)
+    keep a (DT.File n _) = keepPath excludes (a </> n2fp n)
     keep a b             = True
 
 keepPath :: [Pattern] -> FilePath -> Bool
@@ -163,10 +163,10 @@ lazyDirDepth = 4
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree a -> IO (HashTree a)
 -- TODO catch and re-throw errors with better description and/or handle them here
-buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n2p n) ++ ": " ++ show e
+buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n2fp n) ++ ": " ++ show e
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   -- TODO how to exclude these?
-  let fPath = a </> n2p n
+  let fPath = a </> n2fp n
   !h  <- unsafeInterleaveIO $ hashFile v fPath
   !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
@@ -178,7 +178,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
          $ File { name = n, hash = h, fileData = fd }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
-  let root = a </> n2p n
+  let root = a </> n2fp n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
       (_ DT.:/ (DT.Dir _ cs')) = excludeGlobs es d -- TODO operate on only the cs part
@@ -221,7 +221,7 @@ readOrBuildTree verbose mmaxdepth excludes path = do
 
 -- for comparing two trees without getting hung up on different overall names
 renameRoot :: FilePath -> ProdTree -> ProdTree
-renameRoot newName tree = tree { name = p2n newName }
+renameRoot newName tree = tree { name = fp2n newName }
 
 -------------------------------------
 -- serialize and deserialize trees --
@@ -259,7 +259,7 @@ flattenTree' :: FilePath -> ProdTree -> [HashLine]
 flattenTree' dir (File n h ()  ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
-    subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
+    subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs
     wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
 
 -- TODO error on null string/lines?
@@ -313,11 +313,11 @@ treeContainsPath :: ProdTree -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
 dropTo :: ProdTree -> FilePath -> Maybe ProdTree
-dropTo t@(File f1 _ ()  ) f2 = if n2p f1 == f2 then Just t else Nothing
+dropTo t@(File f1 _ ()  ) f2 = if n2fp f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
-  | n2p f1 == f2 = Just t
+  | n2fp f1 == f2 = Just t
   | length (pathComponents f2) < 2 = Nothing
-  | otherwise = let n   = p2n $ head $ pathComponents f2
+  | otherwise = let n   = fp2n $ head $ pathComponents f2
                     f2' = joinPath $ tail $ pathComponents f2
                 in if f1 /= n
                   then Nothing
@@ -337,7 +337,7 @@ treeContainsHash (Dir  _ h1 cs _) h2
 
 -- TODO use this to implement hashing multiple trees at once?
 wrapInEmptyDir :: FilePath -> ProdTree -> ProdTree
-wrapInEmptyDir n t = Dir { name = p2n n, hash = h, contents = cs, nFiles = nFiles t }
+wrapInEmptyDir n t = Dir { name = fp2n n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
     h = hashContents cs
@@ -358,10 +358,10 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
     p1     = head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
-    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= p2n p1) (contents main) ++ [newSub]
+    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= fp2n p1) (contents main) ++ [newSub]
     n'     = nFiles main + nFiles newSub - maybe 0 nFiles oldSub
-    sub'   = sub { name = p2n $ last comps }
-    oldSub = find (\c -> name c == p2n p1) (contents main)
+    sub'   = sub { name = fp2n $ last comps }
+    oldSub = find (\c -> name c == fp2n p1) (contents main)
     newSub = if length comps == 1
                then sub'
                else case oldSub of
@@ -423,7 +423,7 @@ instance Arbitrary HashLine where
     tt <- arbitrary :: Gen TreeType
     il <- arbitrary :: Gen IndentLevel
     h  <- arbitrary :: Gen Hash
-    n  <- arbitrary :: Gen FileName
+    n  <- arbitrary :: Gen Name
     return $ HashLine (tt, il, h, n)
 
   -- only shrinks the filename
@@ -434,17 +434,17 @@ instance Arbitrary HashLine where
 duplicateFilenames :: HashTree a -> HashTree a -> Bool
 duplicateFilenames = if os == "darwin" then macDupes else unixDupes
   where
-    macDupes  a b = map toLower (n2p $ name a)
-                 == map toLower (n2p $ name b)
-    unixDupes a b = n2p (name a)
-                 == n2p (name b)
+    macDupes  a b = map toLower (n2fp $ name a)
+                 == map toLower (n2fp $ name b)
+    unixDupes a b = n2fp (name a)
+                 == n2fp (name b)
 
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
 -- same arbitrary bytestring for the file content and its hash
 instance Arbitrary TestTree where
 
   arbitrary = do
-    n <- arbitrary :: Gen FileName
+    n <- arbitrary :: Gen Name
     -- TODO there's got to be a better way, right?
     i <- choose (0,5 :: Int)
     if i == 0
@@ -558,11 +558,11 @@ assertNoFile path = do
  -}
 writeTestTreeDir :: FilePath -> TestTree -> IO ()
 writeTestTreeDir root (File {name = n, fileData = bs}) = do
-  let path = root </> n2p n
+  let path = root </> n2fp n
   assertNoFile path
   B8.writeFile path bs
 writeTestTreeDir root (Dir {name = n, contents = cs}) = do
-  let root' = root </> n2p n
+  let root' = root </> n2fp n
   assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'
   SD.createDirectoryIfMissing True root' -- TODO false here
@@ -578,7 +578,7 @@ roundtrip_testtree_to_dir :: TestTree -> IO TestTree
 roundtrip_testtree_to_dir t = withSystemTempDirectory "roundtriptemp" $ \root -> do
   let tmpRoot = "/tmp/round-trip-tests" -- TODO replace with actual root
   SD.createDirectoryIfMissing True tmpRoot -- TODO False?
-  let treePath = tmpRoot </> n2p (name t)
+  let treePath = tmpRoot </> n2fp (name t)
   SD.removePathForcibly treePath -- TODO remove
   writeTestTreeDir tmpRoot t
   -- putStrLn $ "treePath: " ++ treePath

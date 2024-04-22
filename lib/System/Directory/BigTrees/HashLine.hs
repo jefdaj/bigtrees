@@ -27,8 +27,8 @@ import Data.Maybe (catMaybes)
 import Data.Store (Store (..))
 import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
-import System.Directory.BigTrees.FileName (FileName (..))
-import System.Directory.BigTrees.FilePath (p2n)
+import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.FilePath (fp2n)
 import System.Directory.BigTrees.Hash
 import TH.Derive
 
@@ -48,15 +48,15 @@ newtype IndentLevel
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine
-  = HashLine (TreeType, IndentLevel, Hash, FileName)
+  = HashLine (TreeType, IndentLevel, Hash, Name)
   deriving (Eq, Ord, Read, Show)
 
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B8.ByteString
-prettyHashLine (HashLine (t, IndentLevel n, h, FileName p)) = B8.unwords
-  [B8.pack $ show t, B8.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2p, p2n?
+prettyHashLine (HashLine (t, IndentLevel n, h, Name p)) = B8.unwords
+  [B8.pack $ show t, B8.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2fp, fp2n?
 
 typeP :: Parser TreeType
 typeP = do
@@ -80,8 +80,8 @@ breakP :: Parser ()
 breakP = endOfLine >> choice [typeP >> indentP >> hashP >> return (), endOfInput]
 
 -- TODO should anyChar be anything except forward slash and the null char?
-nameP :: Parser FileName
-nameP = fmap p2n $ do
+nameP :: Parser Name
+nameP = fmap fp2n $ do
   c  <- anyChar
   cs <- manyTill anyChar $ lookAhead breakP
   return (c:cs)
