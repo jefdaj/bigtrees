@@ -11,6 +11,27 @@ It uses the standard FilePath (String) type, just with custom functions to and f
 -- TODO am I just using the standard ones wrong?
 -- TODO recombine with the Name module?
 
+-- describe "Util" $ do
+--   describe "absolute" $ do
+--       it "strips dots from paths" pending
+--       it "does not follow symlinks" pending
+--
+--     describe "findAnnex" $ do
+--       it "returns Nothing if given a nonexistent path" pending
+--       it "returns Nothing if given a non-annex path" pending
+--       it "returns (Just path) if path is an annex" pending
+--       it "returns only absolute paths" pending
+--
+--     describe "isAnnexSymlink" $ do
+--       it "returns False if given a non-symlink" pending
+--       it "returns True if given a symlink pointing into a .git/annex/objects dir" pending
+--       it "returns False if given a symlink pointing somewhere else" pending
+--
+--     describe "isNonAnnexSymlink" $ do
+--       it "returns False if given a non-symlink" pending
+--       it "returns False if given a symlink pointing into a .git/annex/objects dir" pending
+--       it "returns True if given a symlink pointing somewhere else" pending
+
 module System.Directory.BigTrees.FilePath where
 
 import Control.Monad.IO.Class (liftIO)
@@ -32,13 +53,18 @@ import Test.QuickCheck
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
--- TODO name this something less confusing
+-- * Convert `Name`s to/from `FilePath`s
+--
+-- $nameconversion
+--
+-- Functions for converting between `Name`s and (regular Haskell) `FilePath`s.
+-- They should work on Linux and MacOS.
+
 n2fp :: Name -> FilePath
 n2fp (Name t) = (if os == "darwin"
                       then B.unpack . TE.encodeUtf8
                       else T.unpack) t
 
--- TODO name this something less confusing
 -- TODO this should actually convert to a list of names, right?
 -- TODO and does that make it more like pathComponents?
 fp2n :: FilePath -> Name
@@ -46,22 +72,12 @@ fp2n = Name . (if os == "darwin"
                     then TE.decodeUtf8 . B.pack
                     else T.pack)
 
--- TODO FilePath?
-prop_roundtrip_filename_to_bytestring :: Name -> Bool
-prop_roundtrip_filename_to_bytestring n = fp2n (n2fp n) == n
-
-roundtrip_filename_to_name_of_tmpfile :: Name -> IO ()
-roundtrip_filename_to_name_of_tmpfile n = withSystemTempDirectory "roundtriptemp" $ \d -> do
-  let f = d </> n2fp n
-  B.writeFile f "this is a test"
-  _ <- B.readFile f
-  return ()
-
-prop_roundtrip_filename_to_name_of_tmpfile :: Property
-prop_roundtrip_filename_to_name_of_tmpfile = monadicIO $ do
-  n <- pick arbitrary
-  run $ roundtrip_filename_to_name_of_tmpfile n
-  assert True
+-- TODO haddocks
+-- TODO fp2ns?
+pathComponents :: FilePath -> [FilePath]
+pathComponents f = filter (not . null)
+                 $ map (filter (/= SF.pathSeparator))
+                 $ SF.splitPath f
 
 -- n2bs :: Name -> BU.ByteString
 -- n2bs = BU.fromString . n2fp
@@ -70,10 +86,27 @@ prop_roundtrip_filename_to_name_of_tmpfile = monadicIO $ do
 -- bs2n :: BU.ByteString -> Name
 -- bs2n = fp2n . BU.toString
 
+prop_roundtrip_name_to_filepath :: Name -> Bool
+prop_roundtrip_name_to_filepath n = fp2n (n2fp n) == n
+
+roundtrip_name_to_filename :: Name -> IO ()
+roundtrip_name_to_filename n = withSystemTempDirectory "roundtriptemp" $ \d -> do
+  let f = d </> n2fp n
+  B.writeFile f "this is a test"
+  _ <- B.readFile f
+  return ()
+
+prop_roundtrip_name_to_filename :: Property
+prop_roundtrip_name_to_filename = monadicIO $ do
+  n <- pick arbitrary
+  run $ roundtrip_name_to_filename n
+  assert True
+
 newtype ValidFilePath
   = ValidFilePath FilePath
   deriving (Eq, Ord, Read, Show)
 
+-- TODO wait, why does the built-in instance not work here? did no one write it?
 instance Arbitrary ValidFilePath where
   arbitrary = do
     prefix <- oneof $ map pure ["", ".", "..", "~"]
@@ -82,11 +115,11 @@ instance Arbitrary ValidFilePath where
     let path = SF.joinPath (prefix:comps)
     return $ ValidFilePath $ if null path then "/" else path
 
--- TODO haddocks
-pathComponents :: FilePath -> [FilePath]
-pathComponents f = filter (not . null)
-                 $ map (filter (/= SF.pathSeparator))
-                 $ SF.splitPath f
+-- * Canonical `FilePath`s
+--
+-- $canonicalfilepaths
+--
+-- Resolve various `FilePath`s to their "real" absolute paths,
 
 -- TODO own section
 -- TODO haddocks
@@ -115,6 +148,72 @@ absolute' aPath
           Nothing -> return $ Just aPath
           Just p  -> return $ Just p
         -- return $ guess_dotdot pathMaybeWithDots -- TODO this is totally wrong sometimes!
+
+-- |
+-- >>> let x = 23
+-- >>> x + 42
+-- 65
+unit_absolute_expands_tildes :: Assertion
+unit_absolute_expands_tildes = do
+  home <- getHomeDirectory
+  let explicit = home </> "xyz"
+  (Just implicit) <- absolute "~/xyz"
+  implicit @=? explicit
+
+unit_absolute_rejects_null_path :: Assertion
+unit_absolute_rejects_null_path = do
+  reject <- absolute ""
+  reject @=? Nothing
+
+unit_absolute_fixes_invalid_dotdot :: Assertion
+unit_absolute_fixes_invalid_dotdot = do
+  fixed <- absolute "/.." -- one level above / is invalid
+  fixed @=? Just "/"
+
+prop_absolute_is_idempotent :: ValidFilePath -> Property
+prop_absolute_is_idempotent (ValidFilePath path) = monadicIO $ do
+  (Just path' ) <- liftIO $ absolute path
+  (Just path'') <- liftIO $ absolute path'
+  assert $ path' == path''
+
+prop_absolute_strips_redundant_dotdot :: ValidFilePath -> Property
+prop_absolute_strips_redundant_dotdot (ValidFilePath path) = monadicIO $ do
+  (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
+  (Just a') <- liftIO $ absolute $ path </> ".."
+  assert $ a == a'
+
+prop_absolute_strips_redundant_dot :: ValidFilePath -> Property
+prop_absolute_strips_redundant_dot (ValidFilePath path) = monadicIO $ do
+  (Just a ) <- liftIO $ absolute path
+  (Just a') <- liftIO $ absolute $ path </> "."
+  assert $ a == a'
+
+-------------------------------
+-- handle git-annex symlinks --
+-------------------------------
+
+---- * git-annex symlinks
+--
+-- $gitannexsymlinks
+--
+-- Special handling of git-annex symlinks. If we trust the links, we can
+-- read sha256sums from them rather than re-hashing the referenced files.
+
+-- We treat these as files rather than following to avoid infinite cycles
+-- TODO refactor to use isAnnexSymlink?
+isNonAnnexSymlink :: FilePath -> IO Bool
+isNonAnnexSymlink path = do
+  status <- getSymbolicLinkStatus path
+  if not (isSymbolicLink status)
+    then return False
+    else do
+      link <- readSymbolicLink path
+      return $ not $ (".git/annex/objects/" `isInfixOf` link)
+                  && ("SHA256E-" `isPrefixOf` SF.takeBaseName link)
+
+--------------
+-- old code --
+--------------
 
 -- absolute :: FilePath -> IO FilePath
 -- absolute p = do
@@ -177,80 +276,3 @@ absolute' aPath
 --     else do
 --       l <- readSymbolicLink path
 --       return $ ".git/annex/objects/" `isInfixOf` l && "SHA256E-" `isPrefixOf` SF.takeBaseName l
-
-
--- TODO haddocks
--- We treat these as files rather than following to avoid infinite cycles
--- TODO refactor to use isAnnexSymlink?
-isNonAnnexSymlink :: FilePath -> IO Bool
-isNonAnnexSymlink path = do
-  status <- getSymbolicLinkStatus path
-  if not (isSymbolicLink status)
-    then return False
-    else do
-      link <- readSymbolicLink path
-      return $ not $ (".git/annex/objects/" `isInfixOf` link)
-                  && ("SHA256E-" `isPrefixOf` SF.takeBaseName link)
-
------------
--- tests --
------------
--- describe "Util" $ do
---   describe "absolute" $ do
---       it "strips dots from paths" pending
---       it "does not follow symlinks" pending
---
---     describe "findAnnex" $ do
---       it "returns Nothing if given a nonexistent path" pending
---       it "returns Nothing if given a non-annex path" pending
---       it "returns (Just path) if path is an annex" pending
---       it "returns only absolute paths" pending
---
---     describe "isAnnexSymlink" $ do
---       it "returns False if given a non-symlink" pending
---       it "returns True if given a symlink pointing into a .git/annex/objects dir" pending
---       it "returns False if given a symlink pointing somewhere else" pending
---
---     describe "isNonAnnexSymlink" $ do
---       it "returns False if given a non-symlink" pending
---       it "returns False if given a symlink pointing into a .git/annex/objects dir" pending
---       it "returns True if given a symlink pointing somewhere else" pending
-
--- |
--- >>> let x = 23
--- >>> x + 42
--- 65
-unit_absolute_expands_tildes :: Assertion
-unit_absolute_expands_tildes = do
-  home <- getHomeDirectory
-  let explicit = home </> "xyz"
-  (Just implicit) <- absolute "~/xyz"
-  implicit @=? explicit
-
-unit_absolute_rejects_the_null_path :: Assertion
-unit_absolute_rejects_the_null_path = do
-  reject <- absolute ""
-  reject @=? Nothing
-
-unit_absolute_fixes_invalid_dotdot_path :: Assertion
-unit_absolute_fixes_invalid_dotdot_path = do
-  fixed <- absolute "/.." -- one level above / is invalid
-  fixed @=? Just "/"
-
-prop_absolute_is_idempotent :: ValidFilePath -> Property
-prop_absolute_is_idempotent (ValidFilePath path) = monadicIO $ do
-  (Just path' ) <- liftIO $ absolute path
-  (Just path'') <- liftIO $ absolute path'
-  assert $ path' == path''
-
-prop_absolute_strips_redundant_dotdot :: ValidFilePath -> Property
-prop_absolute_strips_redundant_dotdot (ValidFilePath path) = monadicIO $ do
-  (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
-  (Just a') <- liftIO $ absolute $ path </> ".."
-  assert $ a == a'
-
-prop_absolute_strips_redundant_dot :: ValidFilePath -> Property
-prop_absolute_strips_redundant_dot (ValidFilePath path) = monadicIO $ do
-  (Just a ) <- liftIO $ absolute path
-  (Just a') <- liftIO $ absolute $ path </> "."
-  assert $ a == a'
