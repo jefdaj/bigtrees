@@ -46,6 +46,7 @@ instance Arbitrary Name where
   arbitrary = Name <$> (arbitrary :: Gen T.Text) `suchThat` validName
   shrink (Name t) = Name <$> filter validName (shrink t)
 
+-- TODO is there ever another separator, except on windows?
 validName :: T.Text -> Bool
 validName t = notElem t ["", ".", ".."]
                && (not . T.any (== '/')) t -- no separators

@@ -9,6 +9,7 @@ It uses the standard FilePath (String) type, just with custom functions to and f
 -}
 
 -- TODO am I just using the standard ones wrong?
+-- TODO recombine with the Name module?
 
 module System.Directory.BigTrees.FilePath where
 
