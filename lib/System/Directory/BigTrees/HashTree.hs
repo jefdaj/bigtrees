@@ -54,10 +54,10 @@ import Data.Store (Store (..), decodeIO, encode)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import qualified System.Directory as SD
-import System.Directory.BigTrees.FilePath (FileName (..), n2p, p2n)
+import System.Directory.BigTrees.FileName (FileName (..))
+import System.Directory.BigTrees.FilePath (n2p, p2n, pathComponents)
 import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashLine
-import System.Directory.BigTrees.Util
 import qualified System.Directory.Tree as DT
 import System.FilePath
 import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)

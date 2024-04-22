@@ -21,8 +21,8 @@ library
       System.Directory.BigTrees.HashTree
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.FileName
       System.Directory.BigTrees.FilePath
-      System.Directory.BigTrees.Util
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.Delta
   other-modules:
@@ -159,12 +159,12 @@ test-suite test-doctests
       System.Directory.BigTrees
       System.Directory.BigTrees.Delta
       System.Directory.BigTrees.DupeMap
+      System.Directory.BigTrees.FileName
       System.Directory.BigTrees.FilePath
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.HashTree
-      System.Directory.BigTrees.Util
       System.Directory.Tree
       Cmd
       Cmd.Add
@@ -234,12 +234,12 @@ test-suite test-lib
       System.Directory.BigTrees
       System.Directory.BigTrees.Delta
       System.Directory.BigTrees.DupeMap
+      System.Directory.BigTrees.FileName
       System.Directory.BigTrees.FilePath
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.HashTree
-      System.Directory.BigTrees.Util
       System.Directory.Tree
       Paths_bigtrees
   hs-source-dirs:

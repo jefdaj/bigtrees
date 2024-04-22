@@ -7,7 +7,7 @@ import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (sort)
 import System.Directory.BigTrees
-import System.Directory.BigTrees.Util (absolutize)
+import System.Directory.BigTrees.FilePath (absolutize)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)

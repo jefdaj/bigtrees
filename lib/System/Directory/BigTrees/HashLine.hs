@@ -27,7 +27,8 @@ import Data.Maybe (catMaybes)
 import Data.Store (Store (..))
 import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
-import System.Directory.BigTrees.FilePath (FileName (..), p2n)
+import System.Directory.BigTrees.FileName (FileName (..))
+import System.Directory.BigTrees.FilePath (p2n)
 import System.Directory.BigTrees.Hash
 import TH.Derive
 
