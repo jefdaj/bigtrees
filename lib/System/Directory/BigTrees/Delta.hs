@@ -26,8 +26,8 @@ import qualified Data.ByteString.Char8 as B
 import Data.List (find)
 import Data.Maybe (fromJust)
 import System.Directory.BigTrees.FilePath (n2fp)
-import System.Directory.BigTrees.HashTree.Types
 import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.HashTree.Types
 import System.FilePath ((</>))
 
 

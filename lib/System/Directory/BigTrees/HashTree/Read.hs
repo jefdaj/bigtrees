@@ -1,12 +1,12 @@
 module System.Directory.BigTrees.HashTree.Read where
 
+import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
+import Data.List (delete, find, nubBy, partition, sort, sortBy)
+import Data.Store (decodeIO, encode)
 import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree.Types
 import System.Directory.BigTrees.HashTree.Util (countFiles)
-import Data.List (delete, find, nubBy, partition, sort, sortBy)
-import Control.Exception.Safe (catchAny)
-import Data.Store (decodeIO, encode)
 
 -- try to read as binary, and fall back to text if it fails
 readTree :: Maybe Int -> FilePath -> IO ProdTree

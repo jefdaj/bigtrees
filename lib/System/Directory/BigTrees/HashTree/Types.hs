@@ -5,16 +5,16 @@
 module System.Directory.BigTrees.HashTree.Types where
 
 import Control.DeepSeq
+import qualified Data.ByteString.Char8 as B8
 import Data.Store (Store (..))
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashLine
-import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Name (Name (..))
-import TH.Derive
 import Test.QuickCheck
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic
+import TH.Derive
 
 
 {- A tree of file names matching (a subdirectory of) the annex,

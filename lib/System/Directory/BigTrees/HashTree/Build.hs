@@ -1,19 +1,19 @@
-{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE BangPatterns #-}
 
 module System.Directory.BigTrees.HashTree.Build where
 
 import qualified Control.Monad.Parallel as P
+import Data.Function (on)
+import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import System.Directory.BigTrees.FilePath
+import System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree.Types
 import System.Directory.BigTrees.HashTree.Util
 import qualified System.Directory.Tree as DT
-import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
-import Data.List (delete, find, nubBy, partition, sort, sortBy)
-import Data.Function (on)
-import System.IO.Unsafe (unsafeInterleaveIO)
-import System.Directory.BigTrees.Hash
-import System.Directory.BigTrees.HashLine
 import System.FilePath ((</>))
+import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
+import System.IO.Unsafe (unsafeInterleaveIO)
 
 keepPath :: [Pattern] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes

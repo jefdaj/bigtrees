@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
+
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -67,10 +67,10 @@ import Test.QuickCheck
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic
 
+import System.Directory.BigTrees.HashTree.Build
+import System.Directory.BigTrees.HashTree.Read
 import System.Directory.BigTrees.HashTree.Types
 import System.Directory.BigTrees.HashTree.Util
-import System.Directory.BigTrees.HashTree.Read
-import System.Directory.BigTrees.HashTree.Build
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
