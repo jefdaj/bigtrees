@@ -40,28 +40,28 @@ main = do
         , exclude  = eList
         }
   print cfg
-  if cmd "cat" then do
+  if cmd "oldcat" then do
      let paths = lst "path"
      cmdCat cfg paths
-  else if cmd "hash" then do
+  else if cmd "oldhash" then do
      let paths = lst "path"
      cmdHash cfg paths
-  else if cmd "diff" then do
+  else if cmd "olddiff" then do
     old <- arg "old"
     new <- arg "new"
     cmdDiff cfg old new
-  else if cmd "dupes" then do
+  else if cmd "olddupes" then do
     let hashes = lst "hashes"
     cmdDupes cfg hashes
-  else if cmd "test"  then do
+  else if cmd "oldtest"  then do
     let paths = lst "path"
     cmdTest cfg paths
-  else if cmd "update" then do
+  else if cmd "oldupdate" then do
     mainTree <- arg "main"
     subTree  <- arg "sub"
     subPath  <- arg "path"
     cmdUpdate cfg mainTree subTree subPath
-  -- else if cmd "rm" then do
+  -- else if cmd "oldrm" then do
   --   target <- arg "target"
   --   rPath  <- arg "rootpath"
   --   dPath  <- arg "rmpath"

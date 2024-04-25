@@ -1,12 +1,12 @@
 The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
-  bigtrees [-vc]  cat    <path>...
-  bigtrees [-vc]  hash   [-e <exclude>] [-t <txt>] [-b <bin>] <path>...
-  bigtrees [-vc]  diff   <old> <new>
-  bigtrees [-vc]  dupes  [-t <txt>] [-m <maxdepth>] <hashes>...
-  bigtrees [-vfc] update <main> <sub> <path>
-  bigtrees [-vc]  test   <path>...
+  bigtrees [-vc]  oldcat    <path>...
+  bigtrees [-vc]  oldhash   [-e <exclude>] [-t <txt>] [-b <bin>] <path>...
+  bigtrees [-vc]  olddiff   <old> <new>
+  bigtrees [-vc]  olddupes  [-t <txt>] [-m <maxdepth>] <hashes>...
+  bigtrees [-vfc] oldupdate <main> <sub> <path>
+  bigtrees [-vc]  oldtest   <path>...
 
 Options:
   -f, --force    Change existing files without requiring confirmation.
@@ -25,15 +25,15 @@ Options:
                  at the same time.
 
 Commands:
-  cat     Decodes and prints each <path> if hashes, and hashes + prints if not.
-  hash    Reads files + folders and prints their hashes to stdout.
-  dupes   List duplicate files + folders in <hashes>.
-  diff    Print changes in <new> relative to <old>. TODO take hashes here too!
-  update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
-  test    Run tests on the given directories.
+  oldcat     Decodes and prints each <path> if hashes, and hashes + prints if not.
+  oldhash    Reads files + folders and prints their hashes to stdout.
+  olddupes   List duplicate files + folders in <hashes>.
+  olddiff    Print changes in <new> relative to <old>. TODO take hashes here too!
+  oldupdate  Updates <main> hashes with new ones from <sub>, inserted at <path>.
+  oldtest    Run tests on the given directories.
 
 Examples:
 
-  bigtrees hash "/media/jeff/WD My Book"  > mybook-orig-hashes.txt
-  bigtrees hash  /media/jeff/dedup/mybook > mybook-dedup-hashes.txt
-  bigtrees diff mybook-{orig,dedup}-hashes.txt
+  bigtrees oldhash "/media/jeff/WD My Book"  > mybook-orig-hashes.txt
+  bigtrees oldhash  /media/jeff/dedup/mybook > mybook-dedup-hashes.txt
+  bigtrees olddiff mybook-{orig,dedup}-hashes.txt
