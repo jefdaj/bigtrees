@@ -3,6 +3,7 @@ module System.Directory.BigTrees.HashTree.Read where
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree.Types
+import System.Directory.BigTrees.HashTree.Util (countFiles)
 import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import Control.Exception.Safe (catchAny)
 import Data.Store (decodeIO, encode)
@@ -44,8 +45,3 @@ accTrees (HashLine (t, IndentLevel i, h, p)) cs = case t of
            dir = Dir p h (map snd children)
                          (sum $ map (countFiles . snd) children)
        in siblings ++ [(IndentLevel i, dir)]
-
--- TODO where should this live?
-countFiles :: HashTree a -> Int
-countFiles (File {}  )    = 1
-countFiles (Dir  _ _ _ n) = n
