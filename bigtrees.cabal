@@ -20,6 +20,7 @@ library
       System.Directory.BigTrees.DupeMap
       System.Directory.BigTrees.HashTree
       System.Directory.BigTrees.HashTree.Types
+      System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.Name
@@ -169,6 +170,7 @@ test-suite test-doctests
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.HashTree
+      System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Types
       System.Directory.BigTrees.Name
       System.Directory.Tree
@@ -247,6 +249,7 @@ test-suite test-lib
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.HashTree
+      System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Types
       System.Directory.BigTrees.Name
       System.Directory.Tree
