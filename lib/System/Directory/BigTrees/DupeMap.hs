@@ -35,6 +35,7 @@ import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashForest
 import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.HashTree.Types
 import System.FilePath (splitDirectories, (</>))
 
 -- TODO are the paths getting messed up somewhere in here?

@@ -1,11 +1,12 @@
 {-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
+-- TODO when you don't add an export list, does it not re-export everything?
 
 module System.Directory.BigTrees.HashTree where
   -- ( HashTree(..)
@@ -38,7 +39,7 @@ module System.Directory.BigTrees.HashTree where
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
 
-import Control.DeepSeq
+import Control.DeepSeq (force)
 import Control.Exception.Safe (catchAny)
 import Control.Monad (msum, when)
 import qualified Control.Monad.Parallel as P
@@ -50,9 +51,7 @@ import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import Data.Maybe (isJust)
-import Data.Store (Store (..), decodeIO, encode)
-import GHC.Generics (Generic)
-import Prelude hiding (take)
+import Data.Store (decodeIO, encode)
 import qualified System.Directory as SD
 import System.Directory.BigTrees.FilePath (fp2n, n2fp, pathComponents)
 import System.Directory.BigTrees.Hash
@@ -68,51 +67,8 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import Test.QuickCheck
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic
-import TH.Derive
 
-{- A tree of file names matching (a subdirectory of) the annex,
- - where each dir and file node contains a hash of its contents.
- - TODO read and write files
- - TODO would also storing the number of files in each dir help, or timestamps?
- -}
--- data HashTree = DT.AnchoredDirTree Hash
---   deriving (Eq, Read, Show)
---   TODO rename name -> path?
-data HashTree a
-  = File
-      { name     :: !Name
-      , hash     :: !Hash
-      , fileData :: !a
-      }
-  | Dir
-      { name     :: !Name
-      , hash     :: Hash
-      , contents :: [HashTree a]
-      , nFiles   :: Int
-      }
-  deriving (Generic, Ord, Read, Show)
-
--- We only need the file decoration for testing, so we can leave it off the production types
-type ProdTree = HashTree ()
-
--- TODO disable this while testing to ensure deep equality?
-instance Eq (HashTree a) where
-  t1 == t2 = hash t1 == hash t2
-
--- TODO once there's also a dirData, should this be BiFunctor instead?
--- TODO should this also re-hash the file, or is that not part of the fileData idea?
-instance Functor HashTree where
-  fmap fn f@(File {}) = f { fileData = fn (fileData f) }
-  fmap fn d@(Dir  {}) = d { contents = map (fmap fn) (contents d) }
-
--- TODO test functor identity law
-
-instance NFData a => NFData (HashTree a)
-
--- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
-$($(derive [d|
-    instance Store a => Deriving (Store (HashTree a))
-    |]))
+import System.Directory.BigTrees.HashTree.Types
 
 excludeGlobs :: [Pattern]
              -> (DT.AnchoredDirTree a -> DT.AnchoredDirTree a)

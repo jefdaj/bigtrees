@@ -27,6 +27,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Store (Store (..), decodeIO, encode)
 import System.Directory.BigTrees.HashLine (parseHashes)
 import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.HashTree.Types
 import System.FilePath.Glob (Pattern)
 import System.IO (IOMode (..), hClose, withFile)
 import System.IO.Temp

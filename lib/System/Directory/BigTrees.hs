@@ -71,3 +71,4 @@ import System.Directory.BigTrees.Hash
 import System.Directory.BigTrees.HashForest
 import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.HashTree.Types
