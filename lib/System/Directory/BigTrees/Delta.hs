@@ -27,7 +27,9 @@ import Data.List (find)
 import Data.Maybe (fromJust)
 import System.Directory.BigTrees.FilePath (n2fp)
 import System.Directory.BigTrees.HashTree
+    ( dropTo, addSubTree, rmSubTree )
 import System.Directory.BigTrees.HashTree.Types
+    ( ProdTree, HashTree(File, Dir, name) )
 import System.FilePath ((</>))
 
 

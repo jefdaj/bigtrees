@@ -42,7 +42,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Prelude hiding (log)
 import System.Directory (canonicalizePath, getHomeDirectory)
-import System.Directory.BigTrees.Name
+import System.Directory.BigTrees.Name ( Name(..) )
 import qualified System.FilePath as SF
 import System.FilePath ((</>))
 import System.Info (os)
@@ -51,6 +51,7 @@ import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck
+    ( Arbitrary(arbitrary), Property, Gen, oneof, listOf )
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 

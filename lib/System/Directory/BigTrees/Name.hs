@@ -16,14 +16,14 @@ Long description here.
 
 module System.Directory.BigTrees.Name where
 
-import Control.DeepSeq
+import Control.DeepSeq ( NFData )
 import Data.Store (Store (..))
 import qualified Data.Text as T
 import qualified Filesystem.Path.CurrentOS as OS
-import GHC.Generics
-import Test.QuickCheck
+import GHC.Generics ( Generic )
+import Test.QuickCheck ( Arbitrary(..), Gen, suchThat )
 import Test.QuickCheck.Instances ()
-import TH.Derive
+import TH.Derive ( derive, Deriving )
 
 
 -- | An element in a FilePath.

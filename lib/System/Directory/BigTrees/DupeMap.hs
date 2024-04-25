@@ -21,7 +21,7 @@ module System.Directory.BigTrees.DupeMap
   )
   where
 
-import Control.Monad.ST
+import Control.Monad.ST ( ST, runST )
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
@@ -31,11 +31,12 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.FilePath (n2fp)
-import System.Directory.BigTrees.Hash
-import System.Directory.BigTrees.HashForest
-import System.Directory.BigTrees.HashLine
-import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.Hash ( Hash )
+import System.Directory.BigTrees.HashForest ( HashForest(..) )
+import System.Directory.BigTrees.HashLine ( TreeType(..) )
+import System.Directory.BigTrees.HashTree ()
 import System.Directory.BigTrees.HashTree.Types
+    ( ProdTree, HashTree(Dir, File) )
 import System.FilePath (splitDirectories, (</>))
 
 -- TODO are the paths getting messed up somewhere in here?

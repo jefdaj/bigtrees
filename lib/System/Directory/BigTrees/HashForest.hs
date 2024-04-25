@@ -4,6 +4,8 @@
 {-# LANGUAGE TemplateHaskell    #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use camelCase" #-}
 
 -- TODO are forests even needed?
 
@@ -27,15 +29,17 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Store (Store (..), decodeIO, encode)
 import System.Directory.BigTrees.HashLine (parseHashes)
 import System.Directory.BigTrees.HashTree
-import System.Directory.BigTrees.HashTree.Build
+    ( readOrBuildTree, serializeTree, printTree )
+import System.Directory.BigTrees.HashTree.Build ( buildProdTree )
 import System.Directory.BigTrees.HashTree.Read
-import System.Directory.BigTrees.HashTree.Types
+    ( readTree, accTrees )
+import System.Directory.BigTrees.HashTree.Types ( HashTree )
 import System.FilePath.Glob (Pattern)
 import System.IO (IOMode (..), hClose, withFile)
-import System.IO.Temp
-import Test.QuickCheck
-import Test.QuickCheck.Monadic
-import TH.Derive
+import System.IO.Temp ( withSystemTempFile )
+import Test.QuickCheck ( Arbitrary(..), Property, resize )
+import Test.QuickCheck.Monadic ( assert, monadicIO, pick, run )
+import TH.Derive ( derive, Deriving )
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the

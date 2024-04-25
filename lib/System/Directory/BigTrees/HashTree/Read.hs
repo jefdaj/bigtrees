@@ -5,7 +5,9 @@ import qualified Data.ByteString.Char8 as B8
 import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import Data.Store (decodeIO, encode)
 import System.Directory.BigTrees.HashLine
+    ( TreeType(D, F), HashLine(..), IndentLevel(..), parseHashes )
 import System.Directory.BigTrees.HashTree.Types
+    ( ProdTree, HashTree(Dir, File) )
 import System.Directory.BigTrees.HashTree.Util (countFiles)
 
 -- try to read as binary, and fall back to text if it fails
