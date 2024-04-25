@@ -8,8 +8,13 @@ import Control.DeepSeq
 import Data.Store (Store (..))
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash
+import System.Directory.BigTrees.HashLine
+import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Name (Name (..))
 import TH.Derive
+import Test.QuickCheck
+import Test.QuickCheck.Instances.ByteString ()
+import Test.QuickCheck.Monadic
 
 
 {- A tree of file names matching (a subdirectory of) the annex,
@@ -55,3 +60,35 @@ instance NFData a => NFData (HashTree a)
 $($(derive [d|
     instance Store a => Deriving (Store (HashTree a))
     |]))
+
+instance Arbitrary TreeType where
+
+  arbitrary = do
+    n <- choose (0,1 :: Int)
+    return $ [F, D] !! n
+
+  -- you could shrink D -> F, but not without changing the rest of the hashline
+  shrink _ = []
+
+instance Arbitrary IndentLevel where
+  arbitrary = IndentLevel <$> ((arbitrary :: Gen Int) `suchThat` (>= 0))
+  shrink _ = []
+
+instance Arbitrary Hash where
+  arbitrary = fmap hashBytes (arbitrary :: Gen B8.ByteString)
+  shrink _ = []
+
+-- TODO can you really have an arbitrary hashline without the rest of a tree?
+instance Arbitrary HashLine where
+
+  arbitrary = do
+    tt <- arbitrary :: Gen TreeType
+    il <- arbitrary :: Gen IndentLevel
+    h  <- arbitrary :: Gen Hash
+    n  <- arbitrary :: Gen Name
+    return $ HashLine (tt, il, h, n)
+
+  -- only shrinks the filename
+  shrink (HashLine (tt, il, h, n)) = map (\n' -> HashLine (tt, il, h, n')) (shrink n)
+
+
