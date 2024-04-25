@@ -5,10 +5,10 @@ module Main where
 -- TODO sort by how many links deduping would save: files per dupe * (dupes - 1)
 -- TODO figure out how to read files + compute hashes in parallel
 
-import Cmd    -- TODO qualified?
-import OldCmd -- TODO qualified?
+import Cmd
 import Config (Config (..), defaultConfig)
 import Data.Functor ((<&>))
+import OldCmd
 import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
 import System.FilePath.Glob (compile)
