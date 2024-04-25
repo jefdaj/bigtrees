@@ -27,6 +27,10 @@ in
 pkgs.mkShell {
   buildInputs = [
 
+    # dev
+    pkgs.haskell-language-server
+    pkgs.vscode
+
     # build
     stack-wrapped
     pkgs.zlib
