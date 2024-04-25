@@ -72,19 +72,19 @@ library
 executable bigtrees
   main-is: Main.hs
   other-modules:
-      Cmd
-      Cmd.Add
-      Cmd.Cat
-      Cmd.Dedup
-      Cmd.Diff
-      Cmd.Dupes
-      Cmd.Hash
-      Cmd.Init
-      Cmd.Mv
-      Cmd.Rm
-      Cmd.Test
-      Cmd.Update
       Config
+      OldCmd
+      OldCmd.Add
+      OldCmd.Cat
+      OldCmd.Dedup
+      OldCmd.Diff
+      OldCmd.Dupes
+      OldCmd.Hash
+      OldCmd.Init
+      OldCmd.Mv
+      OldCmd.Rm
+      OldCmd.Test
+      OldCmd.Update
       Run
       Paths_bigtrees
   hs-source-dirs:
@@ -116,20 +116,20 @@ test-suite test-app
   type: exitcode-stdio-1.0
   main-is: Test.hs
   other-modules:
-      Cmd
-      Cmd.Add
-      Cmd.Cat
-      Cmd.Dedup
-      Cmd.Diff
-      Cmd.Dupes
-      Cmd.Hash
-      Cmd.Init
-      Cmd.Mv
-      Cmd.Rm
-      Cmd.Test
-      Cmd.Update
       Config
       Main
+      OldCmd
+      OldCmd.Add
+      OldCmd.Cat
+      OldCmd.Dedup
+      OldCmd.Diff
+      OldCmd.Dupes
+      OldCmd.Hash
+      OldCmd.Init
+      OldCmd.Mv
+      OldCmd.Rm
+      OldCmd.Test
+      OldCmd.Update
       Run
       Paths_bigtrees
   hs-source-dirs:
@@ -166,20 +166,20 @@ test-suite test-doctests
       System.Directory.BigTrees.HashTree
       System.Directory.BigTrees.Name
       System.Directory.Tree
-      Cmd
-      Cmd.Add
-      Cmd.Cat
-      Cmd.Dedup
-      Cmd.Diff
-      Cmd.Dupes
-      Cmd.Hash
-      Cmd.Init
-      Cmd.Mv
-      Cmd.Rm
-      Cmd.Test
-      Cmd.Update
       Config
       Main
+      OldCmd
+      OldCmd.Add
+      OldCmd.Cat
+      OldCmd.Dedup
+      OldCmd.Diff
+      OldCmd.Dupes
+      OldCmd.Hash
+      OldCmd.Init
+      OldCmd.Mv
+      OldCmd.Rm
+      OldCmd.Test
+      OldCmd.Update
       Run
       Paths_bigtrees
   hs-source-dirs:

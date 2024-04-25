@@ -1,4 +1,4 @@
-module Cmd.Test where
+module OldCmd.Test where
 
 import Config (Config (..), log)
 import qualified Data.ByteString.Char8 as B

@@ -1,4 +1,4 @@
-module Cmd.Update where
+module OldCmd.Update where
 
 -- TODO guess and check hashes? not sure if that makes sense here
 -- TODO make an operation to replace a subtree (insert despite it existing, then diff)

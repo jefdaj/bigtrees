@@ -1,10 +1,11 @@
-module Cmd.Diff where
+module OldCmd.Dupes where
 
 -- TODO guess and check hashes
 
 import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
+import qualified System.Directory.BigTrees as BT
 import System.Directory.BigTrees (diff, printDeltas, readOrBuildTree, renameRoot)
 import System.Directory.BigTrees.FilePath (absolute)
 import System.FilePath (dropExtension, takeBaseName, (</>))
@@ -15,18 +16,23 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
 
-cmdDiff :: Config -> FilePath -> FilePath -> IO ()
-cmdDiff cfg old new = do
-  tree1 <- renameRoot "old" <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) old
-  tree2 <- renameRoot "new" <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) new
-  printDeltas $ diff tree1 tree2
+cmdDupes :: Config -> [FilePath] -> IO ()
+cmdDupes cfg paths = do
+  forest <- BT.readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
+  -- TODO rewrite sorting with lower memory usage
+  -- let dupes = runST $ BT.dupesByNFiles =<< BT.pathsByHash tree
+  -- printDupes $ map sortDupePaths $ simplifyDupes BT.dupes
+  let ds = BT.dupesByNFiles $ BT.pathsByHash forest
+  case txt cfg of
+    Nothing -> BT.printDupes (maxdepth cfg) ds
+    Just p  -> BT.writeDupes (maxdepth cfg) p ds
 
 -----------
 -- tests --
 -----------
 
-diffTarXz :: FilePath -> FilePath -> IO BLU.ByteString
-diffTarXz xz1 xz2 = do
+dupesTarXz :: FilePath -> FilePath -> IO BLU.ByteString
+dupesTarXz xz1 xz2 = do
   (Just xz1') <- absolute xz1
   (Just xz2') <- absolute xz2
   withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
@@ -35,16 +41,16 @@ diffTarXz xz1 xz2 = do
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
     _ <- readCreateProcess ((proc "tar" ["-xf", xz2']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultConfig d1 d2
+    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultConfig [d1, d2]
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 
-test_demo_diff :: TestTree
-test_demo_diff =
+test_demo_dupes :: TestTree
+test_demo_dupes =
   let xz1 = "test/app/demo1.tar.xz"
       xz2 = "test/app/demo2.tar.xz"
-      gld = "test/app/demo12.diff"
+      gld = "test/app/demo12.dupes"
   in goldenVsString
-       "diff demo1 -> demo2"
+       "dupes demo1 + demo2"
        gld
-       (diffTarXz xz1 xz2)
+       (dupesTarXz xz1 xz2)

@@ -1,4 +1,4 @@
-module Cmd
+module OldCmd
   -- ( cmdAdd
   -- , cmdDedup
   ( cmdCat
@@ -13,9 +13,9 @@ module Cmd
   )
   where
 
-import Cmd.Cat
-import Cmd.Diff
-import Cmd.Dupes
-import Cmd.Hash
-import Cmd.Test
-import Cmd.Update
+import OldCmd.Cat
+import OldCmd.Diff
+import OldCmd.Dupes
+import OldCmd.Hash
+import OldCmd.Test
+import OldCmd.Update

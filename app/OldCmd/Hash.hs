@@ -1,4 +1,4 @@
-module Cmd.Hash where
+module OldCmd.Hash where
 
 -- TODO guess and check hashes
 

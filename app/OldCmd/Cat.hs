@@ -1,4 +1,4 @@
-module Cmd.Cat where
+module OldCmd.Cat where
 
 import Config (Config (..))
 import System.Directory.BigTrees (printForest, readOrBuildTrees, writeForest)

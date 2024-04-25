@@ -1,4 +1,4 @@
-module Cmd.Dedup where
+module OldCmd.Dedup where
 
 -- TODO guess and check hashes
 -- TODO have a separate dedup command that only does the rm part without moving stuff?

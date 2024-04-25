@@ -1,4 +1,4 @@
-module Cmd.Mv where
+module OldCmd.Mv where
 
 -- TODO guess and check hashes
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D

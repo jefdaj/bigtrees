@@ -47,7 +47,7 @@ import System.FilePath (splitDirectories, (</>))
 -- note that most of the functions use (Hash, DupeSet) instead of plain DupeSet
 -- TODO is DupeSet a Monoid?
 type DupeSet  = (Int, TreeType, S.HashSet B.ByteString)
-type DupeList = (Int, TreeType, [B.ByteString]) -- TODO move to Cmd/Dupes.hs?
+type DupeList = (Int, TreeType, [B.ByteString]) -- TODO move to OldCmd/Dupes.hs?
 
 -- TODO remove DupeMap type?
 type DupeMap     = M.HashMap Hash DupeSet
