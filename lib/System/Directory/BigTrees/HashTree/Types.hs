@@ -4,18 +4,17 @@
 
 module System.Directory.BigTrees.HashTree.Types where
 
-import Control.DeepSeq ( NFData )
+import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B8
 import Data.Store (Store (..))
 import GHC.Generics (Generic)
-import System.Directory.BigTrees.Hash ( Hash, hashBytes )
-import System.Directory.BigTrees.HashLine
-    ( TreeType(..), HashLine(..), IndentLevel(..) )
+import System.Directory.BigTrees.Hash (Hash, hashBytes)
+import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.Name (Name (..))
-import Test.QuickCheck ( Arbitrary(..), Gen, choose, suchThat )
+import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic ()
-import TH.Derive ( derive, Deriving )
+import TH.Derive (Deriving, derive)
 
 
 {- A tree of file names matching (a subdirectory of) the annex,

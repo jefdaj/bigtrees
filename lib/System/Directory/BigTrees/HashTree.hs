@@ -56,34 +56,24 @@ import Data.Maybe (isJust)
 import Data.Store (decodeIO, encode)
 import qualified System.Directory as SD
 import System.Directory.BigTrees.FilePath (fp2n, n2fp, pathComponents)
-import System.Directory.BigTrees.Hash ( Hash, hashBytes )
-import System.Directory.BigTrees.HashLine
-    ( TreeType(D, F),
-      HashLine(..),
-      IndentLevel(IndentLevel),
-      prettyHashLine,
-      lineP )
+import System.Directory.BigTrees.Hash (Hash, hashBytes)
+import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLevel),
+                                           TreeType (D, F), lineP, prettyHashLine)
 import System.Directory.BigTrees.Name (Name (..))
 import qualified System.Directory.Tree as DT
-import System.FilePath ( joinPath, (</>), splitPath )
+import System.FilePath (joinPath, splitPath, (</>))
 import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
 import System.Info (os)
 import System.IO (IOMode (..), hClose, hFlush, stdout, withFile)
-import System.IO.Temp
-    ( withSystemTempDirectory, withSystemTempFile )
-import Test.QuickCheck
-    ( Arbitrary(..), Property, Gen, choose, resize )
+import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
+import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize)
 import Test.QuickCheck.Instances.ByteString ()
-import Test.QuickCheck.Monadic ( assert, monadicIO, pick, run )
+import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
-import System.Directory.BigTrees.HashTree.Build
-    ( buildProdTree, buildTree )
-import System.Directory.BigTrees.HashTree.Read
-    ( readTree, deserializeTree )
-import System.Directory.BigTrees.HashTree.Types
-    ( ProdTree, HashTree(..) )
-import System.Directory.BigTrees.HashTree.Util
-    ( countFiles, hashContents )
+import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
+import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree)
+import System.Directory.BigTrees.HashTree.Types (HashTree (..), ProdTree)
+import System.Directory.BigTrees.HashTree.Util (countFiles, hashContents)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.

@@ -28,18 +28,16 @@ import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.Store (Store (..), decodeIO, encode)
 import System.Directory.BigTrees.HashLine (parseHashes)
-import System.Directory.BigTrees.HashTree
-    ( readOrBuildTree, serializeTree, printTree )
-import System.Directory.BigTrees.HashTree.Build ( buildProdTree )
-import System.Directory.BigTrees.HashTree.Read
-    ( readTree, accTrees )
-import System.Directory.BigTrees.HashTree.Types ( HashTree )
+import System.Directory.BigTrees.HashTree (printTree, readOrBuildTree, serializeTree)
+import System.Directory.BigTrees.HashTree.Build (buildProdTree)
+import System.Directory.BigTrees.HashTree.Read (accTrees, readTree)
+import System.Directory.BigTrees.HashTree.Types (HashTree)
 import System.FilePath.Glob (Pattern)
 import System.IO (IOMode (..), hClose, withFile)
-import System.IO.Temp ( withSystemTempFile )
-import Test.QuickCheck ( Arbitrary(..), Property, resize )
-import Test.QuickCheck.Monadic ( assert, monadicIO, pick, run )
-import TH.Derive ( derive, Deriving )
+import System.IO.Temp (withSystemTempFile)
+import Test.QuickCheck (Arbitrary (..), Property, resize)
+import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import TH.Derive (Deriving, derive)
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the
