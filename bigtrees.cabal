@@ -72,6 +72,8 @@ library
 executable bigtrees
   main-is: Main.hs
   other-modules:
+      Cmd
+      Cmd.Info
       Config
       OldCmd
       OldCmd.Add
@@ -116,6 +118,8 @@ test-suite test-app
   type: exitcode-stdio-1.0
   main-is: Test.hs
   other-modules:
+      Cmd
+      Cmd.Info
       Config
       Main
       OldCmd
@@ -166,6 +170,8 @@ test-suite test-doctests
       System.Directory.BigTrees.HashTree
       System.Directory.BigTrees.Name
       System.Directory.Tree
+      Cmd
+      Cmd.Info
       Config
       Main
       OldCmd

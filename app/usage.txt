@@ -1,6 +1,8 @@
-The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
+Create and manipulate hash trees representing collections of files.
 
 Usage:
+  bigtrees [-v] info <path>..
+
   bigtrees [-vc]  oldcat    <path>...
   bigtrees [-vc]  oldhash   [-e <exclude>] [-t <txt>] [-b <bin>] <path>...
   bigtrees [-vc]  olddiff   <old> <new>
