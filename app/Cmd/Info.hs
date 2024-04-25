@@ -1,7 +1,6 @@
 module Cmd.Info where
 
 import Config (Config (..))
-import System.Directory.BigTrees (printForest, readOrBuildTrees, writeForest)
 
 cmdInfo :: Config -> [FilePath] -> IO ()
 cmdInfo cfg paths = do

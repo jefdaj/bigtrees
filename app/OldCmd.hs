@@ -13,9 +13,9 @@ module OldCmd
   )
   where
 
-import OldCmd.Cat
-import OldCmd.Diff
-import OldCmd.Dupes
-import OldCmd.Hash
-import OldCmd.Test
-import OldCmd.Update
+import OldCmd.Cat (oldCmdCat)
+import OldCmd.Diff (oldCmdDiff)
+import OldCmd.Dupes (oldCmdDupes)
+import OldCmd.Hash (oldCmdHash)
+import OldCmd.Test (oldCmdTest)
+import OldCmd.Update (oldCmdUpdate)

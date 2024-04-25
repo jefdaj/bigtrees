@@ -3,7 +3,9 @@ module OldCmd.Test where
 import Config (Config (..), log)
 import qualified Data.ByteString.Char8 as B
 import Prelude hiding (log)
-import System.Directory.BigTrees
+import System.Directory.BigTrees (HashForest, HashTree, deserializeForest, dupesByNFiles,
+                                  pathsByHash, printDupes, printForest, printTree, readOrBuildTrees,
+                                  rmSubTree, serializeForest)
 import Text.Pretty.Simple (pPrint)
 
 oldCmdTest :: Config -> [FilePath] -> IO ()

@@ -3,4 +3,4 @@ module Cmd
   )
   where
 
-import Cmd.Info
+import Cmd.Info (cmdInfo)
