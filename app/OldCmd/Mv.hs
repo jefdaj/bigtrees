@@ -8,8 +8,8 @@ module OldCmd.Mv where
 --      that's ok but confusing here
 -- TODO list files with no duplicates when confirming
 -- TODO aha! ok to be missing folder hashes, just not files
--- cmdMv :: Config -> FilePath -> FilePath -> IO ()
--- cmdMv cfg src dst = do -- TODO correct toRm path using root!
+-- oldCmdMv :: Config -> FilePath -> FilePath -> IO ()
+-- oldCmdMv cfg src dst = do -- TODO correct toRm path using root!
 --   let ds  = [Mv src dst]
 --       msg = unwords ["mv", src, "->", dst] -- TODO sanitize!
 --   safeRunDeltas cfg ds msg

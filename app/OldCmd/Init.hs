@@ -2,8 +2,8 @@ module OldCmd.Init where
 
 -- TODO guess and check hashes
 
--- cmdInit :: Config -> FilePath -> IO ()
--- cmdInit cfg dir = do
+-- oldCmdInit :: Config -> FilePath -> IO ()
+-- oldCmdInit cfg dir = do
 --   dir' <- fmap fromJust $ absolute dir -- TODO can this fail?
 --   -- TODO check the root folder doesn't exist yet, or abort
 --   -- TODO guards: git, git-annex on path

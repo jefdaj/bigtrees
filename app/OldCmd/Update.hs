@@ -6,8 +6,8 @@ module OldCmd.Update where
 import Config (Config (..))
 import System.Directory.BigTrees (addSubTree, printTree, readOrBuildTree)
 
-cmdUpdate :: Config -> FilePath -> FilePath -> FilePath -> IO ()
-cmdUpdate cfg root sub path = do
+oldCmdUpdate :: Config -> FilePath -> FilePath -> FilePath -> IO ()
+oldCmdUpdate cfg root sub path = do
   tree1 <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) root
   tree2 <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) sub
   printTree $ addSubTree tree1 tree2 path

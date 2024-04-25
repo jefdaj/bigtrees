@@ -6,9 +6,9 @@ module OldCmd.Rm where
 
 -- TODO list files with no duplicates when confirming
 -- TODO aha! ok to be missing folder hashes, just not files
--- cmdRm :: Config -> FilePath -> FilePath -> FilePath -> IO ()
--- cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
--- cmdRm cfg target = do -- TODO correct toRm path using root!
+-- oldCmdRm :: Config -> FilePath -> FilePath -> FilePath -> IO ()
+-- oldCmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
+-- oldCmdRm cfg target = do -- TODO correct toRm path using root!
   -- let rmPath' = "./" ++ rmPath -- TODO fix this of course
   -- let ds  = [Rm rmPath]
   --     msg = unwords ["bigtrees rm", rmPath] -- TODO sanitize!

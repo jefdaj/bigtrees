@@ -21,8 +21,8 @@ import Test.Tasty.Golden (findByExtension, goldenVsString)
 -- TODO is there a better way to set that up?
 -- TODO require that the path be either absolute + in the annex or relative and in the annex
 -- this works, but add doesn't. so what changed?
-cmdHash :: Config -> [FilePath] -> IO ()
-cmdHash cfg targets = do
+oldCmdHash :: Config -> [FilePath] -> IO ()
+oldCmdHash cfg targets = do
   f <- buildForest (verbose cfg) (exclude cfg) targets
   case txt cfg of
     Nothing -> printForest f
@@ -73,7 +73,7 @@ hashTarXzAction xzPath = do
     let dPath = tmpDir </> dropExtension (takeBaseName xzPath') -- assumes .tar.something
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xzPath']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig [dPath]
+    (out, ()) <- hCapture [stdout, stderr] $ oldCmdHash defaultConfig [dPath]
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 

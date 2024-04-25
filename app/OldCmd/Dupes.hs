@@ -16,8 +16,8 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
 
-cmdDupes :: Config -> [FilePath] -> IO ()
-cmdDupes cfg paths = do
+oldCmdDupes :: Config -> [FilePath] -> IO ()
+oldCmdDupes cfg paths = do
   forest <- BT.readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
   -- TODO rewrite sorting with lower memory usage
   -- let dupes = runST $ BT.dupesByNFiles =<< BT.pathsByHash tree
@@ -41,7 +41,7 @@ dupesTarXz xz1 xz2 = do
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
     _ <- readCreateProcess ((proc "tar" ["-xf", xz2']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultConfig [d1, d2]
+    (out, ()) <- hCapture [stdout, stderr] $ oldCmdDupes defaultConfig [d1, d2]
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 

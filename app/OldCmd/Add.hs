@@ -3,8 +3,8 @@ module OldCmd.Add where
 -- TODO is the dst path being duplicated a bit? like unsorted/u1/u1?
 
 -- TODO ensure that dst is a valid relative path, or trust the user?
--- cmdAdd :: Config -> FilePath -> Maybe FilePath -> IO ()
--- cmdAdd cfg dst mSrc = do
+-- oldCmdAdd :: Config -> FilePath -> Maybe FilePath -> IO ()
+-- oldCmdAdd cfg dst mSrc = do
 --   let aPath   = fromJust $ annex cfg
 --       dstRoot = "unsorted" </> dst
 --       dstAbs  = aPath </> dstRoot

@@ -15,8 +15,8 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
 
-cmdDiff :: Config -> FilePath -> FilePath -> IO ()
-cmdDiff cfg old new = do
+oldCmdDiff :: Config -> FilePath -> FilePath -> IO ()
+oldCmdDiff cfg old new = do
   tree1 <- renameRoot "old" <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) old
   tree2 <- renameRoot "new" <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) new
   printDeltas $ diff tree1 tree2
@@ -35,7 +35,7 @@ diffTarXz xz1 xz2 = do
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
     _ <- readCreateProcess ((proc "tar" ["-xf", xz2']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultConfig d1 d2
+    (out, ()) <- hCapture [stdout, stderr] $ oldCmdDiff defaultConfig d1 d2
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 

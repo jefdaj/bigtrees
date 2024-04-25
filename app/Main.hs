@@ -42,30 +42,30 @@ main = do
   print cfg
   if cmd "oldcat" then do
      let paths = lst "path"
-     cmdCat cfg paths
+     oldCmdCat cfg paths
   else if cmd "oldhash" then do
      let paths = lst "path"
-     cmdHash cfg paths
+     oldCmdHash cfg paths
   else if cmd "olddiff" then do
     old <- arg "old"
     new <- arg "new"
-    cmdDiff cfg old new
+    oldCmdDiff cfg old new
   else if cmd "olddupes" then do
     let hashes = lst "hashes"
-    cmdDupes cfg hashes
+    oldCmdDupes cfg hashes
   else if cmd "oldtest"  then do
     let paths = lst "path"
-    cmdTest cfg paths
+    oldCmdTest cfg paths
   else if cmd "oldupdate" then do
     mainTree <- arg "main"
     subTree  <- arg "sub"
     subPath  <- arg "path"
-    cmdUpdate cfg mainTree subTree subPath
+    oldCmdUpdate cfg mainTree subTree subPath
   -- else if cmd "oldrm" then do
   --   target <- arg "target"
   --   rPath  <- arg "rootpath"
   --   dPath  <- arg "rmpath"
-  --   cmdRm cfg target rPath dPath
+  --   oldCmdRm cfg target rPath dPath
   else do
     print args
     print cfg

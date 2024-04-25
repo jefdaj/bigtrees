@@ -1,15 +1,15 @@
 module OldCmd
-  -- ( cmdAdd
+  -- ( oldCmdAdd
   -- , cmdDedup
-  ( cmdCat
-  , cmdDiff
-  , cmdDupes
-  , cmdHash
-  -- , cmdInit
-  -- , cmdMv
-  -- , cmdRm
-  , cmdTest
-  , cmdUpdate
+  ( oldCmdCat
+  , oldCmdDiff
+  , oldCmdDupes
+  , oldCmdHash
+  -- , oldCmdInit
+  -- , oldCmdMv
+  -- , oldCmdRm
+  , oldCmdTest
+  , oldCmdUpdate
   )
   where
 
