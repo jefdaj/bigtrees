@@ -1,6 +1,7 @@
 recommend-stack-upgrade: false
 resolver: lts-22.16
 packages:
+  - ./directory-tree
   - .
 
 # for weeder
