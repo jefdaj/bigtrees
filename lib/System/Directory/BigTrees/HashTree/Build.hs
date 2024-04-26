@@ -4,7 +4,7 @@ module System.Directory.BigTrees.HashTree.Build where
 
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
-import Data.List (delete, find, nubBy, partition, sort, sortBy)
+import Data.List (sortBy)
 import System.Directory.BigTrees.FilePath (n2fp)
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine ()

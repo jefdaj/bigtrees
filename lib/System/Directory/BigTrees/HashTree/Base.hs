@@ -10,17 +10,16 @@ import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Char (toLower)
-import Data.List (delete, find, nubBy, partition, sort, sortBy)
+import Data.List (nubBy, sort)
 import Data.Store (Store (..))
 import GHC.Generics (Generic)
-import System.Directory.BigTrees.FilePath (fp2n, n2fp, pathComponents)
+import System.Directory.BigTrees.FilePath (fp2n, n2fp)
 import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.Name (Name (..))
 import System.Info (os)
-import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize, suchThat)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
-import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
 
 -- for comparing two trees without getting hung up on different overall names
