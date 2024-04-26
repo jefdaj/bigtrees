@@ -29,11 +29,9 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
+import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree)
-import System.Directory.BigTrees.HashTree.Base
-    ( ProdTree, HashTree(Dir, File) ) -- (HashTree (..), ProdTree)
-import System.Directory.BigTrees.HashTree.Base () -- (countFiles, hashContents)
 
 
 -- TODO can Foldable or Traversable simplify these?

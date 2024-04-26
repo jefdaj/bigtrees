@@ -65,14 +65,20 @@ module System.Directory.BigTrees
   )
   where
 
-import System.Directory.BigTrees.Delta
-import System.Directory.BigTrees.DupeMap
-import System.Directory.BigTrees.Hash
-import System.Directory.BigTrees.HashForest
-import System.Directory.BigTrees.HashLine
-import System.Directory.BigTrees.HashTree
-import System.Directory.BigTrees.HashTree.Build
-import System.Directory.BigTrees.HashTree.Read
-import System.Directory.BigTrees.HashTree.Base
-import System.Directory.BigTrees.HashTree.Base
-import System.Directory.BigTrees.HashTree.Write
+import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
+                                        simDelta, simDeltas)
+import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNFiles, listAllFiles,
+                                          listLostFiles, mergeDupeSets, pathsByHash, printDupes,
+                                          writeDupes)
+import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
+import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, deserializeForest,
+                                             printForest, readForest, readOrBuildTrees, readTrees,
+                                             serializeForest, writeBinForest, writeForest)
+import System.Directory.BigTrees.HashLine (TreeType (..))
+import System.Directory.BigTrees.HashTree (addSubTree, dropTo, readOrBuildTree, renameRoot,
+                                           rmSubTree, treeContainsHash, treeContainsPath)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), hashContents)
+import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
+import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree)
+import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, serializeTree,
+                                                 writeBinTree, writeTree)

@@ -1,32 +1,27 @@
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE FlexibleInstances   #-}
 
 module System.Directory.BigTrees.HashTree.Base where
 
 import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Short as BS
+import Data.Char (toLower)
+import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import Data.Store (Store (..))
 import GHC.Generics (Generic)
-import System.Directory.BigTrees.Hash (Hash, hashBytes)
+import System.Directory.BigTrees.FilePath (n2fp)
+import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.Name (Name (..))
-import System.Directory.BigTrees.FilePath
-import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat)
-import Test.QuickCheck.Instances.ByteString ()
-import Test.QuickCheck.Monadic ()
-import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize)
+import System.Info (os)
+import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Short as BS
-import Data.List (delete, find, nubBy, partition, sort, sortBy)
-import Data.Char (toLower)
-import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
-import System.Info (os)
 
 -- for removing duplicate filenames using nubBy, taking into account
 -- case-insensitivity on apple filesystem

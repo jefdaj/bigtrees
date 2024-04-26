@@ -6,8 +6,7 @@ import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import Data.Store (decodeIO, encode)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (D, F),
                                            parseHashes)
-import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree)
-import System.Directory.BigTrees.HashTree.Base (countFiles)
+import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree, countFiles)
 
 -- try to read as binary, and fall back to text if it fails
 readTree :: Maybe Int -> FilePath -> IO ProdTree

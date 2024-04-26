@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns        #-}
+
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -70,11 +70,11 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
+import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, hash, nFiles, name),
+                                                ProdTree, TestTree, countFiles, hashContents)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree)
-import System.Directory.BigTrees.HashTree.Base
-import System.Directory.BigTrees.HashTree.Base (countFiles, hashContents)
-import System.Directory.BigTrees.HashTree.Write (printTree, writeTree, writeBinTree, serializeTree)
+import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeBinTree, writeTree)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.

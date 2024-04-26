@@ -8,7 +8,7 @@ import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import System.Directory.BigTrees.FilePath (n2fp)
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine ()
-import System.Directory.BigTrees.HashTree.Base
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, countFiles, hashContents)
 import qualified System.Directory.Tree as DT
 import System.FilePath ((</>))
 import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
