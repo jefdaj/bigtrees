@@ -1,5 +1,5 @@
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
 module System.Directory.BigTrees.HashLine
@@ -18,10 +18,10 @@ module System.Directory.BigTrees.HashLine
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
 import Control.DeepSeq (NFData (..))
-import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
+import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (choice, endOfInput, lookAhead, manyTill, sepBy')
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS

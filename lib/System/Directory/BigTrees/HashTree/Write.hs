@@ -1,6 +1,6 @@
 module System.Directory.BigTrees.HashTree.Write where
 
-import Control.DeepSeq (force)
+-- import Control.DeepSeq (force)
 import Control.Exception.Safe (catchAny)
 import Control.Monad (msum, when)
 import qualified Control.Monad.Parallel as P
@@ -29,7 +29,8 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
-import System.Directory.BigTrees.HashTree.Base
+import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, name),
+                                                ProdTree, TestTree)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree)
 

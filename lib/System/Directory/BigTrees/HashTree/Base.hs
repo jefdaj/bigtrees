@@ -13,7 +13,7 @@ import Data.Char (toLower)
 import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import Data.Store (Store (..))
 import GHC.Generics (Generic)
-import System.Directory.BigTrees.FilePath (n2fp)
+import System.Directory.BigTrees.FilePath (fp2n, n2fp, pathComponents)
 import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.Name (Name (..))
@@ -22,7 +22,6 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
-import System.Directory.BigTrees.FilePath (fp2n, n2fp, pathComponents)
 
 -- for comparing two trees without getting hung up on different overall names
 -- TODO when was this needed?

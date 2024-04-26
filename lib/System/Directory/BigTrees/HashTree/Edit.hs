@@ -32,9 +32,9 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, hash, nFiles, name),
                                                 ProdTree, TestTree, countFiles, hashContents)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
-import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree, readTestTree)
-import System.Directory.BigTrees.HashTree.Write
-import System.Directory.BigTrees.HashTree.Search
+import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTestTree, readTree)
+import System.Directory.BigTrees.HashTree.Search (dropTo)
+import System.Directory.BigTrees.HashTree.Write ()
 
 
 -------------------

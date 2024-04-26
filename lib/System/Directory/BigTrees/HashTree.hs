@@ -70,10 +70,11 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, hash, nFiles, name),
                                                 ProdTree, TestTree, countFiles, hashContents)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
-import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree, readTestTree)
-import System.Directory.BigTrees.HashTree.Write
-import System.Directory.BigTrees.HashTree.Search
-import System.Directory.BigTrees.HashTree.Edit
+import System.Directory.BigTrees.HashTree.Edit ()
+import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTestTree, readTree)
+import System.Directory.BigTrees.HashTree.Search ()
+import System.Directory.BigTrees.HashTree.Write (serializeTree, writeBinTree, writeTestTreeDir,
+                                                 writeTree)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.

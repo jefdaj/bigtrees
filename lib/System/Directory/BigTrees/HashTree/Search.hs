@@ -1,8 +1,5 @@
 module System.Directory.BigTrees.HashTree.Search where
 
-import System.Directory.BigTrees.Hash
-import Control.Monad (msum, when)
-import System.Directory.BigTrees.HashTree.Base
 import Control.DeepSeq (force)
 import Control.Exception.Safe (catchAny)
 import Control.Monad (msum, when)
@@ -21,6 +18,7 @@ import System.Directory.BigTrees.FilePath (fp2n, n2fp, pathComponents)
 import System.Directory.BigTrees.Hash (Hash, hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLevel),
                                            TreeType (D, F), lineP, prettyHashLine)
+import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree)
 import System.Directory.BigTrees.Name (Name (..))
 import qualified System.Directory.Tree as DT
 import System.FilePath (joinPath, splitPath, (</>))
