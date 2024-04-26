@@ -4,15 +4,18 @@
 {-# LANGUAGE TemplateHaskell     #-}
 
 module System.Directory.BigTrees.HashLine
+
   ( TreeType(..)
   , IndentLevel(..)
   , HashLine(..)
   , prettyHashLine
   , parseHashes
-  -- for testing
+
+  -- for testing (TODO remove?)
   , nameP
   , lineP
   , linesP
+
   )
   where
 

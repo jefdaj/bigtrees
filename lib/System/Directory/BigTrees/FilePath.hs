@@ -36,7 +36,27 @@ It uses the standard FilePath (String) type, just with custom functions to and f
 --       it "returns False if given a symlink pointing into a .git/annex/objects dir" pending
 --       it "returns True if given a symlink pointing somewhere else" pending
 
-module System.Directory.BigTrees.FilePath where
+module System.Directory.BigTrees.FilePath
+
+  ( FilePath -- ^ Re-export of the standard type for convenience
+  , absolute
+  , fp2n
+  , isNonAnnexSymlink
+  , n2fp
+  , pathComponents
+
+  -- tests
+  , prop_absolute_is_idempotent
+  , prop_absolute_strips_redundant_dot
+  , prop_absolute_strips_redundant_dotdot
+  , prop_roundtrip_name_to_filename
+  , prop_roundtrip_name_to_filepath
+  , unit_absolute_expands_tildes
+  , unit_absolute_fixes_invalid_dotdot
+  , unit_absolute_rejects_null_path
+
+  )
+  where
 
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B

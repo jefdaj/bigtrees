@@ -10,20 +10,25 @@
 
 -- TODO are forests even needed?
 
-module System.Directory.BigTrees.HashForest where
-  -- ( HashForest(..)
-  -- , ProdForest
-  -- , readTrees
-  -- , buildForest
-  -- , readForest
-  -- , readOrBuildTrees
-  -- , serializeForest
-  -- , deserializeForest
-  -- , printForest
-  -- , writeForest
-  -- , writeBinForest
-  -- )
-  -- where
+module System.Directory.BigTrees.HashForest
+
+  ( HashForest(..)
+  , ProdForest
+  , readTrees
+  , buildForest
+  , readForest
+  , readOrBuildTrees
+  , printForest
+  , writeForest
+  , writeBinForest
+
+  -- tests
+  , prop_roundtrip_hashforest_to_binary_hashes
+  , prop_roundtrip_hashforest_to_bytestring
+  , prop_roundtrip_hashforest_to_hashes
+
+  )
+  where
 
 import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8

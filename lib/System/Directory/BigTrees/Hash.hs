@@ -15,15 +15,23 @@ Long description here.
 -- TODO should it also hash filenames?
 -- TODO convert everything here to UTF-8?
 
-module System.Directory.BigTrees.Hash where
-  -- ( Hash(..)
-  -- , digestLength
-  -- , prettyHash
-  -- , hashBytes
-  -- , hashString
-  -- , hashFile
-  -- )
-  -- where
+module System.Directory.BigTrees.Hash
+
+  ( Hash(..)
+  , digestLength
+  , prettyHash
+  , hashBytes
+  , hashString
+  , hashFile
+
+  -- tests
+  , unit_hash_bytestring
+  , unit_hash_empty_file
+  , unit_hash_file_contents
+  , unit_hash_image
+
+  )
+  where
 
 import Control.DeepSeq (NFData)
 import qualified Crypto.Hash as CH

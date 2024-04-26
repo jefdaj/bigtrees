@@ -1,18 +1,18 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module System.Directory.BigTrees.Delta where
-  -- ( Delta(..)
-  -- , diff
-  -- , prettyDelta
-  -- , printDeltas
-  -- -- , safeDelta
-  -- -- , safeDeltas
-  -- , simDelta
-  -- , simDeltas
-  -- , assertSameTrees -- TODO rename to mention diff
-  -- )
-  -- where
+module System.Directory.BigTrees.Delta
+  ( Delta(..)
+  , assertSameTrees
+  , diff
+  , findMv
+  , fixMoves
+  , prettyDelta
+  , printDeltas
+  , simDelta
+  , simDeltas
+  )
+  where
 
 {- This module calculates what a HashTree should look like after doing some git
  - operations, represented as Deltas. It's dramatically faster to update the

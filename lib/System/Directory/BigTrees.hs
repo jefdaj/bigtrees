@@ -11,7 +11,7 @@ module System.Directory.BigTrees
   , addSubTree
   , buildTree
   , buildProdTree
-  , deserializeTree
+  -- , deserializeTree
   , dropTo
   , flattenTree
   , hashContents
@@ -24,7 +24,7 @@ module System.Directory.BigTrees
   , readTree
   , renameRoot
   , rmSubTree
-  , serializeTree
+  -- , serializeTree
   , treeContainsHash
   , treeContainsPath
 
@@ -37,8 +37,8 @@ module System.Directory.BigTrees
   , printForest
   , writeForest
   , writeBinForest
-  , serializeForest
-  , deserializeForest
+  -- , serializeForest
+  -- , deserializeForest
 
   -- delta
   , Delta(..)
@@ -71,15 +71,14 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNFi
                                           listLostFiles, mergeDupeSets, pathsByHash, printDupes,
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
-import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, deserializeForest,
-                                             printForest, readForest, readOrBuildTrees, readTrees,
-                                             serializeForest, writeBinForest, writeForest)
+import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, printForest, readForest,
+                                             readOrBuildTrees, readTrees, writeBinForest,
+                                             writeForest)
 import System.Directory.BigTrees.HashLine (TreeType (..))
 import System.Directory.BigTrees.HashTree (readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), hashContents, renameRoot)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree)
+import System.Directory.BigTrees.HashTree.Read (readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
-import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, serializeTree,
-                                                 writeBinTree, writeTree)
+import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, writeBinTree, writeTree)

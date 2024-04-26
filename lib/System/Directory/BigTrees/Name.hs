@@ -15,7 +15,11 @@ Long description here.
 -- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
 -- TODO wait, is the empty string also a valid filename?
 
-module System.Directory.BigTrees.Name where
+module System.Directory.BigTrees.Name
+  ( Name(..)
+  , validName -- for testing
+  )
+  where
 
 import Control.DeepSeq (NFData)
 import Data.Store (Store (..))

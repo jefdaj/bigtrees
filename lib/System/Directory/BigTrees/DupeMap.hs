@@ -6,18 +6,20 @@
 module System.Directory.BigTrees.DupeMap
   ( DupeSet
   , DupeMap
+  , addToDupeMap
   , allDupes
+  , anotherCopy
   , dupesByNFiles
-  -- , hasDupes
+  , explainDupes
+  , insertDupeSet
   , listAllFiles
   , listLostFiles
   , mergeDupeSets
   , pathsByHash
   , printDupes
+  , scoreSets
+  , simplifyDupes
   , writeDupes
-  -- , simplifyDupes
-  -- , sortDupePaths
-  -- , sortDescLength
   )
   where
 
@@ -245,3 +247,4 @@ listLostFiles before after = filesLost
 
 -- TODO property: if you dedup a list of the same dir 2+ times, there should only be one big overall dupe
 -- TODO property: adding to the dupe set should be idempotent
+

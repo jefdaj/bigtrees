@@ -12,7 +12,7 @@ import OldCmd.Cat (oldCmdCat)
 import OldCmd.Diff (oldCmdDiff)
 import OldCmd.Dupes (oldCmdDupes)
 import OldCmd.Hash (oldCmdHash)
-import OldCmd.Test (oldCmdTest)
+-- import OldCmd.Test (oldCmdTest)
 import OldCmd.Update (oldCmdUpdate)
 import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
@@ -67,9 +67,9 @@ main = do
     let hashes = lst "hashes"
     oldCmdDupes cfg hashes
 
-  else if cmd "oldtest"  then do
-    let paths = lst "path"
-    oldCmdTest cfg paths
+  -- else if cmd "oldtest"  then do
+  --   let paths = lst "path"
+  --   oldCmdTest cfg paths
 
   else if cmd "oldupdate" then do
     mainTree <- arg "main"

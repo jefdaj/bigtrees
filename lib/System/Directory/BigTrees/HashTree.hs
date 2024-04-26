@@ -53,6 +53,10 @@ import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, tree
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeBinTree,
                                                  writeTestTreeDir, writeTree)
 
+-- import qualified Data.ByteString.Char8 as B
+-- import Text.Pretty.Simple (pPrint)
+
+
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
 -- TODO don't assume??
@@ -140,3 +144,24 @@ prop_roundtrip_testtree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundTripTestTreeToDir t1
   assert $ force t2 == t1 -- force evaluation to prevent any possible conflicts
+
+--------------
+-- old code --
+--------------
+
+-- explain :: String -> IO () -> IO ()
+-- explain msg fn = putStrLn msg >> fn >> putStrLn ""
+
+-- testSerialization :: Config -> HashForest () -> IO ()
+-- testSerialization cfg forest1 = do
+--   explain "making hashforest:" $ pPrint forest1
+--   let string1 = B.unlines $ serializeForest forest1
+--       forest2 = deserializeForest (maxdepth cfg) string1
+--       string2 = B.unlines $ serializeForest forest2
+--   let tests = [forest1 == forest2, show forest1 == show forest2, string1 == string2]
+--   if and tests then explain "round-tripped hashforest to string:" $ printForest forest1
+--   else do
+--     putStrLn "failed to round-trip hashforest to string!"
+--     print string1
+--     print string2
+--     putStrLn "failed to round-trip the tree!"
