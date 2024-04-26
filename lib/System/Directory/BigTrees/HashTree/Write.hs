@@ -1,38 +1,17 @@
 module System.Directory.BigTrees.HashTree.Write where
 
 -- import Control.DeepSeq (force)
-import Control.Exception.Safe (catchAny)
-import Control.Monad (msum, when)
-import qualified Control.Monad.Parallel as P
-import qualified Data.Attoparsec.ByteString.Char8 as A8
+import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Short as BS
-import Data.Char (toLower)
-import Data.Either (fromRight)
-import Data.Function (on)
-import Data.List (delete, find, nubBy, partition, sort, sortBy)
-import Data.Maybe (isJust)
-import Data.Store (decodeIO, encode)
+import Data.Store (encode)
 import qualified System.Directory as SD
-import System.Directory.BigTrees.FilePath (fp2n, n2fp, pathComponents)
-import System.Directory.BigTrees.Hash (Hash, hashBytes)
+import System.Directory.BigTrees.FilePath (n2fp)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLevel),
-                                           TreeType (D, F), lineP, prettyHashLine)
-import System.Directory.BigTrees.Name (Name (..))
-import qualified System.Directory.Tree as DT
-import System.FilePath (joinPath, splitPath, (</>))
-import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
-import System.Info (os)
-import System.IO (IOMode (..), hClose, hFlush, stdout, withFile)
-import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
-import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize)
-import Test.QuickCheck.Instances.ByteString ()
-import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-
+                                           TreeType (D, F), prettyHashLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, name),
                                                 ProdTree, TestTree)
-import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
-import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree)
+import System.FilePath (splitPath, (</>))
+import System.IO (IOMode (..), hFlush, stdout, withFile)
 
 
 -- TODO can Foldable or Traversable simplify these?
