@@ -28,8 +28,9 @@ pkgs.mkShell {
   buildInputs = [
 
     # dev
-    pkgs.haskell-language-server
-    pkgs.vscode
+    # TODO clean this up
+    # pkgs.haskell-language-server
+    # pkgs.vscode
 
     # build
     stack-wrapped
