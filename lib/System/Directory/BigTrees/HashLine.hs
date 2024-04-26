@@ -1,7 +1,7 @@
+{-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE InstanceSigs #-}
 
 module System.Directory.BigTrees.HashLine
   ( TreeType(..)

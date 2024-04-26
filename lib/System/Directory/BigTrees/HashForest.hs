@@ -6,7 +6,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs       #-}
 
 -- TODO are forests even needed?
 

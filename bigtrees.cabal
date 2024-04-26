@@ -19,12 +19,6 @@ library
       System.Directory.BigTrees
       System.Directory.BigTrees.DupeMap
       System.Directory.BigTrees.HashTree
-      System.Directory.BigTrees.HashTree.Base
-      System.Directory.BigTrees.HashTree.Build
-      System.Directory.BigTrees.HashTree.Edit
-      System.Directory.BigTrees.HashTree.Read
-      System.Directory.BigTrees.HashTree.Search
-      System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.Name
@@ -32,6 +26,12 @@ library
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.Delta
   other-modules:
+      System.Directory.BigTrees.HashTree.Base
+      System.Directory.BigTrees.HashTree.Build
+      System.Directory.BigTrees.HashTree.Edit
+      System.Directory.BigTrees.HashTree.Read
+      System.Directory.BigTrees.HashTree.Search
+      System.Directory.BigTrees.HashTree.Write
       System.Directory.Tree
       Paths_bigtrees
   hs-source-dirs:

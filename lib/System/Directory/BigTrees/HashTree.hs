@@ -2,35 +2,34 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
 
--- TODO when you don't add an export list, does it not re-export everything?
+module System.Directory.BigTrees.HashTree
 
-module System.Directory.BigTrees.HashTree where
-  -- ( HashTree(..)
-  -- , ProdTree(..)
-  -- , HashLine(..)
-  -- , keepPath
-  -- , readTree
-  -- , buildTree
-  -- , buildProdTree
-  -- , readOrBuildTree
-  -- , renameRoot
-  -- , printTree
-  -- , writeBinTree
-  -- , serializeTree
-  -- , writeTree
-  -- , flattenTree
-  -- , deserializeTree
-  -- , hashContents
-  -- , dropTo
-  -- , treeContainsPath
-  -- , treeContainsHash
-  -- , addSubTree
-  -- , rmSubTree
-  -- , accTrees -- TODO hide this better?
-  -- -- for testing
-  -- , countFiles
-  -- )
-  -- where
+  ( HashTree(..)
+  , ProdTree
+
+  , accTrees -- TODO hide this better?
+  , addSubTree
+  , buildProdTree
+  , buildTree
+  , dropTo
+  , printTree
+  , readOrBuildTree
+  , readTree
+  , rmSubTree
+  , treeContainsHash
+  , treeContainsPath
+  , writeBinTree
+  , writeTree
+
+  -- for testing
+  , countFiles
+  , prop_roundtrip_prodtree_to_bin_hashes
+  , prop_roundtrip_prodtree_to_bytestring
+  , prop_roundtrip_prodtree_to_hashes
+  , prop_roundtrip_testtree_to_dir
+
+  )
+  where
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
@@ -46,11 +45,13 @@ import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Gen, Property)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
-import System.Directory.BigTrees.HashTree.Base (HashTree (name), ProdTree, TestTree)
-import System.Directory.BigTrees.HashTree.Build (buildProdTree)
-import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTestTree, readTree)
-import System.Directory.BigTrees.HashTree.Write (serializeTree, writeBinTree, writeTestTreeDir,
-                                                 writeTree)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countFiles)
+import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
+import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
+import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readTestTree, readTree)
+import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
+import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeBinTree,
+                                                 writeTestTreeDir, writeTree)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.

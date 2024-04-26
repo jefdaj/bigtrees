@@ -2,7 +2,7 @@
 {-# OPTIONS_HADDOCK prune #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs      #-}
 
 {-|
 Description: FilePath handling
