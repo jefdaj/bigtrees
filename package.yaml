@@ -16,8 +16,10 @@ library:
   - System.Directory.BigTrees.DupeMap
   - System.Directory.BigTrees.HashTree
   - System.Directory.BigTrees.HashTree.Base
-  - System.Directory.BigTrees.HashTree.Read
   - System.Directory.BigTrees.HashTree.Build
+  - System.Directory.BigTrees.HashTree.Edit
+  - System.Directory.BigTrees.HashTree.Read
+  - System.Directory.BigTrees.HashTree.Search
   - System.Directory.BigTrees.HashTree.Write
   - System.Directory.BigTrees.HashForest
   - System.Directory.BigTrees.HashLine

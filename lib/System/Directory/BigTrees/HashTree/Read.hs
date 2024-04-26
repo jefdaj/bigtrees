@@ -6,7 +6,9 @@ import Data.List (delete, find, nubBy, partition, sort, sortBy)
 import Data.Store (decodeIO, encode)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (D, F),
                                            parseHashes)
-import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree, countFiles)
+import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree, countFiles, TestTree)
+import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
+import System.Directory.BigTrees.HashTree.Build (buildTree)
 
 -- try to read as binary, and fall back to text if it fails
 readTree :: Maybe Int -> FilePath -> IO ProdTree
@@ -45,3 +47,8 @@ accTrees (HashLine (t, IndentLevel i, h, p)) cs = case t of
            dir = Dir p h (map snd children)
                          (sum $ map (countFiles . snd) children)
        in siblings ++ [(IndentLevel i, dir)]
+
+readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree
+readTestTree md = buildTree B8.readFile
+
+

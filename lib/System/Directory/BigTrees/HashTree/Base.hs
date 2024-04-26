@@ -22,6 +22,12 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, resize, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
+import System.Directory.BigTrees.FilePath (fp2n, n2fp, pathComponents)
+
+-- for comparing two trees without getting hung up on different overall names
+-- TODO when was this needed?
+renameRoot :: FilePath -> ProdTree -> ProdTree
+renameRoot newName tree = tree { name = fp2n newName }
 
 -- for removing duplicate filenames using nubBy, taking into account
 -- case-insensitivity on apple filesystem
@@ -164,4 +170,12 @@ dropFileData f@(File {})             = f {fileData = ()}
 
 instance Arbitrary ProdTree where
   arbitrary = fmap dropFileData arbitrary
+
+confirmFileHashes :: TestTree -> Bool
+confirmFileHashes (File {fileData = f, hash = h}) = hashBytes f == h
+confirmFileHashes (Dir {contents = cs})           = all confirmFileHashes cs
+
+prop_confirm_file_hashes :: TestTree -> Bool
+prop_confirm_file_hashes = confirmFileHashes
+
 

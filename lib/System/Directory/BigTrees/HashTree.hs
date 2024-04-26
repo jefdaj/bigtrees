@@ -1,9 +1,6 @@
-
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
-
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
@@ -73,8 +70,10 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, hash, nFiles, name),
                                                 ProdTree, TestTree, countFiles, hashContents)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
-import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree)
-import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeBinTree, writeTree)
+import System.Directory.BigTrees.HashTree.Read (deserializeTree, readTree, readTestTree)
+import System.Directory.BigTrees.HashTree.Write
+import System.Directory.BigTrees.HashTree.Search
+import System.Directory.BigTrees.HashTree.Edit
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
@@ -86,115 +85,6 @@ readOrBuildTree verbose mmaxdepth excludes path = do
   if      isFile then readTree mmaxdepth path
   else if isDir then buildProdTree verbose excludes path
   else error $ "No such file: '" ++ path ++ "'"
-
--- for comparing two trees without getting hung up on different overall names
-renameRoot :: FilePath -> ProdTree -> ProdTree
-renameRoot newName tree = tree { name = fp2n newName }
-
--------------------------------------
--- serialize and deserialize trees --
--------------------------------------
-
--------------------
--- search a tree --
--------------------
-
--- treeContainsPath :: HashTree -> FilePath -> Bool
--- treeContainsPath (File f1 _     ) f2 = f1 == f2
--- treeContainsPath (Dir  f1 _ cs _) f2
---   | f1 == f2 = True
---   | length (pathComponents f2) < 2 = False
---   | otherwise = let n   = head $ pathComponents f2
---                     f2' = joinPath $ tail $ pathComponents f2
---                 in if f1 /= n
---                   then False
---                   else any (\c -> treeContainsPath c f2') cs
-
-treeContainsPath :: ProdTree -> FilePath -> Bool
-treeContainsPath tree path = isJust $ dropTo tree path
-
-dropTo :: ProdTree -> FilePath -> Maybe ProdTree
-dropTo t@(File f1 _ ()  ) f2 = if n2fp f1 == f2 then Just t else Nothing
-dropTo t@(Dir  f1 _ cs _) f2
-  | n2fp f1 == f2 = Just t
-  | length (pathComponents f2) < 2 = Nothing
-  | otherwise = let n   = fp2n $ head $ pathComponents f2
-                    f2' = joinPath $ tail $ pathComponents f2
-                in if f1 /= n
-                  then Nothing
-                  else msum $ map (`dropTo` f2') cs
-
-treeContainsHash :: ProdTree -> Hash -> Bool
-treeContainsHash (File _ h1 ()  ) h2 = h1 == h2
-treeContainsHash (Dir  _ h1 cs _) h2
-  | h1 == h2 = True
-  | otherwise = any (`treeContainsHash` h2) cs
-
--- TODO if tree contains path, be able to extract it! need for rm
-
--------------------
--- add a subtree --
--------------------
-
--- TODO use this to implement hashing multiple trees at once?
-wrapInEmptyDir :: FilePath -> ProdTree -> ProdTree
-wrapInEmptyDir n t = Dir { name = fp2n n, hash = h, contents = cs, nFiles = nFiles t }
-  where
-    cs = [t]
-    h = hashContents cs
-
-wrapInEmptyDirs :: FilePath -> ProdTree -> ProdTree
-wrapInEmptyDirs p t = case pathComponents p of
-  []     -> error "wrapInEmptyDirs needs at least one dir"
-  [n]    -> wrapInEmptyDir n t
-  (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
-
--- TODO does the anchor here matter? maybe it's set to the full path accidentally
-addSubTree :: ProdTree -> ProdTree -> FilePath -> ProdTree
-addSubTree (File _ _ ()) _ _ = error "attempt to insert tree into a file"
-addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
-addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
-  where
-    comps  = pathComponents path
-    p1     = head comps
-    path'  = joinPath $ tail comps
-    h'     = hashContents cs'
-    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= fp2n p1) (contents main) ++ [newSub]
-    n'     = nFiles main + nFiles newSub - maybe 0 nFiles oldSub
-    sub'   = sub { name = fp2n $ last comps }
-    oldSub = find (\c -> name c == fp2n p1) (contents main)
-    newSub = if length comps == 1
-               then sub'
-               else case oldSub of
-                 Nothing -> wrapInEmptyDirs path sub'
-                 Just d  -> addSubTree d sub' path'
-
-----------------------
--- remove a subtree --
-----------------------
-
-{- This one gets a little complicated because if the subtree exists
- - then after removing it we have to adjust parent nFiles back up to the root.
- - Also edits have to be done on the parent tree (so no File branch).
- - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
- - TODO does this actually solve nFiles too?
- -}
-rmSubTree :: ProdTree -> FilePath -> Either String ProdTree
-rmSubTree (File _ _ ()) p = Left $ "no such subtree: '" ++ p ++ "'"
-rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
-  Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
-  Just t -> Right $ if t `elem` cs
-    then d { contents = delete t cs, nFiles = n - countFiles t }
-    else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
-           , nFiles = n - countFiles t
-           }
-
-parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
-parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")
-
------------
--- tests --
------------
 
 -- TODO test tree in haskell
 -- TODO test dir
@@ -214,14 +104,9 @@ parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")
 --       describe "HashTree" $ do
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
 
-confirmFileHashes :: TestTree -> Bool
-confirmFileHashes (File {fileData = f, hash = h}) = hashBytes f == h
-confirmFileHashes (Dir {contents = cs})           = all confirmFileHashes cs
-
-prop_confirm_file_hashes :: TestTree -> Bool
-prop_confirm_file_hashes = confirmFileHashes
-
 -- TODO prop_confirm_dir_hashes too?
+
+-- TODO round-trip to binary files too
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
 prop_roundtrip_prodtree_to_bytestring :: ProdTree -> Bool
@@ -230,73 +115,49 @@ prop_roundtrip_prodtree_to_bytestring t = t' == t
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
 
--- TODO round-trip to binary files too
-
-roundtrip_prodtree_to_hashes :: ProdTree -> IO ProdTree
-roundtrip_prodtree_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
-  hClose hdl
-  writeTree path t
-  readTree Nothing path
+roundTripProdTreeToHashes :: ProdTree -> IO ProdTree
+roundTripProdTreeToHashes t =
+  withSystemTempFile "roundtriptemp" $ \path hdl -> do
+    hClose hdl
+    writeTree path t
+    readTree Nothing path
 
 prop_roundtrip_prodtree_to_hashes :: Property
 prop_roundtrip_prodtree_to_hashes = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_prodtree_to_hashes t1
+  t2 <- run $ roundTripProdTreeToHashes t1
   assert $ t2 == t1
 
 -- TODO separate thing for test and production trees here?
-roundtrip_prodtree_to_bin_hashes :: ProdTree -> IO ProdTree
-roundtrip_prodtree_to_bin_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
-  hClose hdl
-  writeBinTree path t
-  readTree Nothing path
+roundTripProdTreeToBinHashes :: ProdTree -> IO ProdTree
+roundTripProdTreeToBinHashes t =
+  withSystemTempFile "roundtriptemp" $ \path hdl -> do
+    hClose hdl
+    writeBinTree path t
+    readTree Nothing path
 
 prop_roundtrip_prodtree_to_bin_hashes :: Property
 prop_roundtrip_prodtree_to_bin_hashes = monadicIO $ do
   t1 <- pick (arbitrary :: Gen ProdTree)
-  t2 <- run $ roundtrip_prodtree_to_bin_hashes t1
+  t2 <- run $ roundTripProdTreeToBinHashes t1
   assert $ t2 == t1
-
--- this is to catch the case where it tries to write the same file twice
--- (happened once because of macos filename case-insensitivity)
-assertNoFile :: FilePath -> IO ()
-assertNoFile path = do
-  exists <- SD.doesPathExist path
-  when exists $ error $ "duplicate write to: '" ++ path ++ "'"
-
-{- Take a generated `TestTree` and write it to a tree of tmpfiles.
- - Note that this calls itself recursively.
- -}
-writeTestTreeDir :: FilePath -> TestTree -> IO ()
-writeTestTreeDir root (File {name = n, fileData = bs}) = do
-  let path = root </> n2fp n
-  assertNoFile path
-  B8.writeFile path bs
-writeTestTreeDir root (Dir {name = n, contents = cs}) = do
-  let root' = root </> n2fp n
-  assertNoFile root'
-  -- putStrLn $ "write test dir: " ++ root'
-  SD.createDirectoryIfMissing True root' -- TODO false here
-  mapM_ (writeTestTreeDir root') cs
-
-readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree
-readTestTree md = buildTree B8.readFile
 
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk
 -- note that you have to drop the bytestrings from the original testtree to compare them
-roundtrip_testtree_to_dir :: TestTree -> IO TestTree
-roundtrip_testtree_to_dir t = withSystemTempDirectory "roundtriptemp" $ \root -> do
-  let tmpRoot = "/tmp/round-trip-tests" -- TODO replace with actual root
-  SD.createDirectoryIfMissing True tmpRoot -- TODO False?
-  let treePath = tmpRoot </> n2fp (name t)
-  SD.removePathForcibly treePath -- TODO remove
-  writeTestTreeDir tmpRoot t
-  -- putStrLn $ "treePath: " ++ treePath
-  readTestTree Nothing False [] treePath
+roundTripTestTreeToDir :: TestTree -> IO TestTree
+roundTripTestTreeToDir t =
+  withSystemTempDirectory "roundtriptemp" $ \root -> do
+    let tmpRoot = "/tmp/round-trip-tests" -- TODO replace with actual root
+    SD.createDirectoryIfMissing True tmpRoot -- TODO False?
+    let treePath = tmpRoot </> n2fp (name t)
+    SD.removePathForcibly treePath -- TODO remove
+    writeTestTreeDir tmpRoot t
+    -- putStrLn $ "treePath: " ++ treePath
+    readTestTree Nothing False [] treePath
 
 prop_roundtrip_testtree_to_dir :: Property
 prop_roundtrip_testtree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_testtree_to_dir t1
+  t2 <- run $ roundTripTestTreeToDir t1
   assert $ force t2 == t1 -- force evaluation to prevent any possible conflicts

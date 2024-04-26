@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
 module System.Directory.BigTrees.HashLine
@@ -17,6 +18,7 @@ module System.Directory.BigTrees.HashLine
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
 import Control.DeepSeq (NFData (..))
+import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
@@ -128,3 +130,6 @@ fileP md = linesP md <* endOfLine <* endOfInput
 -- TODO any more elegant way to make the parsing strict?
 parseHashes :: Maybe Int -> B8.ByteString -> [HashLine]
 parseHashes md = fromRight [] . parseOnly (fileP md)
+
+parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
+parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")
