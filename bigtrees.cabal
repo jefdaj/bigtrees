@@ -19,10 +19,10 @@ library
       System.Directory.BigTrees
       System.Directory.BigTrees.DupeMap
       System.Directory.BigTrees.HashTree
-      System.Directory.BigTrees.HashTree.Types
-      System.Directory.BigTrees.HashTree.Util
+      System.Directory.BigTrees.HashTree.Base
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Build
+      System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.Name
@@ -30,6 +30,7 @@ library
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.Delta
   other-modules:
+      System.Directory.BigTrees.HashTree.Util
       System.Directory.Tree
       Paths_bigtrees
   hs-source-dirs:
@@ -172,10 +173,11 @@ test-suite test-doctests
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.HashTree
+      System.Directory.BigTrees.HashTree.Base
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Read
-      System.Directory.BigTrees.HashTree.Types
       System.Directory.BigTrees.HashTree.Util
+      System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.Name
       System.Directory.Tree
       Cmd
@@ -253,10 +255,11 @@ test-suite test-lib
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.HashTree
+      System.Directory.BigTrees.HashTree.Base
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Read
-      System.Directory.BigTrees.HashTree.Types
       System.Directory.BigTrees.HashTree.Util
+      System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.Name
       System.Directory.Tree
       Paths_bigtrees

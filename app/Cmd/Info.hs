@@ -1,6 +1,7 @@
 module Cmd.Info where
 
 import Config (Config (..))
+-- import System.Directory.BigTrees.HashTree.Base
 
 cmdInfo :: Config -> [FilePath] -> IO ()
 cmdInfo cfg paths = do

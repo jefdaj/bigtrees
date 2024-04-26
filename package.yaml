@@ -15,10 +15,10 @@ library:
   - System.Directory.BigTrees
   - System.Directory.BigTrees.DupeMap
   - System.Directory.BigTrees.HashTree
-  - System.Directory.BigTrees.HashTree.Types
-  - System.Directory.BigTrees.HashTree.Util
+  - System.Directory.BigTrees.HashTree.Base
   - System.Directory.BigTrees.HashTree.Read
   - System.Directory.BigTrees.HashTree.Build
+  - System.Directory.BigTrees.HashTree.Write
   - System.Directory.BigTrees.HashForest
   - System.Directory.BigTrees.HashLine
   - System.Directory.BigTrees.Name
