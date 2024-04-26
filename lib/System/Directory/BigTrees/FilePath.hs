@@ -2,6 +2,7 @@
 {-# OPTIONS_HADDOCK prune #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
+{-# LANGUAGE InstanceSigs #-}
 
 {-|
 Description: FilePath handling
@@ -114,6 +115,7 @@ newtype ValidFilePath
 
 -- TODO wait, why does the built-in instance not work here? did no one write it?
 instance Arbitrary ValidFilePath where
+  arbitrary :: Gen ValidFilePath
   arbitrary = do
     prefix <- oneof $ map pure ["", ".", "..", "~"]
     comps  <- map (\ (Name t) -> T.unpack t)

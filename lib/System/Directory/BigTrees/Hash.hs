@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE InstanceSigs #-}
 
 {-|
 Description: Hashes and hash digests.
@@ -60,6 +61,7 @@ newtype Hash
 -- This is unrelated to BigTrees's hashing. It's required to use Data.HashMap
 instance Hashable Hash
   where
+    hashWithSalt :: Int -> Hash -> Int
     hashWithSalt n h = hashWithSalt n (unHash h)
 
 -- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html

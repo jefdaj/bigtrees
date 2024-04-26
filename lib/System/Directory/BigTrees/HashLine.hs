@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module System.Directory.BigTrees.HashLine
   ( TreeType(..)
@@ -40,7 +41,8 @@ data TreeType = D | F
   deriving (Eq, Ord, Read, Show)
 
 instance NFData TreeType
-  where rnf = const () -- TODO is this valid?
+  where rnf :: TreeType -> ()
+        rnf = const () -- TODO is this valid?
 
 $($(derive [d| instance Deriving (Store TreeType) |]))
 

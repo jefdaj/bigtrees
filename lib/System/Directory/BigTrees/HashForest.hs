@@ -6,6 +6,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- TODO are forests even needed?
 
@@ -36,7 +37,7 @@ import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree)
 import System.FilePath.Glob (Pattern)
 import System.IO (IOMode (..), hClose, withFile)
 import System.IO.Temp (withSystemTempFile)
-import Test.QuickCheck (Arbitrary (..), Property, resize)
+import Test.QuickCheck (Arbitrary (..), Gen, Property, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
 
@@ -104,11 +105,19 @@ writeBinForest path forest = B8.writeFile path $ encode forest
 type TestForest = HashForest B8.ByteString
 
 instance Arbitrary TestForest where
+
+  arbitrary :: Gen TestForest
   arbitrary = HashForest <$> resize 3 arbitrary
+
+  shrink :: TestForest -> [TestForest]
   shrink (HashForest xs) = HashForest <$> shrink xs
 
 instance Arbitrary ProdForest where
+
+  arbitrary :: Gen ProdForest
   arbitrary = HashForest <$> arbitrary
+
+  shrink :: ProdForest -> [ProdForest]
   shrink (HashForest ts) = HashForest <$> shrink ts
 
 prop_roundtrip_hashforest_to_bytestring :: HashForest () -> Bool

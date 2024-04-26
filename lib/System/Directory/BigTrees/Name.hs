@@ -4,6 +4,7 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# OPTIONS_HADDOCK prune #-}
+{-# LANGUAGE InstanceSigs #-}
 
 {-|
 Description: Custom Name type
@@ -45,7 +46,9 @@ $($(derive [d|
   |]))
 
 instance Arbitrary Name where
+  arbitrary :: Gen Name
   arbitrary = Name <$> (arbitrary :: Gen T.Text) `suchThat` validName
+  shrink :: Name -> [Name]
   shrink (Name t) = Name <$> filter validName (shrink t)
 
 -- TODO is there ever another separator, except on windows?
