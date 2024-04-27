@@ -104,7 +104,6 @@ fp2n = Name . (if os == "darwin"
 instance DT.IsName Name where
   n2p = n2fp
   p2n = fp2n
-  join (Name n1) (Name n2) = Name $ mconcat [n1, "/", n2]
 
 -- TODO haddocks
 -- TODO fp2ns?
