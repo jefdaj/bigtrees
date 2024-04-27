@@ -101,9 +101,9 @@ fp2n = Name . (if os == "darwin"
 
 -- | I plan to make a PR to the directory-tree package adding TreeName
 -- TODO should this go here, in Name, in Build, somewhere else?
-instance DT.TreeName Name where
-  n2fp = n2fp
-  fp2n = fp2n
+instance DT.IsName Name where
+  n2p = n2fp
+  p2n = fp2n
 
 -- TODO haddocks
 -- TODO fp2ns?

@@ -29,8 +29,8 @@ excludeGlobs :: [Pattern]
              -> (DT.AnchoredDirTree Name a -> DT.AnchoredDirTree Name a)
 excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
   where
-    keep a (DT.Dir  n _) = keepPath excludes (DT.n2fp $ DT.join a n)
-    keep a (DT.File n _) = keepPath excludes (DT.n2fp $ DT.join a n)
+    keep a (DT.Dir  n _) = keepPath excludes (DT.n2p $ DT.join a n)
+    keep a (DT.File n _) = keepPath excludes (DT.n2p $ DT.join a n)
     keep a b             = True
 
 -- TODO take this as a command-line argument?
@@ -55,10 +55,10 @@ buildTree readFileFn beVerbose excludes path = do
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
 -- TODO catch and re-throw errors with better description and/or handle them here
-buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (DT.n2fp $ DT.join a n) ++ ": " ++ show e
+buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (DT.n2p $ DT.join a n) ++ ": " ++ show e
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   -- TODO how to exclude these?
-  let fPath = DT.n2fp $ DT.join a n
+  let fPath = DT.n2p $ DT.join a n
   !h  <- unsafeInterleaveIO $ hashFile v fPath
   !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
