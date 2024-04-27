@@ -66,6 +66,7 @@ import qualified Data.Text.Encoding as TE
 import Prelude hiding (log)
 import System.Directory (canonicalizePath, getHomeDirectory)
 import System.Directory.BigTrees.Name (Name (..))
+import qualified System.Directory.Tree as DT
 import qualified System.FilePath as SF
 import System.FilePath ((</>))
 import System.Info (os)
@@ -76,7 +77,6 @@ import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (arbitrary), Gen, Property, listOf, oneof)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import qualified System.Directory.Tree as DT
 
 -- * Convert paths to/from names
 --
