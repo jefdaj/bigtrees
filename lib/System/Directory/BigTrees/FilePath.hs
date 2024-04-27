@@ -76,6 +76,7 @@ import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (arbitrary), Gen, Property, listOf, oneof)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import qualified System.Directory.Tree as DT
 
 -- * Convert paths to/from names
 --
@@ -97,6 +98,12 @@ fp2n :: FilePath -> Name
 fp2n = Name . (if os == "darwin"
                     then TE.decodeUtf8 . B.pack
                     else T.pack)
+
+-- | I plan to make a PR to the directory-tree package adding TreeName
+-- TODO should this go here, in Name, in Build, somewhere else?
+instance DT.TreeName Name where
+  n2fp = n2fp
+  fp2n = fp2n
 
 -- TODO haddocks
 -- TODO fp2ns?

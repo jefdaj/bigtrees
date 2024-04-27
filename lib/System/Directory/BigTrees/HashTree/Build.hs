@@ -5,7 +5,8 @@ module System.Directory.BigTrees.HashTree.Build where
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
-import System.Directory.BigTrees.FilePath (n2fp)
+import System.Directory.BigTrees.Name
+import System.Directory.BigTrees.FilePath
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine ()
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, countFiles, hashContents)
@@ -23,12 +24,13 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
              , ignoreDotSlash      = True
              }
 
+-- TODO hey is this not that hard to swap out for my new version?
 excludeGlobs :: [Pattern]
-             -> (DT.AnchoredDirTree a -> DT.AnchoredDirTree a)
+             -> (DT.AnchoredDirTree Name a -> DT.AnchoredDirTree Name a)
 excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
   where
-    keep a (DT.Dir  n _) = keepPath excludes (a </> n2fp n)
-    keep a (DT.File n _) = keepPath excludes (a </> n2fp n)
+    keep a (DT.Dir  n _) = keepPath excludes (DT.n2fp $ DT.join a n)
+    keep a (DT.File n _) = keepPath excludes (DT.n2fp $ DT.join a n)
     keep a b             = True
 
 -- TODO take this as a command-line argument?
@@ -51,12 +53,12 @@ buildTree readFileFn beVerbose excludes path = do
   buildTree' readFileFn beVerbose 0 excludes tree
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
-buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree a -> IO (HashTree a)
+buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
 -- TODO catch and re-throw errors with better description and/or handle them here
-buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n2fp n) ++ ": " ++ show e
+buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (DT.n2fp $ DT.join a n) ++ ": " ++ show e
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   -- TODO how to exclude these?
-  let fPath = a </> n2fp n
+  let fPath = DT.n2fp $ DT.join a n
   !h  <- unsafeInterleaveIO $ hashFile v fPath
   !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
@@ -68,7 +70,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
          $ File { name = n, hash = h, fileData = fd }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
-  let root = a </> n2fp n
+  let root = DT.join a n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
       (_ DT.:/ (DT.Dir _ cs')) = excludeGlobs es d -- TODO operate on only the cs part

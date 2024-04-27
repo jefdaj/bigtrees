@@ -34,6 +34,7 @@ library:
   - crypton
   - deepseq
   - directory
+  - directory-tree
   - filepath
   - hashable
   - hashtables
@@ -125,6 +126,7 @@ tests:
     - crypton
     - deepseq
     - directory
+    - directory-tree
     - filepath
     - hashable
     - hashtables
@@ -225,6 +227,7 @@ tests:
     - crypton
     - deepseq
     - directory
+    - directory-tree
     - doctest-parallel
     - filepath
     - hashable

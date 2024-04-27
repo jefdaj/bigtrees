@@ -32,7 +32,6 @@ library
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
-      System.Directory.Tree
       Paths_bigtrees
   hs-source-dirs:
       lib
@@ -48,6 +47,7 @@ library
     , crypton
     , deepseq
     , directory
+    , directory-tree
     , filepath
     , hashable
     , hashtables
@@ -181,7 +181,6 @@ test-suite test-doctests
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.Name
-      System.Directory.Tree
       Cmd
       Cmd.Info
       Config
@@ -218,6 +217,7 @@ test-suite test-doctests
     , crypton
     , deepseq
     , directory
+    , directory-tree
     , doctest-parallel
     , filepath
     , hashable
@@ -264,7 +264,6 @@ test-suite test-lib
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.Name
-      System.Directory.Tree
       Paths_bigtrees
   hs-source-dirs:
       lib
@@ -283,6 +282,7 @@ test-suite test-lib
     , crypton
     , deepseq
     , directory
+    , directory-tree
     , filepath
     , hashable
     , hashtables
