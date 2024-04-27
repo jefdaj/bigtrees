@@ -66,7 +66,6 @@ import qualified Data.Text.Encoding as TE
 import Prelude hiding (log)
 import System.Directory (canonicalizePath, getHomeDirectory)
 import System.Directory.BigTrees.Name (Name (..))
-import qualified System.Directory.Tree as DT
 import qualified System.FilePath as SF
 import System.FilePath ((</>))
 import System.Info (os)
@@ -77,6 +76,7 @@ import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (arbitrary), Gen, Property, listOf, oneof)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import qualified System.Directory.Tree as DT
 
 -- * Convert paths to/from names
 --
@@ -100,10 +100,11 @@ fp2n = Name . (if os == "darwin"
                     else T.pack)
 
 -- | I plan to make a PR to the directory-tree package adding TreeName
--- TODO should this go here, in Name, in Build, somewhere else?
+-- TODO should probably unify FilePath and Name again and make this non-orphan
 instance DT.IsName Name where
   n2p = n2fp
   p2n = fp2n
+  join (Name n1) (Name n2) = Name $ mconcat [n1, "/", n2]
 
 -- TODO haddocks
 -- TODO fp2ns?
