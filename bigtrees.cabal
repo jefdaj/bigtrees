@@ -22,6 +22,7 @@ library
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.Name
+      System.Directory.BigTrees.Path
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.Delta
   other-modules:
@@ -179,6 +180,7 @@ test-suite test-doctests
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.Name
+      System.Directory.BigTrees.Path
       Cmd
       Cmd.Info
       Config
@@ -261,6 +263,7 @@ test-suite test-lib
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.Name
+      System.Directory.BigTrees.Path
       Paths_bigtrees
   hs-source-dirs:
       lib
