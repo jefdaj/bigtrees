@@ -37,7 +37,7 @@ module System.Directory.BigTrees.HashTree
 import Control.DeepSeq (force)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
-import System.Directory.BigTrees.FilePath (n2fp)
+import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath ((</>))
 import System.FilePath.Glob (Pattern)
 import System.IO (hClose)

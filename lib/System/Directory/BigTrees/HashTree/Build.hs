@@ -5,7 +5,7 @@ module System.Directory.BigTrees.HashTree.Build where
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
-import System.Directory.BigTrees.FilePath
+import System.Directory.BigTrees.Name
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine ()
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, countFiles, hashContents)

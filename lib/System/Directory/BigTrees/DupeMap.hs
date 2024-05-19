@@ -32,7 +32,7 @@ import qualified Data.HashTable.ST.Cuckoo as C
 import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
-import System.Directory.BigTrees.FilePath (n2fp)
+import System.Directory.BigTrees.Name (n2fp)
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashForest (HashForest (..))
 import System.Directory.BigTrees.HashLine (TreeType (..))

@@ -22,7 +22,6 @@ library
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
       System.Directory.BigTrees.Name
-      System.Directory.BigTrees.FilePath
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.Delta
   other-modules:
@@ -169,7 +168,6 @@ test-suite test-doctests
       System.Directory.BigTrees
       System.Directory.BigTrees.Delta
       System.Directory.BigTrees.DupeMap
-      System.Directory.BigTrees.FilePath
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine
@@ -252,7 +250,6 @@ test-suite test-lib
       System.Directory.BigTrees
       System.Directory.BigTrees.Delta
       System.Directory.BigTrees.DupeMap
-      System.Directory.BigTrees.FilePath
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.HashForest
       System.Directory.BigTrees.HashLine

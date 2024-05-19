@@ -5,7 +5,7 @@ import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import Data.Store (encode)
 import qualified System.Directory as SD
-import System.Directory.BigTrees.FilePath (n2fp)
+import System.Directory.BigTrees.Name (n2fp)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLevel),
                                            TreeType (D, F), prettyHashLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, name),

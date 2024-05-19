@@ -3,7 +3,7 @@ module System.Directory.BigTrees.HashTree.Edit where
 import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
-import System.Directory.BigTrees.FilePath (fp2n, pathComponents)
+import System.Directory.BigTrees.Name (fp2n, pathComponents)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, hash, nFiles, name),
                                                 ProdTree, countFiles, hashContents)
 import System.Directory.BigTrees.HashTree.Search (dropTo)

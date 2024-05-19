@@ -6,7 +6,7 @@ import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import System.Directory.BigTrees (diff, printDeltas, readOrBuildTree, renameRoot)
-import System.Directory.BigTrees.FilePath (absolute)
+import System.Directory.BigTrees.Name (absolute)
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
