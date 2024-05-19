@@ -47,7 +47,7 @@ import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 import TH.Derive (Deriving, derive)
 import Test.HUnit (Assertion, (@=?))
-import Test.QuickCheck (Arbitrary (..), Gen, suchThat, Property, listOf, oneof)
+import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import qualified Data.ByteString.Char8 as B
@@ -94,18 +94,29 @@ components f = filter (not . null)
 -- bs2n :: BU.ByteString -> Name
 -- bs2n = fp2n . BU.toString
 
-newtype ValidFilePath
-  = ValidFilePath FilePath
+newtype Path
+  = Path FilePath
   deriving (Eq, Ord, Read, Show)
 
-instance Arbitrary ValidFilePath where
-  arbitrary :: Gen ValidFilePath
+instance Arbitrary Path where
+  arbitrary :: Gen Path
   arbitrary = do
     prefix <- oneof $ map pure ["", ".", "..", "~"] -- TODO remove?
     -- a single path would work here too, but i want more complex test trees
     body <- listOf (arbitrary :: Gen FilePath)
     let path = SF.joinPath (prefix:body)
-    return $ ValidFilePath $ if null path then "/" else path
+    return $ Path $ if null path then "/" else path
+
+newtype PathWithParent
+  = PathWithParent FilePath
+  deriving (Eq, Ord, Read, Show)
+
+instance Arbitrary PathWithParent where
+  arbitrary :: Gen PathWithParent
+  arbitrary = fmap sayHasParent (arbitrary :: Gen Path) `suchThat` reallyHasParent
+    where
+      sayHasParent (Path p) = PathWithParent p
+      reallyHasParent (PathWithParent p) = length (SF.splitPath p) > 1
 
 -- * Canonical paths
 --
@@ -162,20 +173,20 @@ unit_absolute_fixes_invalid_dotdot = do
   fixed <- absolute "/.."
   fixed @=? Just "/"
 
-prop_absolute_is_idempotent :: ValidFilePath -> Property
-prop_absolute_is_idempotent (ValidFilePath path) = monadicIO $ do
+prop_absolute_is_idempotent :: Path -> Property
+prop_absolute_is_idempotent (Path path) = monadicIO $ do
   (Just path' ) <- liftIO $ absolute path
   (Just path'') <- liftIO $ absolute path'
   assert $ path' == path''
 
-prop_absolute_strips_redundant_dotdot :: ValidFilePath -> Property
-prop_absolute_strips_redundant_dotdot (ValidFilePath path) = monadicIO $ do
+prop_absolute_strips_redundant_dotdot :: PathWithParent -> Property
+prop_absolute_strips_redundant_dotdot (PathWithParent path) = monadicIO $ do
   (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
   (Just a') <- liftIO $ absolute $ path </> ".."
   assert $ a == a'
 
-prop_absolute_strips_redundant_dot :: ValidFilePath -> Property
-prop_absolute_strips_redundant_dot (ValidFilePath path) = monadicIO $ do
+prop_absolute_strips_redundant_dot :: Path -> Property
+prop_absolute_strips_redundant_dot (Path path) = monadicIO $ do
   (Just a ) <- liftIO $ absolute path
   (Just a') <- liftIO $ absolute $ path </> "."
   assert $ a == a'
