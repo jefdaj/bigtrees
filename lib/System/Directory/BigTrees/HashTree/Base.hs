@@ -17,7 +17,7 @@ import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat, sized)
 import Test.QuickCheck.Instances.ByteString ()
 import TH.Derive (Deriving, derive)
 
@@ -86,6 +86,7 @@ instance NFData a => NFData (HashTree a)
 
 instance Arbitrary TreeType where
 
+  --  TODO oneof
   arbitrary :: Gen TreeType
   arbitrary = do
     n <- choose (0,1 :: Int)
@@ -95,6 +96,7 @@ instance Arbitrary TreeType where
   shrink :: TreeType -> [TreeType]
   shrink _ = []
 
+-- TODO remove?
 instance Arbitrary IndentLevel where
 
   arbitrary :: Gen IndentLevel
@@ -103,6 +105,7 @@ instance Arbitrary IndentLevel where
   shrink :: IndentLevel -> [IndentLevel]
   shrink _ = []
 
+-- TODO remove?
 instance Arbitrary Hash where
 
   arbitrary :: Gen Hash
@@ -112,6 +115,7 @@ instance Arbitrary Hash where
   shrink _ = []
 
 -- TODO can you really have an arbitrary hashline without the rest of a tree?
+-- TODO remove?
 instance Arbitrary HashLine where
 
   arbitrary :: Gen HashLine
@@ -130,33 +134,61 @@ instance Arbitrary HashLine where
 -- memory for round-trip tests
 type TestTree = HashTree B8.ByteString
 
+-- Given a size "budget", generate test directory contents
+-- TODO write this using a fold with accumulator? wait, maybe no need
+-- this should have sum of nFiles == size... or is it nFiles-1?
+-- TODO test prop for that
+arbitraryContents :: Int -> Gen [TestTree]
+arbitraryContents size
+  | size <  1 = return []
+  | size == 1 = arbitraryFile >>= \t -> return [t] -- TODO clean this up
+  | otherwise = do
+      recSize <- choose (1,size) -- TODO bias this to be smaller?
+      let remSize = size - recSize
+      (recTree :: TestTree) <- resize recSize arbitrary
+      arbitraryContents remSize >>= \cs -> return $ recTree:cs -- TODO clean this up
+
+-- TODO make this explicit? it's the same as the overall Arbitrary instance
+-- arbitraryTree :: Int -> Gen TestTree
+
+-- size == nFiles, so a file is always sized 1
+arbitraryFile :: Gen TestTree
+arbitraryFile = do
+  n  <- arbitrary :: Gen Name
+  bs <- arbitrary :: Gen B8.ByteString
+  return $ File
+    { name = n
+    , hash = hashBytes bs
+    , fileData = bs
+    }
+
+arbitraryDirSized :: Int -> Gen TestTree
+arbitraryDirSized size = do
+  n  <- arbitrary :: Gen Name
+  -- !cs <- nubBy duplicateFilenames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
+  !cs <- arbitraryContents size -- TODO (s-1)?
+  -- TODO assert that nFiles == s here?
+  return $ Dir
+    { name     = n
+    , hash     = hashContents cs
+    , contents = cs
+    , nFiles   = sum $ map countFiles cs
+    }
+
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
 -- same arbitrary bytestring for the file content and its hash
 instance Arbitrary TestTree where
 
   arbitrary :: Gen TestTree
-  arbitrary = do
+  arbitrary = sized $ \s -> do
     n <- arbitrary :: Gen Name
     -- TODO there's got to be a better way, right?
     i <- choose (0,5 :: Int)
     if i == 0
+      then arbitraryDirSized s
+      else arbitraryFile
 
-      then do
-        !cs <- nubBy duplicateFilenames <$> resize 5 (arbitrary :: Gen [TestTree])
-        return $ Dir { name     = n
-                     , hash     = hashContents cs
-                     , contents = cs
-                     , nFiles   = sum $ map countFiles cs
-                     }
-
-      else do
-        bs <- arbitrary :: Gen B8.ByteString
-        return $ File { name = n
-                      , hash = hashBytes bs
-                      , fileData = bs
-                      }
-
-  -- only shrinks the filename
+ -- only shrinks the filename
   shrink :: TestTree -> [TestTree]
   shrink f@(File {}) = map (\n -> f { name = n }) (shrink $ name f)
 
@@ -166,7 +198,7 @@ instance Arbitrary TestTree where
       newNames = map (\n -> d { name = n }) (shrink $ name d)
       newContents = map (\cs -> d { contents = cs
                                   , hash = hashContents cs
-                                  , nFiles = sum $ map countFiles cs})
+                                  , nFiles = sum $ map countFiles cs}) -- TODO +1?
                         (shrink $ contents d)
 
 -- TODO rename the actual function file -> fileData to match future dirData

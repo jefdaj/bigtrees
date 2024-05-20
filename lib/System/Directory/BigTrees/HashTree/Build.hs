@@ -86,6 +86,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
   -- use lazy evaluation up to 5 levels deep, then strict
+  -- TODO should that be configurable or something?
   return $ (if depth < lazyDirDepth
               then id
               else (\r -> (hash r `seq` nFiles r `seq` hash r) `seq` r))
@@ -93,7 +94,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
             { name     = n
             , contents = cs''
             , hash     = hashContents cs''
-            , nFiles   = sum $ map countFiles cs''
+            , nFiles   = sum $ map countFiles cs'' -- TODO +1?
             }
 
 
