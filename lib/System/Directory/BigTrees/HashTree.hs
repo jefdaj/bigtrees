@@ -115,7 +115,7 @@ roundTripTestTreeToDir :: TestTree -> IO TestTree
 roundTripTestTreeToDir t =
   -- TODO is this not used?
   withSystemTempDirectory "roundtriptemp" $ \root -> do
-    let tmpRoot = root </> "round-trip-tests" -- TODO remove?
+    let tmpRoot = "/run/user/1000/bigtrees" </> "round-trip-tests" -- TODO use root
     SD.createDirectoryIfMissing True tmpRoot -- TODO False?
     let treePath = tmpRoot </> n2fp (name t)
     SD.removePathForcibly treePath -- TODO remove
