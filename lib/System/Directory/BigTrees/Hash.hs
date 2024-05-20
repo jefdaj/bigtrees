@@ -44,7 +44,6 @@ import qualified Data.ByteString.Short as BS
 import Data.Hashable (Hashable (..))
 import Data.List (isInfixOf, isPrefixOf)
 import Data.List.Split (splitOn)
-import Data.Store (Store (..))
 import GHC.Generics (Generic)
 import Streaming (Of, Stream)
 import qualified Streaming.ByteString.Char8 as Q
@@ -71,11 +70,6 @@ instance Hashable Hash
   where
     hashWithSalt :: Int -> Hash -> Int
     hashWithSalt n h = hashWithSalt n (unHash h)
-
--- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
-$($(derive [d|
-    instance Deriving (Store Hash)
-    |]))
 
 digestLength :: Int
 digestLength = 20

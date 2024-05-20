@@ -12,7 +12,6 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Char (toLower)
 import Data.List (nubBy, sort)
-import Data.Store (Store (..))
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
@@ -84,11 +83,6 @@ instance Functor HashTree where
 -- TODO test functor identity law
 
 instance NFData a => NFData (HashTree a)
-
--- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
-$($(derive [d|
-    instance Store a => Deriving (Store (HashTree a))
-    |]))
 
 instance Arbitrary TreeType where
 

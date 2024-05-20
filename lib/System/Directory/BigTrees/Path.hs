@@ -36,7 +36,6 @@ module System.Directory.BigTrees.Path
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
-import Data.Store (Store (..))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Filesystem.Path.CurrentOS as OS

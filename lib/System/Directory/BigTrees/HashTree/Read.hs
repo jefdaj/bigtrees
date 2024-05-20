@@ -3,7 +3,6 @@ module System.Directory.BigTrees.HashTree.Read where
 import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
-import Data.Store (decodeIO)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (D, F),
                                            parseHashLines)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree, TestTree,
@@ -13,13 +12,7 @@ import System.FilePath.Glob (Pattern)
 
 -- try to read as binary, and fall back to text if it fails
 readTree :: Maybe Int -> FilePath -> IO ProdTree
-readTree md path = catchAny
-                    (B8.readFile path >>= decodeIO)
-                    (\_ -> deserializeTree md <$> B8.readFile path)
---   (do
---      (hs :: [HashLine]) <- decodeIO =<< B8.readFile path
---      return $ snd $ head $ foldr accTrees [] hs)
---   (\_ -> fmap deserializeTree $ B8.readFile path)
+readTree md path = deserializeTree md <$> B8.readFile path
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM

@@ -41,7 +41,6 @@ import Control.DeepSeq (NFData)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
-import Data.Store (Store (..))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Filesystem.Path.CurrentOS as OS
@@ -73,11 +72,6 @@ newtype Name
   deriving (Eq, Generic, Ord, Read, Show)
 
 deriving instance NFData Name
-
--- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
-$($(derive [d|
-  instance Deriving (Store Name)
-  |]))
 
 instance Arbitrary Name where
   arbitrary :: Gen Name

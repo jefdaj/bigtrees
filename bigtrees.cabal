@@ -57,7 +57,6 @@ library
     , quickcheck-unicode
     , safe-exceptions
     , split
-    , store
     , streaming
     , streaming-bytestring
     , system-filepath
@@ -230,7 +229,6 @@ test-suite test-doctests
     , safe-exceptions
     , silently
     , split
-    , store
     , streaming
     , streaming-bytestring
     , system-filepath
@@ -291,7 +289,6 @@ test-suite test-lib
     , quickcheck-instances
     , safe-exceptions
     , split
-    , store
     , streaming
     , streaming-bytestring
     , system-filepath

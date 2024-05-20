@@ -3,7 +3,6 @@ module System.Directory.BigTrees.HashTree.Write where
 -- import Control.DeepSeq (force)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
-import Data.Store (encode)
 import qualified System.Directory as SD
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLevel),
                                            TreeType (D, F), prettyHashLine)
@@ -33,9 +32,6 @@ printTree = mapM_ printLine . flattenTree
 writeTree :: FilePath -> ProdTree -> IO ()
 writeTree path tree = withFile path WriteMode $ \h ->
   mapM_ (B8.hPutStrLn h) (serializeTree tree)
-
-writeBinTree :: FilePath -> ProdTree -> IO ()
-writeBinTree path tree = B8.writeFile path $ encode tree
 
 flattenTree :: ProdTree -> [HashLine]
 flattenTree = flattenTree' ""

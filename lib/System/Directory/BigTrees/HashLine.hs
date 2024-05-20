@@ -32,7 +32,6 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes)
-import Data.Store (Store (..))
 import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
@@ -46,8 +45,6 @@ data TreeType = D | F
 instance NFData TreeType
   where rnf :: TreeType -> ()
         rnf = const () -- TODO is this valid?
-
-$($(derive [d| instance Deriving (Store TreeType) |]))
 
 newtype IndentLevel
   = IndentLevel Int

@@ -44,7 +44,6 @@ library:
   - quickcheck-unicode
   - safe-exceptions
   - split
-  - store
   - streaming
   - streaming-bytestring
   - system-filepath
@@ -135,7 +134,6 @@ tests:
     - quickcheck-instances
     - safe-exceptions
     - split
-    - store
     - streaming
     - streaming-bytestring
     - system-filepath
@@ -240,7 +238,6 @@ tests:
     - safe-exceptions
     - silently
     - split
-    - store
     - streaming
     - streaming-bytestring
     - system-filepath

@@ -20,10 +20,8 @@ module System.Directory.BigTrees.HashForest
   , readOrBuildTrees
   , printForest
   , writeForest
-  , writeBinForest
 
   -- tests
-  , prop_roundtrip_hashforest_to_binary_hashes
   , prop_roundtrip_hashforest_to_bytestring
   , prop_roundtrip_hashforest_to_hashes
 
@@ -32,7 +30,6 @@ module System.Directory.BigTrees.HashForest
 
 import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
-import Data.Store (Store (..), decodeIO, encode)
 import System.Directory.BigTrees.HashLine (parseHashLines)
 import System.Directory.BigTrees.HashTree (readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree)
@@ -60,21 +57,12 @@ deriving instance Eq   a => Eq   (HashForest a)
 deriving instance Show a => Show (HashForest a)
 deriving instance Read a => Read (HashForest a)
 
--- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
--- TODO why can't you extend () to and type Store a => a here?
-$($(derive [d|
-    instance Deriving (Store (HashForest ()))
-    |]))
-
 -- TODO how should errors propagate?
 readTrees :: Maybe Int -> [FilePath] -> IO (HashForest ())
 readTrees md paths = HashForest <$> mapM (readTree md) paths
 
--- TODO remove existing bin case and only handle "txt" hashes now? (which will be partly binary)
 readForest :: Maybe Int -> FilePath -> IO (HashForest ())
-readForest md path = catchAny
-                      (B8.readFile path >>= decodeIO)
-                      (\_ -> deserializeForest md <$> B8.readFile path)
+readForest md path = deserializeForest md <$> B8.readFile path
 
 -- TODO how should errors propagate?
 buildForest :: Bool -> [Pattern] -> [FilePath] -> IO (HashForest ())
@@ -99,9 +87,6 @@ printForest (HashForest ts) = mapM_ printTree ts
 writeForest :: FilePath -> HashForest () -> IO ()
 writeForest path forest = withFile path WriteMode $ \h ->
   mapM_ (B8.hPutStrLn h) (serializeForest forest)
-
-writeBinForest :: FilePath -> HashForest () -> IO ()
-writeBinForest path forest = B8.writeFile path $ encode forest
 
 -----------
 -- tests --
@@ -141,16 +126,4 @@ prop_roundtrip_hashforest_to_hashes :: Property
 prop_roundtrip_hashforest_to_hashes = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundtrip_hashforest_to_hashes t1
-  assert $ t2 == t1
-
-roundtrip_hashforest_to_binary_hashes :: HashForest () -> IO (HashForest ())
-roundtrip_hashforest_to_binary_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
-  hClose hdl
-  writeBinForest path t
-  readForest Nothing path
-
-prop_roundtrip_hashforest_to_binary_hashes :: Property
-prop_roundtrip_hashforest_to_binary_hashes = monadicIO $ do
-  t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashforest_to_binary_hashes t1
   assert $ t2 == t1

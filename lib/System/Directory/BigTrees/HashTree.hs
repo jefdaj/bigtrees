@@ -19,18 +19,13 @@ module System.Directory.BigTrees.HashTree
   , rmSubTree
   , treeContainsHash
   , treeContainsPath
-  , writeBinTree
   , writeTree
 
   -- for testing
   , countFiles
-  , prop_roundtrip_prodtree_to_bin_hashes
   , prop_roundtrip_prodtree_to_bytestring
   , prop_roundtrip_prodtree_to_hashes
   , prop_roundtrip_testtree_to_dir
-  , binDataCompressionRatio
-  , bigTreeMeanCompressionRatio
-  , stackDirCompressionRatio
 
   )
   where
@@ -55,7 +50,7 @@ import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readTestTree, readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
-import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeBinTree,
+import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Path (absolute)
 
@@ -83,7 +78,6 @@ readOrBuildTree verbose mmaxdepth excludes path = do
 -- TODO serialize_tree
 -- TODO write_tree
 -- TODO print_tree
--- TODO write_tree_binary?
 -- TODO flatten_tree
 
 -- prop_roundtrip_prodtree_to_hashes ::
@@ -93,8 +87,6 @@ readOrBuildTree verbose mmaxdepth excludes path = do
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
 
 -- TODO prop_confirm_dir_hashes too?
-
--- TODO round-trip to binary files too
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
 prop_roundtrip_prodtree_to_bytestring :: ProdTree -> Bool
@@ -114,20 +106,6 @@ prop_roundtrip_prodtree_to_hashes :: Property
 prop_roundtrip_prodtree_to_hashes = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundTripProdTreeToHashes t1
-  assert $ t2 == t1
-
--- TODO separate thing for test and production trees here?
-roundTripProdTreeToBinHashes :: ProdTree -> IO ProdTree
-roundTripProdTreeToBinHashes t =
-  withSystemTempFile "roundtriptemp" $ \path hdl -> do
-    hClose hdl
-    writeBinTree path t
-    readTree Nothing path
-
-prop_roundtrip_prodtree_to_bin_hashes :: Property
-prop_roundtrip_prodtree_to_bin_hashes = monadicIO $ do
-  t1 <- pick (arbitrary :: Gen ProdTree)
-  t2 <- run $ roundTripProdTreeToBinHashes t1
   assert $ t2 == t1
 
 -- the tests above round-trip to single files describing trees, whereas this
@@ -150,58 +128,3 @@ prop_roundtrip_testtree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundTripTestTreeToDir t1
   assert $ force t2 == t1 -- force evaluation to prevent any possible conflicts
-
--- https://stackoverflow.com/a/5623479
-getFileSize :: String -> IO Float
-getFileSize path = fromIntegral . fileSize <$> getFileStatus path
-
--- This is very much not encouraging!
--- The bin format actually increases file sizes:
---
--- >>> ts <- mapM (\_ -> generate $ resize 100000 (arbitrary :: Gen ProdTree)) [1..1000 :: Int]
--- >>> ratios <- mapM binDataCompressionRatio ts
--- >>> filter (>= 1) ratios
--- []
--- >>> sum ratios / fromIntegral (length ratios)
--- 0.8772326
-binDataCompressionRatio :: ProdTree -> IO Float
-binDataCompressionRatio t = do
-  putStrLn "writing trees:"
-  withSystemTempDirectory "txtvsbintmp" $ \root -> do
-    SD.createDirectoryIfMissing True root
-    let txt = root </> "hashtree.txt"
-    let bin = root </> "hashtree.bin"
-    writeAndCompareSizes t txt bin
-
-writeAndCompareSizes :: ProdTree -> FilePath -> FilePath -> IO Float
-writeAndCompareSizes tree txt bin = do
-  putStrLn $ "writing '" ++ txt ++ "'"
-  writeTree txt tree -- TODO force?
-  putStrLn $ "writing '" ++ bin ++ "'"
-  writeBinTree bin tree -- TODO force?
-  putStrLn "comparing sizes..."
-  tSize <- getFileSize txt
-  bSize <- getFileSize bin
-  putStrLn $ txt ++ ": " ++ show tSize
-  putStrLn $ bin ++ ": " ++ show bSize
-  let ratio = tSize / bSize
-  putStrLn $ "data compression ratio is " ++ show ratio
-  return ratio
-
--- this also comes out to around .87
-bigTreeMeanCompressionRatio :: IO Float
-bigTreeMeanCompressionRatio = do
-  (ts :: [ProdTree]) <- mapM (\_ -> generate $ resize 100000 (arbitrary :: Gen ProdTree)) [1..100 :: Int]
-  ratios <- sequence $ map binDataCompressionRatio ts
-  let mean = sum ratios / fromIntegral (length ratios)
-  return mean
-
--- this is actually worse! around .785 (txt: 2.12M, bin: 2.7M)
-stackDirCompressionRatio :: IO Float
-stackDirCompressionRatio = do
-  (Just stackDir) <- absolute "~/.stack"
-  putStrLn $ "hashing '" ++ stackDir ++ "'"
-  t <- readOrBuildTree True Nothing [] stackDir
-  let txt = "/tmp/stackDir.bigtree.txt"
-      bin = "/tmp/stackDir.bigtree.bin"
-  writeAndCompareSizes t txt bin

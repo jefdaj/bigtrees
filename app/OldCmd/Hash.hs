@@ -6,7 +6,7 @@ import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (sort)
-import System.Directory.BigTrees (buildForest, printForest, writeBinForest, writeForest)
+import System.Directory.BigTrees (buildForest, printForest, writeForest)
 import System.Directory.BigTrees.Path (absolute)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.IO (stderr, stdout)
@@ -27,9 +27,6 @@ oldCmdHash cfg targets = do
   case txt cfg of
     Nothing -> printForest f
     Just p  -> writeForest p f
-  case bin cfg of
-    Nothing -> return ()
-    Just p  -> writeBinForest p f
 
 -- updateAnnexHashes :: Config -> HashTree () -> IO ()
 -- updateAnnexHashes cfg new = do
@@ -44,11 +41,8 @@ oldCmdHash cfg targets = do
 --   -- B.writeFile hashes $ serializeTree new
 --   writeTree hashes new
 --   -- TODO listen to config here? or always do it?
---   writeBinTree bHashes new
 --   out1 <- runGit aPath ["add", "hashes.txt"]
 --   log cfg out1
---   out2 <- runGit aPath ["add", "hashes.bin"]
---   log cfg out2
 
 guardStatus :: Config -> FilePath -> IO ()
 guardStatus = undefined
