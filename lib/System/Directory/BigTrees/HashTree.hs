@@ -30,6 +30,7 @@ module System.Directory.BigTrees.HashTree
   , prop_roundtrip_testtree_to_dir
   , binDataCompressionRatio
   , bigTreeMeanCompressionRatio
+  , homeDirCompressionRatio
 
   )
   where
@@ -47,7 +48,7 @@ import System.IO (hClose)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Gen, Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import System.Posix (getFileStatus, fileSize, COff(..))
+import System.Posix (getFileStatus, fileSize)
 
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countFiles)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
@@ -56,6 +57,7 @@ import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readT
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeBinTree,
                                                  writeTestTreeDir, writeTree)
+import System.Directory.BigTrees.Path (absolute)
 
 -- import qualified Data.ByteString.Char8 as B
 -- import Text.Pretty.Simple (pPrint)
@@ -135,7 +137,7 @@ roundTripTestTreeToDir :: TestTree -> IO TestTree
 roundTripTestTreeToDir t =
   -- TODO is this not used?
   withSystemTempDirectory "roundtriptemp" $ \root -> do
-    let tmpRoot = "/tmp/round-trip-tests" -- TODO replace with actual root
+    let tmpRoot = root </> "round-trip-tests" -- TODO remove?
     SD.createDirectoryIfMissing True tmpRoot -- TODO False?
     let treePath = tmpRoot </> n2fp (name t)
     SD.removePathForcibly treePath -- TODO remove
@@ -163,17 +165,28 @@ getFileSize path = fromIntegral . fileSize <$> getFileStatus path
 -- >>> sum ratios / fromIntegral (length ratios)
 -- 0.8772326
 binDataCompressionRatio :: ProdTree -> IO Float
-binDataCompressionRatio t =
+binDataCompressionRatio t = do
+  putStrLn "writing trees:"
   withSystemTempDirectory "txtvsbintmp" $ \root -> do
+    SD.createDirectoryIfMissing True root
     let txt = root </> "hashtree.txt"
     let bin = root </> "hashtree.bin"
-    writeTree    txt t -- TODO force?
-    writeBinTree bin t -- TODO force?
-    tSize <- getFileSize txt
-    bSize <- getFileSize bin
-    let ratio = tSize / bSize
-    -- putStrLn $ show ratio
-    return ratio
+    writeAndCompareSizes t txt bin
+
+writeAndCompareSizes :: ProdTree -> FilePath -> FilePath -> IO Float
+writeAndCompareSizes tree txt bin = do
+  putStrLn $ "writing '" ++ txt ++ "'"
+  writeTree txt tree -- TODO force?
+  putStrLn $ "writing '" ++ bin ++ "'"
+  writeBinTree bin tree -- TODO force?
+  putStrLn "comparing sizes..."
+  tSize <- getFileSize txt
+  bSize <- getFileSize bin
+  putStrLn $ txt ++ ": " ++ show tSize
+  putStrLn $ bin ++ ": " ++ show bSize
+  let ratio = tSize / bSize
+  putStrLn $ "data compression ratio is " ++ show ratio
+  return ratio
 
 -- this also comes out to around .87
 -- TODO is that true for real-life filenames which might be more repetitive?
@@ -184,3 +197,12 @@ bigTreeMeanCompressionRatio = do
   ratios <- sequence $ map binDataCompressionRatio ts
   let mean = sum ratios / fromIntegral (length ratios)
   return mean
+
+homeDirCompressionRatio :: IO Float
+homeDirCompressionRatio = do
+  (Just homeDir) <- absolute "~/"
+  putStrLn $ "hashing '" ++ homeDir ++ "'"
+  t <- readOrBuildTree True Nothing [] homeDir
+  let txt = "/tmp/home.bigtree.txt"
+      bin = "/tmp/home.bigtree.txt"
+  writeAndCompareSizes t txt bin
