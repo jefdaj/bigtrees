@@ -1,12 +1,18 @@
 module System.Directory.BigTrees
+
+  -- name
+  ( Name(..)
+
   -- hash
-  ( Hash(..)
+  , Hash(..)
   , prettyHash
   , hashBytes
   , hashFile
 
   -- hashtree
   , HashTree(..)
+  , TestTree -- TODO remove from exports?
+  , ProdTree
   , TreeType(..)
   , addSubTree
   , buildTree
@@ -72,8 +78,9 @@ import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHas
 import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, printForest, readForest,
                                              readOrBuildTrees, readTrees,
                                              writeForest)
+import System.Directory.BigTrees.Name (Name (..))
 import System.Directory.BigTrees.HashLine (TreeType (..))
-import System.Directory.BigTrees.HashTree (readOrBuildTree)
+import System.Directory.BigTrees.HashTree (readOrBuildTree, ProdTree, TestTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), hashContents, renameRoot)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
