@@ -3,6 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -22,11 +23,12 @@ module System.Directory.BigTrees.Path
 
   ( absolute
   , components -- TODO replace with builtin split path or similar?
+  -- , stripExtraDotdot
 
   -- tests
   , prop_absolute_is_idempotent
   , prop_absolute_strips_redundant_dot
-  , prop_absolute_strips_redundant_dotdot
+  -- , prop_absolute_strips_redundant_dotdot
   , unit_absolute_expands_tildes
   , unit_absolute_fixes_invalid_dotdot
   , unit_absolute_rejects_null_path
@@ -100,12 +102,30 @@ newtype Path
 
 instance Arbitrary Path where
   arbitrary :: Gen Path
-  arbitrary = do
-    prefix <- oneof $ map pure ["", ".", "..", "~"] -- TODO remove?
-    -- a single path would work here too, but i want more complex test trees
-    body <- listOf (arbitrary :: Gen FilePath)
-    let path = SF.joinPath (prefix:body)
-    return $ Path $ if null path then "/" else path
+  arbitrary =
+
+    -- make sure the whole thing isn't empty at the end
+    flip suchThat (\(Path p) -> p /= "") $ do
+
+      -- generate the main path body
+      -- (a single path would work here too, but i want more complex test trees)
+      -- TODO would bytestring for this more closely match the actual OS?
+      (body :: [FilePath]) <- listOf (arbitrary `suchThat` (not . elem '\NUL'))
+
+      -- make sure we can handle various prefix styles
+      -- note that "" here generates "/" below
+      -- TODO also ones with variables?
+      (prefix :: String) <- oneof $ map pure ["", ".", "..", "~"]
+
+      -- ... or none at all
+      (usePrefix :: Bool) <- arbitrary
+
+      let path = SF.joinPath $ if usePrefix then prefix:body else body
+      return $ Path path
+
+  -- TODO the individual strings will shrink automatically, right?
+  shrink :: Path -> [Path]
+  shrink (Path p) = map (Path . SF.joinPath) $ shrink $ components p
 
 newtype PathWithParent
   = PathWithParent FilePath
@@ -132,7 +152,7 @@ absolute path = do
   path' <- absolute' path
   case path' of
     Nothing -> return Nothing
-    Just p' -> if p' == path
+    Just p' -> if p' == path -- fixpoint
                  then Just <$> canonicalizePath p'
                  else absolute p'
 
@@ -179,11 +199,13 @@ prop_absolute_is_idempotent (Path path) = monadicIO $ do
   (Just path'') <- liftIO $ absolute path'
   assert $ path' == path''
 
-prop_absolute_strips_redundant_dotdot :: PathWithParent -> Property
-prop_absolute_strips_redundant_dotdot (PathWithParent path) = monadicIO $ do
-  (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
-  (Just a') <- liftIO $ absolute $ path </> ".."
-  assert $ a == a'
+-- TODO is this technically correct, or can "<something>/.." be different from "" with symlinks?
+-- TODO is this technically correct in the absence of symlinks?
+-- prop_absolute_strips_redundant_dotdot :: PathWithParent -> Property
+-- prop_absolute_strips_redundant_dotdot (PathWithParent path) = monadicIO $ do
+--   (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
+--   (Just a') <- liftIO $ absolute $ path </> ".."
+--   assert $ a == a'
 
 prop_absolute_strips_redundant_dot :: Path -> Property
 prop_absolute_strips_redundant_dot (Path path) = monadicIO $ do
