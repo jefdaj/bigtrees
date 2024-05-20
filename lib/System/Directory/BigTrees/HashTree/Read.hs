@@ -5,7 +5,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
 import Data.Store (decodeIO)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (D, F),
-                                           parseHashes)
+                                           parseHashLines)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree, TestTree,
                                                 countFiles)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
@@ -26,7 +26,7 @@ readTree md path = catchAny
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
-deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
+deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 
 {- This one is confusing! It accumulates a list of trees and their indent
  - levels, and when it comes across a dir it uses the indents to determine

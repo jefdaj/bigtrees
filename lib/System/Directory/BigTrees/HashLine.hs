@@ -5,16 +5,17 @@
 
 module System.Directory.BigTrees.HashLine
 
-  ( TreeType(..)
+  ( HashLine(..)
+  , TreeType(..)
   , IndentLevel(..)
-  , HashLine(..)
+  -- , Hash(..) TODO re-export here? And Name too?
   , prettyHashLine
-  , parseHashes
+  , parseHashLines
 
   -- for testing (TODO remove?)
-  , nameP
-  , lineP
-  , linesP
+  -- , nameP
+  -- , lineP
+  -- , linesP
 
   )
   where
@@ -133,8 +134,8 @@ fileP md = linesP md <* endOfLine <* endOfInput
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
-parseHashes :: Maybe Int -> B8.ByteString -> [HashLine]
-parseHashes md = fromRight [] . parseOnly (fileP md)
+parseHashLines :: Maybe Int -> B8.ByteString -> [HashLine]
+parseHashLines md = fromRight [] . parseOnly (fileP md)
 
 parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
 parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")

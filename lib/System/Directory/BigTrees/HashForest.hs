@@ -33,7 +33,7 @@ module System.Directory.BigTrees.HashForest
 import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.Store (Store (..), decodeIO, encode)
-import System.Directory.BigTrees.HashLine (parseHashes)
+import System.Directory.BigTrees.HashLine (parseHashLines)
 import System.Directory.BigTrees.HashTree (readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree)
@@ -89,7 +89,7 @@ serializeForest :: HashForest () -> [B8.ByteString]
 serializeForest (HashForest ts) = concatMap serializeTree ts
 
 deserializeForest :: Maybe Int -> B8.ByteString -> HashForest ()
-deserializeForest md = HashForest <$> fmap snd . foldr accTrees [] . reverse . parseHashes md
+deserializeForest md = HashForest <$> fmap snd . foldr accTrees [] . reverse . parseHashLines md
 
 printForest :: HashForest () -> IO ()
 printForest (HashForest ts) = mapM_ printTree ts
