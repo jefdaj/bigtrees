@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# HLINT ignore "Use camelCase" #-}
 
 module System.Directory.BigTrees.HashTree
@@ -27,6 +28,8 @@ module System.Directory.BigTrees.HashTree
   , prop_roundtrip_prodtree_to_bytestring
   , prop_roundtrip_prodtree_to_hashes
   , prop_roundtrip_testtree_to_dir
+  , binDataCompressionRatio
+  , bigTreeMeanCompressionRatio
 
   )
   where
@@ -42,8 +45,9 @@ import System.FilePath ((</>))
 import System.FilePath.Glob (Pattern)
 import System.IO (hClose)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
-import Test.QuickCheck (Arbitrary (..), Gen, Property)
+import Test.QuickCheck (Arbitrary (..), Gen, Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import System.Posix (getFileStatus, fileSize, COff(..))
 
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countFiles)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
@@ -145,23 +149,38 @@ prop_roundtrip_testtree_to_dir = monadicIO $ do
   t2 <- run $ roundTripTestTreeToDir t1
   assert $ force t2 == t1 -- force evaluation to prevent any possible conflicts
 
---------------
--- old code --
---------------
+-- https://stackoverflow.com/a/5623479
+getFileSize :: String -> IO Float
+getFileSize path = fromIntegral . fileSize <$> getFileStatus path
 
--- explain :: String -> IO () -> IO ()
--- explain msg fn = putStrLn msg >> fn >> putStrLn ""
+-- This is very much not encouraging!
+-- The bin format actually increases file sizes:
+--
+-- >>> ts <- mapM (\_ -> generate $ resize 100000 (arbitrary :: Gen ProdTree)) [1..1000 :: Int]
+-- >>> ratios <- mapM binDataCompressionRatio ts
+-- >>> filter (>= 1) ratios
+-- []
+-- >>> sum ratios / fromIntegral (length ratios)
+-- 0.8772326
+binDataCompressionRatio :: ProdTree -> IO Float
+binDataCompressionRatio t =
+  withSystemTempDirectory "txtvsbintmp" $ \root -> do
+    let txt = root </> "hashtree.txt"
+    let bin = root </> "hashtree.bin"
+    writeTree    txt t -- TODO force?
+    writeBinTree bin t -- TODO force?
+    tSize <- getFileSize txt
+    bSize <- getFileSize bin
+    let ratio = tSize / bSize
+    -- putStrLn $ show ratio
+    return ratio
 
--- testSerialization :: Config -> HashForest () -> IO ()
--- testSerialization cfg forest1 = do
---   explain "making hashforest:" $ pPrint forest1
---   let string1 = B.unlines $ serializeForest forest1
---       forest2 = deserializeForest (maxdepth cfg) string1
---       string2 = B.unlines $ serializeForest forest2
---   let tests = [forest1 == forest2, show forest1 == show forest2, string1 == string2]
---   if and tests then explain "round-tripped hashforest to string:" $ printForest forest1
---   else do
---     putStrLn "failed to round-trip hashforest to string!"
---     print string1
---     print string2
---     putStrLn "failed to round-trip the tree!"
+-- this also comes out to around .87
+-- TODO is that true for real-life filenames which might be more repetitive?
+-- TODO if it still is, remove all the binary format code
+bigTreeMeanCompressionRatio :: IO Float
+bigTreeMeanCompressionRatio = do
+  (ts :: [ProdTree]) <- mapM (\_ -> generate $ resize 100000 (arbitrary :: Gen ProdTree)) [1..100 :: Int]
+  ratios <- sequence $ map binDataCompressionRatio ts
+  let mean = sum ratios / fromIntegral (length ratios)
+  return mean
