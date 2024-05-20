@@ -30,7 +30,7 @@ module System.Directory.BigTrees.HashTree
   , prop_roundtrip_testtree_to_dir
   , binDataCompressionRatio
   , bigTreeMeanCompressionRatio
-  , homeDirCompressionRatio
+  , stackDirCompressionRatio
 
   )
   where
@@ -189,8 +189,6 @@ writeAndCompareSizes tree txt bin = do
   return ratio
 
 -- this also comes out to around .87
--- TODO is that true for real-life filenames which might be more repetitive?
--- TODO if it still is, remove all the binary format code
 bigTreeMeanCompressionRatio :: IO Float
 bigTreeMeanCompressionRatio = do
   (ts :: [ProdTree]) <- mapM (\_ -> generate $ resize 100000 (arbitrary :: Gen ProdTree)) [1..100 :: Int]
@@ -198,11 +196,12 @@ bigTreeMeanCompressionRatio = do
   let mean = sum ratios / fromIntegral (length ratios)
   return mean
 
-homeDirCompressionRatio :: IO Float
-homeDirCompressionRatio = do
-  (Just homeDir) <- absolute "~/"
-  putStrLn $ "hashing '" ++ homeDir ++ "'"
-  t <- readOrBuildTree True Nothing [] homeDir
-  let txt = "/tmp/home.bigtree.txt"
-      bin = "/tmp/home.bigtree.txt"
+-- this is actually worse! around .785 (txt: 2.12M, bin: 2.7M)
+stackDirCompressionRatio :: IO Float
+stackDirCompressionRatio = do
+  (Just stackDir) <- absolute "~/.stack"
+  putStrLn $ "hashing '" ++ stackDir ++ "'"
+  t <- readOrBuildTree True Nothing [] stackDir
+  let txt = "/tmp/stackDir.bigtree.txt"
+      bin = "/tmp/stackDir.bigtree.bin"
   writeAndCompareSizes t txt bin
