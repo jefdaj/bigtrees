@@ -6,7 +6,6 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# OPTIONS_HADDOCK prune #-}
 
 {-|
 Description: Name handling
@@ -18,16 +17,20 @@ There is also a `Path` module, but it holds unrelated-in-principle utility funct
 
 -}
 
+-- TODO actually remove the overview at the top? the individual types + functions make more sense
+
 -- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
 -- TODO wait, is the empty string also a valid filename?
 
 module System.Directory.BigTrees.Name
 
+  -- TODO document these individually
   ( Name(..)
   , fp2n
   , n2fp
 
   -- tests
+  -- TODO document tests as a group
   , prop_roundtrip_name_to_filename
   , prop_roundtrip_name_to_filepath
 

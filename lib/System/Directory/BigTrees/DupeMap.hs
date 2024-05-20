@@ -32,12 +32,12 @@ import qualified Data.HashTable.ST.Cuckoo as C
 import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
-import System.Directory.BigTrees.Name (n2fp)
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashForest (HashForest (..))
 import System.Directory.BigTrees.HashLine (TreeType (..))
 import System.Directory.BigTrees.HashTree ()
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree)
+import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitDirectories, (</>))
 
 -- TODO are the paths getting messed up somewhere in here?

@@ -7,7 +7,6 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# OPTIONS_HADDOCK prune #-}
 
 {-|
 Description: FilePath-related utils
@@ -21,11 +20,13 @@ It doesn't interact directly with `Names` as used in the tree structures.
 
 module System.Directory.BigTrees.Path
 
+  -- $canonicalpaths
+  -- TODO document these individually
   ( absolute
   , components -- TODO replace with builtin split path or similar?
   -- , stripExtraDotdot
 
-  -- tests
+  -- TODO cleaner explanation of all the tests as a group here
   , prop_absolute_is_idempotent
   , prop_absolute_strips_redundant_dot
   -- , prop_absolute_strips_redundant_dotdot
