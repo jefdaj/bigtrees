@@ -39,27 +39,27 @@ module System.Directory.BigTrees.Name
 
 import Control.DeepSeq (NFData)
 import Control.Monad.IO.Class (liftIO)
+import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Store (Store (..))
-import GHC.Generics (Generic)
-import Prelude hiding (log)
-import System.Directory (canonicalizePath, getHomeDirectory)
-import System.FilePath ((</>))
-import System.IO.Temp (withSystemTempDirectory)
-import System.Info (os)
-import System.Path.NameManip (absolute_path, guess_dotdot)
-import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
-import TH.Derive (Deriving, derive)
-import Test.HUnit (Assertion, (@=?))
-import Test.QuickCheck (Arbitrary (..), Gen, suchThat, Property, listOf, oneof)
-import Test.QuickCheck.Instances ()
-import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import qualified Data.ByteString.Char8 as B
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Filesystem.Path.CurrentOS as OS
+import GHC.Generics (Generic)
+import Prelude hiding (log)
+import System.Directory (canonicalizePath, getHomeDirectory)
 import qualified System.Directory.Tree as DT
 import qualified System.FilePath as SF
+import System.FilePath ((</>))
+import System.Info (os)
+import System.IO.Temp (withSystemTempDirectory)
+import System.Path.NameManip (absolute_path, guess_dotdot)
+import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
+import Test.HUnit (Assertion, (@=?))
+import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
+import Test.QuickCheck.Instances ()
+import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import TH.Derive (Deriving, derive)
 
 -- | An element in a FilePath.
 -- My `Name` type is defined as `Text` for efficiency, but what it really

@@ -1,11 +1,7 @@
 {-# HLINT ignore "Use camelCase" #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs               #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE InstanceSigs        #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-|
@@ -38,27 +34,27 @@ module System.Directory.BigTrees.Path
   where
 
 import Control.Monad.IO.Class (liftIO)
+import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Store (Store (..))
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import qualified Filesystem.Path.CurrentOS as OS
 import GHC.Generics (Generic)
 import Prelude hiding (log)
 import System.Directory (canonicalizePath, getHomeDirectory)
+import qualified System.Directory.Tree as DT
+import qualified System.FilePath as SF
 import System.FilePath ((</>))
-import System.IO.Temp (withSystemTempDirectory)
 import System.Info (os)
+import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
-import TH.Derive (Deriving, derive)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import qualified Data.ByteString.Char8 as B
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import qualified Filesystem.Path.CurrentOS as OS
-import qualified System.Directory.Tree as DT
-import qualified System.FilePath as SF
+import TH.Derive (Deriving, derive)
 
 -- describe "Util" $ do
 --   describe "absolute" $ do
@@ -111,7 +107,7 @@ instance Arbitrary Path where
       -- generate the main path body
       -- (a single path would work here too, but i want more complex test trees)
       -- TODO would bytestring for this more closely match the actual OS?
-      (body :: [FilePath]) <- listOf (arbitrary `suchThat` (not . elem '\NUL'))
+      (body :: [FilePath]) <- listOf (arbitrary `suchThat` (notElem '\NUL'))
 
       -- make sure we can handle various prefix styles
       -- note that "" here generates "/" below
