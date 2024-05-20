@@ -149,12 +149,14 @@ hashFile _ path = do
 unit_hash_bytestring :: Assertion
 unit_hash_bytestring = unHash (hashBytes "a bytestring") @=? "YTI3MDBmODFhZWE2ZjBm"
 
+-- TODO clean up tmpfile handling here
 unit_hash_empty_file :: Assertion
 unit_hash_empty_file = do
   f <- emptySystemTempFile "empty"
   h <- hashFile False f
   unHash h @=? "ZTNiMGM0NDI5OGZjMWMx"
 
+-- TODO clean up tmpfile handling here
 unit_hash_file_contents :: Assertion
 unit_hash_file_contents = do
   f <- writeSystemTempFile "filename should not matter" "file contents should be hashed"
