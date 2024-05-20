@@ -17,9 +17,11 @@ import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat, sized)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat, sized, forAll)
 import Test.QuickCheck.Instances.ByteString ()
 import TH.Derive (Deriving, derive)
+
+import Debug.Trace
 
 -- for comparing two trees without getting hung up on different overall names
 -- TODO when was this needed?
@@ -148,6 +150,17 @@ arbitraryContents size
       (recTree :: TestTree) <- resize recSize arbitrary
       arbitraryContents remSize >>= \cs -> return $ recTree:cs -- TODO clean this up
 
+-- https://stackoverflow.com/a/29107066
+-- TODO what's a reasonable upper bound on the sizes here?
+-- TODO can I used sized with this? would be cool
+-- prop_arbitrary_contents_length_matches_nFiles :: Int -> Bool
+prop_arbitrary_contents_length_matches_nFiles =
+  forAll (choose (0, 10)) $ \size -> do
+    cs <- arbitraryContents size
+    let sumFiles = sum $ map countFiles cs
+        res = sumFiles == size
+    return $ if res then res else traceShow ((size, sumFiles, cs)) res
+
 -- TODO make this explicit? it's the same as the overall Arbitrary instance
 -- arbitraryTree :: Int -> Gen TestTree
 
@@ -166,6 +179,7 @@ arbitraryDirSized :: Int -> Gen TestTree
 arbitraryDirSized size = do
   n  <- arbitrary :: Gen Name
   -- !cs <- nubBy duplicateFilenames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
+  -- TODO put back the nubBy part!
   !cs <- arbitraryContents size -- TODO (s-1)?
   -- TODO assert that nFiles == s here?
   return $ Dir
@@ -180,13 +194,17 @@ arbitraryDirSized size = do
 instance Arbitrary TestTree where
 
   arbitrary :: Gen TestTree
-  arbitrary = sized $ \s -> do
-    n <- arbitrary :: Gen Name
+  arbitrary = sized $ \size -> do
+    if size < 2 -- TODO can it go below 1?
+      then arbitraryFile
+      else arbitraryDirSized size
+
+    -- n <- arbitrary :: Gen Name
     -- TODO there's got to be a better way, right?
-    i <- choose (0,5 :: Int)
-    if i == 0
-      then arbitraryDirSized s
-      else arbitraryFile
+    -- i <- choose (0,5 :: Int)
+    -- if i == 0
+      -- then arbitraryDirSized s
+      -- else arbitraryFile
 
  -- only shrinks the filename
   shrink :: TestTree -> [TestTree]
