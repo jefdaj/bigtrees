@@ -124,16 +124,16 @@ instance Arbitrary Path where
   shrink :: Path -> [Path]
   shrink (Path p) = map (Path . SF.joinPath) $ shrink $ components p
 
-newtype PathWithParent
-  = PathWithParent FilePath
-  deriving (Eq, Ord, Read, Show)
+-- newtype PathWithParent
+--   = PathWithParent FilePath
+--   deriving (Eq, Ord, Read, Show)
 
-instance Arbitrary PathWithParent where
-  arbitrary :: Gen PathWithParent
-  arbitrary = fmap sayHasParent (arbitrary :: Gen Path) `suchThat` reallyHasParent
-    where
-      sayHasParent (Path p) = PathWithParent p
-      reallyHasParent (PathWithParent p) = length (SF.splitPath p) > 1
+-- instance Arbitrary PathWithParent where
+--   arbitrary :: Gen PathWithParent
+--   arbitrary = fmap sayHasParent (arbitrary :: Gen Path) `suchThat` reallyHasParent
+--     where
+--       sayHasParent (Path p) = PathWithParent p
+--       reallyHasParent (PathWithParent p) = length (SF.splitPath p) > 1
 
 -- * Canonical paths
 --
