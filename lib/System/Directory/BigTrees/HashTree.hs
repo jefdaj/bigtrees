@@ -26,6 +26,7 @@ module System.Directory.BigTrees.HashTree
   , countFiles
   , roundTripTestTreeToDir
   , dropFileData
+  , writeTestTreeDir
   , prop_roundtrip_ProdTree_to_ByteString
   , prop_roundtrip_ProdTree_to_hashes
   , prop_roundtrip_TestTree_to_dir

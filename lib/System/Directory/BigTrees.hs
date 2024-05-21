@@ -26,6 +26,7 @@ module System.Directory.BigTrees
   , listLostFiles
   , printTree
   , writeTree
+  , writeTestTreeDir
   , readOrBuildTree
   , readTree
   , renameRoot
@@ -87,4 +88,4 @@ import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Read (readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
-import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, writeTree)
+import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, writeTree, writeTestTreeDir)
