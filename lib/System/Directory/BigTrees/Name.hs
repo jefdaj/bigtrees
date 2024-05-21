@@ -31,6 +31,7 @@ module System.Directory.BigTrees.Name
 
   -- tests
   -- TODO document tests as a group
+  , roundtripNameToFileName
   , prop_roundtrip_Name_to_FileName
   , prop_roundtrip_Name_to_filepath
 
@@ -125,8 +126,10 @@ instance DT.IsName Name where
 prop_roundtrip_Name_to_filepath :: Name -> Bool
 prop_roundtrip_Name_to_filepath n = fp2n (n2fp n) == n
 
-roundtrip_Name_to_FileName :: Name -> IO ()
-roundtrip_Name_to_FileName n =
+-- fails if there's an error writing the file,
+-- or if after writing it doesn't exist
+roundtripNameToFileName :: Name -> IO ()
+roundtripNameToFileName n =
   withSystemTempDirectory "bigtrees" $ \d -> do
     let f = d </> n2fp n
     B.writeFile f "this is a test"
@@ -136,5 +139,5 @@ roundtrip_Name_to_FileName n =
 prop_roundtrip_Name_to_FileName :: Property
 prop_roundtrip_Name_to_FileName = monadicIO $ do
   n <- pick arbitrary
-  run $ roundtrip_Name_to_FileName n
+  run $ roundtripNameToFileName n
   assert True

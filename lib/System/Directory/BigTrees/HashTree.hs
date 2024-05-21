@@ -24,7 +24,7 @@ module System.Directory.BigTrees.HashTree
 
   -- for testing
   , countFiles
-  , roundTripTestTreeToDir
+  , roundtripTestTreeToDir
   , dropFileData
   , writeTestTreeDir
   , prop_roundtrip_ProdTree_to_ByteString
@@ -101,8 +101,8 @@ prop_roundtrip_ProdTree_to_ByteString t = t' == t
     t' = deserializeTree Nothing bs
 
 -- TODO put in the main tmpdir
-roundTripProdTreeToHashes :: ProdTree -> IO ProdTree
-roundTripProdTreeToHashes t =
+roundtripProdTreeToHashes :: ProdTree -> IO ProdTree
+roundtripProdTreeToHashes t =
   withSystemTempFile "bigtrees" $ \path hdl -> do
     hClose hdl
     writeTree path t
@@ -111,14 +111,14 @@ roundTripProdTreeToHashes t =
 prop_roundtrip_ProdTree_to_hashes :: Property
 prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundTripProdTreeToHashes t1
+  t2 <- run $ roundtripProdTreeToHashes t1
   assert $ t2 == t1
 
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk
 -- note that you have to drop the bytestrings from the original testtree to compare them
-roundTripTestTreeToDir :: TestTree -> IO TestTree
-roundTripTestTreeToDir t =
+roundtripTestTreeToDir :: TestTree -> IO TestTree
+roundtripTestTreeToDir t =
   -- TODO is this not used?
   withSystemTempDirectory "bigtrees" $ \root -> do
     -- let tmpRoot = root </> "round-trip-tests" -- TODO use root
@@ -133,5 +133,5 @@ roundTripTestTreeToDir t =
 prop_roundtrip_TestTree_to_dir :: Property
 prop_roundtrip_TestTree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundTripTestTreeToDir t1
+  t2 <- run $ roundtripTestTreeToDir t1
   assert $ t2 == t1 -- force evaluation to prevent any possible conflicts

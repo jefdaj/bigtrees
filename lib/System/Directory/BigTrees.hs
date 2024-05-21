@@ -2,6 +2,7 @@ module System.Directory.BigTrees
 
   -- name
   ( Name(..)
+  , roundtripNameToFileName
 
   -- hash
   , Hash(..)
@@ -80,7 +81,7 @@ import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHas
 import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, printForest, readForest,
                                              readOrBuildTrees, readTrees,
                                              writeForest)
-import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.Name (Name (..), roundtripNameToFileName)
 import System.Directory.BigTrees.HashLine (TreeType (..))
 import System.Directory.BigTrees.HashTree (readOrBuildTree, ProdTree, TestTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), hashContents, renameRoot, dropFileData)
