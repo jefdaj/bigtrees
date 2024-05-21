@@ -56,7 +56,6 @@ import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readT
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
-import qualified Control.Concurrent.Thread.Delay as D
 import Control.Monad.IO.Class (liftIO)
 -- import System.Directory.BigTrees.Util (absolutePath)
 
@@ -124,21 +123,15 @@ roundTripTestTreeToDir t =
   withSystemTempDirectory "bigtrees" $ \root -> do
     -- let tmpRoot = root </> "round-trip-tests" -- TODO use root
     -- SD.createDirectoryIfMissing True root -- TODO False?
-    D.delay 1000000 -- TODO does this help?
     -- let treePath = root </> n2fp (name t)
     SD.removePathForcibly root -- TODO remove
-    D.delay 1000000 -- TODO does this help?
     writeTestTreeDir root t -- TODO was this the bug??
-    D.delay 1000000 -- TODO does this help?
     -- putStrLn $ "treePath: " ++ treePath
     res <- readTestTree Nothing False [] root
-    D.delay 1000000 -- TODO does this help?
     return res
 
 prop_roundtrip_TestTree_to_dir :: Property
 prop_roundtrip_TestTree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
-  liftIO $ D.delay 1000000 -- TODO does this help?
   t2 <- run $ roundTripTestTreeToDir t1
-  liftIO $ D.delay 1000000 -- TODO does this help?
   assert $ t2 == t1 -- force evaluation to prevent any possible conflicts

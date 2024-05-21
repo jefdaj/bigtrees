@@ -11,7 +11,6 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, f
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitPath, (</>))
 import System.IO (IOMode (..), hFlush, stdout, withFile)
-import qualified Control.Concurrent.Thread.Delay as D
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
@@ -60,15 +59,11 @@ writeTestTreeDir root (File {name = n, fileData = bs}) = do
   SD.createDirectoryIfMissing True root -- TODO remove
   let path = root </> n2fp n -- TODO use IsName here!
   assertNoFile path
-  D.delay 1000000 -- TODO does this help?
   B8.writeFile path bs
-  D.delay 1000000 -- TODO does this help?
 writeTestTreeDir root (Dir {name = n, contents = cs}) = do
   let root' = root </> n2fp n -- TODO use IsName here!
   assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'
   SD.createDirectoryIfMissing True root' -- TODO false here
-  D.delay 1000000 -- TODO does this help?
   mapM_ (writeTestTreeDir root') cs
-  D.delay 1000000 -- TODO does this help?
 

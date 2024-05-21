@@ -69,7 +69,6 @@ library
     , temporary
     , text
     , th-utilities
-    , unbounded-delays
     , unix
     , unordered-containers
     , utf8-string
@@ -299,7 +298,6 @@ test-suite test-lib
     , temporary
     , text
     , th-utilities
-    , unbounded-delays
     , unix
     , unordered-containers
   default-language: Haskell2010
