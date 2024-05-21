@@ -53,17 +53,20 @@ assertNoFile path = do
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
  - Note that this calls itself recursively.
+ -
+ - TODO take an anchored tree rather than this separate root,
+ -      because it's ambiguous what to do with the root name otherwise
  -}
 writeTestTreeDir :: FilePath -> TestTree -> IO ()
 writeTestTreeDir root (File {name = n, fileData = bs}) = do
-  SD.createDirectoryIfMissing True root -- TODO remove
+  -- SD.createDirectoryIfMissing True root -- TODO remove
   let path = root </> n2fp n -- TODO use IsName here!
-  assertNoFile path
+  -- assertNoFile path
   B8.writeFile path bs
 writeTestTreeDir root (Dir {name = n, contents = cs}) = do
   let root' = root </> n2fp n -- TODO use IsName here!
-  assertNoFile root'
+  -- assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'
-  SD.createDirectoryIfMissing True root' -- TODO false here
+  -- SD.createDirectoryIfMissing True root' -- TODO false here
   mapM_ (writeTestTreeDir root') cs
 

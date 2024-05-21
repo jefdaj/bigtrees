@@ -124,7 +124,7 @@ roundTripTestTreeToDir t =
     -- let tmpRoot = root </> "round-trip-tests" -- TODO use root
     -- SD.createDirectoryIfMissing True root -- TODO False?
     -- let treePath = root </> n2fp (name t)
-    SD.removePathForcibly root -- TODO remove
+    -- SD.removePathForcibly root -- TODO remove
     writeTestTreeDir root t -- TODO was this the bug??
     -- putStrLn $ "treePath: " ++ treePath
     res <- readTestTree Nothing False [] root
