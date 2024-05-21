@@ -216,7 +216,8 @@ instance Arbitrary TestTree where
   shrink f@(File {}) = map (\n -> f { name = n }) (shrink $ name f)
 
   -- shrinks either the name or the contents, and adjusts the rest to match
-  shrink d@(Dir {}) = newNames ++ newContents
+  -- TODO any need to recurse manually into contents?
+  shrink d@(Dir {}) = newContents ++ newNames
     where
       newNames = map (\n -> d { name = n }) (shrink $ name d)
       newContents = map (\cs -> d { contents = cs
