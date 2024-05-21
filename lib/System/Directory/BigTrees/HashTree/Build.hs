@@ -58,7 +58,9 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ DT.nappend a n ++ ": " 
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   -- TODO how to exclude these?
   let fPath = DT.nappend a n
-  !h  <- unsafeInterleaveIO $ hashFile v fPath
+  -- TODO hold up, are we reading the file twice here?
+  --      oh right: not usually a problem because readFileFn is a no-op in production
+  !h  <- unsafeInterleaveIO $ hashFile v fPath -- TODO symlink bug here?
   !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
   -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }

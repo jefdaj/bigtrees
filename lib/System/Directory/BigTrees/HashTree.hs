@@ -26,7 +26,7 @@ module System.Directory.BigTrees.HashTree
   , countFiles
   , roundTripTestTreeToDir
   , dropFileData
-  , prop_roundtrip_ProdTreeto_ByteString
+  , prop_roundtrip_ProdTree_to_ByteString
   , prop_roundtrip_ProdTree_to_hashes
   , prop_roundtrip_TestTree_to_dir
 
@@ -36,7 +36,7 @@ module System.Directory.BigTrees.HashTree
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
 
-import Control.DeepSeq (force)
+-- import Control.DeepSeq (force)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
 import System.Directory.BigTrees.Name (n2fp)
@@ -55,6 +55,8 @@ import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readT
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
+import qualified Control.Concurrent.Thread.Delay as D
+import Control.Monad.IO.Class (liftIO)
 -- import System.Directory.BigTrees.Util (absolutePath)
 
 -- import qualified Data.ByteString.Char8 as B
@@ -92,8 +94,8 @@ readOrBuildTree verbose mmaxdepth excludes path = do
 -- TODO prop_confirm_dir_hashes too?
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
-prop_roundtrip_ProdTreeto_ByteString :: ProdTree -> Bool
-prop_roundtrip_ProdTreeto_ByteString t = t' == t
+prop_roundtrip_ProdTree_to_ByteString :: ProdTree -> Bool
+prop_roundtrip_ProdTree_to_ByteString t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
@@ -119,16 +121,23 @@ roundTripTestTreeToDir :: TestTree -> IO TestTree
 roundTripTestTreeToDir t =
   -- TODO is this not used?
   withSystemTempDirectory "bigtrees" $ \root -> do
-    let tmpRoot = root </> "round-trip-tests" -- TODO use root
-    SD.createDirectoryIfMissing True tmpRoot -- TODO False?
-    let treePath = tmpRoot </> n2fp (name t)
-    SD.removePathForcibly treePath -- TODO remove
-    writeTestTreeDir tmpRoot t
+    -- let tmpRoot = root </> "round-trip-tests" -- TODO use root
+    -- SD.createDirectoryIfMissing True root -- TODO False?
+    D.delay 1000000 -- TODO does this help?
+    -- let treePath = root </> n2fp (name t)
+    SD.removePathForcibly root -- TODO remove
+    D.delay 1000000 -- TODO does this help?
+    writeTestTreeDir root t -- TODO was this the bug??
+    D.delay 1000000 -- TODO does this help?
     -- putStrLn $ "treePath: " ++ treePath
-    readTestTree Nothing False [] treePath
+    res <- readTestTree Nothing False [] root
+    D.delay 1000000 -- TODO does this help?
+    return res
 
 prop_roundtrip_TestTree_to_dir :: Property
 prop_roundtrip_TestTree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
+  liftIO $ D.delay 1000000 -- TODO does this help?
   t2 <- run $ roundTripTestTreeToDir t1
-  assert $ force t2 == t1 -- force evaluation to prevent any possible conflicts
+  liftIO $ D.delay 1000000 -- TODO does this help?
+  assert $ t2 == t1 -- force evaluation to prevent any possible conflicts

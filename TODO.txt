@@ -1,0 +1,4 @@
+overall explicit system tmpdir and make sure it exists
+try to fix the encoding error but don't get stuck on it in case it's still hard
+merge into trunk, add changelog, update with yesterday's work
+then back to the 5 (4?) essential features for taxes!
