@@ -8,7 +8,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, h
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Name (fp2n)
-import System.Directory.BigTrees.Path (components)
+import System.Directory.BigTrees.Util (pathComponents)
 import System.FilePath (joinPath, splitPath)
 
 
@@ -24,7 +24,7 @@ wrapInEmptyDir n t = Dir { name = fp2n n, hash = h, contents = cs, nFiles = nFil
     h = hashContents cs
 
 wrapInEmptyDirs :: FilePath -> HashTree a -> HashTree a
-wrapInEmptyDirs p t = case components p of
+wrapInEmptyDirs p t = case pathComponents p of
   []     -> error "wrapInEmptyDirs needs at least one dir"
   [n]    -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
@@ -32,10 +32,10 @@ wrapInEmptyDirs p t = case components p of
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
 addSubTree (File _ _ _) _ _ = error "attempt to insert tree into a file"
-addSubTree _ _ path | null (components path) = error "can't insert tree at null path"
+addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
-    comps  = components path
+    comps  = pathComponents path
     p1     = head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'

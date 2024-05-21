@@ -7,7 +7,7 @@ import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (sort)
 import System.Directory.BigTrees (buildForest, printForest, writeForest)
-import System.Directory.BigTrees.Path (absolute)
+import System.Directory.BigTrees.Util (absolutePath)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -19,7 +19,7 @@ import Test.Tasty.Golden (findByExtension, goldenVsString)
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...
 -- TODO is there a better way to set that up?
--- TODO require that the path be either absolute + in the annex or relative and in the annex
+-- TODO require that the path be either absolutePath + in the annex or relative and in the annex
 -- this works, but add doesn't. so what changed?
 oldCmdHash :: Config -> [FilePath] -> IO ()
 oldCmdHash cfg targets = do
@@ -62,7 +62,7 @@ guardHash = undefined
 -- TODO random names? or all one bigtrees dir? or prefixed as it is?
 hashTarXzAction :: FilePath -> IO BLU.ByteString
 hashTarXzAction xzPath = do
-  (Just xzPath') <- absolute xzPath
+  (Just xzPath') <- absolutePath xzPath
   withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
     let dPath = tmpDir </> dropExtension (takeBaseName xzPath') -- assumes .tar.something
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty

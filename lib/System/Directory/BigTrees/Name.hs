@@ -31,8 +31,8 @@ module System.Directory.BigTrees.Name
 
   -- tests
   -- TODO document tests as a group
-  , prop_roundtrip_name_to_filename
-  , prop_roundtrip_name_to_filepath
+  , prop_roundtrip_Name_to_FileName
+  , prop_roundtrip_Name_to_filepath
 
   )
   where
@@ -122,18 +122,18 @@ instance DT.IsName Name where
 -- bs2n :: BU.ByteString -> Name
 -- bs2n = fp2n . BU.toString
 
-prop_roundtrip_name_to_filepath :: Name -> Bool
-prop_roundtrip_name_to_filepath n = fp2n (n2fp n) == n
+prop_roundtrip_Name_to_filepath :: Name -> Bool
+prop_roundtrip_Name_to_filepath n = fp2n (n2fp n) == n
 
-roundtrip_name_to_filename :: Name -> IO ()
-roundtrip_name_to_filename n = withSystemTempDirectory "roundtriptemp" $ \d -> do
+roundtrip_Name_to_FileName :: Name -> IO ()
+roundtrip_Name_to_FileName n = withSystemTempDirectory "roundtriptemp" $ \d -> do
   let f = d </> n2fp n
   B.writeFile f "this is a test"
   _ <- B.readFile f
   return ()
 
-prop_roundtrip_name_to_filename :: Property
-prop_roundtrip_name_to_filename = monadicIO $ do
+prop_roundtrip_Name_to_FileName :: Property
+prop_roundtrip_Name_to_FileName = monadicIO $ do
   n <- pick arbitrary
-  run $ roundtrip_name_to_filename n
+  run $ roundtrip_Name_to_FileName n
   assert True

@@ -6,7 +6,7 @@ import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import System.Directory.BigTrees (diff, printDeltas, readOrBuildTree, renameRoot)
-import System.Directory.BigTrees.Path (absolute)
+import System.Directory.BigTrees.Util (absolutePath)
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -27,8 +27,8 @@ oldCmdDiff cfg old new = do
 
 diffTarXz :: FilePath -> FilePath -> IO BLU.ByteString
 diffTarXz xz1 xz2 = do
-  (Just xz1') <- absolute xz1
-  (Just xz2') <- absolute xz2
+  (Just xz1') <- absolutePath xz1
+  (Just xz2') <- absolutePath xz2
   withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
     let d1 = tmpDir </> dropExtension (takeBaseName xz1')
     let d2 = tmpDir </> dropExtension (takeBaseName xz2')

@@ -18,7 +18,7 @@ library:
   - System.Directory.BigTrees.HashForest
   - System.Directory.BigTrees.HashLine
   - System.Directory.BigTrees.Name
-  - System.Directory.BigTrees.Path
+  - System.Directory.BigTrees.Util
   - System.Directory.BigTrees.Hash
   - System.Directory.BigTrees.Delta
   # System.Directory.Tree

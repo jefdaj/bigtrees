@@ -25,7 +25,7 @@ module System.Directory.BigTrees.Hash
   , hashFile
 
   -- tests
-  , unit_hash_bytestring
+  , unit_hash_ByteString
   , unit_hash_empty_file
   , unit_hash_file_contents
   , unit_hash_image
@@ -146,8 +146,8 @@ hashFile _ path = do
 -- tests --
 -----------
 
-unit_hash_bytestring :: Assertion
-unit_hash_bytestring = unHash (hashBytes "a bytestring") @=? "YTI3MDBmODFhZWE2ZjBm"
+unit_hash_ByteString :: Assertion
+unit_hash_ByteString = unHash (hashBytes "a bytestring") @=? "YTI3MDBmODFhZWE2ZjBm"
 
 -- TODO clean up tmpfile handling here
 unit_hash_empty_file :: Assertion

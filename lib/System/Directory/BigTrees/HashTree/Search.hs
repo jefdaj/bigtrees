@@ -5,7 +5,7 @@ import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree)
 import System.Directory.BigTrees.Name (fp2n, n2fp)
-import System.Directory.BigTrees.Path (components)
+import System.Directory.BigTrees.Util (pathComponents)
 import System.FilePath (joinPath)
 
 
@@ -17,9 +17,9 @@ import System.FilePath (joinPath)
 -- treeContainsPath (File f1 _     ) f2 = f1 == f2
 -- treeContainsPath (Dir  f1 _ cs _) f2
 --   | f1 == f2 = True
---   | length (components f2) < 2 = False
---   | otherwise = let n   = head $ components f2
---                     f2' = joinPath $ tail $ components f2
+--   | length (pathComponents f2) < 2 = False
+--   | otherwise = let n   = head $ pathComponents f2
+--                     f2' = joinPath $ tail $ pathComponents f2
 --                 in if f1 /= n
 --                   then False
 --                   else any (\c -> treeContainsPath c f2') cs
@@ -31,9 +31,9 @@ dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
 dropTo t@(File f1 _ _   ) f2 = if n2fp f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2fp f1 == f2 = Just t
-  | length (components f2) < 2 = Nothing
-  | otherwise = let n   = fp2n $ head $ components f2
-                    f2' = joinPath $ tail $ components f2
+  | length (pathComponents f2) < 2 = Nothing
+  | otherwise = let n   = fp2n $ head $ pathComponents f2
+                    f2' = joinPath $ tail $ pathComponents f2
                 in if f1 /= n
                   then Nothing
                   else msum $ map (`dropTo` f2') cs

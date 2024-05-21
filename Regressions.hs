@@ -46,3 +46,41 @@ failsRoundTripToDir1 =
     , nFiles = 2
     }
 
+
+-- TODO agian, not an encoding error:
+--
+-- >>> writeTree "failsRoundTripToDir2.bigtree" failsRoundTripToDir2
+-- >>> res2 <- readTree Nothing "failsRoundTripToDir2.bigtree" 
+-- >>> dropFileData failsRoundTripToDir2 == res2
+-- True
+--
+failsRoundTripToDir2 :: TestTree
+failsRoundTripToDir2 =
+  Dir
+    { name = Name "\xf6847"
+    , hash = Hash
+        { unHash = "ODkzNTQzYjU1MjljNWFh" }
+    , contents =
+        [ Dir
+            { name = Name "*\xfc5a1-"
+            , hash = Hash
+                { unHash = "OTkxNjI4OWVhNjUyYmE0" }
+            , contents =
+                [ File
+                    { name = Name "🮡"
+                    , hash = Hash
+                        { unHash = "ZTNiMGM0NDI5OGZjMWMx" }
+                    , fileData = ""
+                    }
+                , File
+                    { name = Name "\xfec76_"
+                    , hash = Hash
+                        { unHash = "ZDA3NTJiNjBhZGIxNDhj" }
+                    , fileData = "ç"
+                    }
+                ]
+            , nFiles = 2
+            }
+        ]
+    , nFiles = 2
+    }

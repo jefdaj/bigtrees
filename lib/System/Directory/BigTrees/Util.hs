@@ -4,31 +4,27 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-|
-Description: FilePath-related utils
-
-This module is for `FilePath`-related utility functions mainly used in the app.
-It doesn't interact directly with `Names` as used in the tree structures.
--}
-
 -- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
 -- TODO wait, is the empty string also a valid filename?
 
-module System.Directory.BigTrees.Path
+module System.Directory.BigTrees.Util
 
   -- $canonicalpaths
   -- TODO document these individually
-  ( absolute
-  , components -- TODO replace with builtin split path or similar?
+  ( absolutePath
+  , pathComponents -- TODO replace with builtin split path or similar?
   -- , stripExtraDotdot
 
   -- TODO cleaner explanation of all the tests as a group here
-  , prop_absolute_is_idempotent
-  , prop_absolute_strips_redundant_dot
-  -- , prop_absolute_strips_redundant_dotdot
-  , unit_absolute_expands_tildes
-  , unit_absolute_fixes_invalid_dotdot
-  , unit_absolute_rejects_null_path
+  , prop_absolutePaths_is_idempotent
+  , prop_absolutePaths_strips_redundant_dot
+  -- , prop_absolutePaths_strips_redundant_dotdot
+  , unit_absolutePath_expands_tildes
+  , unit_absolutePath_fixes_invalid_dotdot
+  , unit_absolutePath_rejects_null_path
+
+  -- TODO pathComponents tests
+  -- TODO symlink handling tests
 
   )
   where
@@ -80,8 +76,8 @@ import TH.Derive (Deriving, derive)
 -- TODO fp2ns?
 -- TODO does this go in Name.hs instead?
 -- | Split a `FilePath` into a list of `Name`s
-components :: FilePath -> [FilePath]
-components f = filter (not . null)
+pathComponents :: FilePath -> [FilePath]
+pathComponents f = filter (not . null)
                  $ map (filter (/= SF.pathSeparator))
                  $ SF.splitPath f
 
@@ -121,7 +117,7 @@ instance Arbitrary Path where
 
   -- TODO the individual strings will shrink automatically, right?
   shrink :: Path -> [Path]
-  shrink (Path p) = map (Path . SF.joinPath) $ shrink $ components p
+  shrink (Path p) = map (Path . SF.joinPath) $ shrink $ pathComponents p
 
 -- newtype PathWithParent
 --   = PathWithParent FilePath
@@ -143,18 +139,18 @@ instance Arbitrary Path where
 -- TODO rename it cleanPath?
 -- TODO is there a potential for infinite recursion bugs here?
 -- | Do some IO and return the canonical absolute path.
-absolute :: FilePath -> IO (Maybe FilePath)
-absolute path = do
-  path' <- absolute' path
+absolutePath :: FilePath -> IO (Maybe FilePath)
+absolutePath path = do
+  path' <- absolutePath' path
   case path' of
     Nothing -> return Nothing
     Just p' -> if p' == path -- fixpoint
                  then Just <$> canonicalizePath p'
-                 else absolute p'
+                 else absolutePath p'
 
 -- based on: schoolofhaskell.com/user/dshevchenko/cookbook
-absolute' :: FilePath -> IO (Maybe FilePath)
-absolute' aPath
+absolutePath' :: FilePath -> IO (Maybe FilePath)
+absolutePath' aPath
     | null aPath = return Nothing
     | "~" `isPrefixOf` aPath = do
         homePath <- getHomeDirectory
@@ -171,42 +167,42 @@ absolute' aPath
 -- >>> let x = 23
 -- >>> x + 42
 -- 65
-unit_absolute_expands_tildes :: Assertion
-unit_absolute_expands_tildes = do
+unit_absolutePath_expands_tildes :: Assertion
+unit_absolutePath_expands_tildes = do
   home <- getHomeDirectory
   let explicit = home </> "xyz"
-  (Just implicit) <- absolute "~/xyz"
+  (Just implicit) <- absolutePath "~/xyz"
   implicit @=? explicit
 
 -- TODO is the empty string a valid relative path?
-unit_absolute_rejects_null_path :: Assertion
-unit_absolute_rejects_null_path = do
-  reject <- absolute ""
+unit_absolutePath_rejects_null_path :: Assertion
+unit_absolutePath_rejects_null_path = do
+  reject <- absolutePath ""
   reject @=? Nothing
 
-unit_absolute_fixes_invalid_dotdot :: Assertion
-unit_absolute_fixes_invalid_dotdot = do
-  fixed <- absolute "/.."
+unit_absolutePath_fixes_invalid_dotdot :: Assertion
+unit_absolutePath_fixes_invalid_dotdot = do
+  fixed <- absolutePath "/.."
   fixed @=? Just "/"
 
-prop_absolute_is_idempotent :: Path -> Property
-prop_absolute_is_idempotent (Path path) = monadicIO $ do
-  (Just path' ) <- liftIO $ absolute path
-  (Just path'') <- liftIO $ absolute path'
+prop_absolutePaths_is_idempotent :: Path -> Property
+prop_absolutePaths_is_idempotent (Path path) = monadicIO $ do
+  (Just path' ) <- liftIO $ absolutePath path
+  (Just path'') <- liftIO $ absolutePath path'
   assert $ path' == path''
 
 -- TODO is this technically correct, or can "<something>/.." be different from "" with symlinks?
 -- TODO is this technically correct in the absence of symlinks?
--- prop_absolute_strips_redundant_dotdot :: PathWithParent -> Property
--- prop_absolute_strips_redundant_dotdot (PathWithParent path) = monadicIO $ do
---   (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolute path
---   (Just a') <- liftIO $ absolute $ path </> ".."
+-- prop_absolutePaths_strips_redundant_dotdot :: PathWithParent -> Property
+-- prop_absolutePaths_strips_redundant_dotdot (PathWithParent path) = monadicIO $ do
+--   (Just a ) <- fmap (fmap SF.takeDirectory) $ liftIO $ absolutePath path
+--   (Just a') <- liftIO $ absolutePath $ path </> ".."
 --   assert $ a == a'
 
-prop_absolute_strips_redundant_dot :: Path -> Property
-prop_absolute_strips_redundant_dot (Path path) = monadicIO $ do
-  (Just a ) <- liftIO $ absolute path
-  (Just a') <- liftIO $ absolute $ path </> "."
+prop_absolutePaths_strips_redundant_dot :: Path -> Property
+prop_absolutePaths_strips_redundant_dot (Path path) = monadicIO $ do
+  (Just a ) <- liftIO $ absolutePath path
+  (Just a') <- liftIO $ absolutePath $ path </> "."
   assert $ a == a'
 
 -- * git-annex paths
@@ -267,7 +263,7 @@ isNonAnnexSymlink path = do
 --   foundIt <- doesDirectoryExist aPath
 --   if foundIt
 --     then return $ Just $ SF.takeDirectory $ SF.takeDirectory aPath
---     else if null $ components absPath
+--     else if null $ pathComponents absPath
 --       then return Nothing
 --       else findAnnex $ SF.takeDirectory absPath
 

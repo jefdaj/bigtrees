@@ -158,13 +158,14 @@ arbitraryContentsHelper size
 -- https://stackoverflow.com/a/29107066
 -- TODO what's a reasonable upper bound on the sizes here?
 -- TODO can I used sized with this? would be cool
--- prop_arbitrary_contents_length_matches_nFiles :: Int -> Bool
-prop_arbitrary_contents_length_matches_nFiles =
+-- prop_arbitraryContents_length_matches_nFiles :: Int -> Bool
+prop_arbitraryContents_length_matches_nFiles =
   forAll (choose (0, 10)) $ \size -> do
     cs <- arbitraryContents size
     let sumFiles = sum $ map countFiles cs
         res = sumFiles == size
-    return $ if res then res else traceShow ((size, sumFiles, cs)) res
+    -- return $ if res then res else traceShow ((size, sumFiles, cs)) res
+    return res
 
 -- TODO make this explicit? it's the same as the overall Arbitrary instance
 -- arbitraryTree :: Int -> Gen TestTree

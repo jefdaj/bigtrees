@@ -26,9 +26,9 @@ module System.Directory.BigTrees.HashTree
   , countFiles
   , roundTripTestTreeToDir
   , dropFileData
-  , prop_roundtrip_prodtree_to_bytestring
-  , prop_roundtrip_prodtree_to_hashes
-  , prop_roundtrip_testtree_to_dir
+  , prop_roundtrip_ProdTreeto_ByteString
+  , prop_roundtrip_ProdTree_to_hashes
+  , prop_roundtrip_TestTree_to_dir
 
   )
   where
@@ -55,7 +55,7 @@ import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readT
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
-import System.Directory.BigTrees.Path (absolute)
+-- import System.Directory.BigTrees.Util (absolutePath)
 
 -- import qualified Data.ByteString.Char8 as B
 -- import Text.Pretty.Simple (pPrint)
@@ -83,7 +83,7 @@ readOrBuildTree verbose mmaxdepth excludes path = do
 -- TODO print_tree
 -- TODO flatten_tree
 
--- prop_roundtrip_prodtree_to_hashes ::
+-- prop_roundtrip_ProdTree_to_hashes ::
 
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
@@ -92,8 +92,8 @@ readOrBuildTree verbose mmaxdepth excludes path = do
 -- TODO prop_confirm_dir_hashes too?
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
-prop_roundtrip_prodtree_to_bytestring :: ProdTree -> Bool
-prop_roundtrip_prodtree_to_bytestring t = t' == t
+prop_roundtrip_ProdTreeto_ByteString :: ProdTree -> Bool
+prop_roundtrip_ProdTreeto_ByteString t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
@@ -106,8 +106,8 @@ roundTripProdTreeToHashes t =
     writeTree path t
     readTree Nothing path
 
-prop_roundtrip_prodtree_to_hashes :: Property
-prop_roundtrip_prodtree_to_hashes = monadicIO $ do
+prop_roundtrip_ProdTree_to_hashes :: Property
+prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundTripProdTreeToHashes t1
   assert $ t2 == t1
@@ -127,8 +127,8 @@ roundTripTestTreeToDir t =
     -- putStrLn $ "treePath: " ++ treePath
     readTestTree Nothing False [] treePath
 
-prop_roundtrip_testtree_to_dir :: Property
-prop_roundtrip_testtree_to_dir = monadicIO $ do
+prop_roundtrip_TestTree_to_dir :: Property
+prop_roundtrip_TestTree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundTripTestTreeToDir t1
   assert $ force t2 == t1 -- force evaluation to prevent any possible conflicts

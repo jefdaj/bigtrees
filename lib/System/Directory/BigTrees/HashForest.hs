@@ -22,8 +22,8 @@ module System.Directory.BigTrees.HashForest
   , writeForest
 
   -- tests
-  , prop_roundtrip_hashforest_to_bytestring
-  , prop_roundtrip_hashforest_to_hashes
+  , prop_roundtrip_HashForest_to_ByteString
+  , prop_roundtrip_HashForest_to_hashes
 
   )
   where
@@ -110,20 +110,20 @@ instance Arbitrary ProdForest where
   shrink :: ProdForest -> [ProdForest]
   shrink (HashForest ts) = HashForest <$> shrink ts
 
-prop_roundtrip_hashforest_to_bytestring :: HashForest () -> Bool
-prop_roundtrip_hashforest_to_bytestring t = t' == t
+prop_roundtrip_HashForest_to_ByteString :: HashForest () -> Bool
+prop_roundtrip_HashForest_to_ByteString t = t' == t
   where
     bs = B8.unlines $ serializeForest t -- TODO why didn't it include the unlines part again?
     t' = deserializeForest Nothing bs
 
-roundtrip_hashforest_to_hashes :: HashForest () -> IO (HashForest ())
-roundtrip_hashforest_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_HashForest_to_hashes :: HashForest () -> IO (HashForest ())
+roundtrip_HashForest_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeForest path t
   readForest Nothing path
 
-prop_roundtrip_hashforest_to_hashes :: Property
-prop_roundtrip_hashforest_to_hashes = monadicIO $ do
+prop_roundtrip_HashForest_to_hashes :: Property
+prop_roundtrip_HashForest_to_hashes = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashforest_to_hashes t1
+  t2 <- run $ roundtrip_HashForest_to_hashes t1
   assert $ t2 == t1
