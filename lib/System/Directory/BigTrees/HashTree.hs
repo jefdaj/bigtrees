@@ -7,6 +7,7 @@ module System.Directory.BigTrees.HashTree
 
   ( HashTree(..)
   , ProdTree
+  , TestTree
 
   , accTrees -- TODO hide this better?
   , addSubTree
@@ -114,8 +115,8 @@ prop_roundtrip_prodtree_to_hashes = monadicIO $ do
 roundTripTestTreeToDir :: TestTree -> IO TestTree
 roundTripTestTreeToDir t =
   -- TODO is this not used?
-  withSystemTempDirectory "roundtriptemp" $ \root -> do
-    let tmpRoot = "/run/user/1000/bigtrees" </> "round-trip-tests" -- TODO use root
+  withSystemTempDirectory "bigtrees" $ \root -> do
+    let tmpRoot = root </> "round-trip-tests" -- TODO use root
     SD.createDirectoryIfMissing True tmpRoot -- TODO False?
     let treePath = tmpRoot </> n2fp (name t)
     SD.removePathForcibly treePath -- TODO remove
