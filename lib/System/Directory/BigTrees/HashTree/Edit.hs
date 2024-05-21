@@ -17,21 +17,21 @@ import System.FilePath (joinPath, splitPath)
 -------------------
 
 -- TODO use this to implement hashing multiple trees at once?
-wrapInEmptyDir :: FilePath -> ProdTree -> ProdTree
+wrapInEmptyDir :: FilePath -> HashTree a -> HashTree a
 wrapInEmptyDir n t = Dir { name = fp2n n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
     h = hashContents cs
 
-wrapInEmptyDirs :: FilePath -> ProdTree -> ProdTree
+wrapInEmptyDirs :: FilePath -> HashTree a -> HashTree a
 wrapInEmptyDirs p t = case components p of
   []     -> error "wrapInEmptyDirs needs at least one dir"
   [n]    -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
-addSubTree :: ProdTree -> ProdTree -> FilePath -> ProdTree
-addSubTree (File _ _ ()) _ _ = error "attempt to insert tree into a file"
+addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
+addSubTree (File _ _ _) _ _ = error "attempt to insert tree into a file"
 addSubTree _ _ path | null (components path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
@@ -59,8 +59,8 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
  - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
  - TODO does this actually solve nFiles too?
  -}
-rmSubTree :: ProdTree -> FilePath -> Either String ProdTree
-rmSubTree (File _ _ ()) p = Left $ "no such subtree: '" ++ p ++ "'"
+rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
+rmSubTree (File _ _ _) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
@@ -68,5 +68,3 @@ rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
     else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
            , nFiles = n - countFiles t
            }
-
-

@@ -44,27 +44,27 @@ data Delta a
 ------------------------
 
 -- TODO put the hashes back here?
-prettyDelta :: Delta () -> B.ByteString
+prettyDelta :: Show a => Delta a -> B.ByteString
 prettyDelta (Add  f _  ) = B.pack $ "added '"   ++ f  ++ "'"
 prettyDelta (Rm   f    ) = B.pack $ "removed '" ++ f  ++ "'"
 prettyDelta (Edit f _ _) = B.pack $ "edited '"  ++ f  ++ "'"
 prettyDelta (Mv   f1 f2) = B.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
 
-printDeltas :: [Delta ()] -> IO ()
+printDeltas :: Show a => [Delta a] -> IO ()
 printDeltas = mapM_ (putStrLn . B.unpack . prettyDelta)
 
-diff :: ProdTree -> ProdTree -> [Delta ()]
+diff :: Show a => HashTree a -> HashTree a -> [Delta a]
 diff = diff' ""
 
-diff' :: FilePath -> ProdTree -> ProdTree -> [Delta ()]
-diff' a t1@(File f1 h1 ()) t2@(File f2 h2 ())
+diff' :: Show a => FilePath -> HashTree a -> HashTree a -> [Delta a]
+diff' a t1@(File f1 h1 _) t2@(File f2 h2 _)
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (a </> n2fp f1) (a </> n2fp f2)]
   | f1 == f2 && h1 /= h2 = [Edit (if a == n2fp f1 then n2fp f1 else a </> n2fp f1) t1 t2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
-diff' a (File _ _ ()) t2@(Dir  d _ _ _) = [Rm a, Add (a </> n2fp d) t2]
+diff' a (File _ _ _) t2@(Dir  d _ _ _) = [Rm a, Add (a </> n2fp d) t2]
 -- TODO wait is this a Mv?
-diff' a (Dir  d _ _ _) t2@(File _ _ ()) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
+diff' a (Dir  d _ _ _) t2@(File _ _ _) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
 diff' a t1@(Dir _ h1 os _) (Dir _ h2 ns _)
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
@@ -76,7 +76,7 @@ diff' a t1@(Dir _ h1 os _) (Dir _ h2 ns _)
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
 -- TODO need an initial tree too to check if the hashes match
-findMv :: ProdTree -> Delta () -> Delta () -> Bool
+findMv :: Show a => HashTree a -> Delta a -> Delta a -> Bool
 findMv t (Rm p) (Add _ t2) = case dropTo t p of
                                Nothing -> False
                                Just t3 -> t2 == t3
@@ -86,7 +86,7 @@ findMv _ _ _ = False
 -- else, that should be displayed as a single move operation. This will never
 -- match 100% before and after actual operations, because the filesystem
 -- version might be a move followed by editing files.
-fixMoves :: ProdTree -> [Delta ()] -> [Delta ()]
+fixMoves :: Show a => HashTree a -> [Delta a] -> [Delta a]
 fixMoves _ [] = []
 fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
   Just d2@(Add f2 _) -> Mv f1 f2 : let ds' = filter (/= d2) ds in fixMoves t ds'
@@ -118,7 +118,7 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -----------------------------
 
 -- TODO think through how to report results more!
-simDelta :: ProdTree -> Delta () -> Either String ProdTree
+simDelta :: Show a => HashTree a -> Delta a -> Either String (HashTree a)
 simDelta t (Rm   p    ) = rmSubTree t p
 simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
 simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p

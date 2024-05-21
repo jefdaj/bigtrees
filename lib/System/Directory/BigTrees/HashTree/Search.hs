@@ -24,11 +24,11 @@ import System.FilePath (joinPath)
 --                   then False
 --                   else any (\c -> treeContainsPath c f2') cs
 
-treeContainsPath :: ProdTree -> FilePath -> Bool
+treeContainsPath :: HashTree a -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
-dropTo :: ProdTree -> FilePath -> Maybe ProdTree
-dropTo t@(File f1 _ ()  ) f2 = if n2fp f1 == f2 then Just t else Nothing
+dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
+dropTo t@(File f1 _ _   ) f2 = if n2fp f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2fp f1 == f2 = Just t
   | length (components f2) < 2 = Nothing
@@ -38,8 +38,8 @@ dropTo t@(Dir  f1 _ cs _) f2
                   then Nothing
                   else msum $ map (`dropTo` f2') cs
 
-treeContainsHash :: ProdTree -> Hash -> Bool
-treeContainsHash (File _ h1 ()  ) h2 = h1 == h2
+treeContainsHash :: HashTree a -> Hash -> Bool
+treeContainsHash (File _ h1 _   ) h2 = h1 == h2
 treeContainsHash (Dir  _ h1 cs _) h2
   | h1 == h2 = True
   | otherwise = any (`treeContainsHash` h2) cs
