@@ -13,8 +13,15 @@ import System.Directory.BigTrees.Delta
 -- >>> diff failsRoundTripToDir1 res
 -- [Rm "\160431/\1288",Rm "\160431/\53199]"]
 
--- wait, not an encoding error! works when written + read manually
--- TODO so probably also related to disappearing tmpfiles? hooray :D
+-- how to diff them:
+--
+-- >>> writeTestTreeDir "failsRoundTripToDir1" failsRoundTripToDir1
+-- >>> res1 <- buildProdTree False [] "./failsRoundTripToDir1"
+-- >>> diff (dropFileData failsRoundTripToDir1) res1
+-- ... big diff ...
+
+-- TODO wait, it is a real issue uncovered with my read/write function(s)!
+-- TODO see if you can manually shrink it: to just one dir without any contents? just one file?
 failsRoundTripToDir1 :: TestTree
 failsRoundTripToDir1 =
   Dir
@@ -46,14 +53,6 @@ failsRoundTripToDir1 =
     , nFiles = 2
     }
 
-
--- TODO agian, not an encoding error:
---
--- >>> writeTree "failsRoundTripToDir2.bigtree" failsRoundTripToDir2
--- >>> res2 <- readTree Nothing "failsRoundTripToDir2.bigtree" 
--- >>> dropFileData failsRoundTripToDir2 == res2
--- True
---
 failsRoundTripToDir2 :: TestTree
 failsRoundTripToDir2 =
   Dir
