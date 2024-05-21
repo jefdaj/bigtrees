@@ -40,7 +40,7 @@ module System.Directory.BigTrees.HashTree
 -- import Control.DeepSeq (force)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
-import System.Directory.BigTrees.Name (n2fp)
+import System.Directory.BigTrees.Name (n2fp) -- TODO replace with IsName
 import System.FilePath ((</>))
 import System.FilePath.Glob (Pattern)
 import System.IO (hClose)
@@ -120,14 +120,20 @@ prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
 roundtripTestTreeToDir :: TestTree -> IO TestTree
 roundtripTestTreeToDir t =
   -- TODO is this not used?
-  withSystemTempDirectory "bigtrees" $ \root -> do
-    -- let tmpRoot = root </> "round-trip-tests" -- TODO use root
-    -- SD.createDirectoryIfMissing True root -- TODO False?
-    -- let treePath = root </> n2fp (name t)
-    -- SD.removePathForcibly root -- TODO remove
-    writeTestTreeDir root t -- TODO was this the bug??
-    -- putStrLn $ "treePath: " ++ treePath
-    res <- readTestTree Nothing False [] root
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+    -- let tmpRoot = tmpDir </> "round-trip-tests" -- TODO use root
+    -- SD.createDirectoryIfMissing True tmpDir -- TODO False?
+    -- SD.removePathForcibly tmpDir -- TODO remove
+
+    -- This is a little confusing, but the FilePath here should be the *parent*
+    -- within which to write the root tree dir...
+    writeTestTreeDir tmpDir t
+
+    -- ... but then when reading it back in we need the full path including the
+    -- root tree dir name.
+    let treeRootDir = tmpDir </> n2fp (name t) -- TODO use IsName here
+    res <- readTestTree Nothing False [] treeRootDir
+
     return res
 
 prop_roundtrip_TestTree_to_dir :: Property

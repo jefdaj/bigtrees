@@ -3,9 +3,9 @@
 import System.Directory.BigTrees
 import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.Delta
+import Text.Pretty.Simple
 
 -- how to print them out nicely in stack repl:
--- >>> import Text.Pretty.Simple
 -- >>> pPrint failsRoundTripToDir1
 
 -- how to diff before vs after:
