@@ -76,6 +76,8 @@ deriving instance NFData Name
 instance Arbitrary Name where
   arbitrary :: Gen Name
   arbitrary = Name <$> (arbitrary :: Gen T.Text) `suchThat` validName
+  -- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
+  -- TODO should this use https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
   shrink :: Name -> [Name]
   shrink (Name t) = Name <$> filter validName (shrink t)
 

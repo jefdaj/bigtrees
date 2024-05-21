@@ -226,14 +226,14 @@ instance Arbitrary TestTree where
 
 -- TODO rename the actual function file -> fileData to match future dirData
 -- TODO rewrite this in terms of a generic map/fold so it works with other types
-dropFileData :: TestTree -> ProdTree
+dropFileData :: HashTree a -> ProdTree
 dropFileData d@(Dir {contents = cs}) = d {contents = map dropFileData cs}
 dropFileData f@(File {})             = f {fileData = ()}
 
 
 instance Arbitrary ProdTree where
   arbitrary :: Gen ProdTree
-  arbitrary = fmap dropFileData arbitrary
+  arbitrary = fmap dropFileData (arbitrary :: Gen TestTree)
 
 confirmFileHashes :: TestTree -> Bool
 confirmFileHashes (File {fileData = f, hash = h}) = hashBytes f == h
@@ -241,5 +241,3 @@ confirmFileHashes (Dir {contents = cs})           = all confirmFileHashes cs
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes
-
-

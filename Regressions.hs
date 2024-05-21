@@ -13,7 +13,8 @@ import System.Directory.BigTrees.Delta
 -- >>> diff failsRoundTripToDir1 res
 -- [Rm "\160431/\1288",Rm "\160431/\53199]"]
 
--- TODO looks like an encoding error? based on the diff above
+-- wait, not an encoding error! works when written + read manually
+-- TODO so probably also related to disappearing tmpfiles? hooray :D
 failsRoundTripToDir1 :: TestTree
 failsRoundTripToDir1 =
   Dir

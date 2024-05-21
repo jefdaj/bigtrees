@@ -17,11 +17,11 @@ import System.IO (IOMode (..), hFlush, stdout, withFile)
 -- TODO need to handle unicode here?
 -- TODO does map evaluation influence memory usage?
 -- TODO create a single ByteString rather than a list for compression?
-serializeTree :: ProdTree -> [B8.ByteString]
+serializeTree :: HashTree a -> [B8.ByteString]
 serializeTree = map prettyHashLine . flattenTree
 
 -- TODO remove and make this a special case of WriteTree? or vice versa?
-printTree :: ProdTree -> IO ()
+printTree :: HashTree a -> IO ()
 printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
@@ -29,17 +29,17 @@ printTree = mapM_ printLine . flattenTree
 
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
-writeTree :: FilePath -> ProdTree -> IO ()
+writeTree :: FilePath -> HashTree a -> IO ()
 writeTree path tree = withFile path WriteMode $ \h ->
   mapM_ (B8.hPutStrLn h) (serializeTree tree)
 
-flattenTree :: ProdTree -> [HashLine]
+flattenTree :: HashTree a -> [HashLine]
 flattenTree = flattenTree' ""
 
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
-flattenTree' :: FilePath -> ProdTree -> [HashLine]
-flattenTree' dir (File n h ()  ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
+flattenTree' :: FilePath -> HashTree a -> [HashLine]
+flattenTree' dir (File n h _   ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs

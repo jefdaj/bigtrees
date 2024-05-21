@@ -19,6 +19,7 @@ module System.Directory.BigTrees
   , buildProdTree
   -- , deserializeTree
   , dropTo
+  , dropFileData
   , flattenTree
   , hashContents
   , listAllFiles
@@ -81,7 +82,7 @@ import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, print
 import System.Directory.BigTrees.Name (Name (..))
 import System.Directory.BigTrees.HashLine (TreeType (..))
 import System.Directory.BigTrees.HashTree (readOrBuildTree, ProdTree, TestTree)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), hashContents, renameRoot)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), hashContents, renameRoot, dropFileData)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Read (readTree)

@@ -25,6 +25,7 @@ module System.Directory.BigTrees.HashTree
   -- for testing
   , countFiles
   , roundTripTestTreeToDir
+  , dropFileData
   , prop_roundtrip_prodtree_to_bytestring
   , prop_roundtrip_prodtree_to_hashes
   , prop_roundtrip_testtree_to_dir
@@ -47,7 +48,7 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, arbitrary, generate, resi
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import System.Posix (getFileStatus, fileSize)
 
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countFiles)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countFiles, dropFileData)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readTestTree, readTree)
@@ -97,6 +98,7 @@ prop_roundtrip_prodtree_to_bytestring t = t' == t
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
 
+-- TODO put in the main tmpdir
 roundTripProdTreeToHashes :: ProdTree -> IO ProdTree
 roundTripProdTreeToHashes t =
   withSystemTempFile "roundtriptemp" $ \path hdl -> do
