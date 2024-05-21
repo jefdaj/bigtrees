@@ -54,6 +54,7 @@ import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import TH.Derive (Deriving, derive)
+import qualified System.Directory as SD
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -154,13 +155,16 @@ unit_hash_empty_file :: Assertion
 unit_hash_empty_file = do
   f <- emptySystemTempFile "empty"
   h <- hashFile False f
+  SD.removePathForcibly f
   unHash h @=? "ZTNiMGM0NDI5OGZjMWMx"
 
 -- TODO clean up tmpfile handling here
 unit_hash_file_contents :: Assertion
 unit_hash_file_contents = do
-  f <- writeSystemTempFile "filename should not matter" "file contents should be hashed"
+  -- filename changes each time, proving only the contents are hashed
+  f <- writeSystemTempFile "bigtrees" "file contents should be hashed"
   h <- hashFile False f
+  SD.removePathForcibly f
   unHash h @=? "MTVjMzcwNmJjODQzYTg0"
 
 -- TODO should the source code really be used this way?

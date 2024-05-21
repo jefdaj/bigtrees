@@ -126,11 +126,12 @@ prop_roundtrip_Name_to_filepath :: Name -> Bool
 prop_roundtrip_Name_to_filepath n = fp2n (n2fp n) == n
 
 roundtrip_Name_to_FileName :: Name -> IO ()
-roundtrip_Name_to_FileName n = withSystemTempDirectory "roundtriptemp" $ \d -> do
-  let f = d </> n2fp n
-  B.writeFile f "this is a test"
-  _ <- B.readFile f
-  return ()
+roundtrip_Name_to_FileName n =
+  withSystemTempDirectory "bigtrees" $ \d -> do
+    let f = d </> n2fp n
+    B.writeFile f "this is a test"
+    _ <- B.readFile f
+    return ()
 
 prop_roundtrip_Name_to_FileName :: Property
 prop_roundtrip_Name_to_FileName = monadicIO $ do

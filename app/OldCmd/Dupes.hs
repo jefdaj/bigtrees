@@ -34,7 +34,7 @@ dupesTarXz :: FilePath -> FilePath -> IO BLU.ByteString
 dupesTarXz xz1 xz2 = do
   (Just xz1') <- absolutePath xz1
   (Just xz2') <- absolutePath xz2
-  withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     let d1 = tmpDir </> dropExtension (takeBaseName xz1')
     let d2 = tmpDir </> dropExtension (takeBaseName xz2')
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty

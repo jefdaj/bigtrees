@@ -117,10 +117,11 @@ prop_roundtrip_HashForest_to_ByteString t = t' == t
     t' = deserializeForest Nothing bs
 
 roundtrip_HashForest_to_hashes :: HashForest () -> IO (HashForest ())
-roundtrip_HashForest_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
-  hClose hdl
-  writeForest path t
-  readForest Nothing path
+roundtrip_HashForest_to_hashes t =
+  withSystemTempFile "bigtrees" $ \path hdl -> do
+    hClose hdl
+    writeForest path t
+    readForest Nothing path
 
 prop_roundtrip_HashForest_to_hashes :: Property
 prop_roundtrip_HashForest_to_hashes = monadicIO $ do

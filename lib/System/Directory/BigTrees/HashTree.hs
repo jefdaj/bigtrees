@@ -101,7 +101,7 @@ prop_roundtrip_ProdTreeto_ByteString t = t' == t
 -- TODO put in the main tmpdir
 roundTripProdTreeToHashes :: ProdTree -> IO ProdTree
 roundTripProdTreeToHashes t =
-  withSystemTempFile "roundtriptemp" $ \path hdl -> do
+  withSystemTempFile "bigtrees" $ \path hdl -> do
     hClose hdl
     writeTree path t
     readTree Nothing path
