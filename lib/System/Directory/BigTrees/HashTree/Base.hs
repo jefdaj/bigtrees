@@ -30,8 +30,8 @@ renameRoot newName tree = tree { name = fp2n newName }
 
 -- for removing duplicate filenames using nubBy, taking into account
 -- case-insensitivity on apple filesystem
-duplicateFilenames :: HashTree a -> HashTree a -> Bool
-duplicateFilenames = if os == "darwin" then macDupes else unixDupes
+duplicateNames :: HashTree a -> HashTree a -> Bool
+duplicateNames = if os == "darwin" then macDupes else unixDupes
   where
     macDupes  a b = map toLower (n2fp $ name a)
                  == map toLower (n2fp $ name b)
@@ -141,7 +141,12 @@ type TestTree = HashTree B8.ByteString
 -- this should have sum of nFiles == size... or is it nFiles-1?
 -- TODO test prop for that
 arbitraryContents :: Int -> Gen [TestTree]
-arbitraryContents size
+arbitraryContents size = arbitraryContentsHelper size `suchThat` uniqNames
+  where
+    uniqNames cs = cs == nubBy duplicateNames cs
+
+arbitraryContentsHelper :: Int -> Gen [TestTree]
+arbitraryContentsHelper size
   | size <  1 = return []
   | size == 1 = arbitraryFile >>= \t -> return [t] -- TODO clean this up
   | otherwise = do
@@ -178,7 +183,7 @@ arbitraryFile = do
 arbitraryDirSized :: Int -> Gen TestTree
 arbitraryDirSized size = do
   n  <- arbitrary :: Gen Name
-  -- !cs <- nubBy duplicateFilenames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
+  -- !cs <- nubBy duplicateNames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
   -- TODO put back the nubBy part!
   !cs <- arbitraryContents size -- TODO (s-1)?
   -- TODO assert that nFiles == s here?
