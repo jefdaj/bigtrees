@@ -21,7 +21,7 @@ import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat, sized, fo
 import Test.QuickCheck.Instances.ByteString ()
 import TH.Derive (Deriving, derive)
 
-import Debug.Trace
+-- import Debug.Trace
 
 -- for comparing two trees without getting hung up on different overall names
 -- TODO when was this needed?
