@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-|
@@ -31,6 +32,8 @@ module System.Directory.BigTrees.Name
 
   -- tests
   -- TODO document tests as a group
+  , myShrinkText
+  , validName
   , roundtripNameToFileName
   , prop_roundtrip_Name_to_FileName
   , prop_roundtrip_Name_to_filepath
@@ -41,7 +44,7 @@ module System.Directory.BigTrees.Name
 import Control.DeepSeq (NFData)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
-import Data.List (isInfixOf, isPrefixOf)
+import Data.List (isInfixOf, isPrefixOf, nub)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Filesystem.Path.CurrentOS as OS
@@ -57,6 +60,7 @@ import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
+import Test.QuickCheck.Arbitrary ()
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
@@ -74,13 +78,25 @@ newtype Name
 
 deriving instance NFData Name
 
+-- TODO does the standard instance already shrink each char?
+-- TODO does the 2nd guard for going to single Chars help?
+--
+-- >>> filter validName $ myShrinkText "\US"
+-- ["abcABC123 \n"]
+--
+myShrinkText :: T.Text -> [T.Text]
+myShrinkText t
+  | T.length t == 1 = map T.pack $ (\[c] -> [shrink c]) $ T.unpack t
+  | T.length t < 4 = map (\c -> T.pack [c]) $ nub $ T.unpack t
+  | otherwise = shrink t
+
 instance Arbitrary Name where
   arbitrary :: Gen Name
   arbitrary = Name <$> (arbitrary :: Gen T.Text) `suchThat` validName
   -- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
   -- TODO should this use https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
   shrink :: Name -> [Name]
-  shrink (Name t) = Name <$> filter validName (shrink t)
+  shrink (Name t) = Name <$> filter validName (myShrinkText t)
 
 -- TODO is there ever another separator, except on windows?
 -- TODO use this in the arbitrary filepath instance too?
