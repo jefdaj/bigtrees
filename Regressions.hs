@@ -1,11 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import System.Directory.BigTrees
+import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.Delta
 
 -- how to print them out nicely in stack repl:
 -- >>> import Text.Pretty.Simple
 -- >>> pPrint failsRoundTripToDir1
 
+-- how to diff before vs after:
+-- >>> res <- roundTripTestTreeToDir failsRoundTripToDir1
+-- >>> diff failsRoundTripToDir1 res
+-- [Rm "\160431/\1288",Rm "\160431/\53199]"]
+
+-- TODO looks like an encoding error? based on the diff above
 failsRoundTripToDir1 :: TestTree
 failsRoundTripToDir1 =
   Dir
