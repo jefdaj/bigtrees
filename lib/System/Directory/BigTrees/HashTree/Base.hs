@@ -17,7 +17,7 @@ import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat, sized, forAll)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat, sized)
 import Test.QuickCheck.Instances.ByteString ()
 import TH.Derive (Deriving, derive)
 
@@ -155,16 +155,15 @@ arbitraryContentsHelper size
       (recTree :: TestTree) <- resize recSize arbitrary
       arbitraryContents remSize >>= \cs -> return $ recTree:cs -- TODO clean this up
 
--- https://stackoverflow.com/a/29107066
--- TODO what's a reasonable upper bound on the sizes here?
--- TODO can I used sized with this? would be cool
--- prop_arbitraryContents_length_matches_nFiles :: Int -> Bool
+-- TODO does forAll add anything here that I'm not already getting from sized?
+prop_arbitraryContents_length_matches_nFiles :: Gen Bool
 prop_arbitraryContents_length_matches_nFiles =
-  forAll (choose (0, 10)) $ \size -> do
+  sized $ \size -> do
     cs <- arbitraryContents size
     let sumFiles = sum $ map countFiles cs
         res = sumFiles == size
-    -- return $ if res then res else traceShow ((size, sumFiles, cs)) res
+    -- This verifies that it gets called with the full range of sizes:
+    -- return $ traceShow ((size, sumFiles)) res
     return res
 
 -- TODO make this explicit? it's the same as the overall Arbitrary instance
