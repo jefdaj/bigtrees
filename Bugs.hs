@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import System.Directory.BigTrees
-import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.Delta
+import System.Directory.BigTrees.HashTree
 import Text.Pretty.Simple
 
 -- how to run tests:

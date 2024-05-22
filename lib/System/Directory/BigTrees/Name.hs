@@ -4,7 +4,7 @@
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE TemplateHaskell            #-}
+
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 

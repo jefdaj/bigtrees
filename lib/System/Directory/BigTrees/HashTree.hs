@@ -40,23 +40,24 @@ module System.Directory.BigTrees.HashTree
 -- import Control.DeepSeq (force)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
-import System.Directory.BigTrees.Name (n2fp) -- TODO replace with IsName
+import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath ((</>))
 import System.FilePath.Glob (Pattern)
 import System.IO (hClose)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
+import System.Posix (fileSize, getFileStatus)
 import Test.QuickCheck (Arbitrary (..), Gen, Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import System.Posix (getFileStatus, fileSize)
 
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countFiles, dropFileData)
+import Control.Monad.IO.Class (liftIO)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countFiles,
+                                                dropFileData)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readTestTree, readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
-import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree,
-                                                 writeTestTreeDir, writeTree)
-import Control.Monad.IO.Class (liftIO)
+import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeTestTreeDir,
+                                                 writeTree)
 -- import System.Directory.BigTrees.Util (absolutePath)
 
 -- import qualified Data.ByteString.Char8 as B
@@ -132,9 +133,7 @@ roundtripTestTreeToDir t =
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
     let treeRootDir = tmpDir </> n2fp (name t) -- TODO use IsName here
-    res <- readTestTree Nothing False [] treeRootDir
-
-    return res
+    readTestTree Nothing False [] treeRootDir
 
 prop_roundtrip_TestTree_to_dir :: Property
 prop_roundtrip_TestTree_to_dir = monadicIO $ do

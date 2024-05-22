@@ -3,7 +3,7 @@
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TemplateHaskell            #-}
+
 
 {-|
 Description: Hashes and hash digests.
@@ -48,13 +48,13 @@ import GHC.Generics (Generic)
 import Streaming (Of, Stream)
 import qualified Streaming.ByteString.Char8 as Q
 import qualified Streaming.Prelude as S
+import qualified System.Directory as SD
 import System.Directory (pathIsSymbolicLink)
 import System.FilePath (takeBaseName)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import TH.Derive (Deriving, derive)
-import qualified System.Directory as SD
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.

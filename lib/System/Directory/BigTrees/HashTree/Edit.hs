@@ -31,7 +31,7 @@ wrapInEmptyDirs p t = case pathComponents p of
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
-addSubTree (File _ _ _) _ _ = error "attempt to insert tree into a file"
+addSubTree (File {}) _ _ = error "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
@@ -60,7 +60,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
  - TODO does this actually solve nFiles too?
  -}
 rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
-rmSubTree (File _ _ _) p = Left $ "no such subtree: '" ++ p ++ "'"
+rmSubTree (File {}) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs

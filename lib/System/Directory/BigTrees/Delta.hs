@@ -62,9 +62,9 @@ diff' a t1@(File f1 h1 _) t2@(File f2 h2 _)
   | f1 /= f2 && h1 == h2 = [Mv (a </> n2fp f1) (a </> n2fp f2)]
   | f1 == f2 && h1 /= h2 = [Edit (if a == n2fp f1 then n2fp f1 else a </> n2fp f1) t1 t2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
-diff' a (File _ _ _) t2@(Dir  d _ _ _) = [Rm a, Add (a </> n2fp d) t2]
+diff' a (File {}) t2@(Dir  d _ _ _) = [Rm a, Add (a </> n2fp d) t2]
 -- TODO wait is this a Mv?
-diff' a (Dir  d _ _ _) t2@(File _ _ _) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
+diff' a (Dir  d _ _ _) t2@(File {}) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
 diff' a t1@(Dir _ h1 os _) (Dir _ h2 ns _)
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits

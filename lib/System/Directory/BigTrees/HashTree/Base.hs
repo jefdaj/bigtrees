@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
+
 
 module System.Directory.BigTrees.HashTree.Base where
 
@@ -17,7 +17,7 @@ import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, suchThat, sized)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
 import TH.Derive (Deriving, derive)
 
