@@ -40,3 +40,14 @@ stack test
 * "`find` mode": list full paths, filter by metadata and glob/regex
 * Clean up: write haddocks, hide partial constructors, etc
 * Upload to Hackage
+
+```
+bigtrees hash   <src> [-o <tree>]
+bigtrees update <tree> [-i <src>]
+bigtrees cut    <tree> <branch> [-o <tree>]
+bigtrees rm     <tree> <branch>
+bigtrees graft  <tree> <branch> [-i <tree>]
+bigtrees mv     <tree> <oldbranch> <newbranch>
+bigtrees diff   <oldtree> <newtree>
+bigtrees dupes  <tree> [<condition>..] [-s <sortby>] [-n <nhits>] [-p <branch>] [-d <script>]
+```

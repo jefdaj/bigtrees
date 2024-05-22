@@ -6,6 +6,7 @@ module Main where
 -- TODO figure out how to read files + compute hashes in parallel
 
 import Cmd.Info (cmdInfo)
+import Cmd.Find (cmdFind)
 import Config (Config (..), defaultConfig)
 import Data.Functor ((<&>))
 import OldCmd.Cat (oldCmdCat)
@@ -49,6 +50,10 @@ main = do
   if cmd "info" then do
     let paths = lst "path"
     cmdInfo cfg paths
+
+  else if cmd "find" then do
+    let paths = lst "path"
+    cmdFind cfg paths
 
   else if cmd "oldcat" then do
      let paths = lst "path"

@@ -2,6 +2,7 @@ Create and manipulate hash trees representing collections of files.
 
 Usage:
   bigtrees [-v] info <path>..
+  bigtrees [-v] find <tree>.. [<condition>..]
 
   bigtrees [-vc]  oldcat    <path>...
   bigtrees [-vc]  oldhash   [-e <exclude>] [-t <txt>] [-b <bin>] <path>...
@@ -27,12 +28,22 @@ Options:
                  at the same time.
 
 Commands:
+  info       Succinct summary of a tree file: stats, etc
+  find       Print full paths from tree file(s), and optionally filter them
   oldcat     Decodes and prints each <path> if hashes, and hashes + prints if not.
   oldhash    Reads files + folders and prints their hashes to stdout.
   olddupes   List duplicate files + folders in <hashes>.
   olddiff    Print changes in <new> relative to <old>. TODO take hashes here too!
   oldupdate  Updates <main> hashes with new ones from <sub>, inserted at <path>.
   oldtest    Run tests on the given directories.
+
+Conditions:
+  type (file, dir, graft)
+  mindepth, maxdepth
+  minsize, maxsize
+  minfiles, maxfiles
+  glob
+  regex
 
 Examples:
 

@@ -78,6 +78,7 @@ executable bigtrees
   main-is: Main.hs
   other-modules:
       Cmd
+      Cmd.Find
       Cmd.Info
       Config
       OldCmd
@@ -124,6 +125,7 @@ test-suite test-app
   main-is: Test.hs
   other-modules:
       Cmd
+      Cmd.Find
       Cmd.Info
       Config
       Main
@@ -181,6 +183,7 @@ test-suite test-doctests
       System.Directory.BigTrees.Name
       System.Directory.BigTrees.Util
       Cmd
+      Cmd.Find
       Cmd.Info
       Config
       Main
