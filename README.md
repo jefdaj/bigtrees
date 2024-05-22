@@ -38,4 +38,5 @@ stack test
 * Static build so it can be used offline without Nix
 * Intelligent re-hashing of only the files whose mod times have changed
 * "`find` mode": list full paths, filter by metadata and glob/regex
+* Clean up: write haddocks, hide partial constructors, etc
 * Upload to Hackage
