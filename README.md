@@ -28,3 +28,11 @@ stack test
 
 
 #### Todo
+
+* Rewrite command line interface
+* Add more metadata to trees: besides `nFiles`, also want mod time and size in bytes
+* Add `Graft` nodes that import other tree files
+* Static build so it can be used offline without Nix
+* Intelligent re-hashing of only the files whose mod times have changed
+* "`find` mode": list full paths, filter by metadata and glob/regex
+* Upload to Hackage
