@@ -37,8 +37,8 @@ import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), fp2n)
-import TH.Derive ()
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
+import TH.Derive ()
 
 -- for distinguishing beween files and dirs
 data TreeType = D | F

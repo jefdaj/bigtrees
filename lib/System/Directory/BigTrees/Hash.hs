@@ -39,6 +39,7 @@ import Crypto.Hash.Algorithms (SHA256 (SHA256))
 import Crypto.Hash.IO (hashMutableFinalize, hashMutableInitWith, hashMutableUpdate)
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Short as BS
 import Data.Hashable (Hashable (..))
@@ -54,10 +55,9 @@ import System.FilePath (takeBaseName)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
-import TH.Derive (Deriving, derive)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat, arbitrary)
+import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
-import qualified Data.ByteString.Char8 as B8
+import TH.Derive (Deriving, derive)
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
