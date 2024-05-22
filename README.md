@@ -34,6 +34,7 @@ stack test
 * Add `Graft` nodes that import other tree files
 * Add `Link` nodes that indicate whether their target data is present in the tree
 * Add `Error` nodes to wrap errors, the same way directory-tree does it
+* Add header + footer to hashes describing filters, version used, start/end time, table format
 * Static build so it can be used offline without Nix
 * Intelligent re-hashing of only the files whose mod times have changed
 * "`find` mode": list full paths, filter by metadata and glob/regex
