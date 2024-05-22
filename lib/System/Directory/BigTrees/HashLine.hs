@@ -10,6 +10,7 @@ module System.Directory.BigTrees.HashLine
   , IndentLevel(..)
   -- , Hash(..) TODO re-export here? And Name too?
   , prettyHashLine
+  , parseHashLine -- TODO remove? not actually used
   , parseHashLines
 
   -- for testing (TODO remove?)
@@ -36,7 +37,8 @@ import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), fp2n)
-import TH.Derive (Deriving, derive)
+import TH.Derive ()
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 
 -- for distinguishing beween files and dirs
 data TreeType = D | F
@@ -55,6 +57,43 @@ newtype IndentLevel
 newtype HashLine
   = HashLine (TreeType, IndentLevel, Hash, Name)
   deriving (Eq, Ord, Read, Show)
+
+-- TODO remove?
+instance Arbitrary IndentLevel where
+
+  arbitrary :: Gen IndentLevel
+  arbitrary = IndentLevel <$> ((arbitrary :: Gen Int) `suchThat` (>= 0))
+
+  shrink :: IndentLevel -> [IndentLevel]
+  shrink _ = []
+
+instance Arbitrary TreeType where
+
+  --  TODO oneof
+  arbitrary :: Gen TreeType
+  arbitrary = do
+    n <- choose (0,1 :: Int)
+    return $ [F, D] !! n
+
+  -- you could shrink D -> F, but not without changing the rest of the hashline
+  shrink :: TreeType -> [TreeType]
+  shrink _ = []
+
+-- TODO can you really have an arbitrary hashline without the rest of a tree?
+-- TODO remove?
+instance Arbitrary HashLine where
+
+  arbitrary :: Gen HashLine
+  arbitrary = do
+    tt <- arbitrary :: Gen TreeType
+    il <- arbitrary :: Gen IndentLevel
+    h  <- arbitrary :: Gen Hash
+    n  <- arbitrary :: Gen Name
+    return $ HashLine (tt, il, h, n)
+
+  -- only shrinks the filename
+  shrink :: HashLine -> [HashLine]
+  shrink (HashLine (tt, il, h, n)) = map (\n' -> HashLine (tt, il, h, n')) (shrink n)
 
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly

@@ -28,7 +28,6 @@ module System.Directory.BigTrees.HashForest
   )
   where
 
-import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.HashLine (parseHashLines)
 import System.Directory.BigTrees.HashTree (readOrBuildTree)
@@ -41,7 +40,7 @@ import System.IO (IOMode (..), hClose, withFile)
 import System.IO.Temp (withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Gen, Property, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import TH.Derive (Deriving, derive)
+import TH.Derive ()
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the

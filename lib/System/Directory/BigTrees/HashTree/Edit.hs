@@ -1,10 +1,16 @@
-module System.Directory.BigTrees.HashTree.Edit where
+module System.Directory.BigTrees.HashTree.Edit
+  ( addSubTree
+  , rmSubTree
+  , wrapInEmptyDir
+  , wrapInEmptyDirs
+  )
+  where
 
 import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, hash, nFiles, name),
-                                                ProdTree, countFiles, hashContents)
+                                                countFiles, hashContents)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Name (fp2n)

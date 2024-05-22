@@ -45,11 +45,9 @@ import System.FilePath ((</>))
 import System.FilePath.Glob (Pattern)
 import System.IO (hClose)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
-import System.Posix (fileSize, getFileStatus)
-import Test.QuickCheck (Arbitrary (..), Gen, Property, arbitrary, generate, resize)
+import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
-import Control.Monad.IO.Class (liftIO)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countFiles,
                                                 dropFileData)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)

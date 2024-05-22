@@ -55,6 +55,9 @@ import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import TH.Derive (Deriving, derive)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat, arbitrary)
+import Test.QuickCheck.Instances.ByteString ()
+import qualified Data.ByteString.Char8 as B8
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -71,6 +74,15 @@ instance Hashable Hash
   where
     hashWithSalt :: Int -> Hash -> Int
     hashWithSalt n h = hashWithSalt n (unHash h)
+
+-- TODO remove?
+instance Arbitrary Hash where
+
+  arbitrary :: Gen Hash
+  arbitrary = fmap hashBytes (arbitrary :: Gen B8.ByteString)
+
+  shrink :: Hash -> [Hash]
+  shrink _ = []
 
 digestLength :: Int
 digestLength = 20
