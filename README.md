@@ -13,6 +13,7 @@ backups" use case.
 git clone https://github.com/jefdaj/bigtrees
 cd bigtrees
 nix-shell
+stack test
 ```
 
 #### Done
