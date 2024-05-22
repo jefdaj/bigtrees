@@ -32,6 +32,8 @@ stack test
 * Rewrite command line interface
 * Add more metadata to trees: besides `nFiles`, also want mod time and size in bytes
 * Add `Graft` nodes that import other tree files
+* Add `Link` nodes that indicate whether their target data is present in the tree
+* Add `Error` nodes to wrap errors, the same way directory-tree does it
 * Static build so it can be used offline without Nix
 * Intelligent re-hashing of only the files whose mod times have changed
 * "`find` mode": list full paths, filter by metadata and glob/regex
