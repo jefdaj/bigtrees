@@ -2,8 +2,9 @@
 
 ### BigTrees
 
-A rewrite of [gander][1] focusing more on usability of the data
-structures as a library, rather than on my own "dedup backups" use case.
+A rewrite of [gander](https://github.com/jefdaj/gander) focusing more on
+usability of the data structures as a library, rather than on my own "dedup
+backups" use case.
 
 
 #### Quick Start
@@ -31,6 +32,4 @@ nix-shell
 
 See [Bugs.hs](Bugs.hs) for details.
 
-* [round-trip to dir fails with certain unicode chars?](#1)
-
-[1]: https://github.com/jefdaj/gander
+* [round-trip to dir fails with certain unicode chars?](https://github.com/jefdaj/bigtrees/issues/1)
