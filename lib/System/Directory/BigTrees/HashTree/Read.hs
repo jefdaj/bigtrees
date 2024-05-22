@@ -10,7 +10,6 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree, 
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.FilePath.Glob (Pattern)
 
--- try to read as binary, and fall back to text if it fails
 readTree :: Maybe Int -> FilePath -> IO ProdTree
 readTree md path = deserializeTree md <$> B8.readFile path
 

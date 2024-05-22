@@ -32,7 +32,6 @@ oldCmdHash cfg targets = do
 -- updateAnnexHashes cfg new = do
 --   let aPath   = fromJust $ annex cfg
 --       hashes  = aPath </> "hashes.txt"
---       bHashes = aPath </> "hashes.bin"
 --   log cfg "updating hashes.txt"
 --   exists <- doesFileExist hashes
 --   when exists $ do -- TODO only when verbose?

@@ -15,8 +15,7 @@ import System.FilePath.Glob (Pattern, compile)
 -- TODO remove from non-Cmd modules
 data Config
   = Config
-      { bin      :: Maybe FilePath
-      , txt      :: Maybe FilePath
+      { txt      :: Maybe FilePath
       , maxdepth :: Maybe Int
       , verbose  :: Bool
       , force    :: Bool
@@ -27,8 +26,7 @@ data Config
 
 defaultConfig :: Config
 defaultConfig = Config
-  { bin      = Nothing
-  , txt      = Nothing
+  { txt      = Nothing
   , maxdepth = Nothing
   , verbose  = True
   , force    = False

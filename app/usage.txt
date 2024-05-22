@@ -5,7 +5,7 @@ Usage:
   bigtrees [-v] find <tree>.. [<condition>..]
 
   bigtrees [-vc]  oldcat    <path>...
-  bigtrees [-vc]  oldhash   [-e <exclude>] [-t <txt>] [-b <bin>] <path>...
+  bigtrees [-vc]  oldhash   [-e <exclude>] [-t <txt>] <path>...
   bigtrees [-vc]  olddiff   <old> <new>
   bigtrees [-vc]  olddupes  [-t <txt>] [-m <maxdepth>] <hashes>...
   bigtrees [-vfc] oldupdate <main> <sub> <path>
@@ -18,13 +18,11 @@ Options:
   -e <exclude>   Read a list of globs and exclude any files matching it.
                  If none given, the list defaults to [".git*"]
   -t <txt>       Stream output to a text file rather than stdout.
-  -b <bin>       Before exit, write a binary <hashes> file for fast reloading.
-                 Text will still stream to stdout as usual.
   -m <maxdepth>  Look for dupes only <maxdepth> levels into the folder structure.
                  Drastically reduces time and memory use when reading hashes
                  from a file, without affecting accuracy up to the max depth.
-                 WARNING: only works on a saved hashes file. No effect on
-                 binary data or when reading a tree of files and deduping them
+                 WARNING: only works on a saved hashes file. No effect
+                 when reading a tree of files and deduping them
                  at the same time.
 
 Commands:

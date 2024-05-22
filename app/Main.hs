@@ -38,8 +38,7 @@ main = do
              then short 'e' >>= readFile <&> map compile . lines
              else return $ exclude defaultConfig
   let cfg = Config
-        { bin      = D.getArg args $ D.shortOption 'b'
-        , txt      = D.getArg args $ D.shortOption 't'
+        { txt      = D.getArg args $ D.shortOption 't'
         , maxdepth = fmap (read :: String -> Int) $ D.getArg args $ D.shortOption 'm'
         , verbose  = flag 'v'
         , force    = flag 'f'
