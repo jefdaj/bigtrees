@@ -6,16 +6,15 @@ A rewrite of [gander][1] focusing more on usability of the data
 structures as a library, rather than on my own "dedup backups" use case.
 
 
-#### Quick start
+#### Quick Start
 
 ``` .sh
 git clone https://github.com/jefdaj/bigtrees
 cd bigtrees
-nix-shell --run 'stack test'
+nix-shell
 ```
 
-
-#### DONE
+#### Done
 
 * Moved `Gander.Cmd` -> `BigTrees.OldCmd`, leaving old commands functional during the rewrite
 * Wrote a meta lint script (hlint, stan, stylish-haskell, weeder) and applied some basic suggestions
@@ -26,7 +25,12 @@ nix-shell --run 'stack test'
 * Wrote comparison of text vs binary format file sizes, realized binary is always larger, removed it
 
 
-#### TODO
+#### Todo
 
+#### Known bugs & debugging
+
+See [Bugs.hs](Bugs.hs) for details.
+
+* [round-trip to dir fails with certain unicode chars?](#1)
 
 [1]: https://github.com/jefdaj/gander

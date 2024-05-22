@@ -5,25 +5,28 @@ import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.Delta
 import Text.Pretty.Simple
 
--- how to print them out nicely in stack repl:
--- >>> pPrint failsRoundTripToDir1
+-- how to run tests:
+-- TASTY_PATTERN='/roundtrip TestTree to dir/' stack test
+-- TASTY_QUICKCHECK_REPLAY=844840 stack test
+-- TASTY_QUICKCHECK_REPLAY=58121 TASTY_QUICKCHECK_TESTS=300 TASTY_PATTERN='/roundtrip TestTree to dir/' stack test
 
--- how to diff before vs after:
--- >>> res <- roundTripTestTreeToDir failsRoundTripToDir1
--- >>> diff failsRoundTripToDir1 res
--- [Rm "\160431/\1288",Rm "\160431/\53199]"]
+--------------------------------------
+-- issue #1: round-trip to dirs bug --
+--------------------------------------
+
+-- how to print failing trees nicely in stack repl:
+-- >>> pPrint issue11
 
 -- how to diff them:
---
--- >>> writeTestTreeDir "failsRoundTripToDir1" failsRoundTripToDir1
--- >>> res1 <- buildProdTree False [] "./failsRoundTripToDir1"
--- >>> diff (dropFileData failsRoundTripToDir1) res1
+-- >>> writeTestTreeDir "issue11" issue11
+-- >>> res1 <- buildProdTree False [] "./issue11"
+-- >>> diff (dropFileData issue11) res1
 -- ... big diff ...
 
 -- TODO wait, it is a real issue uncovered with my read/write function(s)!
 -- TODO see if you can manually shrink it: to just one dir without any contents? just one file?
-failsRoundTripToDir1 :: TestTree
-failsRoundTripToDir1 =
+issue01example1 :: TestTree
+issue01example1 =
   Dir
     { name = Name "\xf58e6\x1057cc"
     , hash = Hash
@@ -53,8 +56,8 @@ failsRoundTripToDir1 =
     , nFiles = 2
     }
 
-failsRoundTripToDir2 :: TestTree
-failsRoundTripToDir2 =
+issue01example2 :: TestTree
+issue01example2 =
   Dir
     { name = Name "\xf6847"
     , hash = Hash
