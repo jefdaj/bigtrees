@@ -27,9 +27,3 @@ nix-shell
 
 
 #### Todo
-
-#### Known bugs & debugging
-
-See [Bugs.hs](Bugs.hs) for details.
-
-* [round-trip to dir fails with certain unicode chars?](https://github.com/jefdaj/bigtrees/issues/1)
