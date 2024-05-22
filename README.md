@@ -23,7 +23,7 @@ stack test
 * Some initial work in progress writing haddocs
 * Moved tests into lib/ + app/ alongside the functions they test, wrote more of them
 * Broke HashTree into smaller modules by operation: Build, Write, etc
-* Rewrote my old directory-tree code using a typeclass, started a PR upstream for it
+* Rewrote my old directory-tree code using a typeclass, started [a PR upstream](https://github.com/jberryman/directory-tree/pull/18)
 * Wrote comparison of text vs binary format file sizes, realized binary is always larger, removed it
 
 
