@@ -66,6 +66,7 @@ executable:
   # TODO which of these options really help?
   ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
   dependencies:
+  - QuickCheck
   - Glob
   - base
   - bigtrees
@@ -172,6 +173,7 @@ tests:
     - "-Wunused-packages"
     # TODO extract a common list of exe dependencies
     dependencies:
+    - QuickCheck
     - Glob
     - base
     - bigtrees
@@ -182,6 +184,7 @@ tests:
     - silently
     - tasty
     - tasty-golden
+    - tasty-quickcheck
     - temporary
     - unbounded-delays
     - utf8-string
