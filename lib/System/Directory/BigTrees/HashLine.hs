@@ -36,7 +36,7 @@ import Data.Maybe (catMaybes)
 import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), fp2n)
+import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive ()
 
@@ -99,8 +99,8 @@ instance Arbitrary HashLine where
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B8.ByteString
-prettyHashLine (HashLine (t, IndentLevel n, h, Name p)) = B8.unwords
-  [B8.pack $ show t, B8.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2fp, fp2n?
+prettyHashLine (HashLine (t, IndentLevel n, h, name)) = B8.unwords
+  [B8.pack $ show t, B8.pack $ show n, prettyHash h, B8.pack $ n2fp name] -- TODO n2b?
 
 typeP :: Parser TreeType
 typeP = do
