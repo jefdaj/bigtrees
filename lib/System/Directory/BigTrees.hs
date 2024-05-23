@@ -2,6 +2,8 @@ module System.Directory.BigTrees
 
   -- name
   ( Name(..)
+  , n2fp
+  , fp2n
   , roundtripNameToFileName
 
   -- hash
@@ -90,4 +92,4 @@ import System.Directory.BigTrees.HashTree.Read (readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, writeTestTreeDir,
                                                  writeTree)
-import System.Directory.BigTrees.Name (Name (..), roundtripNameToFileName)
+import System.Directory.BigTrees.Name (Name (..), roundtripNameToFileName, n2fp, fp2n)

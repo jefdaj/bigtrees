@@ -19,6 +19,7 @@ import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
 import System.FilePath.Glob (compile)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
+-- import Text.Pretty.Simple (pPrint)
 
 main :: IO ()
 main = do
@@ -45,6 +46,9 @@ main = do
         , check    = flag 'c'
         , exclude  = eList
         }
+
+  -- pPrint cfg
+  -- pPrint args
 
   if cmd "info" then do
     let paths = lst "path"
