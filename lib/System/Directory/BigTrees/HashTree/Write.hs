@@ -5,7 +5,7 @@ import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLevel),
-                                           TreeType (D, F), prettyHashLine)
+                                           TreeType (D, F), prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, name),
                                                 ProdTree, TestTree)
 import System.Directory.BigTrees.Name (n2fp)
@@ -17,14 +17,14 @@ import System.IO (IOMode (..), hFlush, stdout, withFile)
 -- TODO does map evaluation influence memory usage?
 -- TODO create a single ByteString rather than a list for compression?
 serializeTree :: HashTree a -> [B8.ByteString]
-serializeTree = map prettyHashLine . flattenTree
+serializeTree = map (prettyLine Nothing) . flattenTree
 
 -- TODO remove and make this a special case of WriteTree? or vice versa?
 printTree :: HashTree a -> IO ()
 printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
-    printLine l = putStrLn (B8.unpack $ prettyHashLine l) >> hFlush stdout
+    printLine l = putStrLn (B8.unpack $ prettyLine Nothing l) >> hFlush stdout
 
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that

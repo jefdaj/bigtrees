@@ -29,6 +29,7 @@ module System.Directory.BigTrees.Name
   ( Name(..)
   , fp2n
   , n2fp
+  , breadcrumbs2fp
 
   -- tests
   -- TODO document tests as a group
@@ -126,6 +127,12 @@ fp2n :: FilePath -> Name
 fp2n = Name . (if os == "darwin"
                     then TE.decodeUtf8 . B.pack
                     else T.pack)
+
+-- Breadcrumbs are a list of names leading to the current node, like an anchor
+-- path but sorted in reverse order because we want `cons` to be fast.
+-- TODO custom type for this?
+breadcrumbs2fp :: [Name] -> FilePath
+breadcrumbs2fp = foldl1 (flip (</>)) . map n2fp
 
 -- | I plan to make a PR to the directory-tree package adding TreeName
 -- TODO should probably unify FilePath and Name again and make this non-orphan

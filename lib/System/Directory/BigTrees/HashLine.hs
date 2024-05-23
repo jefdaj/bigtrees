@@ -9,7 +9,7 @@ module System.Directory.BigTrees.HashLine
   , TreeType(..)
   , IndentLevel(..)
   -- , Hash(..) TODO re-export here? And Name too?
-  , prettyHashLine
+  , prettyLine
   , parseHashLine -- TODO remove? not actually used
   , parseHashLines
 
@@ -36,9 +36,10 @@ import Data.Maybe (catMaybes)
 import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
+import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp, breadcrumbs2fp)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive ()
+import System.FilePath ((</>))
 
 -- for distinguishing beween files and dirs
 data TreeType = D | F
@@ -97,10 +98,20 @@ instance Arbitrary HashLine where
 
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
+-- TODO rename/move this? it's used in printing lines and also find paths
 -- note: p can have weird characters, so it should be handled only as ByteString
-prettyHashLine :: HashLine -> B8.ByteString
-prettyHashLine (HashLine (t, IndentLevel n, h, name)) = B8.unwords
-  [B8.pack $ show t, B8.pack $ show n, prettyHash h, B8.pack $ n2fp name] -- TODO n2b?
+prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
+prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, name)) =
+  let node = case breadcrumbs of
+               Nothing -> n2fp name
+               Just ns -> breadcrumbs2fp $ name:ns
+  in B8.unwords
+       -- TODO make the metadata configurable here?
+       [ B8.pack $ show t
+       , B8.pack $ show n
+       , prettyHash h
+       , B8.pack node -- TODO n2b?
+       ]
 
 typeP :: Parser TreeType
 typeP = do
