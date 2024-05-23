@@ -24,12 +24,15 @@ printTreePaths' ns t = do
   let ns' = name t:ns
   printPath ns'
   case t of
+    -- TODO why doesn't this sort order match the one in Cmd.Find?
     (Dir {}) -> mapM_ (printTreePaths' ns') (sortOn name $ contents t)
     _        -> return ()
 
 -- Note that the names start in reverse order, then we flip them before printing.
 -- TODO what's the best fold fn to use here?
+-- TODO take a tree + format here too and add metadata to the printout
+-- TODO except this should ideally match the system used for hashlines too...
+--      simplest way to start: fixed order, each thing controlled by a flag
+-- TODO factor some of this out into ns2fp?
 printPath :: [Name] -> IO ()
 printPath = putStrLn . foldl1 (flip (</>)) . map n2fp
-
--- TODO prop_printTreePaths_matches_unix_find_and_sort
