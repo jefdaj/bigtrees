@@ -1,7 +1,7 @@
 module Cmd.Find
   ( cmdFind
-  , cmdFindVsUnixFind
-  , prop_cmdFind_matches_unix_find
+  , cmdFindUnixFind
+  , prop_cmdFind_paths_match_unix_find
   )
   where
 
@@ -26,8 +26,8 @@ cmdFind cfg paths = do
 -- Also, sort order turns out to be weirder than I expected with Unicode,
 -- so I gave up and sorted the output separately. The important part is
 -- that we get the same paths, not necessarily in the same order.
-cmdFindVsUnixFind :: TestTree -> IO (String, String)
-cmdFindVsUnixFind t =
+cmdFindUnixFind :: TestTree -> IO (String, String)
+cmdFindUnixFind t =
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
 
     -- tmpDir will be the *parent* of the root tree dir
@@ -50,10 +50,10 @@ cmdFindVsUnixFind t =
 
     return (out1', out2')
 
-prop_cmdFind_matches_unix_find :: Property
-prop_cmdFind_matches_unix_find = monadicIO $ do
+prop_cmdFind_paths_match_unix_find :: Property
+prop_cmdFind_paths_match_unix_find = monadicIO $ do
   tree <- pick arbitrary
-  (out1, out2) <- run $ cmdFindVsUnixFind tree
+  (out1, out2) <- run $ cmdFindUnixFind tree
   -- WARNING these will mess up your terminal
   -- liftIO $ putStrLn out1
   -- liftIO $ putStrLn out2
