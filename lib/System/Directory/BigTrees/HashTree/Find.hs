@@ -1,3 +1,6 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+
 module System.Directory.BigTrees.HashTree.Find
   ( printTreePaths
   , pathLine
@@ -5,12 +8,10 @@ module System.Directory.BigTrees.HashTree.Find
   )
   where
 
--- import Data.List (sortOn)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..))
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (IndentLevel(..), TreeType(..))
--- import Control.Applicative ((<$>))
 import Data.Maybe (catMaybes)
 import qualified Data.ByteString.Char8 as B8
 import System.IO (hFlush, stdout) -- TODO open stdout in binary mode?
@@ -21,8 +22,11 @@ import Data.List (nub)
  - that `bigtrees find <path>` always matches `find <path> | sort`.
  -}
 -- TODO pass which metadata options to print here without a Config
-printTreePaths :: HashTree a -> IO ()
-printTreePaths = printTreePaths' []
+printTreePaths :: String -> HashTree a -> IO ()
+printTreePaths fmt =
+  case mkLineMetaFormatter fmt of
+    Left  errMsg -> error errMsg -- TODO anything to do besides die here?
+    Right fmtFn  -> printTreePaths' fmtFn (IndentLevel 0) []
 
 {- Recursively print paths, passing a list of breadcrumbs.
  - A couple gotchas:
@@ -30,53 +34,42 @@ printTreePaths = printTreePaths' []
  - * have to print subtree paths before the main dir to maintain streaming
  -   (otherwise the entire tree has to be held in memory)
  -}
-printTreePaths' :: [Name] -> HashTree a -> IO ()
-printTreePaths' ns t = do
+printTreePaths' :: FmtFn -> IndentLevel -> [Name] -> HashTree a -> IO ()
+printTreePaths' fmtFn (IndentLevel i) ns t = do
   let ns' = name t:ns
+      tt  = treeType t
   case t of
-    (Dir {}) -> mapM_ (printTreePaths' ns') (contents t)
+    (Dir {}) -> mapM_ (printTreePaths' fmtFn (IndentLevel $ i+1) (name t:ns)) (contents t)
     _        -> return ()
-  let tt = case t of
-             (File {}) -> F
-             (Dir  {}) -> D
-  B8.putStrLn $ pathLine
-    (Just tt)
-    (Just $ IndentLevel $ length ns)
-    (Just $ hash t)
-    ns'
+  B8.putStrLn $ pathLine fmtFn (IndentLevel i) ns t
   hFlush stdout -- TODO maybe not?
 
-pathLine
-  :: Maybe TreeType
-  -> Maybe IndentLevel
-  -> Maybe Hash
-  -> [Name]
-  -> B8.ByteString
-pathLine mt mi mh ns = B8.unwords $ meta ++ [path] -- TODO tab separate
+pathLine :: FmtFn -> IndentLevel -> [Name] -> HashTree a -> B8.ByteString
+pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
   where
-    path = B8.pack $ breadcrumbs2fp ns
-    meta = catMaybes
-      [ (B8.pack . show) <$> mt
-      , (B8.pack . (\(IndentLevel n) -> show n)) <$> mi
-      ,  prettyHash <$> mh
-      ]
+    meta = fmtFn i t
+    path = B8.pack $ breadcrumbs2fp $ name t:ns -- TODO ns already includes name t?
 
 -- TODO where should this live?
 treeType :: HashTree a -> Char
 treeType (File {}) = 'F'
 treeType (Dir  {}) = 'D'
 
+-- TODO is the type variable a valid here?
+type FmtFn = forall a. IndentLevel -> HashTree a -> B8.ByteString
+
 -- TODO complain if nub is needed rather than silently fixing it?
-matchingFmtFns :: String -> [IndentLevel -> HashTree a -> B8.ByteString]
+matchingFmtFns :: String -> [FmtFn]
 matchingFmtFns = catMaybes . map (\c -> lookup c allFmtFns) . nub
 
--- TODO B8.intercalate (B8.singleton '\t') everywhere instead of unwords?
-combineFmtFns
-  :: [IndentLevel -> HashTree a -> B8.ByteString]
-  -> (IndentLevel -> HashTree a -> B8.ByteString)
-combineFmtFns fs i t = B8.unwords $ map (\f -> f i t) fs
+-- TODO tabs instead of single spaces?
+separate :: [B8.ByteString] -> B8.ByteString
+separate = B8.intercalate $ B8.singleton ' '
 
-allFmtFns :: [(Char, IndentLevel -> HashTree a -> B8.ByteString)]
+combineFmtFns :: [FmtFn] -> FmtFn
+combineFmtFns fs i t = separate $ map (\f -> f i t) fs
+
+allFmtFns :: [(Char, FmtFn)]
 allFmtFns =
   [ ('t', \_ t -> B8.singleton $ treeType t)
   , ('h', \_ t -> prettyHash $ hash t)
@@ -88,11 +81,12 @@ validFmtChars = "thi"
 
 -- The overall "make formatter" function. Takes the metafmt description and
 -- returns an error if it's invalid, or a function for formatting the metadata.
-mkLineMetaFormatter
-  :: String
-  -> Either String (IndentLevel -> HashTree a -> B8.ByteString)
+-- TODO return a list of bytestrings and let the caller handle intercalating?
+mkLineMetaFormatter :: String -> Either String FmtFn
 mkLineMetaFormatter cs =
-  let invalid = filter (not . flip elem validFmtChars) cs
-  in if not (null invalid)
-       then Left  $ "Invalid metafmt: \"" ++ invalid ++ "\""
+  let bad = filter (not . flip elem validFmtChars) cs
+  in if not (null bad)
+       then Left  $ "Invalid metadata format char '" ++ bad ++ "' in " ++ show cs
        else Right $ combineFmtFns $ matchingFmtFns cs
+
+-- TODO test that ^ throws exceptions on invalid formats

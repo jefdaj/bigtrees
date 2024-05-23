@@ -19,7 +19,7 @@ import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
 import System.FilePath.Glob (compile)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
-import Text.Pretty.Simple (pPrint)
+-- import Text.Pretty.Simple (pPrint)
 
 main :: IO ()
 main = do
@@ -48,8 +48,8 @@ main = do
         , metafmt  = D.getArg args $ D.shortOption 'm'
         }
 
-  pPrint cfg
-  pPrint args
+  -- pPrint cfg
+  -- pPrint args
 
   if cmd "diff" then do
     old <- arg "old"

@@ -89,8 +89,8 @@ writeForest path forest = withFile path WriteMode $ \h ->
   mapM_ (B8.hPutStrLn h) (serializeForest forest)
 
 -- TODO sort the trees by name here? match however find does it
-printForestPaths :: HashForest a -> IO ()
-printForestPaths (HashForest ts) = mapM_ printTreePaths ts
+printForestPaths :: String -> HashForest a -> IO ()
+printForestPaths fmt (HashForest ts) = mapM_ (printTreePaths fmt) ts
 
 -----------
 -- tests --
