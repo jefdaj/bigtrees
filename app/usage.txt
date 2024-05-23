@@ -3,9 +3,10 @@ Create and manipulate hash trees representing collections of files.
 Usage:
   bigtrees [-v] info <path>...
   bigtrees [-v] find <path>... [<condition>...]
+  bigtrees [-v] hash [-e <exclude>] [-t <txt>] <path>...
+  bigtrees [-v] diff <old> <new>
+
   bigtrees [-vc]  oldcat    <path>...
-  bigtrees [-vc]  oldhash   [-e <exclude>] [-t <txt>] <path>...
-  bigtrees [-vc]  olddiff   <old> <new>
   bigtrees [-vc]  olddupes  [-t <txt>] [-m <maxdepth>] <hashes>...
   bigtrees [-vfc] oldupdate <main> <sub> <path>
   bigtrees [-vc]  oldtest   <path>...
@@ -27,10 +28,10 @@ Options:
 Commands:
   info       Succinct summary of a tree file: stats, etc
   find       Print full paths from tree file(s), and optionally filter them
+  diff       Print changes in <new> relative to <old>. TODO take hashes here too!
+  hash       Reads files + folders and prints their hashes to stdout.
   oldcat     Decodes and prints each <path> if hashes, and hashes + prints if not.
-  oldhash    Reads files + folders and prints their hashes to stdout.
   olddupes   List duplicate files + folders in <hashes>.
-  olddiff    Print changes in <new> relative to <old>. TODO take hashes here too!
   oldupdate  Updates <main> hashes with new ones from <sub>, inserted at <path>.
   oldtest    Run tests on the given directories.
 
@@ -43,7 +44,6 @@ Conditions:
   regex
 
 Examples:
-
-  bigtrees oldhash "/media/jeff/WD My Book"  > mybook-orig-hashes.txt
-  bigtrees oldhash  /media/jeff/dedup/mybook > mybook-dedup-hashes.txt
-  bigtrees olddiff mybook-{orig,dedup}-hashes.txt
+  bigtrees hash "/media/jeff/WD My Book"  > mybook-orig-hashes.txt
+  bigtrees hash  /media/jeff/dedup/mybook > mybook-dedup-hashes.txt
+  bigtrees diff mybook-{orig,dedup}-hashes.txt

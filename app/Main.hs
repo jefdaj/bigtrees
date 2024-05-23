@@ -10,9 +10,9 @@ import Cmd.Find (cmdFind)
 import Config (Config (..), defaultConfig)
 import Data.Functor ((<&>))
 import OldCmd.Cat (oldCmdCat)
-import OldCmd.Diff (oldCmdDiff)
-import OldCmd.Dupes (oldCmdDupes)
-import OldCmd.Hash (oldCmdHash)
+import Cmd.Diff (cmdDiff)
+import Cmd.Dupes (cmdDupes)
+import Cmd.Hash (cmdHash)
 -- import OldCmd.Test (oldCmdTest)
 import OldCmd.Update (oldCmdUpdate)
 import qualified System.Console.Docopt as D
@@ -50,30 +50,30 @@ main = do
   -- pPrint cfg
   -- pPrint args
 
-  if cmd "info" then do
-    let paths = lst "path"
-    cmdInfo cfg paths
+  if cmd "diff" then do
+    old <- arg "old"
+    new <- arg "new"
+    cmdDiff cfg old new
+
+  else if cmd "dupes" then do
+    let hashes = lst "hashes"
+    cmdDupes cfg hashes
 
   else if cmd "find" then do
     let paths = lst "path"
     cmdFind cfg paths
 
+  else if cmd "hash" then do
+     let paths = lst "path"
+     cmdHash cfg paths
+
+  else if cmd "info" then do
+    let paths = lst "path"
+    cmdInfo cfg paths
+
   else if cmd "oldcat" then do
      let paths = lst "path"
      oldCmdCat cfg paths
-
-  else if cmd "oldhash" then do
-     let paths = lst "path"
-     oldCmdHash cfg paths
-
-  else if cmd "olddiff" then do
-    old <- arg "old"
-    new <- arg "new"
-    oldCmdDiff cfg old new
-
-  else if cmd "olddupes" then do
-    let hashes = lst "hashes"
-    oldCmdDupes cfg hashes
 
   -- else if cmd "oldtest"  then do
   --   let paths = lst "path"

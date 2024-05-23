@@ -2,9 +2,9 @@ module OldCmd
   -- ( oldCmdAdd
   -- , cmdDedup
   ( oldCmdCat
-  , oldCmdDiff
-  , oldCmdDupes
-  , oldCmdHash
+  , cmdDiff
+  , cmdDupes
+  , cmdHash
   -- , oldCmdInit
   -- , oldCmdMv
   -- , oldCmdRm
@@ -14,8 +14,8 @@ module OldCmd
   where
 
 import OldCmd.Cat (oldCmdCat)
-import OldCmd.Diff (oldCmdDiff)
-import OldCmd.Dupes (oldCmdDupes)
-import OldCmd.Hash (oldCmdHash)
+import Cmd.Diff (cmdDiff)
+import Cmd.Dupes (cmdDupes)
+import Cmd.Hash (cmdHash)
 -- import OldCmd.Test (oldCmdTest)
 import OldCmd.Update (oldCmdUpdate)

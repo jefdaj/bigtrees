@@ -79,16 +79,16 @@ executable bigtrees
   main-is: Main.hs
   other-modules:
       Cmd
+      Cmd.Diff
+      Cmd.Dupes
       Cmd.Find
+      Cmd.Hash
       Cmd.Info
       Config
       OldCmd
       OldCmd.Add
       OldCmd.Cat
       OldCmd.Dedup
-      OldCmd.Diff
-      OldCmd.Dupes
-      OldCmd.Hash
       OldCmd.Init
       OldCmd.Mv
       OldCmd.Rm
@@ -126,7 +126,10 @@ test-suite test-app
   main-is: Test.hs
   other-modules:
       Cmd
+      Cmd.Diff
+      Cmd.Dupes
       Cmd.Find
+      Cmd.Hash
       Cmd.Info
       Config
       Main
@@ -134,9 +137,6 @@ test-suite test-app
       OldCmd.Add
       OldCmd.Cat
       OldCmd.Dedup
-      OldCmd.Diff
-      OldCmd.Dupes
-      OldCmd.Hash
       OldCmd.Init
       OldCmd.Mv
       OldCmd.Rm
@@ -185,7 +185,10 @@ test-suite test-doctests
       System.Directory.BigTrees.Name
       System.Directory.BigTrees.Util
       Cmd
+      Cmd.Diff
+      Cmd.Dupes
       Cmd.Find
+      Cmd.Hash
       Cmd.Info
       Config
       Main
@@ -193,9 +196,6 @@ test-suite test-doctests
       OldCmd.Add
       OldCmd.Cat
       OldCmd.Dedup
-      OldCmd.Diff
-      OldCmd.Dupes
-      OldCmd.Hash
       OldCmd.Init
       OldCmd.Mv
       OldCmd.Rm
