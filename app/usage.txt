@@ -2,12 +2,12 @@ Create and manipulate hash trees representing collections of files.
 
 Usage:
   bigtrees [-v] info <path>...
-  bigtrees [-v] find <path>... [<condition>...]
+  bigtrees [-v] find [<condition>...] [-m <metafmt>] <path>...
   bigtrees [-v] hash [-e <exclude>] [-t <txt>] <path>...
   bigtrees [-v] diff <old> <new>
 
   bigtrees [-vc]  oldcat    <path>...
-  bigtrees [-vc]  olddupes  [-t <txt>] [-m <maxdepth>] <hashes>...
+  bigtrees [-vc]  olddupes  [-t <txt>] [-d <maxdepth>] <hashes>...
   bigtrees [-vfc] oldupdate <main> <sub> <path>
   bigtrees [-vc]  oldtest   <path>...
 
@@ -18,12 +18,15 @@ Options:
   -e <exclude>   Read a list of globs and exclude any files matching it.
                  If none given, the list defaults to [".git*"]
   -t <txt>       Stream output to a text file rather than stdout.
-  -m <maxdepth>  Look for dupes only <maxdepth> levels into the folder structure.
+  -d <maxdepth>  Look for dupes only <maxdepth> levels into the folder structure.
                  Drastically reduces time and memory use when reading hashes
                  from a file, without affecting accuracy up to the max depth.
                  WARNING: only works on a saved hashes file. No effect
                  when reading a tree of files and deduping them
                  at the same time.
+  -m <metafmt>   Optional space-separated metadata fields to print at the
+                 beginning of each line. Options are: "h" (hash),
+                 "t" (type), "i" (indent) For example: "ht" -> hash, type
 
 Commands:
   info       Succinct summary of a tree file: stats, etc

@@ -19,7 +19,7 @@ import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
 import System.FilePath.Glob (compile)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
--- import Text.Pretty.Simple (pPrint)
+import Text.Pretty.Simple (pPrint)
 
 main :: IO ()
 main = do
@@ -40,15 +40,16 @@ main = do
              else return $ exclude defaultConfig
   let cfg = Config
         { txt      = D.getArg args $ D.shortOption 't'
-        , maxdepth = fmap (read :: String -> Int) $ D.getArg args $ D.shortOption 'm'
+        , maxdepth = fmap (read :: String -> Int) $ D.getArg args $ D.shortOption 'd'
         , verbose  = flag 'v'
         , force    = flag 'f'
         , check    = flag 'c'
         , exclude  = eList
+        , metafmt  = D.getArg args $ D.shortOption 'm'
         }
 
-  -- pPrint cfg
-  -- pPrint args
+  pPrint cfg
+  pPrint args
 
   if cmd "diff" then do
     old <- arg "old"
