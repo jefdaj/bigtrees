@@ -74,7 +74,7 @@ allFmtFns =
   ]
 
 validFmtChars :: String
-validFmtChars = "thi"
+validFmtChars = map fst allFmtFns
 
 -- The overall "make formatter" function. Takes the metafmt description and
 -- returns an error if it's invalid, or a function for formatting the metadata.
