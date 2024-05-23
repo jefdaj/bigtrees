@@ -1,21 +1,18 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ImpredicativeTypes #-}
 
 module System.Directory.BigTrees.HashTree.Find
   ( printTreePaths
-  , pathLine
-  , mkLineMetaFormatter
   )
   where
 
+import qualified Data.ByteString.Char8 as B8
+import Data.List (nub)
+import Data.Maybe (mapMaybe)
+import System.Directory.BigTrees.Hash (Hash, prettyHash)
+import System.Directory.BigTrees.HashLine (IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..))
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
-import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.Directory.BigTrees.HashLine (IndentLevel(..), TreeType(..))
-import Data.Maybe (catMaybes)
-import qualified Data.ByteString.Char8 as B8
-import System.IO (hFlush, stdout) -- TODO open stdout in binary mode?
-import Data.List (nub)
+import System.IO (hFlush, stdout)
 
 {- We sort on filename here because 1) it's the only thing we can sort on
  - without keeping additional state, and 2) it makes it easy to property test
@@ -60,7 +57,7 @@ type FmtFn = forall a. IndentLevel -> HashTree a -> B8.ByteString
 
 -- TODO complain if nub is needed rather than silently fixing it?
 matchingFmtFns :: String -> [FmtFn]
-matchingFmtFns = catMaybes . map (\c -> lookup c allFmtFns) . nub
+matchingFmtFns = mapMaybe (\c -> lookup c allFmtFns) . nub
 
 -- TODO tabs instead of single spaces?
 separate :: [B8.ByteString] -> B8.ByteString

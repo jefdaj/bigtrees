@@ -36,10 +36,10 @@ import Data.Maybe (catMaybes)
 import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp, breadcrumbs2fp)
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
+import System.FilePath ((</>))
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive ()
-import System.FilePath ((</>))
 
 -----------
 -- types --

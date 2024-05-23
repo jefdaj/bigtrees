@@ -21,7 +21,6 @@ module System.Directory.BigTrees.HashTree
   , treeContainsHash
   , treeContainsPath
   , writeTree
-  , pathLine
   , printTreePaths
 
   -- for testing
@@ -54,7 +53,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTre
                                                 dropFileData)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Find (pathLine, printTreePaths)
+import System.Directory.BigTrees.HashTree.Find (printTreePaths)
 import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readTestTree, readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeTestTreeDir,
