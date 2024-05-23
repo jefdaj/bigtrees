@@ -41,6 +41,10 @@ import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive ()
 import System.FilePath ((</>))
 
+-----------
+-- types --
+-----------
+
 -- for distinguishing beween files and dirs
 data TreeType = D | F
   deriving (Eq, Ord, Read, Show)
@@ -58,6 +62,10 @@ newtype IndentLevel
 newtype HashLine
   = HashLine (TreeType, IndentLevel, Hash, Name)
   deriving (Eq, Ord, Read, Show)
+
+---------------
+-- instances --
+---------------
 
 -- TODO remove?
 instance Arbitrary IndentLevel where
@@ -93,12 +101,18 @@ instance Arbitrary HashLine where
     return $ HashLine (tt, il, h, n)
 
   -- only shrinks the filename
+  -- TODO also change the treetype?
   shrink :: HashLine -> [HashLine]
   shrink (HashLine (tt, il, h, n)) = map (\n' -> HashLine (tt, il, h, n')) (shrink n)
+
+-----------
+-- print --
+-----------
 
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
 -- TODO rename/move this? it's used in printing lines and also find paths
+-- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
 prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, name)) =
@@ -112,6 +126,12 @@ prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, name)) =
        , prettyHash h
        , B8.pack node -- TODO n2b?
        ]
+
+------------
+-- parser --
+------------
+
+-- TODO rewrite a lot of this to deal flexibly with tables? or will order stay fixed?
 
 typeP :: Parser TreeType
 typeP = do

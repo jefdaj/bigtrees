@@ -5,6 +5,8 @@ module Cmd.Find
   )
   where
 
+-- TODO use the actual path passed as the first breadcrumb? would match unix find
+
 import Config (Config (..), defaultConfig)
 import Control.Concurrent.Thread.Delay (delay)
 import Data.List (sort)

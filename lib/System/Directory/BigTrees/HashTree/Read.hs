@@ -43,5 +43,3 @@ accTrees (HashLine (t, IndentLevel i, h, p)) cs = case t of
 
 readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree
 readTestTree md = buildTree B8.readFile
-
-

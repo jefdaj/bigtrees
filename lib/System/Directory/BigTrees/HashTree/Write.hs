@@ -32,6 +32,9 @@ writeTree :: FilePath -> HashTree a -> IO ()
 writeTree path tree = withFile path WriteMode $ \h ->
   mapM_ (B8.hPutStrLn h) (serializeTree tree)
 
+-- This is the only official way to construct a `HashLine`, because they don't
+-- make sense in isolation; each `Dir` needs to be preceded in the list by its
+-- contents to reconstruct the tree structure.
 flattenTree :: HashTree a -> [HashLine]
 flattenTree = flattenTree' ""
 
@@ -41,7 +44,7 @@ flattenTree' :: FilePath -> HashTree a -> [HashLine]
 flattenTree' dir (File n h _   ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
-    subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs
+    subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
     wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
 
 -- this is to catch the case where it tries to write the same file twice

@@ -1,12 +1,18 @@
 module System.Directory.BigTrees.HashTree.Find
   ( printTreePaths
-  , printPath
+  , pathLine
   )
   where
 
-import Data.List (sortOn)
+-- import Data.List (sortOn)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..))
-import System.Directory.BigTrees.Name (Name, n2fp, breadcrumbs2fp)
+import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
+import System.Directory.BigTrees.Hash (Hash, prettyHash)
+import System.Directory.BigTrees.HashLine (IndentLevel(..), TreeType(..))
+-- import Control.Applicative ((<$>))
+import Data.Maybe (catMaybes)
+import qualified Data.ByteString.Char8 as B8
+import System.IO (hFlush, stdout) -- TODO open stdout in binary mode?
 
 {- We sort on filename here because 1) it's the only thing we can sort on
  - without keeping additional state, and 2) it makes it easy to property test
@@ -15,22 +21,39 @@ import System.Directory.BigTrees.Name (Name, n2fp, breadcrumbs2fp)
 printTreePaths :: HashTree a -> IO ()
 printTreePaths = printTreePaths' []
 
-{- Recursively print paths, passing a list of breadcrumbs. Note that the
- - breadcrumbs are in reverse order to make `cons`ing simple.
+{- Recursively print paths, passing a list of breadcrumbs.
+ - A couple gotchas:
+ - * breadcrumbs are in reverse order to make `cons`ing simple
+ - * have to print subtree paths before the main dir to maintain streaming
+ -   (otherwise the entire tree has to be held in memory)
  -}
 printTreePaths' :: [Name] -> HashTree a -> IO ()
 printTreePaths' ns t = do
   let ns' = name t:ns
-  printPath ns'
   case t of
-    -- TODO why doesn't this sort order match the one in Cmd.Find?
-    (Dir {}) -> mapM_ (printTreePaths' ns') (sortOn name $ contents t)
+    (Dir {}) -> mapM_ (printTreePaths' ns') (contents t)
     _        -> return ()
+  let tt = case t of
+             (File {}) -> F
+             (Dir  {}) -> D
+  B8.putStrLn $ pathLine
+    (Just tt)
+    (Just $ IndentLevel $ length ns)
+    (Just $ hash t)
+    ns'
+  hFlush stdout -- TODO maybe not?
 
--- TODO what's the best fold fn to use here?
--- TODO take a tree + format here too and add metadata to the printout
--- TODO except this should ideally match the system used for hashlines too...
---      simplest way to start: fixed order, each thing controlled by a flag
--- TODO factor some of this out into ns2fp?
-printPath :: [Name] -> IO ()
-printPath = putStrLn . breadcrumbs2fp
+pathLine
+  :: Maybe TreeType
+  -> Maybe IndentLevel
+  -> Maybe Hash
+  -> [Name]
+  -> B8.ByteString
+pathLine mt mi mh ns = B8.unwords $ meta ++ [path] -- TODO tab separate
+  where
+    path = B8.pack $ breadcrumbs2fp ns
+    meta = catMaybes
+      [ (B8.pack . show) <$> mt
+      , (B8.pack . (\(IndentLevel n) -> show n)) <$> mi
+      ,  prettyHash <$> mh
+      ]
