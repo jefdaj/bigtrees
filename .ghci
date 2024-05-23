@@ -1,3 +1,4 @@
 :set -hiedir=.hie
 :set prompt  "\x03BB: "
 :set -XOverloadedStrings
+:set -XScopedTypeVariables

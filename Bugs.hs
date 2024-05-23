@@ -86,3 +86,7 @@ issue01example2 =
         ]
     , nFiles = 2
     }
+
+issue02example1 :: TestTree
+issue02example1 =
+  File {name = Name "\1082166", hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, fileData = ""}

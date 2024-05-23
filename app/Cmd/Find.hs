@@ -7,21 +7,19 @@ module Cmd.Find
 
 import Config (Config (..), defaultConfig)
 import System.Directory.BigTrees (readOrBuildTrees, printForestPaths, TestTree, writeTestTreeDir)
-import System.Process (readCreateProcess, shell)
+import System.Process (readCreateProcess, shell, cwd)
 import Control.Concurrent.Thread.Delay (delay)
 import Test.QuickCheck (Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
+import System.FilePath (takeBaseName, takeDirectory)
 
 cmdFind :: Config -> [FilePath] -> IO ()
 cmdFind cfg paths = do
   forest <- readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
   printForestPaths forest
-
--- TODO run unix find | sort on the test tree dir
--- TODO add find to nix-shell? or is it in the core utils already?
 
 cmdFindVsSortedUnixFind :: TestTree -> IO (String, String)
 cmdFindVsSortedUnixFind t =
@@ -32,7 +30,13 @@ cmdFindVsSortedUnixFind t =
     delay 100000 
     (out1, ()) <- hCapture [stdout, stderr] $ cmdFind defaultConfig [tmpDir]
     delay 100000 
-    out2 <- readCreateProcess (shell $ "find '" ++ tmpDir ++ "' | sort") ""
+    -- unix find will print whole absolute paths here,
+    -- so we need to invoke it from above the tmpDir
+    -- TODO print full paths in cmdFind too? or would that be more confusing?
+    let tmpName   = takeBaseName  tmpDir
+        tmpParent = takeDirectory tmpDir
+        unixFind  = "find '" ++ tmpName ++ "' | sort"
+    out2 <- readCreateProcess ((shell unixFind) {cwd = Just tmpParent}) ""
     delay 100000 
     return (out1, out2) -- TODO will stderr sometimes print something?
 
