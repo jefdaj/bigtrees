@@ -90,3 +90,22 @@ issue01example2 =
 issue02example1 :: TestTree
 issue02example1 =
   File {name = Name "\1082166", hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, fileData = ""}
+
+-------------------------------
+-- issue #3: cyclic symlinks --
+-------------------------------
+
+-- bigtrees: /home/user/.local/state/nix/profiles/channels-7-link/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/pkgs/test/nixpkgs-check-by-name/tests/symlink-invalid/pkgs/by-name/fo/foo/foo.nix: /home/user/.local/state/nix/profiles/channels-7-link/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/nixpkgs/pkgs/test/nixpkgs-check-by-name/tests/symlink-invalid/pkgs/by-name/fo/foo/foo.nix: getDirectoryContents:openDirStream: invalid argument (Too many levels of symbolic links)
+-- CallStack (from HasCallStack):
+  -- error, called at lib/System/Directory/BigTrees/HashTree/Build.hs:57:50 in bigtrees-1.0.0.0-GDWfkf2Hgs6Cl1vLfxoa8N:System.Directory.BigTrees.HashTree.Build
+
+-----------------------------------
+-- issue #4: unicode during find --
+-----------------------------------
+--
+-- Presumably, the solution is to keep everything natively as bytestrings,
+-- and only decode (but not re-encode) the printable chars when outputting to the terminal?
+--
+-- bigtrees find /etc/
+-- ...
+-- bigtrees: recoverEncode: invalid argument (cannot encode character '\65533')
