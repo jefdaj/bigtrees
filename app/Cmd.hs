@@ -4,5 +4,5 @@ module Cmd
   )
   where
 
-import Cmd.Info (cmdInfo)
 import Cmd.Find (cmdFind)
+import Cmd.Info (cmdInfo)

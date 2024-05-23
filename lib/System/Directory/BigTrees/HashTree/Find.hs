@@ -4,10 +4,10 @@ module System.Directory.BigTrees.HashTree.Find
   )
   where
 
-import System.Directory.BigTrees.HashTree.Base (HashTree(..))
+import Data.List (sortOn)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..))
 import System.Directory.BigTrees.Name (Name, n2fp)
 import System.FilePath ((</>))
-import Data.List (sortOn)
 
 {- We sort on filename here because 1) it's the only thing we can sort on
  - without keeping additional state, and 2) it makes it easy to property test
@@ -25,7 +25,7 @@ printTreePaths' ns t = do
   printPath ns'
   case t of
     (Dir {}) -> mapM_ (printTreePaths' ns') (sortOn name $ contents t)
-    _ -> return ()
+    _        -> return ()
 
 -- Note that the names start in reverse order, then we flip them before printing.
 -- TODO what's the best fold fn to use here?

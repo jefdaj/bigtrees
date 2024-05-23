@@ -5,14 +5,14 @@ module Main where
 -- TODO sort by how many links deduping would save: files per dupe * (dupes - 1)
 -- TODO figure out how to read files + compute hashes in parallel
 
-import Cmd.Info (cmdInfo)
+import Cmd.Diff (cmdDiff)
+import Cmd.Dupes (cmdDupes)
 import Cmd.Find (cmdFind)
+import Cmd.Hash (cmdHash)
+import Cmd.Info (cmdInfo)
 import Config (Config (..), defaultConfig)
 import Data.Functor ((<&>))
 import OldCmd.Cat (oldCmdCat)
-import Cmd.Diff (cmdDiff)
-import Cmd.Dupes (cmdDupes)
-import Cmd.Hash (cmdHash)
 -- import OldCmd.Test (oldCmdTest)
 import OldCmd.Update (oldCmdUpdate)
 import qualified System.Console.Docopt as D

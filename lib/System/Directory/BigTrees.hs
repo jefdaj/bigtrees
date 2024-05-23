@@ -83,18 +83,18 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNFi
                                           listLostFiles, mergeDupeSets, pathsByHash, printDupes,
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
-import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, printForest, readForest,
-                                             readOrBuildTrees, readTrees, writeForest,
-                                             printForestPaths)
+import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, printForest,
+                                             printForestPaths, readForest, readOrBuildTrees,
+                                             readTrees, writeForest)
 import System.Directory.BigTrees.HashLine (TreeType (..))
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), dropFileData, hashContents,
                                                 renameRoot)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
+import System.Directory.BigTrees.HashTree.Find (printPath, printTreePaths)
 import System.Directory.BigTrees.HashTree.Read (readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, writeTestTreeDir,
                                                  writeTree)
-import System.Directory.BigTrees.Name (Name (..), roundtripNameToFileName, n2fp, fp2n)
-import System.Directory.BigTrees.HashTree.Find (printTreePaths, printPath)
+import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp, roundtripNameToFileName)

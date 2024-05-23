@@ -6,16 +6,16 @@ module Cmd.Find
   where
 
 import Config (Config (..), defaultConfig)
-import System.Directory.BigTrees (readOrBuildTrees, printForestPaths, TestTree, writeTestTreeDir)
-import System.Process (readCreateProcess, proc, cwd)
 import Control.Concurrent.Thread.Delay (delay)
-import Test.QuickCheck (Property, arbitrary)
-import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import Data.List (sort)
+import System.Directory.BigTrees (TestTree, printForestPaths, readOrBuildTrees, writeTestTreeDir)
+import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
-import System.FilePath (takeBaseName, takeDirectory)
-import Data.List (sort)
+import System.Process (cwd, proc, readCreateProcess)
+import Test.QuickCheck (Property, arbitrary)
+import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 -- import Control.Monad.IO.Class (liftIO)
 
 cmdFind :: Config -> [FilePath] -> IO ()
@@ -23,6 +23,9 @@ cmdFind cfg paths = do
   forest <- readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
   printForestPaths forest
 
+-- Also, sort order turns out to be weirder than I expected with Unicode,
+-- so I gave up and sorted the output separately. The important part is
+-- that we get the same paths, not necessarily in the same order.
 cmdFindVsUnixFind :: TestTree -> IO (String, String)
 cmdFindVsUnixFind t =
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
@@ -38,19 +41,14 @@ cmdFindVsUnixFind t =
     delay 100000
 
     -- Unix find will print whole absolute paths here, so we need to invoke it
-    -- from above the tmpDir.
-    --
-    -- Also, sort order turns out to be weirder than I expected with Unicode,
-    -- so I gave up and sorted the output separately. The only important test
-    -- is whether we get all the same paths.
-    --
+    -- by relative path from the parent of the tmpdir to match my relative style.
     let tmpName   = takeBaseName  tmpDir
         tmpParent = takeDirectory tmpDir
     out2 <- readCreateProcess ((proc "find" [tmpName]) {cwd = Just tmpParent}) ""
     let out2' = (unlines . sort . lines) out2
     delay 100000
 
-    return (out1', out2') -- TODO will there ever be stderr?
+    return (out1', out2')
 
 prop_cmdFind_matches_unix_find :: Property
 prop_cmdFind_matches_unix_find = monadicIO $ do
