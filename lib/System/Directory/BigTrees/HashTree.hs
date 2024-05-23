@@ -56,6 +56,8 @@ import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readT
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeTestTreeDir,
                                                  writeTree)
+import System.Directory.BigTrees.HashTree.Find (printTreePaths, printPath)
+
 -- import System.Directory.BigTrees.Util (absolutePath)
 
 -- import qualified Data.ByteString.Char8 as B

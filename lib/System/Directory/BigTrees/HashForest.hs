@@ -20,6 +20,7 @@ module System.Directory.BigTrees.HashForest
   , readOrBuildTrees
   , printForest
   , writeForest
+  , printForestPaths
 
   -- tests
   , prop_roundtrip_HashForest_to_ByteString
@@ -27,7 +28,6 @@ module System.Directory.BigTrees.HashForest
 
   )
   where
-
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.HashLine (parseHashLines)
 import System.Directory.BigTrees.HashTree (readOrBuildTree)
@@ -35,6 +35,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree)
 import System.Directory.BigTrees.HashTree.Read (accTrees, readTree)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree)
+import System.Directory.BigTrees.HashTree.Find (printTreePaths)
 import System.FilePath.Glob (Pattern)
 import System.IO (IOMode (..), hClose, withFile)
 import System.IO.Temp (withSystemTempFile)
@@ -86,6 +87,10 @@ printForest (HashForest ts) = mapM_ printTree ts
 writeForest :: FilePath -> HashForest () -> IO ()
 writeForest path forest = withFile path WriteMode $ \h ->
   mapM_ (B8.hPutStrLn h) (serializeForest forest)
+
+-- TODO sort the trees by name here? match however find does it
+printForestPaths :: HashForest a -> IO ()
+printForestPaths (HashForest ts) = mapM_ printTreePaths ts
 
 -----------
 -- tests --

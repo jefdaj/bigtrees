@@ -29,6 +29,7 @@ library
       System.Directory.BigTrees.HashTree.Base
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Edit
+      System.Directory.BigTrees.HashTree.Find
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
@@ -177,6 +178,7 @@ test-suite test-doctests
       System.Directory.BigTrees.HashTree.Base
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Edit
+      System.Directory.BigTrees.HashTree.Find
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
@@ -260,6 +262,7 @@ test-suite test-lib
       System.Directory.BigTrees.HashTree.Base
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Edit
+      System.Directory.BigTrees.HashTree.Find
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write

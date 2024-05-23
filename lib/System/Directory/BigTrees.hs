@@ -37,6 +37,8 @@ module System.Directory.BigTrees
   -- , serializeTree
   , treeContainsHash
   , treeContainsPath
+  , printTreePaths
+  , printPath
 
   -- hashforest
   , HashForest(..)
@@ -46,6 +48,7 @@ module System.Directory.BigTrees
   , readOrBuildTrees
   , printForest
   , writeForest
+  , printForestPaths
   -- , serializeForest
   -- , deserializeForest
 
@@ -81,7 +84,8 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNFi
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, printForest, readForest,
-                                             readOrBuildTrees, readTrees, writeForest)
+                                             readOrBuildTrees, readTrees, writeForest,
+                                             printForestPaths)
 import System.Directory.BigTrees.HashLine (TreeType (..))
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), dropFileData, hashContents,
@@ -93,3 +97,4 @@ import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, tree
 import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, writeTestTreeDir,
                                                  writeTree)
 import System.Directory.BigTrees.Name (Name (..), roundtripNameToFileName, n2fp, fp2n)
+import System.Directory.BigTrees.HashTree.Find (printTreePaths, printPath)
