@@ -21,6 +21,8 @@ module System.Directory.BigTrees.HashTree
   , treeContainsHash
   , treeContainsPath
   , writeTree
+  , printPath
+  , printTreePaths
 
   -- for testing
   , countFiles
