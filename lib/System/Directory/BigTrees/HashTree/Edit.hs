@@ -28,12 +28,12 @@ import System.FilePath (joinPath, splitPath)
 wrapInEmptyDir :: FilePath -> HashTree a -> HashTree a
 wrapInEmptyDir n t = Dir
   { dirContents = cs
-  , nNodes  = fmap (+1) $ nNodes t
+  , nNodes  = sumNodes t + 1
   , nodeData = NodeData
     { name     = fp2n n
     , hash     = h
-    , modTime  = modTime t
-    , size     = size t + Size 4096 -- TODO does this vary?
+    , modTime  = modTime $ nodeData t
+    , size     = size (nodeData t) + Size 4096 -- TODO does this vary?
     }
   }
   where
@@ -50,16 +50,23 @@ wrapInEmptyDirs p t = case pathComponents p of
 addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
 addSubTree (File {}) _ _ = error "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
-addSubTree main sub path = main { hash = h', dirContents = cs', nNodes = n' }
+addSubTree main sub path = main { nodeData = nd', dirContents = cs', nNodes = n' }
   where
     comps  = pathComponents path
     p1     = head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
-    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= fp2n p1) (dirContents main) ++ [newSub]
-    n'     = nNodes main + nNodes newSub - maybe 0 nNodes oldSub
-    sub'   = sub { name = fp2n $ last comps }
-    oldSub = find (\c -> name c == fp2n p1) (dirContents main)
+    nd'    = (nodeData main) { hash = h', modTime = mt', size = s' }
+    cs'    = sortBy
+               (compare `on` (name . nodeData)) $
+               filter
+                 (\c -> (name . nodeData) c /= fp2n p1)
+                 ((dirContents main) ++ [newSub])
+    n'     = sumNodes main + sumNodes newSub - maybe 0 sumNodes oldSub
+    s'     = size (nodeData main) + size (nodeData newSub) - (maybe 0 (size . nodeData) oldSub)
+    mt'    = maximum $ map (modTime . nodeData) [main, newSub]
+    sub'   = sub { nodeData=(nodeData sub) {name = fp2n $ last comps }}
+    oldSub = find (\c -> (name . nodeData) c == fp2n p1) (dirContents main)
     newSub = if length comps == 1
                then sub'
                else case oldSub of

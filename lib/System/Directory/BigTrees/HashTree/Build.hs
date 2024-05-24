@@ -7,7 +7,7 @@ import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine (ModTime(..), Size(..))
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, totalNodes, hashContents)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, sumNodes, hashContents)
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime)
 import qualified System.Directory.Tree as DT
@@ -112,7 +112,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
             , modTime  = mt
             , size     = sum $ s : map size cs''
             , hash     = hashContents cs''
-            , nNodes  = sum $ 1 : map totalNodes cs''
+            , nNodes  = sum $ 1 : map sumNodes cs''
             }
 
 -- https://stackoverflow.com/a/17909816
