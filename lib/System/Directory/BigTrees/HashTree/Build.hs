@@ -6,8 +6,8 @@ import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile)
-import System.Directory.BigTrees.HashLine ()
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, ModTime(..), Size(..), countINodes, hashContents)
+import System.Directory.BigTrees.HashLine (ModTime(..), Size(..))
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, totalINodes, hashContents)
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime)
 import qualified System.Directory.Tree as DT
@@ -62,6 +62,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   let fPath = DT.nappend a n
   -- TODO hold up, are we reading the file twice here?
   --      oh right: not usually a problem because readFileFn is a no-op in production
+  !mt <- getModTime fPath
   !h  <- unsafeInterleaveIO $ hashFile v fPath -- TODO symlink bug here?
   !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
@@ -70,7 +71,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   return $ (if depth < lazyDirDepth
               then id
               else (\x -> hash x `seq` name x `seq` x))
-         $ File { name = n, hash = h, fileData = fd }
+         $ File { name = n, hash = h, modTime = mt, fileData = fd }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = DT.nappend a n
@@ -89,6 +90,14 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let cs'' = sortBy (compare `on` name) subTrees
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
+  -- We want the overall mod time to be the most recent of the dir + all contents.
+  -- If there are any contents at all, by definition they're newer than the dir, right?
+  -- So we only need the root mod time when the dir is empty...
+  -- !mt <- getModTime root
+  mt <- if null cs''
+          then getModTime root
+          else return $ maximum $ map modTime cs
+
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?
   return $ (if depth < lazyDirDepth
@@ -97,8 +106,9 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
          $ Dir
             { name     = n
             , contents = cs''
+            , modTime  = mt
             , hash     = hashContents cs''
-            , nINodes   = sum $ map countINodes cs'' -- TODO +1?
+            , nINodes  = 1 + sum $ map totalINodes cs''
             }
 
 -- https://stackoverflow.com/a/17909816

@@ -13,11 +13,12 @@ import Data.Char (toLower)
 import Data.List (nubBy, sort)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
-import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..))
+import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..), ModTime(..), Size(..))
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive (Deriving, derive)
+import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
 
 -- import Debug.Trace
 
@@ -36,9 +37,21 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
     unixDupes a b = n2fp (name a)
                  == n2fp (name b)
 
-countINodes :: HashTree a -> Int
-countINodes (File {}  )    = 1
-countINodes (Dir  _ _ _ n) = n
+-- TODO Integer? not sure how big it could get
+totalINodes :: HashTree a -> Int
+totalINodes (File {}) = 1
+totalINodes (Dir {nINodes=n}) = n -- this includes 1 for the dir itself
+
+-- TODO is this needed, or will the fields be total?
+-- TODO size unit
+totalSize :: HashTree a -> Integer
+totalSize (File {}) = undefined -- TODO add size field
+totalSize (Dir  {}) = undefined -- TODO add size field
+
+-- TODO is this needed?
+totalModTime :: HashTree a -> Integer
+totalModTime (File {}) = undefined -- TODO add mod time field
+totalModTime (Dir  {}) = undefined -- TODO add mod time field
 
 hashContents :: [HashTree a] -> Hash
 hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash)
@@ -51,17 +64,21 @@ hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash
 -- data HashTree = DT.AnchoredDirTree Hash
 --   deriving (Eq, Read, Show)
 --   TODO rename name -> path?
+--   TODO make safe access fns and don't export the partial constructors
 data HashTree a
   = File
       { name     :: !Name
       , hash     :: !Hash
+      , modTime  :: !ModTime
       , fileData :: !a
+      -- implicitly has one inode
       }
   | Dir
       { name     :: !Name
-      , hash     :: Hash
-      , contents :: [HashTree a]
-      , nINodes  :: Int
+      , modTime  :: !ModTime
+      , hash     :: Hash -- TODO strict?
+      , contents :: [HashTree a] -- TODO rename dirContents?
+      , nINodes  :: Int -- TODO strict?
       }
   deriving (Generic, Ord, Read, Show)
 
@@ -112,7 +129,7 @@ prop_arbitraryContents_length_matches_nINodes :: Gen Bool
 prop_arbitraryContents_length_matches_nINodes =
   sized $ \size -> do
     cs <- arbitraryContents size
-    let sumFiles = sum $ map countINodes cs
+    let sumFiles = sum $ map totalINodes cs
         res = sumFiles == size
     -- This verifies that it gets called with the full range of sizes:
     -- return $ traceShow ((size, sumFiles)) res
@@ -122,13 +139,16 @@ prop_arbitraryContents_length_matches_nINodes =
 -- arbitraryTree :: Int -> Gen TestTree
 
 -- size == nINodes, so a file is always sized 1
+-- TODO should these all be strict?
 arbitraryFile :: Gen TestTree
 arbitraryFile = do
   n  <- arbitrary :: Gen Name
   bs <- arbitrary :: Gen B8.ByteString
+  mt <- arbitrary :: Gen ModTime
   return $ File
     { name = n
     , hash = hashBytes bs
+    , modTime = mt
     , fileData = bs
     }
 
@@ -138,12 +158,14 @@ arbitraryDirSized size = do
   -- !cs <- nubBy duplicateNames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
   -- TODO put back the nubBy part!
   !cs <- arbitraryContents size -- TODO (s-1)?
+  !mt <- arbitrary :: Gen ModTime
   -- TODO assert that nINodes == s here?
   return $ Dir
     { name     = n
     , hash     = hashContents cs
+    , modTime  = mt
     , contents = cs
-    , nINodes   = sum $ map countINodes cs
+    , nINodes   = sum $ map totalINodes cs
     }
 
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
@@ -174,7 +196,7 @@ instance Arbitrary TestTree where
       newNames = map (\n -> d { name = n }) (shrink $ name d)
       newContents = map (\cs -> d { contents = cs
                                   , hash = hashContents cs
-                                  , nINodes = sum $ map countINodes cs}) -- TODO +1?
+                                  , nINodes = sum $ map totalINodes cs}) -- TODO +1?
                         (shrink $ contents d)
 
 -- TODO rename the actual function file -> fileData to match future dirData
@@ -182,7 +204,6 @@ instance Arbitrary TestTree where
 dropFileData :: HashTree a -> ProdTree
 dropFileData d@(Dir {contents = cs}) = d {contents = map dropFileData cs}
 dropFileData f@(File {})             = f {fileData = ()}
-
 
 instance Arbitrary ProdTree where
   arbitrary :: Gen ProdTree
@@ -194,9 +215,3 @@ confirmFileHashes (Dir {contents = cs})           = all confirmFileHashes cs
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes
-
-newtype ModTime = ModTime Integer
-  deriving (Eq, Ord, Read, Show)
-
-newtype Size = Size Integer
-  deriving (Eq, Ord, Read, Show)

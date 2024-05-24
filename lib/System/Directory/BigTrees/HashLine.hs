@@ -1,6 +1,7 @@
 {-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 
 module System.Directory.BigTrees.HashLine
@@ -8,6 +9,8 @@ module System.Directory.BigTrees.HashLine
   ( HashLine(..)
   , TreeType(..)
   , IndentLevel(..)
+  , ModTime(..)
+  , Size(..)
   -- , Hash(..) TODO re-export here? And Name too?
   , prettyLine
   , parseHashLine -- TODO remove? not actually used
@@ -40,6 +43,7 @@ import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
 import System.FilePath ((</>))
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive ()
+import GHC.Generics (Generic)
 
 -----------
 -- types --
@@ -57,10 +61,26 @@ newtype IndentLevel
   = IndentLevel Int
   deriving (Eq, Ord, Read, Show)
 
+newtype ModTime = ModTime Integer
+  deriving (Eq, Ord, Read, Show, Generic)
+
+-- modNow :: IO ModTime
+-- modNow = getPOSIXTime >>= return . round . utcTimeToPOSIXSeconds
+
+instance Arbitrary ModTime where
+  -- random time between 2000-01-01 and 2024-01-01
+  -- (numbers don't matter much as long as they're in the past?)
+  arbitrary = ModTime <$> choose (946684800, 1704067200)
+
+instance NFData ModTime
+
+newtype Size = Size Integer
+  deriving (Eq, Ord, Read, Show)
+
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine
-  = HashLine (TreeType, IndentLevel, Hash, Name)
+  = HashLine (TreeType, IndentLevel, Hash, ModTime, Name)
   deriving (Eq, Ord, Read, Show)
 
 ---------------
@@ -97,13 +117,14 @@ instance Arbitrary HashLine where
     tt <- arbitrary :: Gen TreeType
     il <- arbitrary :: Gen IndentLevel
     h  <- arbitrary :: Gen Hash
+    mt <- arbitrary :: Gen ModTime
     n  <- arbitrary :: Gen Name
-    return $ HashLine (tt, il, h, n)
+    return $ HashLine (tt, il, h, mt, n)
 
   -- only shrinks the filename
   -- TODO also change the treetype?
   shrink :: HashLine -> [HashLine]
-  shrink (HashLine (tt, il, h, n)) = map (\n' -> HashLine (tt, il, h, n')) (shrink n)
+  shrink (HashLine (tt, il, h, mt, n)) = map (\n' -> HashLine (tt, il, h, mt, n')) (shrink n)
 
 -----------
 -- print --
@@ -115,7 +136,7 @@ instance Arbitrary HashLine where
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
-prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, name)) =
+prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, ModTime mt, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
@@ -124,6 +145,7 @@ prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, name)) =
        [ B8.pack $ show t
        , B8.pack $ show n
        , prettyHash h
+       , B8.pack $ show mt
        , B8.pack node -- TODO n2b?
        ]
 
@@ -152,7 +174,7 @@ hashP = do
  - TODO can it use null-separated lines instead like -print0?
  -}
 breakP :: Parser ()
-breakP = endOfLine >> choice [typeP >> indentP >> hashP >> return (), endOfInput]
+breakP = endOfLine >> choice [typeP >> numStrP >> hashP >> return (), endOfInput]
 
 -- TODO should anyChar be anything except forward slash and the null char?
 nameP :: Parser Name
@@ -161,11 +183,18 @@ nameP = fmap fp2n $ do
   cs <- manyTill anyChar $ lookAhead breakP
   return (c:cs)
 
-indentP :: Parser IndentLevel
-indentP = do
+-- TODO is there a built-in thing for this?
+numStrP :: Parser String
+numStrP = do
   n <- manyTill digit $ char ' '
   -- TODO char ' ' here?
-  return $ IndentLevel $ read n
+  return $ read n
+
+indentP :: Parser IndentLevel
+indentP = numStrP >>= return . IndentLevel . read
+
+modTimeP :: Parser ModTime
+modTimeP = numStrP >>= return . ModTime . read
 
 -- TODO is there a cleaner syntax for this?
 -- TODO this should still count up total files when given a max depth
@@ -185,9 +214,10 @@ lineP md = do
   where
     parseTheRest t i = do
       h <- hashP
+      mt <- modTimeP
       p <- nameP
       -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
-      return $ Just (HashLine (t, i, h, p))
+      return $ Just (HashLine (t, i, h, mt, p))
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do

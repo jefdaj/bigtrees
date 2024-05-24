@@ -41,11 +41,13 @@ flattenTree = flattenTree' ""
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
-flattenTree' dir (File n h _   ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
-flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
+flattenTree' dir (File {name=n, hash=h, modTime=mt})
+  = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
+flattenTree' dir (Dir  {name=n, hash=h, modTime=mt, contents=cs})
+  = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
-    wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
+    wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n) -- TODO mod times
 
 -- this is to catch the case where it tries to write the same file twice
 -- (happened once because of macos filename case-insensitivity)

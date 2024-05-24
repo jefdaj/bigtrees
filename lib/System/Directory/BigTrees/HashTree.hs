@@ -24,7 +24,7 @@ module System.Directory.BigTrees.HashTree
   , printTreePaths
 
   -- for testing
-  , countINodes
+  , totalINodes
   , roundtripTestTreeToDir
   , dropFileData
   , writeTestTreeDir
@@ -49,7 +49,7 @@ import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, countINodes,
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, totalINodes,
                                                 dropFileData)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)

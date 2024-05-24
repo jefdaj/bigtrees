@@ -10,7 +10,7 @@ import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, hash, nINodes, name),
-                                                countINodes, hashContents)
+                                                totalINodes, hashContents)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Name (fp2n)
@@ -70,7 +70,7 @@ rmSubTree (File {}) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
-    then d { contents = delete t cs, nINodes = n - countINodes t }
+    then d { contents = delete t cs, nINodes = n - totalINodes t }
     else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
-           , nINodes = n - countINodes t
+           , nINodes = n - totalINodes t
            }
