@@ -6,8 +6,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLevel),
                                            TreeType (D, F), prettyLine)
-import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, fileData, name),
-                                                ProdTree, TestTree)
+import System.Directory.BigTrees.HashTree.Base (HashTree(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitPath, (</>))
 import System.IO (IOMode (..), hFlush, stdout, withFile)
@@ -42,12 +41,12 @@ flattenTree = flattenTree' ""
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
 flattenTree' dir (File {name=n, hash=h, modTime=mt})
-  = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
+  = [HashLine (F, IndentLevel $ length (splitPath dir), h, mt, n)]
 flattenTree' dir (Dir  {name=n, hash=h, modTime=mt, contents=cs})
   = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
-    wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n) -- TODO mod times
+    wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, mt, n)
 
 -- this is to catch the case where it tries to write the same file twice
 -- (happened once because of macos filename case-insensitivity)

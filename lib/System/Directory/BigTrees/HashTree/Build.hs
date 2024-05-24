@@ -96,7 +96,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- !mt <- getModTime root
   mt <- if null cs''
           then getModTime root
-          else return $ maximum $ map modTime cs
+          else return $ maximum $ map modTime cs''
 
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?
@@ -108,7 +108,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
             , contents = cs''
             , modTime  = mt
             , hash     = hashContents cs''
-            , nINodes  = 1 + sum $ map totalINodes cs''
+            , nINodes  = sum $ 1 : map totalINodes cs''
             }
 
 -- https://stackoverflow.com/a/17909816

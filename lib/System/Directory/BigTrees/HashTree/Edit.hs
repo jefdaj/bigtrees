@@ -9,7 +9,7 @@ module System.Directory.BigTrees.HashTree.Edit
 import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
-import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File, contents, hash, nINodes, name),
+import System.Directory.BigTrees.HashTree.Base (HashTree(..),
                                                 totalINodes, hashContents)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
@@ -23,8 +23,9 @@ import System.FilePath (joinPath, splitPath)
 -------------------
 
 -- TODO use this to implement hashing multiple trees at once?
+-- TODO is the mod time right?
 wrapInEmptyDir :: FilePath -> HashTree a -> HashTree a
-wrapInEmptyDir n t = Dir { name = fp2n n, hash = h, contents = cs, nINodes = nINodes t }
+wrapInEmptyDir n t = Dir { name = fp2n n, hash = h, modTime=modTime t, contents = cs, nINodes = nINodes t }
   where
     cs = [t]
     h = hashContents cs
@@ -67,7 +68,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nINodes = n' }
  -}
 rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
 rmSubTree (File {}) p = Left $ "no such subtree: '" ++ p ++ "'"
-rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
+rmSubTree d@(Dir {contents=cs, nINodes=n}) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
     then d { contents = delete t cs, nINodes = n - totalINodes t }

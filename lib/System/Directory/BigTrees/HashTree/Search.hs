@@ -3,7 +3,7 @@ module System.Directory.BigTrees.HashTree.Search where
 import Control.Monad (msum)
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree)
+import System.Directory.BigTrees.HashTree.Base (HashTree(..), ProdTree)
 import System.Directory.BigTrees.Name (fp2n, n2fp)
 import System.Directory.BigTrees.Util (pathComponents)
 import System.FilePath (joinPath)
@@ -28,8 +28,8 @@ treeContainsPath :: HashTree a -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
 dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
-dropTo t@(File f1 _ _   ) f2 = if n2fp f1 == f2 then Just t else Nothing
-dropTo t@(Dir  f1 _ cs _) f2
+dropTo t@(File {name=f1}) f2 = if n2fp f1 == f2 then Just t else Nothing
+dropTo t@(Dir  {name=f1, contents=cs}) f2
   | n2fp f1 == f2 = Just t
   | length (pathComponents f2) < 2 = Nothing
   | otherwise = let n   = fp2n $ head $ pathComponents f2
@@ -39,8 +39,8 @@ dropTo t@(Dir  f1 _ cs _) f2
                   else msum $ map (`dropTo` f2') cs
 
 treeContainsHash :: HashTree a -> Hash -> Bool
-treeContainsHash (File _ h1 _   ) h2 = h1 == h2
-treeContainsHash (Dir  _ h1 cs _) h2
+treeContainsHash (File {hash=h1}) h2 = h1 == h2
+treeContainsHash (Dir  {hash=h1, contents=cs}) h2
   | h1 == h2 = True
   | otherwise = any (`treeContainsHash` h2) cs
 
