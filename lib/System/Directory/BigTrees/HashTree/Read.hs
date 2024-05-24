@@ -1,12 +1,12 @@
 module System.Directory.BigTrees.HashTree.Read where
 
-import Control.Exception.Safe (catchAny)
+-- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (D, F),
                                            parseHashLines)
-import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree, TestTree,
-                                                totalNodes)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree,
+                                                sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.FilePath.Glob (Pattern)
 
@@ -35,10 +35,27 @@ deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines m
 
 accTrees :: HashLine -> [(IndentLevel, ProdTree)] -> [(IndentLevel, ProdTree)]
 accTrees (HashLine (t, IndentLevel i, h, mt, s, p)) cs = case t of
-  F -> cs ++ [(IndentLevel i, File p h mt s ())]
+  F -> let f = File
+                 { fileData = ()
+                 , nodeData = NodeData
+                   { name = p
+                   , hash = h
+                   , modTime = mt
+                   , size = s
+                   }
+                 }
+       in cs ++ [(IndentLevel i, f)]
   D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
-           dir = Dir p h mt s (map snd children)
-                         (sum $ map (totalNodes . snd) children)
+           dir = Dir
+                   { dirContents = map snd children
+                   , nNodes = (sum $ map (sumNodes . snd) children)
+                   , nodeData = NodeData
+                     { name = p
+                     , hash = h
+                     , modTime = mt
+                     , size = s
+                     }
+                   }
        in siblings ++ [(IndentLevel i, dir)]
 
 readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree

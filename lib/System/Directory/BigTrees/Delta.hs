@@ -25,7 +25,7 @@ import Control.Monad (foldM, unless)
 import qualified Data.ByteString.Char8 as B
 import Data.List (find)
 import Data.Maybe (fromJust)
-import System.Directory.BigTrees.HashTree (HashTree (..), ProdTree, addSubTree, dropTo, rmSubTree)
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData(..), ProdTree, addSubTree, dropTo, rmSubTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath ((</>))
 
@@ -57,22 +57,22 @@ diff :: Show a => HashTree a -> HashTree a -> [Delta a]
 diff = diff' ""
 
 diff' :: Show a => FilePath -> HashTree a -> HashTree a -> [Delta a]
-diff' a t1@(File {name=f1, hash=h1}) t2@(File {name=f2, hash=h2})
+diff' a t1@(File {nodeData=(NodeData {name=f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (a </> n2fp f1) (a </> n2fp f2)]
   | f1 == f2 && h1 /= h2 = [Edit (if a == n2fp f1 then n2fp f1 else a </> n2fp f1) t1 t2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
-diff' a (File {}) t2@(Dir {name=d}) = [Rm a, Add (a </> n2fp d) t2]
+diff' a (File {}) t2@(Dir {nodeData=(NodeData {name=d})}) = [Rm a, Add (a </> n2fp d) t2]
 -- TODO wait is this a Mv?
-diff' a (Dir {name=d}) t2@(File {}) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
-diff' a t1@(Dir {hash=h1, dirContents=os}) (Dir {hash=h2, dirContents=ns})
+diff' a (Dir {nodeData=(NodeData {name=d})}) t2@(File {}) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
+diff' a t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where
-    adds  = [Add (a </> n2fp (name x)) x | x <- ns, name x `notElem` map name os]
-    rms   = [Rm  (a </> n2fp (name x))   | x <- os, name x `notElem` map name ns]
-    edits = concat [diff' (a </> n2fp (name o)) o n | o <- os, n <- ns,
-                                               o /= n, name o == name n]
+    adds  = [Add (a </> n2fp (name $ nodeData x)) x | x <- ns, name (nodeData x) `notElem` map (name . nodeData) os]
+    rms   = [Rm  (a </> n2fp (name $ nodeData x))   | x <- os, name (nodeData x) `notElem` map (name . nodeData) ns]
+    edits = concat [diff' (a </> n2fp (name (nodeData o))) o n | o <- os, n <- ns,
+                                               o /= n, name (nodeData o) == name (nodeData n)]
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
 -- TODO need an initial tree too to check if the hashes match

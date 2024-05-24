@@ -7,7 +7,7 @@ import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine (ModTime(..), Size(..))
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, sumNodes, hashContents)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, sumNodes, hashContents)
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime)
 import qualified System.Directory.Tree as DT
@@ -71,8 +71,16 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   -- return File { name = n, hash = h }
   return $ (if depth < lazyDirDepth
               then id
-              else (\x -> hash x `seq` name x `seq` x))
-         $ File { name = n, hash = h, modTime = mt, size = s, fileData = fd }
+              else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
+         $ File
+            { nodeData = NodeData
+              { name = n
+              , hash = h
+              , modTime = mt
+              , size = s
+              }
+            , fileData = fd
+            }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = DT.nappend a n
@@ -88,7 +96,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
-  let cs'' = sortBy (compare `on` name) subTrees
+  let cs'' = sortBy (compare `on` (name . nodeData)) subTrees
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
   -- We want the overall mod time to be the most recent of the dir + all dirContents.
@@ -97,7 +105,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- !mt <- getModTime root
   mt <- if null cs''
           then getModTime root
-          else return $ maximum $ map modTime cs''
+          else return $ maximum $ map (modTime . nodeData) cs''
 
   !s  <- getSize root -- TODO is this always 4096?
 
@@ -105,14 +113,16 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- TODO should that be configurable or something?
   return $ (if depth < lazyDirDepth
               then id
-              else (\r -> (hash r `seq` nNodes r `seq` hash r) `seq` r)) -- TODO also mt?
+              else (\r -> (nodeData r `seq` nNodes r) `seq` r)) -- TODO what else needs to be here??
          $ Dir
-            { name     = n
-            , dirContents = cs''
-            , modTime  = mt
-            , size     = sum $ s : map size cs''
-            , hash     = hashContents cs''
+            { dirContents = cs''
             , nNodes  = sum $ 1 : map sumNodes cs''
+            , nodeData = NodeData
+              { name     = n
+              , modTime  = mt
+              , size     = sum $ s : map (size . nodeData) cs''
+              , hash     = hashContents cs''
+              }
             }
 
 -- https://stackoverflow.com/a/17909816

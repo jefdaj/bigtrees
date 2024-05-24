@@ -25,7 +25,7 @@ module System.Directory.BigTrees.HashTree
   , printTreePaths
 
   -- for testing
-  , totalNodes
+  , sumNodes
   , roundtripTestTreeToDir
   , dropFileData
   , writeTestTreeDir
@@ -50,7 +50,7 @@ import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, TestTree, totalNodes,
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree, sumNodes,
                                                 dropFileData)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
@@ -135,7 +135,7 @@ roundtripTestTreeToDir t =
 
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
-    let treeRootDir = tmpDir </> n2fp (name t) -- TODO use IsName here
+    let treeRootDir = tmpDir </> n2fp (name $ nodeData t) -- TODO use IsName here
     readTestTree Nothing False [] treeRootDir
 
 prop_roundtrip_TestTree_to_dir :: Property
