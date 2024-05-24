@@ -36,7 +36,7 @@ import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashForest (HashForest (..))
 import System.Directory.BigTrees.HashLine (TreeType (..))
 import System.Directory.BigTrees.HashTree ()
-import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitDirectories, (</>))
 
@@ -86,8 +86,8 @@ addToDupeMap ht = addToDupeMap' ht ""
 
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> FilePath -> ProdTree -> ST s ()
-addToDupeMap' ht dir (File n h ()   ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2fp n)))
-addToDupeMap' ht dir (Dir  n h cs fs) = do
+addToDupeMap' ht dir (File {name=n, hash=h}) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2fp n)))
+addToDupeMap' ht dir (Dir {name=n, hash=h, contents=cs, nINodes=fs}) = do
   insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n2fp n)))
   mapM_ (addToDupeMap' ht (dir </> n2fp n)) cs
 
@@ -203,8 +203,8 @@ explainDupes md = B.unlines . map explainGroup
 
 -- TODO is this actually helpful?
 listAllFiles :: FilePath -> ProdTree -> [(Hash, FilePath)]
-listAllFiles anchor (File n h ()  ) = [(h, anchor </> n2fp n)]
-listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n2fp n) cs
+listAllFiles anchor (File {name=n, hash=h}) = [(h, anchor </> n2fp n)]
+listAllFiles anchor (Dir {name=n, contents=cs}) = concatMap (listAllFiles $ anchor </> n2fp n) cs
 
 
 -- TODO rewrite allDupes by removing the subtree first then testing membership
