@@ -36,9 +36,9 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
     unixDupes a b = n2fp (name a)
                  == n2fp (name b)
 
-countFiles :: HashTree a -> Int
-countFiles (File {}  )    = 1
-countFiles (Dir  _ _ _ n) = n
+countINodes :: HashTree a -> Int
+countINodes (File {}  )    = 1
+countINodes (Dir  _ _ _ n) = n
 
 hashContents :: [HashTree a] -> Hash
 hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash)
@@ -61,7 +61,7 @@ data HashTree a
       { name     :: !Name
       , hash     :: Hash
       , contents :: [HashTree a]
-      , nFiles   :: Int
+      , nINodes  :: Int
       }
   deriving (Generic, Ord, Read, Show)
 
@@ -90,7 +90,7 @@ type TestTree = HashTree B8.ByteString
 
 -- Given a size "budget", generate test directory contents
 -- TODO write this using a fold with accumulator? wait, maybe no need
--- this should have sum of nFiles == size... or is it nFiles-1?
+-- this should have sum of nINodes == size... or is it nINodes-1?
 -- TODO test prop for that
 arbitraryContents :: Int -> Gen [TestTree]
 arbitraryContents size = arbitraryContentsHelper size `suchThat` uniqNames
@@ -108,11 +108,11 @@ arbitraryContentsHelper size
       arbitraryContents remSize >>= \cs -> return $ recTree:cs -- TODO clean this up
 
 -- TODO does forAll add anything here that I'm not already getting from sized?
-prop_arbitraryContents_length_matches_nFiles :: Gen Bool
-prop_arbitraryContents_length_matches_nFiles =
+prop_arbitraryContents_length_matches_nINodes :: Gen Bool
+prop_arbitraryContents_length_matches_nINodes =
   sized $ \size -> do
     cs <- arbitraryContents size
-    let sumFiles = sum $ map countFiles cs
+    let sumFiles = sum $ map countINodes cs
         res = sumFiles == size
     -- This verifies that it gets called with the full range of sizes:
     -- return $ traceShow ((size, sumFiles)) res
@@ -121,7 +121,7 @@ prop_arbitraryContents_length_matches_nFiles =
 -- TODO make this explicit? it's the same as the overall Arbitrary instance
 -- arbitraryTree :: Int -> Gen TestTree
 
--- size == nFiles, so a file is always sized 1
+-- size == nINodes, so a file is always sized 1
 arbitraryFile :: Gen TestTree
 arbitraryFile = do
   n  <- arbitrary :: Gen Name
@@ -138,12 +138,12 @@ arbitraryDirSized size = do
   -- !cs <- nubBy duplicateNames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
   -- TODO put back the nubBy part!
   !cs <- arbitraryContents size -- TODO (s-1)?
-  -- TODO assert that nFiles == s here?
+  -- TODO assert that nINodes == s here?
   return $ Dir
     { name     = n
     , hash     = hashContents cs
     , contents = cs
-    , nFiles   = sum $ map countFiles cs
+    , nINodes   = sum $ map countINodes cs
     }
 
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
@@ -174,7 +174,7 @@ instance Arbitrary TestTree where
       newNames = map (\n -> d { name = n }) (shrink $ name d)
       newContents = map (\cs -> d { contents = cs
                                   , hash = hashContents cs
-                                  , nFiles = sum $ map countFiles cs}) -- TODO +1?
+                                  , nINodes = sum $ map countINodes cs}) -- TODO +1?
                         (shrink $ contents d)
 
 -- TODO rename the actual function file -> fileData to match future dirData

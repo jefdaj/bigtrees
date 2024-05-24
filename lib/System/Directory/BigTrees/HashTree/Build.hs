@@ -7,7 +7,7 @@ import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine ()
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, ModTime(..), Size(..), countFiles, hashContents)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, ModTime(..), Size(..), countINodes, hashContents)
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime)
 import qualified System.Directory.Tree as DT
@@ -93,12 +93,12 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- TODO should that be configurable or something?
   return $ (if depth < lazyDirDepth
               then id
-              else (\r -> (hash r `seq` nFiles r `seq` hash r) `seq` r))
+              else (\r -> (hash r `seq` nINodes r `seq` hash r) `seq` r))
          $ Dir
             { name     = n
             , contents = cs''
             , hash     = hashContents cs''
-            , nFiles   = sum $ map countFiles cs'' -- TODO +1?
+            , nINodes   = sum $ map countINodes cs'' -- TODO +1?
             }
 
 -- https://stackoverflow.com/a/17909816
