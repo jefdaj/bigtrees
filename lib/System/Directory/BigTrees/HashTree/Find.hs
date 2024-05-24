@@ -109,7 +109,7 @@ mkLineMetaFormatter cs =
 -- filter paths --
 ------------------
 
--- TODO have a distinction between filtering paths and filtering tree nodes?
+-- TODO have a distinction between filtering paths and filtering tree nNodes?
 -- TODO have a distinction between filtering name and wholename?
 
 -- TODO does the string type of the regex matter? String is probably fine right?

@@ -38,15 +38,15 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
                  == n2fp (name b)
 
 -- TODO Integer? not sure how big it could get
-totalINodes :: HashTree a -> Int
-totalINodes (File {}) = 1
-totalINodes (Dir {nINodes=n}) = n -- this includes 1 for the dir itself
+sumNodes :: HashTree a -> Int
+sumNodes (File {}) = 1
+sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 
 -- TODO is this needed, or will the fields be total?
 -- TODO size unit
-totalSize :: HashTree a -> Integer
-totalSize (File {}) = undefined -- TODO add size field
-totalSize (Dir  {}) = undefined -- TODO add size field
+-- totalSize :: HashTree a -> Integer
+-- totalSize (File {}) = undefined -- TODO add size field
+-- totalSize (Dir  {}) = undefined -- TODO add size field
 
 -- TODO is this needed?
 -- totalModTime :: HashTree a -> Integer
@@ -55,6 +55,18 @@ totalSize (Dir  {}) = undefined -- TODO add size field
 
 hashContents :: [HashTree a] -> Hash
 hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash)
+
+-- All the fields shat should be common to File + Dir constructors
+-- TODO come up with a better name?
+-- TODO is it OK to make the entire thing strict for File but not Dir?
+-- TODO should Eq be based only on the hash, or also the rest of it? 
+data NodeData = NodeData
+  { name     :: !Name
+  , hash     :: !Hash
+  , modTime  :: !ModTime
+  , size     :: !Size
+  }
+  deriving (Eq, Ord, Generic, Read, Show)
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -67,20 +79,14 @@ hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash
 --   TODO make safe access fns and don't export the partial constructors
 data HashTree a
   = File
-      { name     :: !Name
-      , hash     :: !Hash
-      , modTime  :: !ModTime
-      , size     :: !Size
+      { nodeData :: !NodeData
       , fileData :: !a
       -- implicitly has one inode
       }
   | Dir
-      { name     :: !Name
-      , hash     :: Hash -- TODO strict?
-      , modTime  :: !ModTime
-      , size     :: !Size
+      { nodeData :: NodeData
       , contents :: [HashTree a] -- TODO rename dirContents?
-      , nINodes  :: Int -- TODO strict? include in tree files?
+      , nNodes  :: Int -- TODO strict? include in tree files?
       }
   deriving (Generic, Ord, Read, Show)
 
@@ -110,7 +116,7 @@ type TestTree = HashTree B8.ByteString
 
 -- Given a size "budget", generate test directory contents
 -- TODO write this using a fold with accumulator? wait, maybe no need
--- this should have sum of nINodes == size... or is it nINodes-1?
+-- this should have sum of nNodes == size... or is it nNodes-1?
 -- TODO test prop for that
 arbitraryContents :: Int -> Gen [TestTree]
 arbitraryContents size = arbitraryContentsHelper size `suchThat` uniqNames
@@ -128,12 +134,12 @@ arbitraryContentsHelper size
       arbitraryContents remSize >>= \cs -> return $ recTree:cs -- TODO clean this up
 
 -- TODO does forAll add anything here that I'm not already getting from sized?
-prop_arbitraryContents_length_matches_nINodes :: Gen Bool
-prop_arbitraryContents_length_matches_nINodes =
+prop_arbitraryContents_length_matches_nNodes :: Gen Bool
+prop_arbitraryContents_length_matches_nNodes =
   sized $ \size -> do
     cs <- arbitraryContents size
-    let sumFiles = sum $ map totalINodes cs
-        res = sumFiles == size
+    let totalNodes = sum $ map sumNodes cs
+        res = totalNodes == size
     -- This verifies that it gets called with the full range of sizes:
     -- return $ traceShow ((size, sumFiles)) res
     return res
@@ -141,7 +147,7 @@ prop_arbitraryContents_length_matches_nINodes =
 -- TODO make this explicit? it's the same as the overall Arbitrary instance
 -- arbitraryTree :: Int -> Gen TestTree
 
--- size == nINodes, so a file is always sized 1
+-- size == nNodes, so a file is always sized 1
 -- TODO should these all be strict?
 arbitraryFile :: Gen TestTree
 arbitraryFile = do
@@ -164,14 +170,14 @@ arbitraryDirSized arbsize = do
   !cs <- arbitraryContents arbsize -- TODO (s-1)?
   !mt <- arbitrary :: Gen ModTime
   !s <- fmap Size $ return 4096 -- TODO does dir size vary?
-  -- TODO assert that nINodes == s here?
+  -- TODO assert that nNodes == s here?
   return $ Dir
     { name     = n
     , hash     = hashContents cs
     , modTime  = mt
     , size = sum $ s : map size cs
     , contents = cs
-    , nINodes   = sum $ 1 : map totalINodes cs -- TODO factor this out
+    , nNodes   = sum $ 1 : map sumNodes cs -- TODO factor this out
     }
 
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
@@ -202,7 +208,7 @@ instance Arbitrary TestTree where
       newNames = map (\n -> d { name = n }) (shrink $ name d)
       newContents = map (\cs -> d { contents = cs
                                   , hash = hashContents cs
-                                  , nINodes = sum $ map totalINodes cs}) -- TODO +1?
+                                  , nNodes = sum $ 1 : map sumNodes cs}) -- TODO factor out
                         (shrink $ contents d)
 
 -- TODO rename the actual function file -> fileData to match future dirData

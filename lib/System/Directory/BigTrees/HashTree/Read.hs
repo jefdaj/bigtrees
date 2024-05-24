@@ -6,7 +6,7 @@ import Data.List (partition)
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (D, F),
                                            parseHashLines)
 import System.Directory.BigTrees.HashTree.Base (HashTree (Dir, File), ProdTree, TestTree,
-                                                totalINodes)
+                                                totalNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.FilePath.Glob (Pattern)
 
@@ -38,7 +38,7 @@ accTrees (HashLine (t, IndentLevel i, h, mt, s, p)) cs = case t of
   F -> cs ++ [(IndentLevel i, File p h mt s ())]
   D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
            dir = Dir p h mt s (map snd children)
-                         (sum $ map (totalINodes . snd) children)
+                         (sum $ map (totalNodes . snd) children)
        in siblings ++ [(IndentLevel i, dir)]
 
 readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree

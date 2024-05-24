@@ -87,7 +87,7 @@ addToDupeMap ht = addToDupeMap' ht ""
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> FilePath -> ProdTree -> ST s ()
 addToDupeMap' ht dir (File {name=n, hash=h}) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2fp n)))
-addToDupeMap' ht dir (Dir {name=n, hash=h, contents=cs, nINodes=fs}) = do
+addToDupeMap' ht dir (Dir {name=n, hash=h, contents=cs, nNodes=fs}) = do
   insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n2fp n)))
   mapM_ (addToDupeMap' ht (dir </> n2fp n)) cs
 
