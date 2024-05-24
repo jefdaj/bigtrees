@@ -27,7 +27,7 @@ module System.Directory.BigTrees.Hash
   -- tests
   , unit_hash_ByteString
   , unit_hash_empty_file
-  , unit_hash_file_contents
+  , unit_hash_file_dirContents
   , unit_hash_image
 
   )
@@ -171,10 +171,10 @@ unit_hash_empty_file = do
   unHash h @=? "ZTNiMGM0NDI5OGZjMWMx"
 
 -- TODO clean up tmpfile handling here
-unit_hash_file_contents :: Assertion
-unit_hash_file_contents = do
-  -- filename changes each time, proving only the contents are hashed
-  f <- writeSystemTempFile "bigtrees" "file contents should be hashed"
+unit_hash_file_dirContents :: Assertion
+unit_hash_file_dirContents = do
+  -- filename changes each time, proving only the dirContents are hashed
+  f <- writeSystemTempFile "bigtrees" "file dirContents should be hashed"
   h <- hashFile False f
   SD.removePathForcibly f
   unHash h @=? "MTVjMzcwNmJjODQzYTg0"

@@ -43,7 +43,7 @@ lazyDirDepth = 4
 buildProdTree :: Bool -> [Pattern] -> FilePath -> IO ProdTree
 buildProdTree = buildTree (return . const ())
 
--- TODO are contents sorted? they probably should be for stable hashes
+-- TODO are dirContents sorted? they probably should be for stable hashes
 buildTree :: (FilePath -> IO a) -> Bool -> [Pattern] -> FilePath -> IO (HashTree a)
 buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
@@ -91,8 +91,8 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let cs'' = sortBy (compare `on` name) subTrees
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
-  -- We want the overall mod time to be the most recent of the dir + all contents.
-  -- If there are any contents at all, by definition they're newer than the dir, right?
+  -- We want the overall mod time to be the most recent of the dir + all dirContents.
+  -- If there are any dirContents at all, by definition they're newer than the dir, right?
   -- So we only need the root mod time when the dir is empty...
   -- !mt <- getModTime root
   mt <- if null cs''
@@ -108,7 +108,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
               else (\r -> (hash r `seq` nNodes r `seq` hash r) `seq` r)) -- TODO also mt?
          $ Dir
             { name     = n
-            , contents = cs''
+            , dirContents = cs''
             , modTime  = mt
             , size     = sum $ s : map size cs''
             , hash     = hashContents cs''

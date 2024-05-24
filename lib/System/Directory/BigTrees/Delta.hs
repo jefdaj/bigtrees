@@ -65,7 +65,7 @@ diff' a t1@(File {name=f1, hash=h1}) t2@(File {name=f2, hash=h2})
 diff' a (File {}) t2@(Dir {name=d}) = [Rm a, Add (a </> n2fp d) t2]
 -- TODO wait is this a Mv?
 diff' a (Dir {name=d}) t2@(File {}) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
-diff' a t1@(Dir {hash=h1, contents=os}) (Dir {hash=h2, contents=ns})
+diff' a t1@(Dir {hash=h1, dirContents=os}) (Dir {hash=h2, dirContents=ns})
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where

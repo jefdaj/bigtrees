@@ -33,7 +33,7 @@ writeTree path tree = withFile path WriteMode $ \h ->
 
 -- This is the only official way to construct a `HashLine`, because they don't
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its
--- contents to reconstruct the tree structure.
+-- dirContents to reconstruct the tree structure.
 flattenTree :: HashTree a -> [HashLine]
 flattenTree = flattenTree' ""
 
@@ -42,7 +42,7 @@ flattenTree = flattenTree' ""
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
 flattenTree' dir (File {name=n, hash=h, modTime=mt, size=s})
   = [HashLine (F, IndentLevel $ length (splitPath dir), h, mt, s, n)]
-flattenTree' dir (Dir  {name=n, hash=h, modTime=mt, size=s, contents=cs})
+flattenTree' dir (Dir  {name=n, hash=h, modTime=mt, size=s, dirContents=cs})
   = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
@@ -70,7 +70,7 @@ writeTestTreeDir root (File {name = n, fileData = bs}) = do
   let path = root </> n2fp n -- TODO use IsName here!
   -- assertNoFile path
   B8.writeFile path bs
-writeTestTreeDir root (Dir {name = n, contents = cs}) = do
+writeTestTreeDir root (Dir {name = n, dirContents = cs}) = do
   let root' = root </> n2fp n -- TODO use IsName here!
   -- assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'

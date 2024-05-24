@@ -31,7 +31,7 @@ wrapInEmptyDir n t = Dir
   , hash     = h
   , modTime  = modTime t
   , size     = size t + Size 4096 -- TODO does this vary?
-  , contents = cs
+  , dirContents = cs
   , nNodes  = fmap (+1) $ nNodes t
   }
   where
@@ -48,16 +48,16 @@ wrapInEmptyDirs p t = case pathComponents p of
 addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
 addSubTree (File {}) _ _ = error "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
-addSubTree main sub path = main { hash = h', contents = cs', nNodes = n' }
+addSubTree main sub path = main { hash = h', dirContents = cs', nNodes = n' }
   where
     comps  = pathComponents path
     p1     = head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
-    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= fp2n p1) (contents main) ++ [newSub]
+    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= fp2n p1) (dirContents main) ++ [newSub]
     n'     = nNodes main + nNodes newSub - maybe 0 nNodes oldSub
     sub'   = sub { name = fp2n $ last comps }
-    oldSub = find (\c -> name c == fp2n p1) (contents main)
+    oldSub = find (\c -> name c == fp2n p1) (dirContents main)
     newSub = if length comps == 1
                then sub'
                else case oldSub of
@@ -76,10 +76,10 @@ addSubTree main sub path = main { hash = h', contents = cs', nNodes = n' }
  -}
 rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
 rmSubTree (File {}) p = Left $ "no such subtree: '" ++ p ++ "'"
-rmSubTree d@(Dir {contents=cs, nNodes=n}) p = case dropTo d p of
+rmSubTree d@(Dir {dirContents=cs, nNodes=n}) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
-    then d { contents = delete t cs, nNodes = n - totalNodes t }
-    else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
+    then d { dirContents = delete t cs, nNodes = n - totalNodes t }
+    else d { dirContents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
            , nNodes = n - totalNodes t
            }

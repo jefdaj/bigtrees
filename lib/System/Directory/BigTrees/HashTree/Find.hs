@@ -46,7 +46,7 @@ printTreePaths' fExpr fmtFn (IndentLevel i) ns t = do
   let ns' = name t:ns
       tt  = treeType t
   case t of
-    (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (IndentLevel $ i+1) ns') (contents t)
+    (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (IndentLevel $ i+1) ns') (dirContents t)
     _        -> return ()
   when (pathMatches fExpr ns') $
     B8.putStrLn $ pathLine fmtFn (IndentLevel i) ns t

@@ -29,7 +29,7 @@ treeContainsPath tree path = isJust $ dropTo tree path
 
 dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
 dropTo t@(File {name=f1}) f2 = if n2fp f1 == f2 then Just t else Nothing
-dropTo t@(Dir  {name=f1, contents=cs}) f2
+dropTo t@(Dir  {name=f1, dirContents=cs}) f2
   | n2fp f1 == f2 = Just t
   | length (pathComponents f2) < 2 = Nothing
   | otherwise = let n   = fp2n $ head $ pathComponents f2
@@ -40,7 +40,7 @@ dropTo t@(Dir  {name=f1, contents=cs}) f2
 
 treeContainsHash :: HashTree a -> Hash -> Bool
 treeContainsHash (File {hash=h1}) h2 = h1 == h2
-treeContainsHash (Dir  {hash=h1, contents=cs}) h2
+treeContainsHash (Dir  {hash=h1, dirContents=cs}) h2
   | h1 == h2 = True
   | otherwise = any (`treeContainsHash` h2) cs
 
