@@ -235,6 +235,7 @@ test-suite test-doctests
     , pretty-simple
     , process
     , quickcheck-instances
+    , regex-tdfa
     , safe-exceptions
     , silently
     , split
@@ -297,6 +298,7 @@ test-suite test-lib
     , massiv
     , monad-parallel
     , quickcheck-instances
+    , regex-tdfa
     , safe-exceptions
     , split
     , streaming
