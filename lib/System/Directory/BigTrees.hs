@@ -18,6 +18,8 @@ module System.Directory.BigTrees
   , ProdTree
   , TestTree
   , TreeType(..)
+  , ModTime(..)
+  , Size(..)
   , addSubTree
   , buildTree
   , buildProdTree
@@ -88,7 +90,7 @@ import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHas
 import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, printForest,
                                              printForestPaths, readForest, readOrBuildTrees,
                                              readTrees, writeForest)
-import System.Directory.BigTrees.HashLine (TreeType (..))
+import System.Directory.BigTrees.HashLine (TreeType (..), ModTime(..), Size(..))
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), dropFileData, hashContents,
                                                 renameRoot)

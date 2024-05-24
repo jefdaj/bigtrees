@@ -31,29 +31,33 @@ issue01example1 =
     { name = Name "\xf58e6\x1057cc"
     , hash = Hash
         { unHash = "NjAxYWM0OTY1M2RkOGNm" }
+    , modTime = ModTime 0
     , contents =
         [ Dir
             { name = Name "𧊯"
             , hash = Hash
                 { unHash = "NWQxZTY4ZGRlNmFmNTRj" }
+            , modTime = ModTime 0
             , contents =
                 [ File
                     { name = Name "Ԉ"
                     , hash = Hash
                         { unHash = "ZTNiMGM0NDI5OGZjMWMx" }
+                    , modTime = ModTime 0
                     , fileData = ""
                     }
                 , File
                     { name = Name "쿏]"
                     , hash = Hash
                         { unHash = "YjdkMjUyOTZlN2JjNmE2" }
+                    , modTime = ModTime 0
                     , fileData = "Û"
                     }
                 ]
-            , nFiles = 2
+            , nINodes = 2
             }
         ]
-    , nFiles = 2
+    , nINodes = 2
     }
 
 issue01example2 :: TestTree
@@ -62,34 +66,38 @@ issue01example2 =
     { name = Name "\xf6847"
     , hash = Hash
         { unHash = "ODkzNTQzYjU1MjljNWFh" }
+    , modTime = ModTime 0
     , contents =
         [ Dir
             { name = Name "*\xfc5a1-"
             , hash = Hash
                 { unHash = "OTkxNjI4OWVhNjUyYmE0" }
+            , modTime = ModTime 0
             , contents =
                 [ File
                     { name = Name "🮡"
                     , hash = Hash
                         { unHash = "ZTNiMGM0NDI5OGZjMWMx" }
+                    , modTime = ModTime 0
                     , fileData = ""
                     }
                 , File
                     { name = Name "\xfec76_"
                     , hash = Hash
                         { unHash = "ZDA3NTJiNjBhZGIxNDhj" }
+                    , modTime = ModTime 0
                     , fileData = "ç"
                     }
                 ]
-            , nFiles = 2
+            , nINodes = 2
             }
         ]
-    , nFiles = 2
+    , nINodes = 2
     }
 
 issue02example1 :: TestTree
 issue02example1 =
-  File {name = Name "\1082166", hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, fileData = ""}
+  File {name = Name "\1082166", hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 0, fileData = ""}
 
 -------------------------------
 -- issue #3: cyclic symlinks --

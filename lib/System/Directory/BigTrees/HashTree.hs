@@ -119,6 +119,7 @@ prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk
 -- note that you have to drop the bytestrings from the original testtree to compare them
+-- TODO oh, have to test equality ignoring mod times, right? otherwise they'll always update
 roundtripTestTreeToDir :: TestTree -> IO TestTree
 roundtripTestTreeToDir t =
   -- TODO is this not used?
