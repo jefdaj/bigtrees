@@ -185,14 +185,13 @@ nameP = fmap fp2n $ do
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
-numStrP = do
-  n <- manyTill digit $ char ' '
-  -- TODO char ' ' here?
-  return $ read n
+numStrP = manyTill digit $ char ' '
 
+-- TODO applicative version?
 indentP :: Parser IndentLevel
 indentP = numStrP >>= return . IndentLevel . read
 
+-- TODO applicative version?
 modTimeP :: Parser ModTime
 modTimeP = numStrP >>= return . ModTime . read
 
