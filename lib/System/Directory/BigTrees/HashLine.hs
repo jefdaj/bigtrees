@@ -16,6 +16,7 @@ module System.Directory.BigTrees.HashLine
   , prettyLine
   , parseHashLine -- TODO remove? not actually used
   , parseHashLines
+  , sepChar
 
   -- for testing (TODO remove?)
   -- , nameP

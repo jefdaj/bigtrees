@@ -12,7 +12,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.Directory.BigTrees.HashLine (IndentLevel (..), TreeType (..), ModTime(..), Size(..))
+import System.Directory.BigTrees.HashLine (IndentLevel (..), TreeType (..), ModTime(..), Size(..), sepChar)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..))
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
@@ -76,7 +76,7 @@ matchingFmtFns = mapMaybe (\c -> lookup c allFmtFns) . nub
 
 -- TODO tabs instead of single spaces?
 separate :: [B8.ByteString] -> B8.ByteString
-separate = B8.intercalate $ B8.singleton ' '
+separate = B8.intercalate $ B8.singleton sepChar
 
 combineFmtFns :: [FmtFn] -> FmtFn
 combineFmtFns fs i t = separate $ map (\f -> f i t) fs
