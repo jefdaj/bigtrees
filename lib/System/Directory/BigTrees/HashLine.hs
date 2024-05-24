@@ -37,12 +37,10 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes)
-import qualified Data.Text.Encoding as T
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
-import System.FilePath ((</>))
-import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat)
 import TH.Derive ()
 import GHC.Generics (Generic)
 
@@ -167,15 +165,18 @@ prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, ModTime mt, Size s, name)
 
 -- TODO rewrite a lot of this to deal flexibly with tables? or will order stay fixed?
 
+sepChar :: Parser Char
+sepChar = char '\t'
+
 typeP :: Parser TreeType
 typeP = do
-  t <- choice [char 'D', char 'F'] <* char ' '
+  t <- choice [char 'D', char 'F'] <* sepChar
   return $ read [t]
 
 hashP :: Parser Hash
 hashP = do
   h <- take digestLength -- TODO any need to sanitize these?
-  _ <- char ' '
+  _ <- sepChar
   return $ Hash $ BS.toShort h
 
 {- Like endOfLine, but make sure D/F comes next followed by a valid hash digest
@@ -197,7 +198,7 @@ nameP = fmap fp2n $ do
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
-numStrP = manyTill digit $ char ' '
+numStrP = manyTill digit sepChar
 
 -- TODO applicative version?
 indentP :: Parser IndentLevel
