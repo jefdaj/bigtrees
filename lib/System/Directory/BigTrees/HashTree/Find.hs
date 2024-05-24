@@ -7,6 +7,7 @@ module System.Directory.BigTrees.HashTree.Find
   )
   where
 
+import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (mapMaybe)
@@ -17,7 +18,6 @@ import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
-import Control.Monad (when)
 
 -----------------
 -- print paths --
@@ -30,9 +30,7 @@ import Control.Monad (when)
 -- TODO pass which metadata options to print here without a Config
 printTreePaths :: Maybe String -> String -> HashTree a -> IO ()
 printTreePaths mRegex fmt =
-  let fExpr = case mRegex of
-                Nothing -> Anything
-                Just s  -> FilterRegex s
+  let fExpr = maybe Anything FilterRegex mRegex
   in case mkLineMetaFormatter fmt of
     Left  errMsg -> error errMsg -- TODO anything to do besides die here?
     Right fmtFn  -> printTreePaths' fExpr fmtFn (IndentLevel 0) []
@@ -119,5 +117,5 @@ data Filter
   deriving (Read, Show)
 
 pathMatches :: Filter -> [Name] -> Bool
-pathMatches Anything _ = True
+pathMatches Anything _          = True
 pathMatches (FilterRegex re) ns = (breadcrumbs2fp ns) =~ re

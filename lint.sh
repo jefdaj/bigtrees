@@ -13,15 +13,14 @@ stack test 2>&1 | tee -a "$LOG"
 
 pushd .lint
 
-find ../* -name '*.hs' | while read hs; do
-  # TODO can it be auto-accepted? the prompts don't show through tee
+find ../{lib,app,test} -name '*.hs' | while read hs; do
   hlint --hint hlint.yml "$hs" --refactor --refactor-options="-i" 2>&1 | tee -a "$LOG"
 done
 
 stylish-haskell --config stylish-haskell.yaml -r -i .. 2>&1 | tee -a "$LOG"
 
-# TODO add to ignores instead?
-git checkout ../lib/System/Directory/Tree.hs
+# TODO why is this still being edited?
+pushd directory-tree && git checkout .; popd
 
 stan --hiedir ../.hie --config-file stan.toml report 2>&1 | tee -a "$LOG"
 
