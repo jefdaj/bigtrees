@@ -63,6 +63,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   -- TODO hold up, are we reading the file twice here?
   --      oh right: not usually a problem because readFileFn is a no-op in production
   !mt <- getModTime fPath
+  !s  <- getSize fPath
   !h  <- unsafeInterleaveIO $ hashFile v fPath -- TODO symlink bug here?
   !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
@@ -71,7 +72,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   return $ (if depth < lazyDirDepth
               then id
               else (\x -> hash x `seq` name x `seq` x))
-         $ File { name = n, hash = h, modTime = mt, fileData = fd }
+         $ File { name = n, hash = h, modTime = mt, size = s, fileData = fd }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = DT.nappend a n
@@ -98,6 +99,8 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
           then getModTime root
           else return $ maximum $ map modTime cs''
 
+  !s  <- getSize root -- TODO is this always 4096?
+
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?
   return $ (if depth < lazyDirDepth
@@ -107,6 +110,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
             { name     = n
             , contents = cs''
             , modTime  = mt
+            , size     = s
             , hash     = hashContents cs''
             , nINodes  = sum $ 1 : map totalINodes cs''
             }

@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
-
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module System.Directory.BigTrees.HashLine
 
@@ -62,7 +62,7 @@ newtype IndentLevel
   deriving (Eq, Ord, Read, Show)
 
 newtype ModTime = ModTime Integer
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Num, Read, Show, Generic)
 
 -- modNow :: IO ModTime
 -- modNow = getPOSIXTime >>= return . round . utcTimeToPOSIXSeconds
@@ -75,12 +75,17 @@ instance Arbitrary ModTime where
 instance NFData ModTime
 
 newtype Size = Size Integer
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Ord, Num, Read, Show, Generic)
+
+-- TODO Arbitrary Size instance?
+--      so far I'm just generating integers as appropriate elsewhere
+
+instance NFData Size
 
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine
-  = HashLine (TreeType, IndentLevel, Hash, ModTime, Name)
+  = HashLine (TreeType, IndentLevel, Hash, ModTime, Size, Name)
   deriving (Eq, Ord, Read, Show)
 
 ---------------
@@ -118,13 +123,14 @@ instance Arbitrary HashLine where
     il <- arbitrary :: Gen IndentLevel
     h  <- arbitrary :: Gen Hash
     mt <- arbitrary :: Gen ModTime
+    s  <- fmap Size $ choose (0, 10000) -- TODO does it matter?
     n  <- arbitrary :: Gen Name
-    return $ HashLine (tt, il, h, mt, n)
+    return $ HashLine (tt, il, h, mt, s, n)
 
   -- only shrinks the filename
   -- TODO also change the treetype?
   shrink :: HashLine -> [HashLine]
-  shrink (HashLine (tt, il, h, mt, n)) = map (\n' -> HashLine (tt, il, h, mt, n')) (shrink n)
+  shrink (HashLine (tt, il, h, mt, s, n)) = map (\n' -> HashLine (tt, il, h, mt, s, n')) (shrink n)
 
 -----------
 -- print --
@@ -136,7 +142,7 @@ instance Arbitrary HashLine where
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
-prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, ModTime mt, name)) =
+prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, ModTime mt, Size s, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
@@ -146,6 +152,7 @@ prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, ModTime mt, name)) =
        , B8.pack $ show n
        , prettyHash h
        , B8.pack $ show mt
+       , B8.pack $ show s
        , B8.pack node -- TODO n2b?
        ]
 
@@ -195,6 +202,10 @@ indentP = numStrP >>= return . IndentLevel . read
 modTimeP :: Parser ModTime
 modTimeP = numStrP >>= return . ModTime . read
 
+-- TODO applicative version?
+sizeP :: Parser Size
+sizeP = numStrP >>= return . Size . read
+
 -- TODO is there a cleaner syntax for this?
 -- TODO this should still count up total files when given a max depth
 lineP :: Maybe Int -> Parser (Maybe HashLine)
@@ -214,9 +225,10 @@ lineP md = do
     parseTheRest t i = do
       h <- hashP
       mt <- modTimeP
+      s <- sizeP
       p <- nameP
       -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
-      return $ Just (HashLine (t, i, h, mt, p))
+      return $ Just (HashLine (t, i, h, mt, s, p))
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do

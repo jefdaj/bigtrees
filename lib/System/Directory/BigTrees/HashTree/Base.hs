@@ -49,9 +49,9 @@ totalSize (File {}) = undefined -- TODO add size field
 totalSize (Dir  {}) = undefined -- TODO add size field
 
 -- TODO is this needed?
-totalModTime :: HashTree a -> Integer
-totalModTime (File {}) = undefined -- TODO add mod time field
-totalModTime (Dir  {}) = undefined -- TODO add mod time field
+-- totalModTime :: HashTree a -> Integer
+-- totalModTime (File {}) = undefined -- TODO add mod time field
+-- totalModTime (Dir  {}) = undefined -- TODO add mod time field
 
 hashContents :: [HashTree a] -> Hash
 hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash)
@@ -70,6 +70,7 @@ data HashTree a
       { name     :: !Name
       , hash     :: !Hash
       , modTime  :: !ModTime
+      , size     :: !Size
       , fileData :: !a
       -- implicitly has one inode
       }
@@ -77,8 +78,9 @@ data HashTree a
       { name     :: !Name
       , hash     :: Hash -- TODO strict?
       , modTime  :: !ModTime
+      , size     :: !Size
       , contents :: [HashTree a] -- TODO rename dirContents?
-      , nINodes  :: Int -- TODO strict?
+      , nINodes  :: Int -- TODO strict? include in tree files?
       }
   deriving (Generic, Ord, Read, Show)
 
@@ -86,6 +88,7 @@ data HashTree a
 type ProdTree = HashTree ()
 
 -- TODO disable this while testing to ensure deep equality?
+-- TODO should this include mod time, or do we want to ignore it?
 instance Eq (HashTree a) where
   (==) :: HashTree a -> HashTree a -> Bool
   t1 == t2 = hash t1 == hash t2
@@ -145,27 +148,31 @@ arbitraryFile = do
   n  <- arbitrary :: Gen Name
   bs <- arbitrary :: Gen B8.ByteString
   mt <- arbitrary :: Gen ModTime
+  s  <- fmap Size $ choose (0, 10000)
   return $ File
     { name = n
     , hash = hashBytes bs
     , modTime = mt
     , fileData = bs
+    , size = s
     }
 
 arbitraryDirSized :: Int -> Gen TestTree
-arbitraryDirSized size = do
+arbitraryDirSized arbsize = do
   n  <- arbitrary :: Gen Name
   -- !cs <- nubBy duplicateNames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
   -- TODO put back the nubBy part!
-  !cs <- arbitraryContents size -- TODO (s-1)?
+  !cs <- arbitraryContents arbsize -- TODO (s-1)?
   !mt <- arbitrary :: Gen ModTime
+  !s <- fmap Size $ return 4096 -- TODO does dir size vary?
   -- TODO assert that nINodes == s here?
   return $ Dir
     { name     = n
     , hash     = hashContents cs
     , modTime  = mt
+    , size = sum $ s : map size cs
     , contents = cs
-    , nINodes   = sum $ map totalINodes cs
+    , nINodes   = sum $ 1 : map totalINodes cs -- TODO factor this out
     }
 
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
@@ -173,10 +180,10 @@ arbitraryDirSized size = do
 instance Arbitrary TestTree where
 
   arbitrary :: Gen TestTree
-  arbitrary = sized $ \size -> do
-    if size < 2 -- TODO can it go below 1?
+  arbitrary = sized $ \arbsize -> do
+    if arbsize < 2 -- TODO can it go below 1?
       then arbitraryFile
-      else arbitraryDirSized size
+      else arbitraryDirSized arbsize
 
     -- n <- arbitrary :: Gen Name
     -- TODO there's got to be a better way, right?

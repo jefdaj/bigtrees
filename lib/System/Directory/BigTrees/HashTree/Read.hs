@@ -34,10 +34,10 @@ deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines m
 --   | otherwise  = accTrees' hl cs
 
 accTrees :: HashLine -> [(IndentLevel, ProdTree)] -> [(IndentLevel, ProdTree)]
-accTrees (HashLine (t, IndentLevel i, h, mt, p)) cs = case t of
-  F -> cs ++ [(IndentLevel i, File p h mt ())]
+accTrees (HashLine (t, IndentLevel i, h, mt, s, p)) cs = case t of
+  F -> cs ++ [(IndentLevel i, File p h mt s ())]
   D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
-           dir = Dir p h mt (map snd children)
+           dir = Dir p h mt s (map snd children)
                          (sum $ map (totalINodes . snd) children)
        in siblings ++ [(IndentLevel i, dir)]
 

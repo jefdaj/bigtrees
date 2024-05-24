@@ -9,6 +9,7 @@ module System.Directory.BigTrees.HashTree.Edit
 import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
+import System.Directory.BigTrees.HashLine (Size(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree(..),
                                                 totalINodes, hashContents)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
@@ -25,7 +26,14 @@ import System.FilePath (joinPath, splitPath)
 -- TODO use this to implement hashing multiple trees at once?
 -- TODO is the mod time right?
 wrapInEmptyDir :: FilePath -> HashTree a -> HashTree a
-wrapInEmptyDir n t = Dir { name = fp2n n, hash = h, modTime=modTime t, contents = cs, nINodes = nINodes t }
+wrapInEmptyDir n t = Dir
+  { name     = fp2n n
+  , hash     = h
+  , modTime  = modTime t
+  , size     = size t + Size 4096 -- TODO does this vary?
+  , contents = cs
+  , nINodes  = nINodes t
+  }
   where
     cs = [t]
     h = hashContents cs
