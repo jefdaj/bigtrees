@@ -9,6 +9,9 @@ import Control.Monad (when)
 import Prelude hiding (log)
 import System.FilePath.Glob (Pattern, compile)
 
+-- TODO derive To/FromJSON for the Config so it can go in Headers?
+--      or just the exclude and maxdepth values for now
+
 {- Parsed command line args
  - TODO add other stuff from usage.txt, or revise that
  -}
@@ -33,6 +36,7 @@ defaultConfig = Config
   , verbose  = True
   , force    = False
   , check    = True
+  -- TODO add .nix-* things with cyclic symlinks? or fix upstream
   , exclude  = map compile ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
   , metafmt  = Nothing
   , regex    = Nothing

@@ -15,6 +15,7 @@ library:
   - System.Directory.BigTrees
   - System.Directory.BigTrees.DupeMap
   - System.Directory.BigTrees.HashTree
+  - System.Directory.BigTrees.HeadFoot
   - System.Directory.BigTrees.HashForest
   - System.Directory.BigTrees.HashLine
   - System.Directory.BigTrees.Name

@@ -17,6 +17,7 @@ module System.Directory.BigTrees.HashLine
   , parseHashLine -- TODO remove? not actually used
   , parseHashLines
   , sepChar
+  , hashLineFields
 
   -- for testing (TODO remove?)
   -- , nameP
@@ -63,9 +64,6 @@ newtype IndentLevel
 
 newtype ModTime = ModTime Integer
   deriving (Eq, Ord, Num, Read, Show, Generic)
-
--- modNow :: IO ModTime
--- modNow = getPOSIXTime >>= return . round . utcTimeToPOSIXSeconds
 
 instance Arbitrary ModTime where
   -- random time between 2000-01-01 and 2024-01-01
@@ -143,6 +141,11 @@ instance Arbitrary HashLine where
 -- join ByteStrings with the separator char (currently tab)
 join :: [B8.ByteString] -> B8.ByteString
 join = B8.intercalate $ B8.singleton sepChar
+
+-- TODO use this more directly?
+-- For now it's only imported by HeadFoot to use in the Header
+hashLineFields :: [String]
+hashLineFields = ["type", "depth", "hash", "modtime", "size", "name"]
 
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly

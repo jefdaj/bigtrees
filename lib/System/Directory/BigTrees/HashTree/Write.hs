@@ -9,7 +9,10 @@ import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLev
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitPath, (</>))
-import System.IO (IOMode (..), hFlush, stdout, withFile)
+import System.IO (IOMode (..), Handle, hFlush, stdout, withFile)
+-- import Text.Printf (hPrintf)
+import Data.Version (showVersion)
+import System.Info (os, arch, compilerName, fullCompilerVersion)
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
@@ -27,9 +30,29 @@ printTree = mapM_ printLine . flattenTree
 
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
-writeTree :: FilePath -> HashTree a -> IO ()
-writeTree path tree = withFile path WriteMode $ \h ->
+-- TODO how much of the config should live in the library vs the app, if we're writing it?
+writeTree :: Maybe Header -> FilePath -> HashTree a -> IO ()
+writeTree path tree = withFile path WriteMode $ \h -> do
+  writeHeader h
+  -- TODO accumulate a little state during write too: n errors at least
   mapM_ (B8.hPutStrLn h) (serializeTree tree)
+  writeFooter h
+
+writeHeader :: Handle -> IO ()
+writeHeader h = do
+  -- TODO bigtrees: version
+  -- TODO system: os, arch, locale
+  -- TODO config: maxdepth, excludes
+  -- TODO scan: start time
+  -- TODO is filesystem easy?
+  -- hPrintf h $ ""
+  return ()
+
+writeFooter :: Handle -> IO ()
+writeFooter h = do
+  -- TODO n errors?
+  -- TODO end time
+  return ()
 
 -- This is the only official way to construct a `HashLine`, because they don't
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its
