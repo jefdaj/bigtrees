@@ -16,11 +16,6 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
 
--- the maybe filepath controls standalone (print hashes)
--- vs annex mode (write to the filepath)...
--- TODO is there a better way to set that up?
--- TODO require that the path be either absolutePath + in the annex or relative and in the annex
--- this works, but add doesn't. so what changed?
 cmdHash :: Config -> [FilePath] -> IO ()
 cmdHash cfg targets = do
   f <- buildForest (verbose cfg) (exclude cfg) targets
@@ -28,37 +23,6 @@ cmdHash cfg targets = do
     Nothing -> printForest f
     Just p  -> writeForest p f
 
--- updateAnnexHashes :: Config -> HashTree () -> IO ()
--- updateAnnexHashes cfg new = do
---   let aPath   = fromJust $ annex cfg
---       hashes  = aPath </> "hashes.txt"
---   log cfg "updating hashes.txt"
---   exists <- doesFileExist hashes
---   when exists $ do -- TODO only when verbose?
---     old <- readTree (maxdepth cfg) hashes
---     printDeltas $ diff old new -- just nice to verify this looks right
---   -- B.writeFile hashes $ serializeTree new
---   writeTree hashes new
---   -- TODO listen to config here? or always do it?
---   out1 <- runGit aPath ["add", "hashes.txt"]
---   log cfg out1
-
-guardStatus :: Config -> FilePath -> IO ()
-guardStatus = undefined
-  -- TODO check that git status is all clear
-  -- TODO check that git-annex status is all clear too?
-
-guardHash :: Config -> Maybe FilePath -> FilePath -> IO ()
-guardHash = undefined
-  -- TODO run guardInit here?
-  -- TODO run guardStatus here?
-  -- TODO check that hashes.txt exists
-
------------
--- tests --
------------
-
--- TODO random names? or all one bigtrees dir? or prefixed as it is?
 hashTarXzAction :: FilePath -> IO BLU.ByteString
 hashTarXzAction xzPath = do
   (Just xzPath') <- absolutePath xzPath
