@@ -13,7 +13,7 @@ import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (IndentLevel (..), TreeType (..), ModTime(..), Size(..))
-import System.Directory.BigTrees.HashTree.Base (HashTree (..))
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..))
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
@@ -43,7 +43,7 @@ printTreePaths mRegex fmt =
  -}
 printTreePaths' :: Filter -> FmtFn -> IndentLevel -> [Name] -> HashTree a -> IO ()
 printTreePaths' fExpr fmtFn (IndentLevel i) ns t = do
-  let ns' = name t:ns
+  let ns' = (name $ nodeData t):ns
       tt  = treeType t
   case t of
     (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (IndentLevel $ i+1) ns') (dirContents t)
@@ -56,7 +56,7 @@ pathLine :: FmtFn -> IndentLevel -> [Name] -> HashTree a -> B8.ByteString
 pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
   where
     meta = fmtFn i t
-    path = B8.pack $ breadcrumbs2fp $ name t:ns -- TODO ns already includes name t?
+    path = B8.pack $ breadcrumbs2fp $ (name $ nodeData t):ns -- TODO ns already includes name t?
 
 ---------------------
 -- format metadata --
@@ -84,10 +84,10 @@ combineFmtFns fs i t = separate $ map (\f -> f i t) fs
 allFmtFns :: [(Char, FmtFn)]
 allFmtFns =
   [ ('t', \_ t -> B8.singleton $ treeType t)
-  , ('h', \_ t -> prettyHash $ hash t)
+  , ('h', \_ t -> prettyHash $ hash $ nodeData t)
   , ('i', \(IndentLevel i) _ -> B8.pack $ show i)
-  , ('m', \_ t -> B8.pack $ show $ (\(ModTime n) -> n) $ modTime t)
-  , ('s', \_ t -> B8.pack $ show $ (\(Size n) -> n) $ size t)
+  , ('m', \_ t -> B8.pack $ show $ (\(ModTime n) -> n) $ modTime $ nodeData t)
+  , ('s', \_ t -> B8.pack $ show $ (\(Size n) -> n) $ size $ nodeData t)
   ]
 
 validFmtChars :: String

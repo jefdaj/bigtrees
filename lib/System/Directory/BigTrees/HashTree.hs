@@ -6,6 +6,7 @@
 module System.Directory.BigTrees.HashTree
 
   ( HashTree(..)
+  , NodeData(..)
   , ProdTree
   , TestTree
 

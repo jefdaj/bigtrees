@@ -6,7 +6,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
 import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLevel),
                                            TreeType (D, F), prettyLine)
-import System.Directory.BigTrees.HashTree.Base (HashTree(..), TestTree)
+import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitPath, (</>))
 import System.IO (IOMode (..), hFlush, stdout, withFile)
@@ -40,13 +40,14 @@ flattenTree = flattenTree' ""
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
-flattenTree' dir (File {name=n, hash=h, modTime=mt, size=s})
-  = [HashLine (F, IndentLevel $ length (splitPath dir), h, mt, s, n)]
-flattenTree' dir (Dir  {name=n, hash=h, modTime=mt, size=s, dirContents=cs})
+flattenTree' dir (File {nodeData=nd})
+  = [HashLine (F, IndentLevel $ length (splitPath dir), hash nd, modTime nd, size nd, name nd)]
+flattenTree' dir (Dir  {nodeData=nd, dirContents=cs})
   = subtrees ++ [wholeDir]
   where
+    n = name nd
     subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
-    wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, mt, s, n)
+    wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), hash nd, modTime nd, size nd, n)
 
 -- this is to catch the case where it tries to write the same file twice
 -- (happened once because of macos filename case-insensitivity)
@@ -65,13 +66,13 @@ assertNoFile path = do
  -      because it's ambiguous what to do with the root name otherwise
  -}
 writeTestTreeDir :: FilePath -> TestTree -> IO ()
-writeTestTreeDir root (File {name = n, fileData = bs}) = do
+writeTestTreeDir root (File {nodeData=nd, fileData = bs}) = do
   -- SD.createDirectoryIfMissing True root -- TODO remove
-  let path = root </> n2fp n -- TODO use IsName here!
+  let path = root </> n2fp (name nd) -- TODO use IsName here!
   -- assertNoFile path
   B8.writeFile path bs
-writeTestTreeDir root (Dir {name = n, dirContents = cs}) = do
-  let root' = root </> n2fp n -- TODO use IsName here!
+writeTestTreeDir root (Dir {nodeData=nd, dirContents = cs}) = do
+  let root' = root </> n2fp (name nd) -- TODO use IsName here!
   -- assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'
   SD.createDirectoryIfMissing False root' -- TODO true?

@@ -122,27 +122,27 @@ type TestTree = HashTree B8.ByteString
 -- this should have sum of nNodes == size... or is it nNodes-1?
 -- TODO test prop for that
 arbitraryContents :: Int -> Gen [TestTree]
-arbitraryContents size = arbitraryContentsHelper size `suchThat` uniqNames
+arbitraryContents arbsize = arbitraryContentsHelper arbsize `suchThat` uniqNames
   where
     uniqNames cs = cs == nubBy duplicateNames cs
 
 arbitraryContentsHelper :: Int -> Gen [TestTree]
-arbitraryContentsHelper size
-  | size <  1 = return []
-  | size == 1 = arbitraryFile >>= \t -> return [t] -- TODO clean this up
+arbitraryContentsHelper arbsize
+  | arbsize <  1 = return []
+  | arbsize == 1 = arbitraryFile >>= \t -> return [t] -- TODO clean this up
   | otherwise = do
-      recSize <- choose (1,size) -- TODO bias this to be smaller?
-      let remSize = size - recSize
+      recSize <- choose (1,arbsize) -- TODO bias this to be smaller?
+      let remSize = arbsize - recSize
       (recTree :: TestTree) <- resize recSize arbitrary
       arbitraryContents remSize >>= \cs -> return $ recTree:cs -- TODO clean this up
 
 -- TODO does forAll add anything here that I'm not already getting from sized?
 prop_arbitraryContents_length_matches_nNodes :: Gen Bool
 prop_arbitraryContents_length_matches_nNodes =
-  sized $ \size -> do
-    cs <- arbitraryContents size
-    let totalNodes = sum $ map sumNodes cs
-        res = totalNodes == size
+  sized $ \arbsize -> do
+    cs <- arbitraryContents arbsize
+    let total = sum $ map sumNodes cs
+        res = total == arbsize
     -- This verifies that it gets called with the full range of sizes:
     -- return $ traceShow ((size, sumFiles)) res
     return res

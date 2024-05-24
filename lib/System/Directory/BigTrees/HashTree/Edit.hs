@@ -10,8 +10,8 @@ import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
 import System.Directory.BigTrees.HashLine (Size(..))
-import System.Directory.BigTrees.HashTree.Base (HashTree(..),
-                                                totalNodes, hashContents)
+import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..),
+                                                sumNodes, hashContents)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Name (fp2n)
@@ -27,12 +27,14 @@ import System.FilePath (joinPath, splitPath)
 -- TODO is the mod time right?
 wrapInEmptyDir :: FilePath -> HashTree a -> HashTree a
 wrapInEmptyDir n t = Dir
-  { name     = fp2n n
-  , hash     = h
-  , modTime  = modTime t
-  , size     = size t + Size 4096 -- TODO does this vary?
-  , dirContents = cs
+  { dirContents = cs
   , nNodes  = fmap (+1) $ nNodes t
+  , nodeData = NodeData
+    { name     = fp2n n
+    , hash     = h
+    , modTime  = modTime t
+    , size     = size t + Size 4096 -- TODO does this vary?
+    }
   }
   where
     cs = [t]
@@ -79,7 +81,7 @@ rmSubTree (File {}) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir {dirContents=cs, nNodes=n}) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
-    then d { dirContents = delete t cs, nNodes = n - totalNodes t }
+    then d { dirContents = delete t cs, nNodes = n - sumNodes t }
     else d { dirContents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
-           , nNodes = n - totalNodes t
+           , nNodes = n - sumNodes t
            }
