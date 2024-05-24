@@ -6,8 +6,9 @@ import System.Environment (getEnv, getProgName)
 import Paths_bigtrees (version)
 import System.Directory.BigTrees.HashLine (hashLineFields)
 import System.FilePath.Glob (Pattern)
-import Data.Time.Clock.POSIX (POSIXTime, getPOSIXTime, utcTimeToPOSIXSeconds)
-import Data.Time.Clock (secondsToDiffTime)
+import Data.Time.Clock.POSIX (getPOSIXTime)
+-- import Data.Time.Clock (secondsToDiffTime)
+import qualified Data.ByteString.Char8 as B8
 
 {- Header + footer info to write before and after HashLines, respectively.
  - The initial format is to read/write JSON delimited from other lines by '#'.
@@ -28,15 +29,15 @@ data Header = Header
   , system    :: (String, String) -- os, arch
   , compiler  :: (String, String) -- compiler, version
   , bigtrees  :: String           -- format version string, from cabal file
-  , scanStart :: POSIXTime
+  , scanStart :: Integer
   , fields    :: [String]         -- field order, hardcoded
   }
 
 now :: IO Integer
-now = getPOSIXTime >>= return . round . utcTimeToPOSIXSeconds
+now = getPOSIXTime >>= return . round
 
-makeHeader :: [Pattern] -> Maybe Int -> IO Header
-makeHeader es md = do
+makeHeaderNow :: [Pattern] -> Maybe Int -> IO Header
+makeHeaderNow es md = do
   progName  <- getProgName
   startTime <- now
   let header = Header
@@ -51,13 +52,13 @@ makeHeader es md = do
   return header
 
 data Footer = Footer
-  { scanEnd    :: POSIXTime
+  { scanEnd    :: Integer
   , nSuccesses :: Int -- TODO integer?
   , nErrors    :: Int
   }
 
-makeFooter :: (Int, Int) -> IO Footer
-makeFooter nOK nErr = do
+makeFooterNow :: (Int, Int) -> IO Footer
+makeFooterNow (nOK, nErr) = do
   endTime <- now
   let footer = Footer
         { scanEnd    = endTime
@@ -67,7 +68,7 @@ makeFooter nOK nErr = do
   return footer
 
 -- TODO proper time type for this?
-scanDuration :: (Header a, Footer) -> String
+scanDuration :: (Header, Footer) -> String
 scanDuration = undefined
 
 treeInfo :: (Header, Footer) -> B8.ByteString

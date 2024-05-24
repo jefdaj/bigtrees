@@ -8,7 +8,7 @@ import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLev
                                            TreeType (D, F), prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
-import System.Directory.BigTrees.HeadFoot (makeHeader, makeFooter)
+import System.Directory.BigTrees.HeadFoot (makeHeaderNow, makeFooterNow)
 import System.FilePath (splitPath, (</>))
 import System.IO (IOMode (..), Handle, hFlush, stdout, withFile)
 
@@ -29,7 +29,7 @@ printTree = mapM_ printLine . flattenTree
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
 -- TODO how much of the config should live in the library vs the app, if we're writing it?
-writeTree :: Maybe Header -> FilePath -> HashTree a -> IO ()
+writeTree :: FilePath -> HashTree a -> IO ()
 writeTree path tree = withFile path WriteMode $ \h -> do
   writeHeader h
   -- TODO accumulate a little state during write too: n errors at least
