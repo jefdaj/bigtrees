@@ -4,7 +4,10 @@ import System.Info (os, arch, compilerName, fullCompilerVersion)
 import Data.Version (showVersion)
 import System.Environment (getEnv, getProgName)
 import Paths_bigtrees (version)
-import System.Directory.BigTrees.HashLines (hashLineFields)
+import System.Directory.BigTrees.HashLine (hashLineFields)
+import System.FilePath.Glob (Pattern)
+import Data.Time.Clock.POSIX (POSIXTime, getPOSIXTime, utcTimeToPOSIXSeconds)
+import Data.Time.Clock (secondsToDiffTime)
 
 {- Header + footer info to write before and after HashLines, respectively.
  - The initial format is to read/write JSON delimited from other lines by '#'.
@@ -37,14 +40,14 @@ makeHeader es md = do
   progName  <- getProgName
   startTime <- now
   let header = Header
-    { excludes  = es
-    , maxdepth  = md
-    , system    = (os, arch)
-    , compiler  = (compilerName, showVersion fullCompilerVersion)
-    , bigtrees  = showVersion version
-    , scanStart = startTime
-    , fields    = hashLineFields
-    }
+        { excludes  = es
+        , maxdepth  = md
+        , system    = (os, arch)
+        , compiler  = (compilerName, showVersion fullCompilerVersion)
+        , bigtrees  = showVersion version
+        , scanStart = startTime
+        , fields    = hashLineFields
+        }
   return header
 
 data Footer = Footer
@@ -54,17 +57,17 @@ data Footer = Footer
   }
 
 makeFooter :: (Int, Int) -> IO Footer
-makeFooter nOK nFail = do
+makeFooter nOK nErr = do
   endTime <- now
   let footer = Footer
-    { scanEnd    = endTime
-    , nSuccesses = nOK
-    , nFailures  = nFail
-    }
+        { scanEnd    = endTime
+        , nSuccesses = nOK
+        , nErrors    = nErr
+        }
   return footer
 
 -- TODO proper time type for this?
-scanDuration :: (Header a, Footer) -> UTCTime
+scanDuration :: (Header a, Footer) -> String
 scanDuration = undefined
 
 treeInfo :: (Header, Footer) -> B8.ByteString

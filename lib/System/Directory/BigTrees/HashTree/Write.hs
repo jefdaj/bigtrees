@@ -8,11 +8,9 @@ import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLev
                                            TreeType (D, F), prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
+import System.Directory.BigTrees.HeadFoot (makeHeader, makeFooter)
 import System.FilePath (splitPath, (</>))
 import System.IO (IOMode (..), Handle, hFlush, stdout, withFile)
--- import Text.Printf (hPrintf)
-import Data.Version (showVersion)
-import System.Info (os, arch, compilerName, fullCompilerVersion)
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
