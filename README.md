@@ -25,12 +25,12 @@ stack test
 * Broke HashTree into smaller modules by operation: Build, Write, etc
 * Rewrote my old directory-tree code using a typeclass, started [a PR upstream](https://github.com/jberryman/directory-tree/pull/18)
 * Wrote comparison of text vs binary format file sizes, realized binary is always larger, removed it
+* Added mod time and size (bytes) to tree data
 
 
 #### Todo
 
 * Rewrite command line interface
-* Add more metadata to trees: besides `nFiles`, also want mod time and size in bytes
 * Add `Graft` nodes that import other tree files
 * Add `Link` nodes that indicate whether their target data is present in the tree
 * Add `Error` nodes to wrap errors, the same way directory-tree does it
