@@ -40,6 +40,7 @@ stack test
 * "`find` mode": list full paths, filter by metadata and glob/regex
 * Clean up: write haddocks, hide partial constructors, etc
 * Upload to Hackage
+* Example screencasts of using the binary + data structures in repl
 
 ```
 bigtrees hash   <src> [-o <tree>]

@@ -121,7 +121,7 @@ fixMoves t (d:ds) = d : fixMoves t ds
 simDelta :: Show a => HashTree a -> Delta a -> Either String (HashTree a)
 simDelta t (Rm   p    ) = rmSubTree t p
 simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
-simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p
+simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p -- TODO duplicate final name in path?
 simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
   Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?
