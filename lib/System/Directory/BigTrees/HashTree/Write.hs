@@ -8,7 +8,7 @@ import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLev
                                            TreeType (D, F), prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
-import System.Directory.BigTrees.HeadFoot (makeHeaderNow, makeFooterNow)
+import System.Directory.BigTrees.HeadFoot (writeHeader, writeFooter)
 import System.FilePath (splitPath, (</>))
 import System.IO (IOMode (..), Handle, hFlush, stdout, withFile)
 
@@ -35,22 +35,6 @@ writeTree path tree = withFile path WriteMode $ \h -> do
   -- TODO accumulate a little state during write too: n errors at least
   mapM_ (B8.hPutStrLn h) (serializeTree tree)
   writeFooter h
-
-writeHeader :: Handle -> IO ()
-writeHeader h = do
-  -- TODO bigtrees: version
-  -- TODO system: os, arch, locale
-  -- TODO config: maxdepth, excludes
-  -- TODO scan: start time
-  -- TODO is filesystem easy?
-  -- hPrintf h $ ""
-  return ()
-
-writeFooter :: Handle -> IO ()
-writeFooter h = do
-  -- TODO n errors?
-  -- TODO end time
-  return ()
 
 -- This is the only official way to construct a `HashLine`, because they don't
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its

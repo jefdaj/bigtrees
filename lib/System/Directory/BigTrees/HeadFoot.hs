@@ -9,6 +9,7 @@ import System.FilePath.Glob (Pattern)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 -- import Data.Time.Clock (secondsToDiffTime)
 import qualified Data.ByteString.Char8 as B8
+import System.IO (Handle)
 
 {- Header + footer info to write before and after HashLines, respectively.
  - The initial format is to read/write JSON delimited from other lines by '#'.
@@ -32,6 +33,7 @@ data Header = Header
   , scanStart :: Integer
   , fields    :: [String]         -- field order, hardcoded
   }
+  deriving (Show, Read)
 
 now :: IO Integer
 now = getPOSIXTime >>= return . round
@@ -56,6 +58,7 @@ data Footer = Footer
   , nSuccesses :: Int -- TODO integer?
   , nErrors    :: Int
   }
+  deriving (Show, Read)
 
 makeFooterNow :: (Int, Int) -> IO Footer
 makeFooterNow (nOK, nErr) = do
@@ -68,8 +71,24 @@ makeFooterNow (nOK, nErr) = do
   return footer
 
 -- TODO proper time type for this?
-scanDuration :: (Header, Footer) -> String
-scanDuration = undefined
+scanSeconds :: (Header, Footer) -> Integer
+scanSeconds (h, f) = scanEnd f - scanStart h
 
 treeInfo :: (Header, Footer) -> B8.ByteString
 treeInfo = undefined
+
+writeHeader :: Handle -> IO ()
+writeHeader h = do
+  -- TODO bigtrees: version
+  -- TODO system: os, arch, locale
+  -- TODO config: maxdepth, excludes
+  -- TODO scan: start time
+  -- TODO is filesystem easy?
+  -- hPrintf h $ ""
+  return ()
+
+writeFooter :: Handle -> IO ()
+writeFooter h = do
+  -- TODO n errors?
+  -- TODO end time
+  return ()
