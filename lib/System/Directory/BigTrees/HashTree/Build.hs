@@ -7,12 +7,14 @@ import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine ()
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, countFiles, hashContents)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, ModTime(..), FileSize(..), countFiles, hashContents)
 import System.Directory.BigTrees.Name
+import System.Directory (getFileSize, getModificationTime)
 import qualified System.Directory.Tree as DT
 import System.FilePath ((</>))
 import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
 import System.IO.Unsafe (unsafeInterleaveIO)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 
 keepPath :: [Pattern] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
@@ -99,4 +101,14 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
             , nFiles   = sum $ map countFiles cs'' -- TODO +1?
             }
 
+-- https://stackoverflow.com/a/17909816
+-- TODO if git reports file is older than mod time does, trust git?
+-- TODO going to have to update dirs recursively based on newest content change
+getModTime :: FilePath -> IO ModTime
+getModTime f = do
+  mt <- getModificationTime f
+  let sec = round $ utcTimeToPOSIXSeconds mt
+  return $ ModTime sec
 
+getSize :: FilePath -> IO FileSize
+getSize f = FileSize <$> getFileSize f

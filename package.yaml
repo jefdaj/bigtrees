@@ -55,6 +55,7 @@ library:
   - tasty-quickcheck
   - temporary
   - text
+  - time
   - regex-tdfa
   - th-utilities
   - unix
@@ -144,6 +145,7 @@ tests:
     - tasty-quickcheck
     - temporary
     - text
+    - time
     - regex-tdfa
     - th-utilities
     - unix
@@ -250,6 +252,7 @@ tests:
     - tasty-golden
     - temporary
     - text
+    - time
     - regex-tdfa
     - th-utilities
     - unbounded-delays

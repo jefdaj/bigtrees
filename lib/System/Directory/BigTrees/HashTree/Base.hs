@@ -4,7 +4,6 @@
 {-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-
 module System.Directory.BigTrees.HashTree.Base where
 
 import Control.DeepSeq (NFData)
@@ -195,3 +194,9 @@ confirmFileHashes (Dir {contents = cs})           = all confirmFileHashes cs
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes
+
+newtype ModTime = ModTime Integer
+  deriving (Eq, Ord, Read, Show)
+
+newtype FileSize = FileSize Integer
+  deriving (Eq, Ord, Read, Show)
