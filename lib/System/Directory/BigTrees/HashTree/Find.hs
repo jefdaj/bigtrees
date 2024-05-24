@@ -12,7 +12,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.Directory.BigTrees.HashLine (IndentLevel (..), TreeType (..), ModTime(..))
+import System.Directory.BigTrees.HashLine (IndentLevel (..), TreeType (..), ModTime(..), Size(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..))
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
@@ -87,6 +87,7 @@ allFmtFns =
   , ('h', \_ t -> prettyHash $ hash t)
   , ('i', \(IndentLevel i) _ -> B8.pack $ show i)
   , ('m', \_ t -> B8.pack $ show $ (\(ModTime n) -> n) $ modTime t)
+  , ('s', \_ t -> B8.pack $ show $ (\(Size n) -> n) $ size t)
   ]
 
 validFmtChars :: String

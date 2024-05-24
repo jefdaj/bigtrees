@@ -105,12 +105,12 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- TODO should that be configurable or something?
   return $ (if depth < lazyDirDepth
               then id
-              else (\r -> (hash r `seq` nINodes r `seq` hash r) `seq` r))
+              else (\r -> (hash r `seq` nINodes r `seq` hash r) `seq` r)) -- TODO also mt?
          $ Dir
             { name     = n
             , contents = cs''
             , modTime  = mt
-            , size     = s
+            , size     = sum $ s : map size cs''
             , hash     = hashContents cs''
             , nINodes  = sum $ 1 : map totalINodes cs''
             }
