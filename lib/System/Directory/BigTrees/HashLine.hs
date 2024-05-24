@@ -139,6 +139,10 @@ instance Arbitrary HashLine where
 -- print --
 -----------
 
+-- join ByteStrings with the separator char (currently tab)
+join :: [B8.ByteString] -> B8.ByteString
+join = B8.intercalate $ B8.singleton sepChar
+
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
 -- TODO rename/move this? it's used in printing lines and also find paths
@@ -149,7 +153,7 @@ prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, ModTime mt, Size s, name)
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
-  in B8.unwords
+  in join
        -- TODO make the metadata configurable here?
        [ B8.pack $ show t
        , B8.pack $ show n
@@ -165,18 +169,21 @@ prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, ModTime mt, Size s, name)
 
 -- TODO rewrite a lot of this to deal flexibly with tables? or will order stay fixed?
 
-sepChar :: Parser Char
-sepChar = char '\t'
+sepChar :: Char
+sepChar = '\t'
+
+pSep :: Parser Char
+pSep = char sepChar
 
 typeP :: Parser TreeType
 typeP = do
-  t <- choice [char 'D', char 'F'] <* sepChar
+  t <- choice [char 'D', char 'F'] <* pSep
   return $ read [t]
 
 hashP :: Parser Hash
 hashP = do
   h <- take digestLength -- TODO any need to sanitize these?
-  _ <- sepChar
+  _ <- pSep
   return $ Hash $ BS.toShort h
 
 {- Like endOfLine, but make sure D/F comes next followed by a valid hash digest
@@ -198,7 +205,7 @@ nameP = fmap fp2n $ do
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
-numStrP = manyTill digit sepChar
+numStrP = manyTill digit pSep
 
 -- TODO applicative version?
 indentP :: Parser IndentLevel
