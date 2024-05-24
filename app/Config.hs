@@ -22,6 +22,7 @@ data Config
       , check    :: Bool
       , exclude  :: [Pattern]
       , metafmt  :: Maybe String
+      , regex    :: Maybe String
       }
   deriving (Read, Show)
 
@@ -34,6 +35,7 @@ defaultConfig = Config
   , check    = True
   , exclude  = map compile ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
   , metafmt  = Nothing
+  , regex    = Nothing
   }
 
 -- TODO remove this from Util

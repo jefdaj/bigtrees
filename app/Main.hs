@@ -46,6 +46,7 @@ main = do
         , check    = flag 'c'
         , exclude  = eList
         , metafmt  = D.getArg args $ D.shortOption 'm'
+        , regex    = D.getArg args $ D.shortOption 'r'
         }
 
   -- pPrint cfg

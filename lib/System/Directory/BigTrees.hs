@@ -39,6 +39,8 @@ module System.Directory.BigTrees
   , treeContainsHash
   , treeContainsPath
   , printTreePaths
+  , Filter(..)
+  , pathMatches
 
   -- hashforest
   , HashForest(..)
@@ -92,7 +94,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), dropFileData, has
                                                 renameRoot)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Find (printTreePaths)
+import System.Directory.BigTrees.HashTree.Find (Filter(..), printTreePaths, pathMatches)
 import System.Directory.BigTrees.HashTree.Read (readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, writeTestTreeDir,

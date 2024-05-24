@@ -2,6 +2,8 @@
 
 module System.Directory.BigTrees.HashTree.Find
   ( printTreePaths
+  , Filter(..)  -- TODO remove from exports?
+  , pathMatches -- TODO remove from exports?
   )
   where
 
@@ -13,17 +15,27 @@ import System.Directory.BigTrees.HashLine (IndentLevel (..), TreeType (..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..))
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
+import Text.Regex.TDFA
+import Text.Regex.TDFA.ByteString
+import Control.Monad (when)
+
+-----------------
+-- print paths --
+-----------------
 
 {- We sort on filename here because 1) it's the only thing we can sort on
  - without keeping additional state, and 2) it makes it easy to property test
  - that `bigtrees find <path>` always matches `find <path> | sort`.
  -}
 -- TODO pass which metadata options to print here without a Config
-printTreePaths :: String -> HashTree a -> IO ()
-printTreePaths fmt =
-  case mkLineMetaFormatter fmt of
+printTreePaths :: Maybe String -> String -> HashTree a -> IO ()
+printTreePaths mRegex fmt =
+  let fExpr = case mRegex of
+                Nothing -> Anything
+                Just s  -> FilterRegex s
+  in case mkLineMetaFormatter fmt of
     Left  errMsg -> error errMsg -- TODO anything to do besides die here?
-    Right fmtFn  -> printTreePaths' fmtFn (IndentLevel 0) []
+    Right fmtFn  -> printTreePaths' fExpr fmtFn (IndentLevel 0) []
 
 {- Recursively print paths, passing a list of breadcrumbs.
  - A couple gotchas:
@@ -31,14 +43,15 @@ printTreePaths fmt =
  - * have to print subtree paths before the main dir to maintain streaming
  -   (otherwise the entire tree has to be held in memory)
  -}
-printTreePaths' :: FmtFn -> IndentLevel -> [Name] -> HashTree a -> IO ()
-printTreePaths' fmtFn (IndentLevel i) ns t = do
+printTreePaths' :: Filter -> FmtFn -> IndentLevel -> [Name] -> HashTree a -> IO ()
+printTreePaths' fExpr fmtFn (IndentLevel i) ns t = do
   let ns' = name t:ns
       tt  = treeType t
   case t of
-    (Dir {}) -> mapM_ (printTreePaths' fmtFn (IndentLevel $ i+1) (name t:ns)) (contents t)
+    (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (IndentLevel $ i+1) ns') (contents t)
     _        -> return ()
-  B8.putStrLn $ pathLine fmtFn (IndentLevel i) ns t
+  when (pathMatches fExpr ns') $
+    B8.putStrLn $ pathLine fmtFn (IndentLevel i) ns t
   hFlush stdout -- TODO maybe not?
 
 pathLine :: FmtFn -> IndentLevel -> [Name] -> HashTree a -> B8.ByteString
@@ -46,6 +59,10 @@ pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
   where
     meta = fmtFn i t
     path = B8.pack $ breadcrumbs2fp $ name t:ns -- TODO ns already includes name t?
+
+---------------------
+-- format metadata --
+---------------------
 
 -- TODO where should this live?
 treeType :: HashTree a -> Char
@@ -87,3 +104,20 @@ mkLineMetaFormatter cs =
        else Right $ combineFmtFns $ matchingFmtFns cs
 
 -- TODO test that ^ throws exceptions on invalid formats
+
+------------------
+-- filter paths --
+------------------
+
+-- TODO have a distinction between filtering paths and filtering tree nodes?
+-- TODO have a distinction between filtering name and wholename?
+
+-- TODO does the string type of the regex matter? String is probably fine right?
+data Filter
+  = Anything -- TODO is this useful?
+  | FilterRegex String
+  deriving (Read, Show)
+
+pathMatches :: Filter -> [Name] -> Bool
+pathMatches Anything _ = True
+pathMatches (FilterRegex re) ns = (breadcrumbs2fp ns) =~ re

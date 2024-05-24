@@ -24,7 +24,7 @@ import Data.Maybe (fromMaybe)
 cmdFind :: Config -> [FilePath] -> IO ()
 cmdFind cfg paths = do
   forest <- readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
-  printForestPaths (fromMaybe "" $ metafmt cfg) forest
+  printForestPaths (regex cfg) (fromMaybe "" $ metafmt cfg) forest
 
 -- Also, sort order turns out to be weirder than I expected with Unicode,
 -- so I gave up and sorted the output separately. The important part is

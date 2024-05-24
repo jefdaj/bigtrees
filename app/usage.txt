@@ -2,7 +2,7 @@ Create and manipulate hash trees representing collections of files.
 
 Usage:
   bigtrees [-v] info <path>...
-  bigtrees [-v] find [-m <metafmt>] <path>...
+  bigtrees [-v] find [-m <metafmt>] [-r <regex>] <path>...
   bigtrees [-v] hash [-e <exclude>] [-t <txt>] <path>...
   bigtrees [-v] diff <old> <new>
 
@@ -27,6 +27,7 @@ Options:
   -m <metafmt>   Optional space-separated metadata fields to print at the
                  beginning of each line. Options are: "h" (hash),
                  "t" (type), "i" (indent) For example: "ht" -> hash, type
+  -r <regex>     Regex filter filenames.
 
 Commands:
   info       Succinct summary of a tree file: stats, etc

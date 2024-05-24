@@ -55,6 +55,7 @@ library:
   - tasty-quickcheck
   - temporary
   - text
+  - regex-tdfa
   - th-utilities
   - unix
   - unordered-containers
