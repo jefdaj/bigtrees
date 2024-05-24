@@ -13,7 +13,7 @@ import Data.Char (toLower)
 import Data.List (nubBy, sort)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
-import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..), ModTime(..), Size(..))
+import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (..), ModTime(..), Size(..), bsSize)
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
@@ -148,13 +148,12 @@ arbitraryFile = do
   n  <- arbitrary :: Gen Name
   bs <- arbitrary :: Gen B8.ByteString
   mt <- arbitrary :: Gen ModTime
-  s  <- fmap Size $ choose (0, 10000)
   return $ File
     { name = n
     , hash = hashBytes bs
     , modTime = mt
     , fileData = bs
-    , size = s
+    , size = bsSize bs -- size in bytes equals length of bytestring
     }
 
 arbitraryDirSized :: Int -> Gen TestTree

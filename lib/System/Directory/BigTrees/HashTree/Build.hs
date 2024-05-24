@@ -124,5 +124,6 @@ getModTime f = do
   let sec = round $ utcTimeToPOSIXSeconds mt
   return $ ModTime sec
 
+-- Size in bytes
 getSize :: FilePath -> IO Size
 getSize f = Size <$> getFileSize f

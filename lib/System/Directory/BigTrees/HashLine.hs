@@ -11,6 +11,7 @@ module System.Directory.BigTrees.HashLine
   , IndentLevel(..)
   , ModTime(..)
   , Size(..)
+  , bsSize
   -- , Hash(..) TODO re-export here? And Name too?
   , prettyLine
   , parseHashLine -- TODO remove? not actually used
@@ -81,6 +82,10 @@ newtype Size = Size Integer
 --      so far I'm just generating integers as appropriate elsewhere
 
 instance NFData Size
+
+-- Conveniently, the size in bytes of a ByteString equals its length
+bsSize :: B8.ByteString -> Size
+bsSize = Size . toInteger . B8.length
 
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
