@@ -7,7 +7,7 @@ import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine ()
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, ModTime(..), FileSize(..), countFiles, hashContents)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), ProdTree, ModTime(..), Size(..), countFiles, hashContents)
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime)
 import qualified System.Directory.Tree as DT
@@ -110,5 +110,5 @@ getModTime f = do
   let sec = round $ utcTimeToPOSIXSeconds mt
   return $ ModTime sec
 
-getSize :: FilePath -> IO FileSize
-getSize f = FileSize <$> getFileSize f
+getSize :: FilePath -> IO Size
+getSize f = Size <$> getFileSize f

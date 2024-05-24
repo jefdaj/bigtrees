@@ -198,5 +198,5 @@ prop_confirm_file_hashes = confirmFileHashes
 newtype ModTime = ModTime Integer
   deriving (Eq, Ord, Read, Show)
 
-newtype FileSize = FileSize Integer
+newtype Size = Size Integer
   deriving (Eq, Ord, Read, Show)
