@@ -46,7 +46,7 @@ commentLines = map (B8.append "# ")
 
 -- TODO proper time type for this?
 scanSeconds :: (Header, Footer) -> Integer
-scanSeconds (h, f) = scanEnd f - scanStart h
+scanSeconds (h, f) = endTime f - startTime h
 
 treeInfo :: (Header, Footer) -> B8.ByteString
 treeInfo = undefined
@@ -54,32 +54,32 @@ treeInfo = undefined
 --- header ---
 
 data Header = Header
-  { excludes  :: [String]
-  , maxdepth  :: Maybe Int
-  , system    :: String -- os, arch TODO uname?
-  , compiler  :: String -- compiler, version
-  , bigtrees  :: String -- format version string, from cabal file
-  , scanFormat :: Int
-  , scanStart :: Integer
-  -- TODO locale
+  { compiler :: String -- compiler, version
+  , exclude  :: [String]
+  , format   :: Int
+  , locale   :: String
+  , program  :: String -- format version string, from cabal file
+  , startTime    :: Integer
+  , system   :: String -- os, arch TODO uname?
   }
   deriving (Eq, Read, Show, Generic)
 
 instance ToJSON   Header
 instance FromJSON Header
 
-makeHeaderNow :: [String] -> Maybe Int -> IO Header
-makeHeaderNow es md = do
+makeHeaderNow :: [String] -> IO Header
+makeHeaderNow es = do
   progName  <- getProgName
   startTime <- now
+  lang      <- getEnv "LANG" -- TODO locale? LC_ALL? others?
   let header = Header
-        { excludes  = es
-        , maxdepth  = md
+        { compiler  = unwords [compilerName, showVersion fullCompilerVersion]
+        , exclude   = es
+        , format    = 2 -- update when changing anything that breaks parser
+        , locale    = lang
+        , program   = unwords [progName, showVersion version]
+        , startTime = startTime
         , system    = unwords [os, arch]
-        , compiler  = unwords [compilerName, showVersion fullCompilerVersion]
-        , bigtrees  = showVersion version
-        , scanFormat = 2 -- update when changing anything that breaks parser
-        , scanStart = startTime
         }
   return header
 
@@ -89,30 +89,30 @@ renderHeader h = B8.unlines $ commentLines $ (B8.lines header) ++ [fields]
     header = B8.toStrict $ AP.encodePretty' apConf h
     fields = join $ map B8.pack hashLineFields
 
-writeHeader :: Handle -> [String] -> Maybe Int -> IO ()
-writeHeader hdl es md = do
-  hdr <- makeHeaderNow es md
+hWriteHeader :: Handle -> [String] -> IO ()
+hWriteHeader hdl es = do
+  hdr <- makeHeaderNow es
   B8.hPutStrLn hdl $ renderHeader hdr
 
 --- footer ---
 
 data Footer = Footer
-  { scanEnd    :: Integer
-  , nSuccesses :: Int -- TODO integer?
-  , nErrors    :: Int
+  { endTime  :: Integer
+  -- TODO , nErrors  :: Int
+  -- TODO , nScanned :: Int -- TODO integer?
   }
   deriving (Eq, Read, Show, Generic)
 
 instance ToJSON   Footer
 instance FromJSON Footer
 
-makeFooterNow :: (Int, Int) -> IO Footer
-makeFooterNow (nOK, nErr) = do
+makeFooterNow :: IO Footer
+makeFooterNow = do
   endTime <- now
   let footer = Footer
-        { scanEnd    = endTime
-        , nSuccesses = nOK
-        , nErrors    = nErr
+        { endTime  = endTime
+        -- , nScanned = nOK
+        -- , nErrors    = nErr
         }
   return footer
 
@@ -121,7 +121,7 @@ renderFooter f = B8.unlines $ commentLines $ B8.lines footer
   where
     footer = B8.toStrict $ AP.encodePretty' apConf f
 
-writeFooter :: Handle -> (Int, Int) -> IO ()
-writeFooter hdl oe = do
-  ftr <- makeFooterNow oe
+hWriteFooter :: Handle -> IO ()
+hWriteFooter hdl = do
+  ftr <- makeFooterNow
   B8.hPutStrLn hdl $ renderFooter ftr

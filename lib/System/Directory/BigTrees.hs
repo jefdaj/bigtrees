@@ -33,6 +33,7 @@ module System.Directory.BigTrees
   , listLostFiles
   , printTree
   , writeTree
+  , hWriteTree
   , writeTestTreeDir
   , readOrBuildTree
   , readTree
@@ -86,6 +87,6 @@ import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printT
 import System.Directory.BigTrees.HashTree.Read (readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, printTree, writeTestTreeDir,
-                                                 writeTree)
+                                                 hWriteTree, writeTree)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp,
                                        roundtripNameToFileName)

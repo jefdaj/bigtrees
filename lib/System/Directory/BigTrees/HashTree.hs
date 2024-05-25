@@ -22,6 +22,7 @@ module System.Directory.BigTrees.HashTree
   , treeContainsHash
   , treeContainsPath
   , writeTree
+  , hWriteTree
   , printTreePaths
 
   -- for testing
@@ -58,7 +59,7 @@ import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printT
 import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readTestTree, readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeTestTreeDir,
-                                                 writeTree)
+                                                 hWriteTree, writeTree)
 
 -- import System.Directory.BigTrees.Util (absolutePath)
 

@@ -8,9 +8,8 @@ import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (IndentLev
                                            TreeType (D, F), prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
-import System.Directory.BigTrees.HeadFoot (writeHeader, writeFooter)
 import System.FilePath (splitPath, (</>))
-import System.IO (IOMode (..), Handle, hFlush, stdout, withFile)
+import System.IO (IOMode (..), hFlush, stdout, withFile, Handle)
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
@@ -30,11 +29,10 @@ printTree = mapM_ printLine . flattenTree
 -- TODO rename writeHashes? this is a confusing way to say that
 -- TODO how much of the config should live in the library vs the app, if we're writing it?
 writeTree :: FilePath -> HashTree a -> IO ()
-writeTree path tree = withFile path WriteMode $ \h -> do
-  -- writeHeader h
-  -- TODO accumulate a little state during write too: n errors at least
-  mapM_ (B8.hPutStrLn h) (serializeTree tree)
-  -- writeFooter h
+writeTree path tree = withFile path WriteMode $ \h -> hWriteTree h tree
+
+hWriteTree :: Handle -> HashTree a -> IO ()
+hWriteTree h tree = mapM_ (B8.hPutStrLn h) (serializeTree tree)
 
 -- This is the only official way to construct a `HashLine`, because they don't
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its
