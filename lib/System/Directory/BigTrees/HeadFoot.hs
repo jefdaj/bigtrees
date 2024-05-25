@@ -46,7 +46,7 @@ commentLines = map (B8.append "# ")
 
 -- TODO proper time type for this?
 scanSeconds :: (Header, Footer) -> Integer
-scanSeconds (h, f) = endTime f - startTime h
+scanSeconds (h, f) = scanEnd f - scanStart h
 
 treeInfo :: (Header, Footer) -> B8.ByteString
 treeInfo = undefined
@@ -54,13 +54,13 @@ treeInfo = undefined
 --- header ---
 
 data Header = Header
-  { compiler :: String -- compiler, version
-  , exclude  :: [String]
-  , format   :: Int
-  , locale   :: String
-  , program  :: String -- format version string, from cabal file
-  , startTime    :: Integer
-  , system   :: String -- os, arch TODO uname?
+  { compiler        :: String -- compiler, version
+  , excludePatterns :: [String]
+  , locale          :: String
+  , program         :: String -- format version string, from cabal file
+  , scanStart       :: Integer
+  , system          :: String -- os, arch TODO uname?
+  , treeFormat      :: Int
   }
   deriving (Eq, Read, Show, Generic)
 
@@ -70,16 +70,16 @@ instance FromJSON Header
 makeHeaderNow :: [String] -> IO Header
 makeHeaderNow es = do
   progName  <- getProgName
-  startTime <- now
+  scanStart <- now
   lang      <- getEnv "LANG" -- TODO locale? LC_ALL? others?
   let header = Header
-        { compiler  = unwords [compilerName, showVersion fullCompilerVersion]
-        , exclude   = es
-        , format    = 2 -- update when changing anything that breaks parser
-        , locale    = lang
-        , program   = unwords [progName, showVersion version]
-        , startTime = startTime
-        , system    = unwords [os, arch]
+        { compiler        = unwords [compilerName, showVersion fullCompilerVersion]
+        , excludePatterns = es
+        , locale          = lang
+        , program         = unwords [progName, showVersion version]
+        , scanStart       = scanStart
+        , system          = unwords [os, arch]
+        , treeFormat      = 2 -- update when changing anything that breaks parser
         }
   return header
 
@@ -92,12 +92,12 @@ renderHeader h = B8.unlines $ commentLines $ (B8.lines header) ++ [fields]
 hWriteHeader :: Handle -> [String] -> IO ()
 hWriteHeader hdl es = do
   hdr <- makeHeaderNow es
-  B8.hPutStrLn hdl $ renderHeader hdr
+  B8.hPutStr hdl $ renderHeader hdr
 
 --- footer ---
 
 data Footer = Footer
-  { endTime  :: Integer
+  { scanEnd  :: Integer
   -- TODO , nErrors  :: Int
   -- TODO , nScanned :: Int -- TODO integer?
   }
@@ -108,9 +108,9 @@ instance FromJSON Footer
 
 makeFooterNow :: IO Footer
 makeFooterNow = do
-  endTime <- now
+  scanEnd <- now
   let footer = Footer
-        { endTime  = endTime
+        { scanEnd  = scanEnd
         -- , nScanned = nOK
         -- , nErrors    = nErr
         }

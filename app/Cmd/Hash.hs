@@ -19,7 +19,7 @@ import Test.Tasty.Golden (findByExtension, goldenVsString)
 import Control.Exception (bracket) -- TODO .Safe?
 
 cmdHash :: Config -> FilePath -> IO ()
-cmdHash cfg path = bracket open write close
+cmdHash cfg path = bracket open close write
   where
     open = case txt cfg of
              Nothing -> return stdout
