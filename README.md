@@ -26,6 +26,7 @@ stack test
 * Rewrote my old directory-tree code using a typeclass, started [a PR upstream](https://github.com/jberryman/directory-tree/pull/18)
 * Wrote comparison of text vs binary format file sizes, realized binary is always larger, removed it
 * Added mod time and size (bytes) to tree data
+* Added header + footer to hashes describing filters, version used, start/end time, table format
 
 
 #### Todo
@@ -34,7 +35,6 @@ stack test
 * Add `Graft` nodes that import other tree files
 * Add `Link` nodes that indicate whether their target data is present in the tree
 * Add `Error` nodes to wrap errors, the same way directory-tree does it
-* Add header + footer to hashes describing filters, version used, start/end time, table format
 * Static build so it can be used offline without Nix
 * Intelligent re-hashing of only the files whose mod times have changed
 * "`find` mode": list full paths, filter by metadata and glob/regex
