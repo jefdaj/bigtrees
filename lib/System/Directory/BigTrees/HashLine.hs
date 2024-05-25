@@ -156,7 +156,7 @@ join = B8.intercalate $ B8.singleton sepChar
 -- TODO use this more directly?
 -- For now it's only imported by HeadFoot to use in the Header
 hashLineFields :: [String]
-hashLineFields = ["type", "depth", "hash", "modtime", "size", "name"]
+hashLineFields = ["type", "depth", "hash", "modtime", "nbytes", "nfiles", "name"]
 
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly

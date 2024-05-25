@@ -88,7 +88,7 @@ allFmtFns =
   , ('d', \(Depth i) _ -> B8.pack $ show i)
   , ('m', \_ t -> B8.pack $ show $ (\(ModTime n) -> n) $ modTime $ nodeData t)
   , ('b', \_ t -> B8.pack $ show $ (\(NBytes n) -> n) $ nBytes $ nodeData t)
-  , ('f', \_ t -> B8.pack $ show $ sumNodes t)
+  , ('f', \_ t -> B8.pack $ show $ sumNodes t) -- we say "files" in anything user-facing for now
   ]
 
 validFmtChars :: String
