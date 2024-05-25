@@ -10,8 +10,8 @@ module System.Directory.BigTrees.HashLine
   , TreeType(..)
   , Depth(..)
   , ModTime(..)
-  , Size(..)
-  , bsSize
+  , NBytes(..)
+  , bsBytes
   -- , Hash(..) TODO re-export here? And Name too?
   , prettyLine
   , parseHashLine -- TODO remove? not actually used
@@ -73,22 +73,22 @@ instance Arbitrary ModTime where
 
 instance NFData ModTime
 
-newtype Size = Size Integer
+newtype NBytes = NBytes Integer
   deriving (Eq, Ord, Num, Read, Show, Generic)
 
--- TODO Arbitrary Size instance?
+-- TODO Arbitrary NBytes instance?
 --      so far I'm just generating integers as appropriate elsewhere
 
-instance NFData Size
+instance NFData NBytes
 
 -- Conveniently, the size in bytes of a ByteString equals its length
-bsSize :: B8.ByteString -> Size
-bsSize = Size . toInteger . B8.length
+bsBytes :: B8.ByteString -> NBytes
+bsBytes = NBytes . toInteger . B8.length
 
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine
-  = HashLine (TreeType, Depth, Hash, ModTime, Size, Name)
+  = HashLine (TreeType, Depth, Hash, ModTime, NBytes, Name)
   deriving (Eq, Ord, Read, Show)
 
 ---------------
@@ -126,7 +126,7 @@ instance Arbitrary HashLine where
     il <- arbitrary :: Gen Depth
     h  <- arbitrary :: Gen Hash
     mt <- arbitrary :: Gen ModTime
-    s  <- fmap Size $ choose (0, 10000) -- TODO does it matter?
+    s  <- fmap NBytes $ choose (0, 10000) -- TODO does it matter?
     n  <- arbitrary :: Gen Name
     return $ HashLine (tt, il, h, mt, s, n)
 
@@ -154,7 +154,7 @@ hashLineFields = ["type", "depth", "hash", "modtime", "size", "name"]
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
-prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, Size s, name)) =
+prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
@@ -221,8 +221,8 @@ modTimeP :: Parser ModTime
 modTimeP = numStrP >>= return . ModTime . read
 
 -- TODO applicative version?
-sizeP :: Parser Size
-sizeP = numStrP >>= return . Size . read
+sizeP :: Parser NBytes
+sizeP = numStrP >>= return . NBytes . read
 
 -- TODO is there a cleaner syntax for this?
 -- TODO this should still count up total files when given a max depth

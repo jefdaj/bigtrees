@@ -9,7 +9,7 @@ module System.Directory.BigTrees.HashTree.Edit
 import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
-import System.Directory.BigTrees.HashLine (Size(..))
+import System.Directory.BigTrees.HashLine (NBytes(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..),
                                                 sumNodes, hashContents)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
@@ -33,7 +33,7 @@ wrapInEmptyDir n t = Dir
     { name     = fp2n n
     , hash     = h
     , modTime  = modTime $ nodeData t
-    , size     = size (nodeData t) + Size 4096 -- TODO does this vary?
+    , nBytes   = nBytes (nodeData t) + NBytes 4096 -- TODO does this vary?
     }
   }
   where
@@ -56,14 +56,14 @@ addSubTree main sub path = main { nodeData = nd', dirContents = cs', nNodes = n'
     p1     = head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
-    nd'    = (nodeData main) { hash = h', modTime = mt', size = s' }
+    nd'    = (nodeData main) { hash = h', modTime = mt', nBytes = s' }
     cs'    = sortBy
                (compare `on` (name . nodeData)) $
                filter
                  (\c -> (name . nodeData) c /= fp2n p1)
                  ((dirContents main) ++ [newSub])
     n'     = sumNodes main + sumNodes newSub - maybe 0 sumNodes oldSub
-    s'     = size (nodeData main) + size (nodeData newSub) - (maybe 0 (size . nodeData) oldSub)
+    s'     = nBytes (nodeData main) + nBytes (nodeData newSub) - (maybe 0 (nBytes . nodeData) oldSub)
     mt'    = maximum $ map (modTime . nodeData) [main, newSub]
     sub'   = sub { nodeData=(nodeData sub) {name = fp2n $ last comps }}
     oldSub = find (\c -> (name . nodeData) c == fp2n p1) (dirContents main)

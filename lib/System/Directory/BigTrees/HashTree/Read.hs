@@ -41,7 +41,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, p)) cs = case t of
                    { name = p
                    , hash = h
                    , modTime = mt
-                   , size = s
+                   , nBytes = s
                    }
                  }
        in cs ++ [(Depth i, f)]
@@ -53,7 +53,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, p)) cs = case t of
                      { name = p
                      , hash = h
                      , modTime = mt
-                     , size = s
+                     , nBytes = s
                      }
                    }
        in siblings ++ [(Depth i, dir)]

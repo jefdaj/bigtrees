@@ -6,7 +6,7 @@ import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile)
-import System.Directory.BigTrees.HashLine (ModTime(..), Size(..))
+import System.Directory.BigTrees.HashLine (ModTime(..), NBytes(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, sumNodes, hashContents)
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime)
@@ -63,7 +63,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   -- TODO hold up, are we reading the file twice here?
   --      oh right: not usually a problem because readFileFn is a no-op in production
   !mt <- getModTime fPath
-  !s  <- getSize fPath
+  !s  <- getNBytes fPath
   !h  <- unsafeInterleaveIO $ hashFile v fPath -- TODO symlink bug here?
   !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
@@ -77,7 +77,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
               { name = n
               , hash = h
               , modTime = mt
-              , size = s
+              , nBytes = s
               }
             , fileData = fd
             }
@@ -107,7 +107,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
           then getModTime root
           else return $ maximum $ map (modTime . nodeData) cs''
 
-  !s  <- getSize root -- TODO is this always 4096?
+  !s  <- getNBytes root -- TODO is this always 4096?
 
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?
@@ -120,7 +120,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
             , nodeData = NodeData
               { name     = n
               , modTime  = mt
-              , size     = sum $ s : map (size . nodeData) cs''
+              , nBytes   = sum $ s : map (nBytes . nodeData) cs''
               , hash     = hashContents cs''
               }
             }
@@ -134,6 +134,6 @@ getModTime f = do
   let sec = round $ utcTimeToPOSIXSeconds mt
   return $ ModTime sec
 
--- Size in bytes
-getSize :: FilePath -> IO Size
-getSize f = Size <$> getFileSize f
+-- NBytes in bytes
+getNBytes :: FilePath -> IO NBytes
+getNBytes f = NBytes <$> getFileSize f

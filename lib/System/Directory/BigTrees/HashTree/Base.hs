@@ -13,7 +13,7 @@ import Data.Char (toLower)
 import Data.List (nubBy, sort)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
-import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..), ModTime(..), Size(..), bsSize)
+import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..), ModTime(..), NBytes(..), bsBytes)
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
@@ -46,9 +46,9 @@ sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 
 -- TODO is this needed, or will the fields be total?
 -- TODO size unit
--- totalSize :: HashTree a -> Integer
--- totalSize (File {}) = undefined -- TODO add size field
--- totalSize (Dir  {}) = undefined -- TODO add size field
+-- totalNBytes :: HashTree a -> Integer
+-- totalNBytes (File {}) = undefined -- TODO add size field
+-- totalNBytes (Dir  {}) = undefined -- TODO add size field
 
 -- TODO is this needed?
 -- totalModTime :: HashTree a -> Integer
@@ -66,7 +66,7 @@ data NodeData = NodeData
   { name     :: !Name
   , hash     :: !Hash
   , modTime  :: !ModTime
-  , size     :: !Size
+  , nBytes   :: !NBytes
   }
   deriving (Eq, Ord, Read, Show, Generic)
 
@@ -131,10 +131,10 @@ arbitraryContentsHelper arbsize
   | arbsize <  1 = return []
   | arbsize == 1 = arbitraryFile >>= \t -> return [t] -- TODO clean this up
   | otherwise = do
-      recSize <- choose (1,arbsize) -- TODO bias this to be smaller?
-      let remSize = arbsize - recSize
-      (recTree :: TestTree) <- resize recSize arbitrary
-      arbitraryContents remSize >>= \cs -> return $ recTree:cs -- TODO clean this up
+      recNBytes <- choose (1,arbsize) -- TODO bias this to be smaller?
+      let remNBytes = arbsize - recNBytes
+      (recTree :: TestTree) <- resize recNBytes arbitrary
+      arbitraryContents remNBytes >>= \cs -> return $ recTree:cs -- TODO clean this up
 
 -- TODO does forAll add anything here that I'm not already getting from sized?
 prop_arbitraryContents_length_matches_nNodes :: Gen Bool
@@ -163,7 +163,7 @@ arbitraryFile = do
       { name = n
       , hash = hashBytes bs
       , modTime = mt
-      , size = bsSize bs -- size in bytes equals length of bytestring
+      , nBytes = bsBytes bs -- TODO is this true on all platforms/architectures?
       }
     }
 
@@ -174,7 +174,7 @@ arbitraryDirSized arbsize = do
   -- TODO put back the nubBy part!
   !cs <- arbitraryContents arbsize -- TODO (s-1)?
   !mt <- arbitrary :: Gen ModTime
-  !s <- fmap Size $ return 4096 -- TODO does dir size vary?
+  !s <- fmap NBytes $ return 4096 -- TODO does dir size vary?
   -- TODO assert that nNodes == s here?
   return $ Dir
     { dirContents = cs
@@ -183,7 +183,7 @@ arbitraryDirSized arbsize = do
       { name     = n
       , hash     = hashContents cs
       , modTime  = mt
-      , size     = sum $ s : map (size .nodeData) cs
+      , nBytes   = sum $ s : map (nBytes .nodeData) cs
       }
     }
 

@@ -20,7 +20,7 @@ module System.Directory.BigTrees
   , TestTree
   , TreeType(..)
   , ModTime(..)
-  , Size(..)
+  , NBytes(..)
   , addSubTree
   , buildTree
   , buildProdTree
@@ -77,7 +77,7 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNFi
                                           listLostFiles, mergeDupeSets, pathsByHash, printDupes,
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
-import System.Directory.BigTrees.HashLine (TreeType (..), ModTime(..), Size(..))
+import System.Directory.BigTrees.HashLine (TreeType (..), ModTime(..), NBytes(..))
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), dropFileData, hashContents,
                                                 renameRoot)
