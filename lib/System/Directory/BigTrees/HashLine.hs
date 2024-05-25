@@ -18,6 +18,7 @@ module System.Directory.BigTrees.HashLine
   , parseHashLines
   , sepChar
   , hashLineFields
+  , join
 
   -- for testing (TODO remove?)
   -- , nameP

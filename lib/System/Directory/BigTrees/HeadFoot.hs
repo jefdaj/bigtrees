@@ -6,7 +6,7 @@ import System.Info (os, arch, compilerName, fullCompilerVersion)
 import Data.Version (showVersion)
 import System.Environment (getEnv, getProgName)
 import Paths_bigtrees (version)
-import System.Directory.BigTrees.HashLine (hashLineFields)
+import System.Directory.BigTrees.HashLine (hashLineFields, join)
 -- import System.FilePath.Glob (Pattern)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 -- import Data.Time.Clock (secondsToDiffTime)
@@ -60,6 +60,12 @@ makeHeaderNow es md = do
         }
   return header
 
+headerPrefix :: B8.ByteString
+headerPrefix = "# "
+
+renderHeader :: Header -> B8.ByteString
+renderHeader h = undefined -- rmFields (toJSON h) ++ fields h
+
 data Footer = Footer
   { scanEnd    :: Integer
   , nSuccesses :: Int -- TODO integer?
@@ -79,6 +85,9 @@ makeFooterNow (nOK, nErr) = do
         , nErrors    = nErr
         }
   return footer
+
+renderFooter :: Footer -> B8.ByteString
+renderFooter f = undefined
 
 -- TODO proper time type for this?
 scanSeconds :: (Header, Footer) -> Integer
