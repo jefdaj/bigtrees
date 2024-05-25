@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE DeriveAnyClass      #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -69,10 +68,9 @@ data NodeData = NodeData
   , modTime  :: !ModTime
   , size     :: !Size
   }
-  deriving (Eq, Ord, Read, Show, Generic, NFData)
+  deriving (Eq, Ord, Read, Show, Generic)
 
--- TODO any downsides to using DeriveAnyClass for this instead?
--- instance NFData NodeData
+instance NFData NodeData
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.

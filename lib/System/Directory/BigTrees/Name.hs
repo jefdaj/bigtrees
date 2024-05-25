@@ -75,7 +75,9 @@ import TH.Derive (Deriving, derive)
 -- TODO why doesn't the tree link work right
 newtype Name
   = Name T.Text
-  deriving (Eq, Generic, Ord, Read, Show, NFData)
+  deriving (Eq, Generic, Ord, Read, Show)
+
+deriving instance NFData Name
 
 -- TODO does the standard instance already shrink each char?
 -- TODO does the 2nd guard for going to single Chars help?

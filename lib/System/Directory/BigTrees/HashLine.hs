@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module System.Directory.BigTrees.HashLine
@@ -54,30 +53,33 @@ import GHC.Generics (Generic)
 
 -- for distinguishing beween files and dirs
 data TreeType = D | F
-  deriving (Eq, Ord, Read, Show, Generic, NFData)
+  deriving (Eq, Ord, Read, Show)
 
--- TODO any downsides to doing this with DeriveAnyClass above instead?
--- instance NFData TreeType
---   where rnf :: TreeType -> ()
---         rnf = const () -- TODO is this valid?
+instance NFData TreeType
+  where rnf :: TreeType -> ()
+        rnf = const () -- TODO is this valid?
 
 newtype IndentLevel
   = IndentLevel Int
   deriving (Eq, Ord, Read, Show)
 
 newtype ModTime = ModTime Integer
-  deriving (Eq, Ord, Num, Read, Show, Generic, NFData)
+  deriving (Eq, Ord, Num, Read, Show, Generic)
 
 instance Arbitrary ModTime where
   -- random time between 2000-01-01 and 2024-01-01
   -- (numbers don't matter much as long as they're in the past?)
   arbitrary = ModTime <$> choose (946684800, 1704067200)
 
+instance NFData ModTime
+
 newtype Size = Size Integer
-  deriving (Eq, Ord, Num, Read, Show, Generic, NFData)
+  deriving (Eq, Ord, Num, Read, Show, Generic)
 
 -- TODO Arbitrary Size instance?
 --      so far I'm just generating integers as appropriate elsewhere
+
+instance NFData Size
 
 -- Conveniently, the size in bytes of a ByteString equals its length
 bsSize :: B8.ByteString -> Size
