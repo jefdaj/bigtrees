@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module System.Directory.BigTrees.HeadFoot where
 
 import System.Info (os, arch, compilerName, fullCompilerVersion)
@@ -5,11 +7,13 @@ import Data.Version (showVersion)
 import System.Environment (getEnv, getProgName)
 import Paths_bigtrees (version)
 import System.Directory.BigTrees.HashLine (hashLineFields)
-import System.FilePath.Glob (Pattern)
+-- import System.FilePath.Glob (Pattern)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 -- import Data.Time.Clock (secondsToDiffTime)
 import qualified Data.ByteString.Char8 as B8
 import System.IO (Handle)
+import Data.Aeson (ToJSON, FromJSON)
+import GHC.Generics (Generic)
 
 {- Header + footer info to write before and after HashLines, respectively.
  - The initial format is to read/write JSON delimited from other lines by '#'.
@@ -25,7 +29,7 @@ import System.IO (Handle)
 -- TODO generalize so we can fit other things in the header too? or are explicit values enough?
 
 data Header = Header
-  { excludes  :: [Pattern]
+  { excludes  :: [String]
   , maxdepth  :: Maybe Int
   , system    :: (String, String) -- os, arch
   , compiler  :: (String, String) -- compiler, version
@@ -33,12 +37,15 @@ data Header = Header
   , scanStart :: Integer
   , fields    :: [String]         -- field order, hardcoded
   }
-  deriving (Show, Read)
+  deriving (Eq, Read, Show, Generic)
+
+instance ToJSON   Header
+instance FromJSON Header
 
 now :: IO Integer
 now = getPOSIXTime >>= return . round
 
-makeHeaderNow :: [Pattern] -> Maybe Int -> IO Header
+makeHeaderNow :: [String] -> Maybe Int -> IO Header
 makeHeaderNow es md = do
   progName  <- getProgName
   startTime <- now
@@ -58,7 +65,10 @@ data Footer = Footer
   , nSuccesses :: Int -- TODO integer?
   , nErrors    :: Int
   }
-  deriving (Show, Read)
+  deriving (Eq, Read, Show, Generic)
+
+instance ToJSON   Footer
+instance FromJSON Footer
 
 makeFooterNow :: (Int, Int) -> IO Footer
 makeFooterNow (nOK, nErr) = do

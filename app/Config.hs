@@ -7,7 +7,6 @@ module Config
 
 import Control.Monad (when)
 import Prelude hiding (log)
-import System.FilePath.Glob (Pattern, compile)
 
 -- TODO derive To/FromJSON for the Config so it can go in Headers?
 --      or just the exclude and maxdepth values for now
@@ -23,7 +22,7 @@ data Config
       , verbose  :: Bool
       , force    :: Bool
       , check    :: Bool
-      , exclude  :: [Pattern]
+      , exclude  :: [String]
       , metafmt  :: Maybe String
       , regex    :: Maybe String
       }
@@ -37,7 +36,7 @@ defaultConfig = Config
   , force    = False
   , check    = True
   -- TODO add .nix-* things with cyclic symlinks? or fix upstream
-  , exclude  = map compile ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
+  , exclude  = ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
   , metafmt  = Nothing
   , regex    = Nothing
   }

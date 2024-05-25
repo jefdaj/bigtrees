@@ -8,7 +8,7 @@ import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), Tree
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree,
                                                 sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
-import System.FilePath.Glob (Pattern)
+-- import System.FilePath.Glob (Pattern)
 
 readTree :: Maybe Int -> FilePath -> IO ProdTree
 readTree md path = deserializeTree md <$> B8.readFile path
@@ -58,5 +58,5 @@ accTrees (HashLine (t, IndentLevel i, h, mt, s, p)) cs = case t of
                    }
        in siblings ++ [(IndentLevel i, dir)]
 
-readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree
+readTestTree :: Maybe Int -> Bool -> [String] -> FilePath -> IO TestTree
 readTestTree md = buildTree B8.readFile

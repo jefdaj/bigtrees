@@ -17,7 +17,7 @@ import OldCmd.Cat (oldCmdCat)
 import OldCmd.Update (oldCmdUpdate)
 import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
-import System.FilePath.Glob (compile)
+-- import System.FilePath.Glob (compile)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 -- import Text.Pretty.Simple (pPrint)
 
@@ -36,7 +36,7 @@ main = do
       short n = D.getArgOrExitWith ptns args $ D.shortOption n
       flag  n = D.isPresent args $ D.shortOption n
   eList <- if flag 'e'
-             then short 'e' >>= readFile <&> map compile . lines
+             then short 'e' >>= readFile <&> lines
              else return $ exclude defaultConfig
   let cfg = Config
         { txt      = D.getArg args $ D.shortOption 't'

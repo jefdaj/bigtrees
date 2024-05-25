@@ -44,7 +44,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath ((</>))
-import System.FilePath.Glob (Pattern)
+-- import System.FilePath.Glob (Pattern)
 import System.IO (hClose)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
@@ -69,7 +69,7 @@ import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, write
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
 -- TODO don't assume??
-readOrBuildTree :: Bool -> Maybe Int -> [Pattern] -> FilePath -> IO ProdTree
+readOrBuildTree :: Bool -> Maybe Int -> [String] -> FilePath -> IO ProdTree
 readOrBuildTree verbose mmaxdepth excludes path = do
   isDir  <- SD.doesDirectoryExist path
   isFile <- SD.doesFileExist      path

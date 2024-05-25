@@ -12,12 +12,12 @@ import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime)
 import qualified System.Directory.Tree as DT
 import System.FilePath ((</>))
-import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith)
+import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith, compile)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 
-keepPath :: [Pattern] -> FilePath -> Bool
-keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
+keepPath :: [String] -> FilePath -> Bool
+keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) (map compile excludes)
   where
     opts = MatchOptions
              { matchDotsImplicitly = True
@@ -26,7 +26,7 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
              }
 
 -- TODO hey is this not that hard to swap out for my new version?
-excludeGlobs :: [Pattern]
+excludeGlobs :: [String]
              -> (DT.AnchoredDirTree Name a -> DT.AnchoredDirTree Name a)
 excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
   where
@@ -40,11 +40,11 @@ lazyDirDepth = 4
 
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
-buildProdTree :: Bool -> [Pattern] -> FilePath -> IO ProdTree
+buildProdTree :: Bool -> [String] -> FilePath -> IO ProdTree
 buildProdTree = buildTree (return . const ())
 
 -- TODO are dirContents sorted? they probably should be for stable hashes
-buildTree :: (FilePath -> IO a) -> Bool -> [Pattern] -> FilePath -> IO (HashTree a)
+buildTree :: (FilePath -> IO a) -> Bool -> [String] -> FilePath -> IO (HashTree a)
 buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
@@ -54,7 +54,7 @@ buildTree readFileFn beVerbose excludes path = do
   buildTree' readFileFn beVerbose 0 excludes tree
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
-buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
+buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
 -- TODO catch and re-throw errors with better description and/or handle them here
 buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ DT.nappend a n ++ ": " ++ show e
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do

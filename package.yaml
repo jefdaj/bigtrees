@@ -28,6 +28,7 @@ library:
   - HUnit
   - MissingH
   - QuickCheck
+  - aeson
   - attoparsec
   - base
   - base64-bytestring
@@ -121,6 +122,7 @@ tests:
     - HUnit
     - MissingH
     - QuickCheck
+    - aeson
     - attoparsec
     - base
     - base64-bytestring
@@ -225,6 +227,7 @@ tests:
     - HUnit
     - MissingH
     - QuickCheck
+    - aeson
     - attoparsec
     - base
     - base64-bytestring

@@ -36,7 +36,7 @@ import System.Directory.BigTrees.HashTree.Build (buildProdTree)
 import System.Directory.BigTrees.HashTree.Find (printTreePaths)
 import System.Directory.BigTrees.HashTree.Read (accTrees, readTree)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree)
-import System.FilePath.Glob (Pattern)
+-- import System.FilePath.Glob (Pattern)
 import System.IO (IOMode (..), hClose, withFile)
 import System.IO.Temp (withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Gen, Property, resize)
@@ -65,11 +65,11 @@ readForest :: Maybe Int -> FilePath -> IO (HashForest ())
 readForest md path = deserializeForest md <$> B8.readFile path
 
 -- TODO how should errors propagate?
-buildForest :: Bool -> [Pattern] -> [FilePath] -> IO (HashForest ())
+buildForest :: Bool -> [String] -> [FilePath] -> IO (HashForest ())
 buildForest beVerbose excludes paths = HashForest <$> mapM (buildProdTree beVerbose excludes) paths
 
 -- TODO be clearer: this works on trees, but you could also read a forest directly
-readOrBuildTrees :: Bool -> Maybe Int -> [Pattern] -> [FilePath] -> IO (HashForest ())
+readOrBuildTrees :: Bool -> Maybe Int -> [String] -> [FilePath] -> IO (HashForest ())
 readOrBuildTrees vrb mmaxdepth excludes paths = HashForest <$> mapM (readOrBuildTree vrb mmaxdepth excludes) paths
 
 -- TODO is there a reason this doesn't join lines?
