@@ -124,4 +124,4 @@ renderFooter f = B8.unlines $ commentLines $ B8.lines footer
 hWriteFooter :: Handle -> IO ()
 hWriteFooter hdl = do
   ftr <- makeFooterNow
-  B8.hPutStrLn hdl $ renderFooter ftr
+  B8.hPutStr hdl $ renderFooter ftr

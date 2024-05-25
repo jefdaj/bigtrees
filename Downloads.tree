@@ -1,0 +1,35 @@
+# {
+#   "compiler": "ghc 9.6.4",
+#   "excludePatterns": [
+#     "hashes.*",
+#     ".git*",
+#     ".*.sw*",
+#     "._DS_Store",
+#     "*.plist"
+#   ],
+#   "locale": "en_US.UTF-8",
+#   "program": "bigtrees 1.0.0.0",
+#   "scanStart": 1716620602,
+#   "system": "linux x86_64",
+#   "treeFormat": 2
+# }
+# type	depth	hash	modtime	size	name
+F	1	OGNkZThkOWZjZDE4M2Fj	1715806092	35854636	10blocks.heapsnapshot
+F	1	YTU5ZWJkZmRkOTY1ODU0	1715805708	82819697	336blocks.heapsnapshot
+F	1	YTU5ZWJkZmRkOTY1ODU0	1715805614	82819697	Heap-20240515T134005.heapsnapshot
+F	1	NjM3YmQ1YjI5OGMwOTIx	1715805723	26750154	justreloaded.heapsnapshot
+F	1	ZTA3NGM4YTg2NzE0MGUz	1715278134	17	utxostudyPost (1).json
+F	1	ZTA3NGM4YTg2NzE0MGUz	1715267573	17	utxostudyPost.json
+F	1	ODcwMWZlY2IxZTY0NTU3	1715271792	11	utxostudyQuery (1).json
+F	1	NmE1NDQzOGE2MTU4YzM1	1715271851	99	utxostudyQuery (2).json
+F	1	MjY1ODI3OGU0OWJiMDIx	1715272143	101	utxostudyQuery (3).json
+F	1	YThhOGFjMjBhNjg4MjNh	1715791262	101	utxostudyQuery (4).json
+F	1	YjlmNGRhODAyMDZlNTQx	1715791352	100	utxostudyQuery (5).json
+F	1	ODcwMWZlY2IxZTY0NTU3	1715218166	11	utxostudyQuery.json
+F	1	NDdkN2FlMWE0YmI4ZjJk	1715277342	2014	utxostudyStyle (1).json
+F	1	ZTE3YjFkNDQwMDlhODAy	1715217798	2000	utxostudyStyle.json
+D	0	Yjg5ZTBmOGVkOWI1OGE1	1715806092	228252751	Downloads
+# {
+#   "scanEnd": 1716620603
+# }
+
