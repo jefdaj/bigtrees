@@ -29,6 +29,7 @@ library:
   - MissingH
   - QuickCheck
   - aeson
+  - aeson-pretty
   - attoparsec
   - base
   - base64-bytestring
@@ -123,6 +124,7 @@ tests:
     - MissingH
     - QuickCheck
     - aeson
+    - aeson-pretty
     - attoparsec
     - base
     - base64-bytestring
@@ -228,6 +230,7 @@ tests:
     - MissingH
     - QuickCheck
     - aeson
+    - aeson-pretty
     - attoparsec
     - base
     - base64-bytestring

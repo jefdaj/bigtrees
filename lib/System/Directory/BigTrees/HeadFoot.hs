@@ -13,6 +13,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import qualified Data.ByteString.Char8 as B8
 import System.IO (Handle)
 import Data.Aeson (ToJSON, FromJSON)
+import qualified Data.Aeson.Encode.Pretty as AP
 import GHC.Generics (Generic)
 
 {- Header + footer info to write before and after HashLines, respectively.
@@ -28,14 +29,20 @@ import GHC.Generics (Generic)
 
 -- TODO generalize so we can fit other things in the header too? or are explicit values enough?
 
+apConf :: AP.Config
+apConf = AP.defConfig
+  { AP.confIndent = AP.Spaces 2
+  , AP.confTrailingNewline = True
+  }
+
 data Header = Header
   { excludes  :: [String]
   , maxdepth  :: Maybe Int
-  , system    :: (String, String) -- os, arch
-  , compiler  :: (String, String) -- compiler, version
-  , bigtrees  :: String           -- format version string, from cabal file
+  , system    :: String   -- os, arch
+  , compiler  :: String   -- compiler, version
+  , bigtrees  :: String   -- format version string, from cabal file
+  -- , fields    :: [String] -- field order, hardcoded
   , scanStart :: Integer
-  , fields    :: [String]         -- field order, hardcoded
   }
   deriving (Eq, Read, Show, Generic)
 
@@ -52,19 +59,22 @@ makeHeaderNow es md = do
   let header = Header
         { excludes  = es
         , maxdepth  = md
-        , system    = (os, arch)
-        , compiler  = (compilerName, showVersion fullCompilerVersion)
+        , system    = os ++ "-" ++ arch
+        , compiler  = compilerName ++ " " ++ showVersion fullCompilerVersion
         , bigtrees  = showVersion version
         , scanStart = startTime
-        , fields    = hashLineFields
+        -- , fields    = intercalate "\t" hashLineFields
         }
   return header
 
-headerPrefix :: B8.ByteString
-headerPrefix = "# "
+commentLines :: [B8.ByteString] -> [B8.ByteString]
+commentLines = map (B8.append "# ")
 
 renderHeader :: Header -> B8.ByteString
-renderHeader h = undefined -- rmFields (toJSON h) ++ fields h
+renderHeader h = B8.unlines $ commentLines $ (B8.lines header) ++ [fields]
+  where
+    header = B8.toStrict $ AP.encodePretty' apConf h
+    fields = join $ map B8.pack hashLineFields
 
 data Footer = Footer
   { scanEnd    :: Integer
@@ -72,6 +82,11 @@ data Footer = Footer
   , nErrors    :: Int
   }
   deriving (Eq, Read, Show, Generic)
+
+renderFooter :: Footer -> B8.ByteString
+renderFooter f = B8.unlines $ commentLines $ B8.lines footer
+  where
+    footer = B8.toStrict $ AP.encodePretty' apConf f
 
 instance ToJSON   Footer
 instance FromJSON Footer
@@ -85,9 +100,6 @@ makeFooterNow (nOK, nErr) = do
         , nErrors    = nErr
         }
   return footer
-
-renderFooter :: Footer -> B8.ByteString
-renderFooter f = undefined
 
 -- TODO proper time type for this?
 scanSeconds :: (Header, Footer) -> Integer
