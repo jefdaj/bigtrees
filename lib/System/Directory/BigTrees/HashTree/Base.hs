@@ -90,7 +90,7 @@ data HashTree a
       }
   | Dir
       { nodeData    :: NodeData
-      , nNodes      :: Int -- TODO Integer? include in tree files
+      , nNodes      :: NFiles -- TODO Integer? include in tree files
       , dirContents :: [HashTree a] -- TODO rename dirContents?
       }
   deriving (Generic, Ord, Read, Show)

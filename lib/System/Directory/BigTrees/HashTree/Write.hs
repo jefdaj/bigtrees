@@ -44,13 +44,13 @@ flattenTree = flattenTree' ""
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
 flattenTree' dir (File {nodeData=nd})
-  = [HashLine (F, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, name nd)]
-flattenTree' dir (Dir  {nodeData=nd, dirContents=cs})
+  = [HashLine (F, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, 1, name nd)]
+flattenTree' dir (Dir  {nodeData=nd, dirContents=cs, nNodes=(NFiles f)})
   = subtrees ++ [wholeDir]
   where
     n = name nd
     subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
-    wholeDir = HashLine (D, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, n)
+    wholeDir = HashLine (D, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, f, n)
 
 -- this is to catch the case where it tries to write the same file twice
 -- (happened once because of macos filename case-insensitivity)

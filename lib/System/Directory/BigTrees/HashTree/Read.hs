@@ -33,7 +33,7 @@ deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines m
 --   | depth > d = cs
 --   | otherwise  = accTrees' hl cs
 
--- TODO verify that nfiles == 1 for files? or just ignore?
+-- TODO verify nfiles here, or just ignore it? should always be recalculated anyway
 accTrees :: HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
   F -> let f = File
