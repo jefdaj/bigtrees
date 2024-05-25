@@ -25,20 +25,20 @@ stack test
 * Broke HashTree into smaller modules by operation: Build, Write, etc
 * Rewrote my old directory-tree code using a typeclass, started [a PR upstream](https://github.com/jberryman/directory-tree/pull/18)
 * Wrote comparison of text vs binary format file sizes, realized binary is always larger, removed it
-* Added mod time and size (bytes) to tree data
+* Added mod time, size (bytes), n files (nodes) to tree data
 * Added header + footer to hashes describing filters, version used, start/end time, table format
+* Rename data structures: Depth, NFiles, NBytes
 
 
 #### Todo
 
-* Rename data structures: Depth, NFiles, NBytes
+* Static build so it can be used offline without Nix
+* "`find` mode": list full paths, filter by metadata and glob/regex
 * Rewrite command line interface
 * Add `Graft` nodes that import other tree files
 * Add `Link` nodes that indicate whether their target data is present in the tree
 * Add `Error` nodes to wrap errors, the same way directory-tree does it
-* Static build so it can be used offline without Nix
 * Intelligent re-hashing of only the files whose mod times have changed
-* "`find` mode": list full paths, filter by metadata and glob/regex
 * Clean up: write haddocks, hide partial constructors, etc
 * Upload to Hackage
 * Example screencasts of using the binary + data structures in repl
