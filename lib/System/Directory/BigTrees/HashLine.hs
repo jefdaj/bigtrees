@@ -8,7 +8,7 @@ module System.Directory.BigTrees.HashLine
 
   ( HashLine(..)
   , TreeType(..)
-  , IndentLevel(..)
+  , Depth(..)
   , ModTime(..)
   , Size(..)
   , bsSize
@@ -59,8 +59,8 @@ instance NFData TreeType
   where rnf :: TreeType -> ()
         rnf = const () -- TODO is this valid?
 
-newtype IndentLevel
-  = IndentLevel Int
+newtype Depth
+  = Depth Int
   deriving (Eq, Ord, Read, Show)
 
 newtype ModTime = ModTime Integer
@@ -88,7 +88,7 @@ bsSize = Size . toInteger . B8.length
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine
-  = HashLine (TreeType, IndentLevel, Hash, ModTime, Size, Name)
+  = HashLine (TreeType, Depth, Hash, ModTime, Size, Name)
   deriving (Eq, Ord, Read, Show)
 
 ---------------
@@ -96,12 +96,12 @@ newtype HashLine
 ---------------
 
 -- TODO remove?
-instance Arbitrary IndentLevel where
+instance Arbitrary Depth where
 
-  arbitrary :: Gen IndentLevel
-  arbitrary = IndentLevel <$> ((arbitrary :: Gen Int) `suchThat` (>= 0))
+  arbitrary :: Gen Depth
+  arbitrary = Depth <$> ((arbitrary :: Gen Int) `suchThat` (>= 0))
 
-  shrink :: IndentLevel -> [IndentLevel]
+  shrink :: Depth -> [Depth]
   shrink _ = []
 
 instance Arbitrary TreeType where
@@ -123,7 +123,7 @@ instance Arbitrary HashLine where
   arbitrary :: Gen HashLine
   arbitrary = do
     tt <- arbitrary :: Gen TreeType
-    il <- arbitrary :: Gen IndentLevel
+    il <- arbitrary :: Gen Depth
     h  <- arbitrary :: Gen Hash
     mt <- arbitrary :: Gen ModTime
     s  <- fmap Size $ choose (0, 10000) -- TODO does it matter?
@@ -154,7 +154,7 @@ hashLineFields = ["type", "depth", "hash", "modtime", "size", "name"]
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
-prettyLine breadcrumbs (HashLine (t, IndentLevel n, h, ModTime mt, Size s, name)) =
+prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, Size s, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
@@ -213,8 +213,8 @@ numStrP :: Parser String
 numStrP = manyTill digit pSep
 
 -- TODO applicative version?
-indentP :: Parser IndentLevel
-indentP = numStrP >>= return . IndentLevel . read
+depthP :: Parser Depth
+depthP = numStrP >>= return . Depth . read
 
 -- TODO applicative version?
 modTimeP :: Parser ModTime
@@ -229,16 +229,16 @@ sizeP = numStrP >>= return . Size . read
 lineP :: Maybe Int -> Parser (Maybe HashLine)
 lineP md = do
   t <- typeP
-  (IndentLevel i) <- indentP
+  (Depth i) <- depthP
   case md of
-    Nothing -> parseTheRest t (IndentLevel i)
+    Nothing -> parseTheRest t (Depth i)
     Just d -> do
       if i > d
         then do
           skipWhile (not . isEndOfLine)
           lookAhead breakP
           return Nothing
-        else parseTheRest t (IndentLevel i)
+        else parseTheRest t (Depth i)
   where
     parseTheRest t i = do
       h <- hashP

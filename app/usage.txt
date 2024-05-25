@@ -26,7 +26,7 @@ Options:
                  at the same time.
   -m <metafmt>   Optional space-separated metadata fields to print at the
                  beginning of each line. Options are: "h" (hash),
-                 "t" (type), "i" (indent) For example: "ht" -> hash, type
+                 "t" (type), "d" (depth) For example: "ht" -> hash, type
   -r <regex>     Regex filter filenames.
 
 Commands:

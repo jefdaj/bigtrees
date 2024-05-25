@@ -3,7 +3,7 @@ module System.Directory.BigTrees.HashTree.Read where
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
-import System.Directory.BigTrees.HashLine (HashLine (..), IndentLevel (..), TreeType (D, F),
+import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (D, F),
                                            parseHashLines)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree,
                                                 sumNodes)
@@ -20,21 +20,21 @@ readTree md path = deserializeTree md <$> B8.readFile path
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 
-{- This one is confusing! It accumulates a list of trees and their indent
- - levels, and when it comes across a dir it uses the indents to determine
+{- This one is confusing! It accumulates a list of trees and their depth,
+ - and when it comes across a dir it uses the depths to determine
  - which files are children to put inside it vs which are siblings.
  -
- - If a value for d (max depth) is given, any line with an indent above that
+ - If a value for d (max depth) is given, any line with a depth above that
  - will be dropped from the list to decrease memory usage.
  -}
 -- accTrees :: Maybe Int -> HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
 -- accTrees Nothing hl cs = accTrees' hl cs
--- accTrees (Just d) hl@(_, indent, _, _) cs
---   | indent > d = cs
+-- accTrees (Just d) hl@(_, depth, _, _) cs
+--   | depth > d = cs
 --   | otherwise  = accTrees' hl cs
 
-accTrees :: HashLine -> [(IndentLevel, ProdTree)] -> [(IndentLevel, ProdTree)]
-accTrees (HashLine (t, IndentLevel i, h, mt, s, p)) cs = case t of
+accTrees :: HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
+accTrees (HashLine (t, Depth i, h, mt, s, p)) cs = case t of
   F -> let f = File
                  { fileData = ()
                  , nodeData = NodeData
@@ -44,8 +44,8 @@ accTrees (HashLine (t, IndentLevel i, h, mt, s, p)) cs = case t of
                    , size = s
                    }
                  }
-       in cs ++ [(IndentLevel i, f)]
-  D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
+       in cs ++ [(Depth i, f)]
+  D -> let (children, siblings) = partition (\(Depth i2, _) -> i2 > i) cs
            dir = Dir
                    { dirContents = map snd children
                    , nNodes = (sum $ map (sumNodes . snd) children)
@@ -56,7 +56,7 @@ accTrees (HashLine (t, IndentLevel i, h, mt, s, p)) cs = case t of
                      , size = s
                      }
                    }
-       in siblings ++ [(IndentLevel i, dir)]
+       in siblings ++ [(Depth i, dir)]
 
 readTestTree :: Maybe Int -> Bool -> [String] -> FilePath -> IO TestTree
 readTestTree md = buildTree B8.readFile

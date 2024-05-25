@@ -12,7 +12,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.Directory.BigTrees.HashLine (IndentLevel (..), TreeType (..), ModTime(..), Size(..), sepChar)
+import System.Directory.BigTrees.HashLine (Depth (..), TreeType (..), ModTime(..), Size(..), sepChar)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..))
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
@@ -33,7 +33,7 @@ printTreePaths mRegex fmt =
   let fExpr = maybe Anything FilterRegex mRegex
   in case mkLineMetaFormatter fmt of
     Left  errMsg -> error errMsg -- TODO anything to do besides die here?
-    Right fmtFn  -> printTreePaths' fExpr fmtFn (IndentLevel 0) []
+    Right fmtFn  -> printTreePaths' fExpr fmtFn (Depth 0) []
 
 {- Recursively print paths, passing a list of breadcrumbs.
  - A couple gotchas:
@@ -41,18 +41,18 @@ printTreePaths mRegex fmt =
  - * have to print subtree paths before the main dir to maintain streaming
  -   (otherwise the entire tree has to be held in memory)
  -}
-printTreePaths' :: Filter -> FmtFn -> IndentLevel -> [Name] -> HashTree a -> IO ()
-printTreePaths' fExpr fmtFn (IndentLevel i) ns t = do
+printTreePaths' :: Filter -> FmtFn -> Depth -> [Name] -> HashTree a -> IO ()
+printTreePaths' fExpr fmtFn (Depth i) ns t = do
   let ns' = (name $ nodeData t):ns
       tt  = treeType t
   case t of
-    (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (IndentLevel $ i+1) ns') (dirContents t)
+    (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (Depth $ i+1) ns') (dirContents t)
     _        -> return ()
   when (pathMatches fExpr ns') $
-    B8.putStrLn $ pathLine fmtFn (IndentLevel i) ns t
+    B8.putStrLn $ pathLine fmtFn (Depth i) ns t
   hFlush stdout -- TODO maybe not?
 
-pathLine :: FmtFn -> IndentLevel -> [Name] -> HashTree a -> B8.ByteString
+pathLine :: FmtFn -> Depth -> [Name] -> HashTree a -> B8.ByteString
 pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
   where
     meta = fmtFn i t
@@ -68,7 +68,7 @@ treeType (File {}) = 'F'
 treeType (Dir  {}) = 'D'
 
 -- TODO is the type variable a valid here?
-type FmtFn = forall a. IndentLevel -> HashTree a -> B8.ByteString
+type FmtFn = forall a. Depth -> HashTree a -> B8.ByteString
 
 -- TODO complain if nub is needed rather than silently fixing it?
 matchingFmtFns :: String -> [FmtFn]
@@ -85,7 +85,7 @@ allFmtFns :: [(Char, FmtFn)]
 allFmtFns =
   [ ('t', \_ t -> B8.singleton $ treeType t)
   , ('h', \_ t -> prettyHash $ hash $ nodeData t)
-  , ('i', \(IndentLevel i) _ -> B8.pack $ show i)
+  , ('d', \(Depth i) _ -> B8.pack $ show i)
   , ('m', \_ t -> B8.pack $ show $ (\(ModTime n) -> n) $ modTime $ nodeData t)
   , ('s', \_ t -> B8.pack $ show $ (\(Size n) -> n) $ size $ nodeData t)
   ]
