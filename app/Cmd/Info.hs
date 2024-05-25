@@ -3,10 +3,10 @@ module Cmd.Info where
 import Config (Config (..))
 -- import System.Directory.BigTrees.HashTree
 
-cmdInfo :: Config -> [FilePath] -> IO ()
-cmdInfo cfg paths = do
+cmdInfo :: Config -> FilePath -> IO ()
+cmdInfo cfg path = do
   putStrLn "cmdInfo"
-  putStrLn $ "paths: " ++ show paths
+  putStrLn $ "path: " ++ show path
   putStrLn $ "cfg: " ++ show cfg
   -- forest <- readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
   -- case txt cfg of

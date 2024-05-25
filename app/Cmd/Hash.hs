@@ -6,7 +6,7 @@ import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (sort)
-import System.Directory.BigTrees (buildForest, printForest, writeForest)
+import System.Directory.BigTrees (buildProdTree, printTree, writeTree)
 import System.Directory.BigTrees.Util (absolutePath)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.IO (stderr, stdout)
@@ -16,12 +16,12 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
 
-cmdHash :: Config -> [FilePath] -> IO ()
-cmdHash cfg targets = do
-  f <- buildForest (verbose cfg) (exclude cfg) targets
+cmdHash :: Config -> FilePath -> IO ()
+cmdHash cfg path = do
+  tree <- buildProdTree (verbose cfg) (exclude cfg) path
   case txt cfg of
-    Nothing -> printForest f
-    Just p  -> writeForest p f
+    Nothing -> printTree   tree
+    Just p  -> writeTree p tree
 
 hashTarXzAction :: FilePath -> IO BLU.ByteString
 hashTarXzAction xzPath = do
@@ -30,7 +30,7 @@ hashTarXzAction xzPath = do
     let dPath = tmpDir </> dropExtension (takeBaseName xzPath') -- assumes .tar.something
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xzPath']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig [dPath]
+    (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig dPath
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 

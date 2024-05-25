@@ -10,7 +10,7 @@ module Cmd.Find
 import Config (Config (..), defaultConfig)
 import Control.Concurrent.Thread.Delay (delay)
 import Data.List (sort)
-import System.Directory.BigTrees (TestTree, printForestPaths, readOrBuildTrees, writeTestTreeDir)
+import System.Directory.BigTrees (TestTree, printTreePaths, readOrBuildTree, writeTestTreeDir)
 import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -21,10 +21,10 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 -- import Control.Monad.IO.Class (liftIO)
 import Data.Maybe (fromMaybe)
 
-cmdFind :: Config -> [FilePath] -> IO ()
-cmdFind cfg paths = do
-  forest <- readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
-  printForestPaths (regex cfg) (fromMaybe "" $ metafmt cfg) forest
+cmdFind :: Config -> FilePath -> IO ()
+cmdFind cfg path = do
+  tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
+  printTreePaths (regex cfg) (fromMaybe "" $ metafmt cfg) tree
 
 -- Also, sort order turns out to be weirder than I expected with Unicode,
 -- so I gave up and sorted the output separately. The important part is
@@ -38,7 +38,7 @@ cmdFindUnixFind t =
     -- wait 0.1 second before + after each cmd so we don't capture output from tasty
     delay 100000
 
-    (out1, ()) <- hCapture [stdout, stderr] $ cmdFind defaultConfig [tmpDir]
+    (out1, ()) <- hCapture [stdout, stderr] $ cmdFind defaultConfig tmpDir
     -- TODO why is this necessary? what's different vs `sortOn name`?
     let out1' = (unlines . sort . lines) out1
     delay 100000

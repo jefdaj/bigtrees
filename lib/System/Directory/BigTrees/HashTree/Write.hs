@@ -31,10 +31,10 @@ printTree = mapM_ printLine . flattenTree
 -- TODO how much of the config should live in the library vs the app, if we're writing it?
 writeTree :: FilePath -> HashTree a -> IO ()
 writeTree path tree = withFile path WriteMode $ \h -> do
-  writeHeader h
+  -- writeHeader h
   -- TODO accumulate a little state during write too: n errors at least
   mapM_ (B8.hPutStrLn h) (serializeTree tree)
-  writeFooter h
+  -- writeFooter h
 
 -- This is the only official way to construct a `HashLine`, because they don't
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its

@@ -45,18 +45,6 @@ module System.Directory.BigTrees
   , Filter(..)
   , pathMatches
 
-  -- hashforest
-  , HashForest(..)
-  , buildForest
-  , readForest
-  , readTrees
-  , readOrBuildTrees
-  , printForest
-  , writeForest
-  , printForestPaths
-  -- , serializeForest
-  -- , deserializeForest
-
   -- delta
   , Delta(..)
   , diff
@@ -88,9 +76,6 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNFi
                                           listLostFiles, mergeDupeSets, pathsByHash, printDupes,
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
-import System.Directory.BigTrees.HashForest (HashForest (..), buildForest, printForest,
-                                             printForestPaths, readForest, readOrBuildTrees,
-                                             readTrees, writeForest)
 import System.Directory.BigTrees.HashLine (TreeType (..), ModTime(..), Size(..))
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), dropFileData, hashContents,

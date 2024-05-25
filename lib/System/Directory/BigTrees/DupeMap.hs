@@ -33,17 +33,13 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashForest (HashForest (..))
 import System.Directory.BigTrees.HashLine (TreeType (..))
-import System.Directory.BigTrees.HashTree ()
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree)
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData(..), ProdTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitDirectories, (</>))
 
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup
-
--- TODO replace every HashTree in here with HashForest?
 
 -- TODO can Foldable or Traversable simplify these?
 
@@ -72,10 +68,10 @@ type DupeTable s = C.HashTable s Hash DupeSet
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: HashForest () -> ST s (DupeTable s)
-pathsByHash (HashForest ts) = do
+pathsByHash :: HashTree () -> ST s (DupeTable s)
+pathsByHash t = do
   ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
-  mapM_ (addToDupeMap ht) ts
+  addToDupeMap ht t
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
   return ht
@@ -223,15 +219,15 @@ allDupes :: ProdTree -> ProdTree -> Bool
 -- allDupes mainTree subTree = all safeToRmHash $ undefined subDupes
 allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
   where
-    mainDupes = undefined $ pathsByHash $ HashForest [mainTree]
-    subDupes  = undefined $ pathsByHash $ HashForest [subTree]
+    mainDupes = undefined $ pathsByHash $ mainTree
+    subDupes  = undefined $ pathsByHash $ subTree
     safeToRmHash h = anotherCopy h mainDupes subDupes
 
 -- for warning the user when their action will delete the last copy of a file
 -- TODO also warn about directories, because sometimes they might care (Garageband files for example)
 -- TODO make more efficient by restricting to hashes found in the removed subtree!
 --      (only used for Rm right?)
-listLostFiles :: HashForest () -> HashForest () -> [FilePath]
+listLostFiles :: HashTree () -> HashTree () -> [FilePath]
 listLostFiles before after = filesLost
   where
     hashesBefore = pathsByHash before

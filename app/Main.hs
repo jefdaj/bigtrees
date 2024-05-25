@@ -32,7 +32,7 @@ main = do
   args <- D.parseArgsOrExit ptns =<< getArgs
   let cmd   n = D.isPresent args $ D.command n
       arg   n = D.getArgOrExitWith ptns args $ D.argument n
-      lst   n = D.getAllArgs args $ D.argument n
+      -- lst   n = D.getAllArgs args $ D.argument n
       short n = D.getArgOrExitWith ptns args $ D.shortOption n
       flag  n = D.isPresent args $ D.shortOption n
   eList <- if flag 'e'
@@ -58,27 +58,27 @@ main = do
     cmdDiff cfg old new
 
   else if cmd "dupes" then do
-    let hashes = lst "hashes"
+    hashes <- arg "hashes"
     cmdDupes cfg hashes
 
   else if cmd "find" then do
-    let paths = lst "path"
-    cmdFind cfg paths
+    path <- arg "path"
+    cmdFind cfg path
 
   else if cmd "hash" then do
-     let paths = lst "path"
-     cmdHash cfg paths
+     path <- arg "path"
+     cmdHash cfg path
 
   else if cmd "info" then do
-    let paths = lst "path"
-    cmdInfo cfg paths
+    path <- arg "path"
+    cmdInfo cfg path
 
   else if cmd "oldcat" then do
-     let paths = lst "path"
-     oldCmdCat cfg paths
+     path <- arg "path"
+     oldCmdCat cfg path
 
   -- else if cmd "oldtest"  then do
-  --   let paths = lst "path"
+  --   let paths = arg "path"
   --   oldCmdTest cfg paths
 
   else if cmd "oldupdate" then do

@@ -1,11 +1,11 @@
 module OldCmd.Cat where
 
 import Config (Config (..))
-import System.Directory.BigTrees (printForest, readOrBuildTrees, writeForest)
+import System.Directory.BigTrees (printTree, readOrBuildTree, writeTree)
 
-oldCmdCat :: Config -> [FilePath] -> IO ()
-oldCmdCat cfg paths = do
-  forest <- readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
+oldCmdCat :: Config -> FilePath -> IO ()
+oldCmdCat cfg path = do
+  tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
   case txt cfg of
-    Nothing -> printForest   forest
-    Just p  -> writeForest p forest
+    Nothing -> printTree   tree
+    Just p  -> writeTree p tree
