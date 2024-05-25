@@ -31,6 +31,7 @@ stack test
 
 #### Todo
 
+* Rename data structures: Depth, NFiles, NBytes
 * Rewrite command line interface
 * Add `Graft` nodes that import other tree files
 * Add `Link` nodes that indicate whether their target data is present in the tree
