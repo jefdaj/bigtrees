@@ -4,7 +4,7 @@ module System.Directory.BigTrees.HashTree.Write where
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
-import System.Directory.BigTrees.HashLine (HashLine (..), Depth (Depth),
+import System.Directory.BigTrees.HashLine (HashLine (..), Depth (Depth), NNodes(..),
                                            TreeType (D, F), prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
@@ -45,7 +45,7 @@ flattenTree = flattenTree' ""
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
 flattenTree' dir (File {nodeData=nd})
   = [HashLine (F, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, 1, name nd)]
-flattenTree' dir (Dir  {nodeData=nd, dirContents=cs, nNodes=(NFiles f)})
+flattenTree' dir (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
     n = name nd

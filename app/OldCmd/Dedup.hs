@@ -21,7 +21,7 @@ module OldCmd.Dedup where
 -- dedupLoop :: Config -> FilePath -> [Hash] -> HashTree () -> IO ()
 -- dedupLoop cfg path ignored tree = do
 --   let aPath       = fromJust $ annex cfg
---       dupes       = dupesByNFiles $ pathsByHash $ HashForest [tree] -- TODO only ever one tree, right?
+--       dupes       = dupesByNNodes $ pathsByHash $ HashForest [tree] -- TODO only ever one tree, right?
 --
 --       -- TODO rewrite this to use paths rather than hashes?
 --       -- TODO or, put back the (hash, dupelist) pairs

@@ -61,7 +61,7 @@ module System.Directory.BigTrees
   , DupeSet
   , DupeMap
   , allDupes
-  , dupesByNFiles
+  , dupesByNNodes
   , pathsByHash
   , mergeDupeSets
   , printDupes
@@ -73,7 +73,7 @@ module System.Directory.BigTrees
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
-import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNFiles, listAllFiles,
+import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNNodes, listAllFiles,
                                           listLostFiles, mergeDupeSets, pathsByHash, printDupes,
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)

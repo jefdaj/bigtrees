@@ -11,6 +11,7 @@ module System.Directory.BigTrees.HashLine
   , Depth(..)
   , ModTime(..)
   , NBytes(..)
+  , NNodes(..)
   , bsBytes
   -- , Hash(..) TODO re-export here? And Name too?
   , prettyLine
@@ -86,14 +87,15 @@ bsBytes :: B8.ByteString -> NBytes
 bsBytes = NBytes . toInteger . B8.length
 
 -- TODO does this NFData instance work? if not, use separate clause like the others
--- TODO call it NNodes for accuracy? ppl will understand NFiles better
-newtype NFiles = NFiles Integer
+-- TODO call it NNodes for accuracy? ppl will understand NNodes better
+-- TODO Integer? think about whether it'll impact DupeMap negatively
+newtype NNodes = NNodes Int
   deriving (Eq, Ord, Num, Read, Show, Generic, NFData)
 
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine
-  = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NFiles, Name)
+  = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
   deriving (Eq, Ord, Read, Show)
 
 ---------------
@@ -133,7 +135,7 @@ instance Arbitrary HashLine where
     mt <- arbitrary :: Gen ModTime
     s  <- fmap NBytes $ choose (0, 10000) -- TODO does it matter?
     f  <- case tt of
-            D -> fmap NFiles $ choose (0, 10000) -- TODO does it matter?
+            D -> fmap NNodes $ choose (0, 10000) -- TODO does it matter?
             _ -> return 1
     n  <- arbitrary :: Gen Name
     return $ HashLine (tt, il, h, mt, s, f, n)
@@ -162,7 +164,7 @@ hashLineFields = ["type", "depth", "hash", "modtime", "size", "name"]
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
-prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NFiles f, name)) =
+prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
@@ -235,8 +237,8 @@ sizeP :: Parser NBytes
 sizeP = numStrP >>= return . NBytes . read
 
 -- TODO applicative version?
-nfilesP :: Parser NFiles
-nfilesP = numStrP >>= return . NFiles . read
+nfilesP :: Parser NNodes
+nfilesP = numStrP >>= return . NNodes . read
 
 -- TODO is there a cleaner syntax for this?
 -- TODO this should still count up total files when given a max depth

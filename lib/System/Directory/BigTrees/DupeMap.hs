@@ -9,7 +9,7 @@ module System.Directory.BigTrees.DupeMap
   , addToDupeMap
   , allDupes
   , anotherCopy
-  , dupesByNFiles
+  , dupesByNNodes
   , explainDupes
   , insertDupeSet
   , listAllFiles
@@ -33,7 +33,7 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (TreeType (..))
+import System.Directory.BigTrees.HashLine (TreeType (..), NNodes(..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData(..), ProdTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitDirectories, (</>))
@@ -83,7 +83,7 @@ addToDupeMap ht = addToDupeMap' ht ""
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> FilePath -> ProdTree -> ST s ()
 addToDupeMap' ht dir (File {nodeData=(NodeData{name=n, hash=h})}) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2fp n)))
-addToDupeMap' ht dir (Dir {nodeData=(NodeData{name=n, hash=h}), dirContents=cs, nNodes=fs}) = do
+addToDupeMap' ht dir (Dir {nodeData=(NodeData{name=n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
   insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n2fp n)))
   mapM_ (addToDupeMap' ht (dir </> n2fp n)) cs
 
@@ -101,8 +101,8 @@ mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 -- TODO is this reasonable?
 type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
-dupesByNFiles :: (forall s. ST s (DupeTable s)) -> [DupeList]
-dupesByNFiles ht = simplifyDupes $ Prelude.map fixElem sortedL
+dupesByNNodes :: (forall s. ST s (DupeTable s)) -> [DupeList]
+dupesByNNodes ht = simplifyDupes $ Prelude.map fixElem sortedL
   where
     sets     = runST $ scoreSets =<< ht
     unsorted = A.fromList A.Par sets :: DupeSetVec
@@ -131,7 +131,7 @@ scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
 --                                                 then Just v
 --                                                 else Nothing, ())
 
-{- Assumes a pre-sorted list as provided by dupesByNFiles.
+{- Assumes a pre-sorted list as provided by dupesByNNodes.
  - Removes lists whose elements are all inside elements of the first list.
  - For example if the first is dir1, dir2, dir3
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt

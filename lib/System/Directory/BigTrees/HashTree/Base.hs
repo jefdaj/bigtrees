@@ -13,7 +13,7 @@ import Data.Char (toLower)
 import Data.List (nubBy, sort)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
-import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..), ModTime(..), NBytes(..), bsBytes)
+import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..), ModTime(..), NBytes(..), bsBytes, NNodes(..))
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
@@ -40,8 +40,8 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
                  == n2fp (name $ nodeData b)
 
 -- TODO Integer? not sure how big it could get
-sumNodes :: HashTree a -> Int
-sumNodes (File {}) = 1
+sumNodes :: HashTree a -> NNodes
+sumNodes (File {}) = NNodes 1
 sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 
 -- TODO is this needed, or will the fields be total?
@@ -90,7 +90,7 @@ data HashTree a
       }
   | Dir
       { nodeData    :: NodeData
-      , nNodes      :: NFiles -- TODO Integer? include in tree files
+      , nNodes      :: NNodes -- TODO Integer? include in tree files
       , dirContents :: [HashTree a] -- TODO rename dirContents?
       }
   deriving (Generic, Ord, Read, Show)
@@ -143,7 +143,7 @@ prop_arbitraryContents_length_matches_nNodes :: Gen Bool
 prop_arbitraryContents_length_matches_nNodes =
   sized $ \arbsize -> do
     cs <- arbitraryContents arbsize
-    let total = sum $ map sumNodes cs
+    let (NNodes total) = sum $ map sumNodes cs
         res = total == arbsize
     -- This verifies that it gets called with the full range of sizes:
     -- return $ traceShow ((size, sumFiles)) res
@@ -180,7 +180,7 @@ arbitraryDirSized arbsize = do
   -- TODO assert that nNodes == s here?
   return $ Dir
     { dirContents = cs
-    , nNodes = sum $ 1 : map sumNodes cs
+    , nNodes = sum $ (NNodes 1) : map sumNodes cs
     , nodeData = NodeData
       { name     = n
       , hash     = hashContents cs

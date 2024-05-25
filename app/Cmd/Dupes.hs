@@ -19,9 +19,9 @@ cmdDupes :: Config -> FilePath -> IO ()
 cmdDupes cfg path = do
   tree <- BT.readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
   -- TODO rewrite sorting with lower memory usage
-  -- let dupes = runST $ BT.dupesByNFiles =<< BT.pathsByHash tree
+  -- let dupes = runST $ BT.dupesByNNodes =<< BT.pathsByHash tree
   -- printDupes $ map sortDupePaths $ simplifyDupes BT.dupes
-  let ds = BT.dupesByNFiles $ BT.pathsByHash tree
+  let ds = BT.dupesByNNodes $ BT.pathsByHash tree
   case txt cfg of
     Nothing -> BT.printDupes (maxdepth cfg) ds
     Just p  -> BT.writeDupes (maxdepth cfg) p ds
