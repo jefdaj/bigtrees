@@ -67,6 +67,11 @@ data Header = Header
 instance ToJSON   Header
 instance FromJSON Header
 
+-- update when changing anything that might break the parser, and keep track of
+-- prev versions with git tags in order to implement upgrade fns later
+currentTreeFormat :: Int
+currentTreeFormat = 240525
+
 makeHeaderNow :: [String] -> IO Header
 makeHeaderNow es = do
   progName  <- getProgName
@@ -79,7 +84,7 @@ makeHeaderNow es = do
         , program         = unwords [progName, showVersion version]
         , scanStart       = scanStart
         , system          = unwords [os, arch]
-        , treeFormat      = 2 -- update when changing anything that breaks parser
+        , treeFormat      = currentTreeFormat
         }
   return header
 
