@@ -85,10 +85,15 @@ instance NFData NBytes
 bsBytes :: B8.ByteString -> NBytes
 bsBytes = NBytes . toInteger . B8.length
 
+-- TODO does this NFData instance work? if not, use separate clause like the others
+-- TODO call it NNodes for accuracy? ppl will understand NFiles better
+newtype NFiles = NFiles Integer
+  deriving (Eq, Ord, Num, Read, Show, Generic, NFData)
+
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine
-  = HashLine (TreeType, Depth, Hash, ModTime, NBytes, Name)
+  = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NFiles, Name)
   deriving (Eq, Ord, Read, Show)
 
 ---------------
@@ -127,13 +132,16 @@ instance Arbitrary HashLine where
     h  <- arbitrary :: Gen Hash
     mt <- arbitrary :: Gen ModTime
     s  <- fmap NBytes $ choose (0, 10000) -- TODO does it matter?
+    f  <- case tt of
+            D -> fmap NFiles $ choose (0, 10000) -- TODO does it matter?
+            _ -> return 1
     n  <- arbitrary :: Gen Name
-    return $ HashLine (tt, il, h, mt, s, n)
+    return $ HashLine (tt, il, h, mt, s, f, n)
 
   -- only shrinks the filename
   -- TODO also change the treetype?
   shrink :: HashLine -> [HashLine]
-  shrink (HashLine (tt, il, h, mt, s, n)) = map (\n' -> HashLine (tt, il, h, mt, s, n')) (shrink n)
+  shrink (HashLine (tt, il, h, mt, s, f, n)) = map (\n' -> HashLine (tt, il, h, mt, s, f, n')) (shrink n)
 
 -----------
 -- print --
@@ -154,7 +162,7 @@ hashLineFields = ["type", "depth", "hash", "modtime", "size", "name"]
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
-prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, name)) =
+prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NFiles f, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
@@ -165,6 +173,7 @@ prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, name)) =
        , prettyHash h
        , B8.pack $ show mt
        , B8.pack $ show s
+       , B8.pack $ show f
        , B8.pack node -- TODO n2b?
        ]
 
@@ -221,8 +230,13 @@ modTimeP :: Parser ModTime
 modTimeP = numStrP >>= return . ModTime . read
 
 -- TODO applicative version?
+-- TODO rename nbytesP
 sizeP :: Parser NBytes
 sizeP = numStrP >>= return . NBytes . read
+
+-- TODO applicative version?
+nfilesP :: Parser NFiles
+nfilesP = numStrP >>= return . NFiles . read
 
 -- TODO is there a cleaner syntax for this?
 -- TODO this should still count up total files when given a max depth
@@ -244,9 +258,10 @@ lineP md = do
       h <- hashP
       mt <- modTimeP
       s <- sizeP
+      f <- nfilesP
       p <- nameP
       -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
-      return $ Just (HashLine (t, i, h, mt, s, p))
+      return $ Just (HashLine (t, i, h, mt, s, f, p))
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do

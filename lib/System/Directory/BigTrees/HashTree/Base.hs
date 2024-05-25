@@ -58,6 +58,8 @@ sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 hashContents :: [HashTree a] -> Hash
 hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash . nodeData)
 
+-- TODO separate module for NodeData
+
 -- All the fields shat should be common to File + Dir constructors
 -- TODO come up with a better name?
 -- TODO is it OK to make the entire thing strict for File but not Dir?
