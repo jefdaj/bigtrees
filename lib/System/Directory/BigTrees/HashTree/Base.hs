@@ -85,8 +85,8 @@ instance NFData NodeData
 --   TODO make safe access fns and don't export the partial constructors
 data HashTree a
   = Err
-      { nodeData :: !NodeData -- TODO or just name?
-      , errMsg   :: !String -- TODO ByteString?
+      { errName :: !Name   -- TODO NodeData?
+      , errMsg  :: !String -- TODO ByteString?
       }
   | File
       { nodeData :: !NodeData
@@ -99,6 +99,12 @@ data HashTree a
       }
   deriving (Generic, Ord, Read, Show)
 
+-- TODO should this be a lens or something? going to want a setter too at some point
+treeName :: HashTree a -> Name
+treeName (Err  {errName =n }) = n
+treeName (File {nodeData=nd}) = name nd
+treeName (Dir  {nodeData=nd}) = name nd
+
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
 
@@ -106,12 +112,16 @@ type ProdTree = HashTree ()
 -- TODO should this include mod time, or do we want to ignore it?
 instance Eq (HashTree a) where
   (==) :: HashTree a -> HashTree a -> Bool
+  t1@(Err {}) == t2@(Err {}) = errName t1 == errName t2 && errMsg t1 == errMsg t2
+  t1@(Err {}) == _ = False
+  _ == t2@(Err {}) = False
   t1 == t2 = (hash . nodeData) t1 == (hash . nodeData) t2
 
 -- TODO once there's also a dirData, should this be BiFunctor instead?
 -- TODO should this also re-hash the file, or is that not part of the fileData idea?
 instance Functor HashTree where
   fmap :: (a -> b) -> HashTree a -> HashTree b
+  fmap fn e@(Err  {}) = Err { errMsg = errMsg e, errName = errName e}
   fmap fn f@(File {}) = f { fileData = fn (fileData f) }
   fmap fn d@(Dir  {}) = d { dirContents = map (fmap fn) (dirContents d) }
 
@@ -156,6 +166,15 @@ prop_arbitraryContents_length_matches_nNodes =
 -- TODO make this explicit? it's the same as the overall Arbitrary instance
 -- arbitraryTree :: Int -> Gen TestTree
 
+arbitraryErr :: Gen TestTree
+arbitraryErr = do
+  n <- arbitrary :: Gen Name
+  m <- arbitrary :: Gen String
+  return $ Err
+    { errName = n
+    , errMsg = m
+    }
+
 -- size == nNodes, so a file is always sized 1
 -- TODO should these all be strict?
 arbitraryFile :: Gen TestTree
@@ -199,6 +218,9 @@ instance Arbitrary TestTree where
 
   arbitrary :: Gen TestTree
   arbitrary = sized $ \arbsize -> do
+
+    -- TODO should `Err`s be one of the choices here?
+
     if arbsize < 2 -- TODO can it go below 1?
       then arbitraryFile
       else arbitraryDirSized arbsize
@@ -213,6 +235,7 @@ instance Arbitrary TestTree where
  -- only shrinks the filename
   shrink :: TestTree -> [TestTree]
   shrink f@(File {nodeData=nd}) = map (\n -> f { nodeData = nd {name = n} }) (shrink $ name nd)
+  shrink e@(Err {}) = map (\n -> e { errName = n }) (shrink $ errName e)
 
   -- shrinks either the name or the dirContents, and adjusts the rest to match
   -- TODO any need to recurse manually into dirContents?
@@ -229,6 +252,7 @@ instance Arbitrary TestTree where
 dropFileData :: HashTree a -> ProdTree
 dropFileData d@(Dir {dirContents = cs}) = d {dirContents = map dropFileData cs}
 dropFileData f@(File {})             = f {fileData = ()}
+dropFileData e@(Err  {})             = Err { errName = errName e, errMsg = errMsg e }
 
 instance Arbitrary ProdTree where
   arbitrary :: Gen ProdTree
@@ -237,6 +261,7 @@ instance Arbitrary ProdTree where
 confirmFileHashes :: TestTree -> Bool
 confirmFileHashes (File {fileData = f, nodeData=nd}) = hashBytes f == hash nd
 confirmFileHashes (Dir {dirContents = cs})           = all confirmFileHashes cs
+confirmFileHashes (Err {})                           = True -- TODO False?
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes
