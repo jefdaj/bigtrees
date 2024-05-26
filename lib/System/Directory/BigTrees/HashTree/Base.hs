@@ -86,7 +86,11 @@ instance NFData NodeData
 --   TODO rename name -> path?
 --   TODO make safe access fns and don't export the partial constructors
 data HashTree a
-  = File
+  = Err
+      { nodeData :: !NodeData -- TODO or just name?
+      , errMsg   :: !String -- TODO ByteString?
+      }
+  | File
       { nodeData :: !NodeData
       , fileData :: !a
       }
