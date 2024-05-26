@@ -12,6 +12,7 @@ module System.Directory.BigTrees.HashLine
   , ModTime(..)
   , NBytes(..)
   , NNodes(..)
+  , ErrMsg(..)
   , bsBytes
   -- , Hash(..) TODO re-export here? And Name too?
   , prettyLine
@@ -87,6 +88,11 @@ instance NFData NBytes
 bsBytes :: B8.ByteString -> NBytes
 bsBytes = NBytes . toInteger . B8.length
 
+newtype ErrMsg = ErrMsg String
+  deriving (Eq, Ord, Read, Show, Generic, Arbitrary)
+
+instance NFData ErrMsg
+
 -- TODO does this NFData instance work? if not, use separate clause like the others
 -- TODO call it NNodes for accuracy? ppl will understand NNodes better
 -- TODO Integer? think about whether it'll impact DupeMap negatively
@@ -95,8 +101,9 @@ newtype NNodes = NNodes Int
 
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
-newtype HashLine
+data HashLine
   = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
+  | ErrLine  (TreeType, Depth, ErrMsg, Name)
   deriving (Eq, Ord, Read, Show)
 
 ---------------

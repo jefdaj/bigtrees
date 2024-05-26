@@ -43,6 +43,8 @@ flattenTree = flattenTree' ""
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
+flattenTree' dir (Err {errName=n, errMsg=m})
+  = [] -- TODO finish
 flattenTree' dir (File {nodeData=nd})
   = [HashLine (F, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, 1, name nd)]
 flattenTree' dir (Dir  {nodeData=nd, dirContents=cs, nNodes=f})

@@ -13,7 +13,7 @@ import Data.Char (toLower)
 import Data.List (nubBy, sort)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
-import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..), ModTime(..), NBytes(..), bsBytes, NNodes(..))
+import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..), ModTime(..), NBytes(..), bsBytes, NNodes(..), ErrMsg(..))
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
@@ -86,7 +86,7 @@ instance NFData NodeData
 data HashTree a
   = Err
       { errName :: !Name   -- TODO NodeData?
-      , errMsg  :: !String -- TODO ByteString?
+      , errMsg  :: !ErrMsg -- TODO ByteString?
       }
   | File
       { nodeData :: !NodeData
@@ -169,7 +169,7 @@ prop_arbitraryContents_length_matches_nNodes =
 arbitraryErr :: Gen TestTree
 arbitraryErr = do
   n <- arbitrary :: Gen Name
-  m <- arbitrary :: Gen String
+  m <- arbitrary :: Gen ErrMsg
   return $ Err
     { errName = n
     , errMsg = m
