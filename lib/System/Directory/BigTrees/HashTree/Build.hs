@@ -33,6 +33,7 @@ excludeGlobs :: [String]
              -> (DT.AnchoredDirTree Name a -> DT.AnchoredDirTree Name a)
 excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
   where
+    keep a (DT.Failed n _) = keepPath excludes $ DT.nappend a n
     keep a (DT.Dir  n _) = keepPath excludes $ DT.nappend a n
     keep a (DT.File n _) = keepPath excludes $ DT.nappend a n
     keep a b             = True
@@ -60,8 +61,11 @@ buildTree readFileFn beVerbose excludes path = do
 -- TODO rename buildTreeL'?
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
 
--- TODO catch and re-throw errors with better description and/or handle them here
-buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ DT.nappend a n ++ ": " ++ show e
+buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) =
+  return $ Err
+    { errName = n
+    , errMsg = show e -- TODO clean it up a bit more
+    }
 
 -- A "File" can be a real file, but also several variants of symlink.
 -- We handle them all here.
