@@ -6,7 +6,7 @@ import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile, hashSymlinkTarget, hashSymlinkLiteral)
-import System.Directory.BigTrees.HashLine (ModTime(..), NBytes(..))
+import System.Directory.BigTrees.HashLine (ModTime(..), NBytes(..), ErrMsg(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, sumNodes, hashContents)
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime, pathIsSymbolicLink, doesPathExist)
@@ -64,7 +64,7 @@ buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTre
 buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) =
   return $ Err
     { errName = n
-    , errMsg = show e -- TODO clean it up a bit more
+    , errMsg = ErrMsg $ show e -- TODO clean it up a bit more
     }
 
 -- A "File" can be a real file, but also several variants of symlink.
