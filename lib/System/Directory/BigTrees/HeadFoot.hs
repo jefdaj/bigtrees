@@ -83,7 +83,7 @@ makeHeaderNow es = do
         , locale          = lang
         , program         = unwords [progName, showVersion version]
         , scanStart       = scanStart
-        , system          = unwords [os, arch]
+        , system          = arch ++ "-" ++ os
         , treeFormat      = currentTreeFormat
         }
   return header
