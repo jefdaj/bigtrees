@@ -103,7 +103,7 @@ newtype NNodes = NNodes Int
 -- TODO remove the tuple part now?
 data HashLine
   = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
-  | ErrLine  (TreeType, Depth, ErrMsg, Name)
+  | ErrLine  (Depth, ErrMsg, Name)
   deriving (Eq, Ord, Read, Show)
 
 ---------------
@@ -197,18 +197,18 @@ prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f,
 sepChar :: Char
 sepChar = '\t'
 
-pSep :: Parser Char
-pSep = char sepChar
+sepP :: Parser Char
+sepP = char sepChar
 
 typeP :: Parser TreeType
 typeP = do
-  t <- choice [char 'D', char 'E', char 'F'] <* pSep
+  t <- choice [char 'D', char 'E', char 'F'] <* sepP
   return $ read [t]
 
 hashP :: Parser Hash
 hashP = do
   h <- take digestLength -- TODO any need to sanitize these?
-  _ <- pSep
+  _ <- sepP
   return $ Hash $ BS.toShort h
 
 {- Like endOfLine, but make sure D/E/F comes next followed by a valid hash digest
@@ -230,7 +230,7 @@ nameP = fmap fp2n $ do
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
-numStrP = manyTill digit pSep
+numStrP = manyTill digit sepP
 
 -- TODO applicative version?
 depthP :: Parser Depth
@@ -256,23 +256,45 @@ lineP md = do
   t <- typeP
   (Depth i) <- depthP
   case md of
-    Nothing -> parseTheRest t (Depth i)
+    Nothing -> Just <$> parseTheRest t (Depth i)
     Just d -> do
       if i > d
         then do
           skipWhile (not . isEndOfLine)
           lookAhead breakP
           return Nothing
-        else parseTheRest t (Depth i)
-  where
-    parseTheRest t i = do
-      h <- hashP
-      mt <- modTimeP
-      s <- sizeP
-      f <- nfilesP
-      p <- nameP
-      -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
-      return $ Just (HashLine (t, i, h, mt, s, f, p))
+        else Just <$> parseTheRest t (Depth i)
+
+quoteChar :: Char
+quoteChar = '"'
+
+-- TODO there should be something built-in for this, right?
+quoteP :: Parser Char
+quoteP = char quoteChar
+
+errP :: Parser ErrMsg
+errP = do
+  _ <- quoteP
+  msg <- manyTill anyChar quoteP
+  -- _ <- quoteP -- TODO does msg already parse this?
+  return $ ErrMsg msg
+
+parseTheRest :: TreeType -> Depth -> Parser HashLine
+
+parseTheRest E i = do
+  m <- errP
+  n <- nameP
+  return $ ErrLine (i, m, n)
+
+-- this works on F or D; only E is different so far
+parseTheRest t i = do
+  h <- hashP
+  mt <- modTimeP
+  s <- sizeP
+  f <- nfilesP
+  p <- nameP
+  -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
+  return $ HashLine (t, i, h, mt, s, f, p)
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
