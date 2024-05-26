@@ -28,6 +28,7 @@ treeContainsPath :: HashTree a -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
 dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
+dropTo t@(Err {errName=n}) f2 = if n2fp n == f2 then Just t else Nothing
 dropTo t@(File {nodeData=nd1}) f2 = if n2fp (name nd1) == f2 then Just t else Nothing
 dropTo t@(Dir  {nodeData=nd1, dirContents=cs}) f2
   | n2fp (name nd1) == f2 = Just t
@@ -39,6 +40,7 @@ dropTo t@(Dir  {nodeData=nd1, dirContents=cs}) f2
                   else msum $ map (`dropTo` f2') cs
 
 treeContainsHash :: HashTree a -> Hash -> Bool
+treeContainsHash (Err {}) _ = False
 treeContainsHash (File {nodeData=nd1}) h2 = hash nd1 == h2
 treeContainsHash (Dir  {nodeData=nd1, dirContents=cs}) h2
   | hash nd1 == h2 = True
