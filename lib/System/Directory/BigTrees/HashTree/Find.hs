@@ -64,6 +64,7 @@ pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
 
 -- TODO where should this live?
 treeType :: HashTree a -> Char
+treeType (Err  {}) = 'E'
 treeType (File {}) = 'F'
 treeType (Dir  {}) = 'D'
 

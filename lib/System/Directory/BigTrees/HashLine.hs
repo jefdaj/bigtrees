@@ -54,7 +54,8 @@ import GHC.Generics (Generic)
 
 -- for distinguishing beween files and dirs
 -- TODO is B a good notation for broken link, or should that be LB?
-data TreeType = D | F | L | B
+-- TODO unify this with the actual constructors in HashTree.Base?
+data TreeType = D | F | L | B | E
   deriving (Eq, Ord, Read, Show)
 
 instance NFData TreeType
@@ -121,8 +122,8 @@ instance Arbitrary TreeType where
   --  TODO oneof
   arbitrary :: Gen TreeType
   arbitrary = do
-    n <- choose (0,1 :: Int)
-    return $ [F, D] !! n
+    n <- choose (0,2 :: Int) -- TODO make errors less common?
+    return $ [E, F, D] !! n
 
   -- you could shrink D -> F, but not without changing the rest of the hashline
   shrink :: TreeType -> [TreeType]
@@ -141,7 +142,8 @@ instance Arbitrary HashLine where
     s  <- fmap NBytes $ choose (0, 10000) -- TODO does it matter?
     f  <- case tt of
             D -> fmap NNodes $ choose (0, 10000) -- TODO does it matter?
-            _ -> return 1
+            E -> return 0 -- TODO 1? but it could be a dir with any number really
+            F -> return 1
     n  <- arbitrary :: Gen Name
     return $ HashLine (tt, il, h, mt, s, f, n)
 
@@ -198,7 +200,7 @@ pSep = char sepChar
 
 typeP :: Parser TreeType
 typeP = do
-  t <- choice [char 'D', char 'F', char 'L', char 'B'] <* pSep
+  t <- choice [char 'D', char 'F', char 'L', char 'B', char 'E'] <* pSep
   return $ read [t]
 
 hashP :: Parser Hash
@@ -207,7 +209,7 @@ hashP = do
   _ <- pSep
   return $ Hash $ BS.toShort h
 
-{- Like endOfLine, but make sure D/F comes next followed by a valid hash digest
+{- Like endOfLine, but make sure D/E/F comes next followed by a valid hash digest
  - instead of the rest of a filename. This catches the rare case where a
  - filename contains a newline followed by D or F. You could still construct a
  - filename that would fool it, but it would be extremely unlikely to happen by
