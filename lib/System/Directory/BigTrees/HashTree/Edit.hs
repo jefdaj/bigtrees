@@ -48,6 +48,7 @@ wrapInEmptyDirs p t = case pathComponents p of
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
+addSubTree (Err  {}) sub path | null (pathComponents path) = sub -- TODO is this right?
 addSubTree (File {}) _ _ = error "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
 addSubTree main sub path = main { nodeData = nd', dirContents = cs', nNodes = n' }
@@ -84,6 +85,7 @@ addSubTree main sub path = main { nodeData = nd', dirContents = cs', nNodes = n'
  - TODO does this actually solve nNodes too?
  -}
 rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
+rmSubTree (Err  {}) p = Left $ "no such subtree: '" ++ p ++ "'" -- TODO is this right?
 rmSubTree (File {}) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir {dirContents=cs, nNodes=n}) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
