@@ -11,3 +11,8 @@ ghc-options:
 
 extra-deps:
   - docopt-0.7.0.8@sha256:b88ca348766430101ff1d1ca230ea9038a9fcd63aa3f042a4b95ceab207357e5,3352
+
+# TODO does this help?
+nix:
+  enable: false
+  pure: false
