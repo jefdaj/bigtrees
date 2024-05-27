@@ -19,6 +19,8 @@
 
       let
 
+        myGhcVersion = "ghc981";
+
         # This overlay is weird because it needs to work around a nixpkgs haskell bug:
         # https://github.com/NixOS/nixpkgs/issues/235960
         # The fix is to expose all new attributes "my*" for now.
@@ -29,7 +31,7 @@
         haskellOverlay = (final: prev: {
           myHaskell = final.lib.recursiveUpdate prev.haskell {
             myPackages = final.lib.recursiveUpdate prev.haskell.packages {
-              myGhc = prev.haskell.packages.ghc981.override {
+              myGhc = prev.haskell.packages.${myGhcVersion}.override {
                 overrides = hFinal: hPrev: {
                   # TODO figure out how to include the DT flake output directly instead?
                   directory-tree = hFinal.callCabal2nix "directory-tree" directory-tree {};
