@@ -1,8 +1,11 @@
 {
 
   inputs = {
-    # TODO stable release? nixpkgs-unstable? see what ppl are doing these days
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-unstable;
+
+    # domenkozar+angerman fix for ghc static build failing is to use haskell.nix for now:
+    haskellNix.url = "github:input-output-hk/haskell.nix?ref=angerman/fix-aarch64-musl";
+    nixpkgs.follows = "haskellNix/nixpkgs-unstable";
+
     flake-utils.url = "github:numtide/flake-utils";
     # TODO consider removing the git submodule in favor of this
     directory-tree = {
@@ -11,7 +14,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, directory-tree }:
+  outputs = { self, nixpkgs, haskellNix, flake-utils, directory-tree }:
     flake-utils.lib.eachDefaultSystem (system:
 
       # TODO what was legacyPackages for?
@@ -19,7 +22,32 @@
 
       let
 
-        myGhcVersion = "ghc981";
+        # Ah, another nixpkgs bug/maybe ghc this time?
+        # https://github.com/NixOS/nixpkgs/issues/275304
+        #
+        # @domenkozar reproduced the problem, and fixed by using haskellNix:
+        # https://github.com/domenkozar/nixpkgs-static-repo/tree/haskell.nix
+        #
+        # versions tried:
+        #   nixos-unstable:
+        #     ghc982 (latest ghc on nixos-unstable) th-orphans fails
+        #   nixos-23.11:
+        #     ghc981
+        #   nixpkgs-unstable:
+        #     ghc9101 (latest ghc on anything ppl use?) cabal-doctest fails
+        #     ghc982 (second latest on unstable) th-orphans fails
+        #     ghc981 th-orphans fails
+        #     ghc963-4 ghc itself marked broken
+        #     ghc948 ...
+        #
+        myGhcVersion = "ghc962";
+
+        # https://cs-syd.eu/posts/2024-04-20-static-linking-haskell-nix
+        # Unnecessary these days? The same exact ghc builds with and without it.
+        fixGHC = pkg: pkg.override {    
+          enableRelocatedStaticLibs = true;
+          enableShared = false;
+        };
 
         # This overlay is weird because it needs to work around a nixpkgs haskell bug:
         # https://github.com/NixOS/nixpkgs/issues/235960
@@ -33,6 +61,9 @@
             myPackages = final.lib.recursiveUpdate prev.haskell.packages {
               myGhc = prev.haskell.packages.${myGhcVersion}.override {
                 overrides = hFinal: hPrev: {
+
+                  ghc = fixGHC hPrev.ghc;
+
                   # TODO figure out how to include the DT flake output directly instead?
                   directory-tree = hFinal.callCabal2nix "directory-tree" directory-tree {};
                   docopt = prev.haskell.lib.markUnbroken hPrev.docopt;
@@ -87,6 +118,10 @@
         };
 
       in rec {
+
+        # TODO is there a nicer way to load it in nix repl?
+        # inherit myHaskell;
+
         # empty devTools tells it to build the package
         packages.pkg = project [ ];
 
