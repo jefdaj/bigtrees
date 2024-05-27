@@ -47,7 +47,8 @@
           overlays = [ haskellOverlay ];
         });
 
-      # Static by default, but allow pkgsDynamic to be referenced explicitly for dev tools.
+      # Static by default, but allow pkgsDynamic to be referenced explicitly
+      # for dev tools we don't want to bother rebuilding.
       in with pkgsDynamic.pkgsStatic;
       let
 
@@ -95,7 +96,6 @@
           # rsync
         ];
 
-        # The dev tools could probably also be static, but why rebuild them?
         devShell = project (executableSystemDepends ++ [
 
           # TODO *any* package here evaluates the broken docopt? weird
