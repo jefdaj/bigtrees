@@ -49,6 +49,8 @@
           addBuildTools = lib.trivial.flip haskell.lib.addBuildTools devTools;
           confirmStaticBinaries = lib.trivial.flip haskell.lib.overrideCabal (old: {
             # https://cs-syd.eu/posts/2024-04-20-static-linking-haskell-nix
+            # We want to confirm it says something like this:
+            # ldd: /nix/store/.../bin/bigtrees: Not a valid dynamic program
             postInstall = (old.postInstall or "") + '' for b in $out/bin/*; do
                 if ldd "$b"; then
                   echo "ldd succeeded on $b, which may mean that it is not statically linked"
