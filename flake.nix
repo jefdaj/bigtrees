@@ -19,21 +19,28 @@
 
       let
 
-        # TODO why is docopt still blocking evaluation after markUnbroken?
-        #      oh, there's a bug:
-        #      https://github.com/NixOS/nixpkgs/issues/235960
-        #      exposing it as haskellPackages does not help
+        # This overlay is weird because it needs to work around a nixpkgs haskell bug:
+        # https://github.com/NixOS/nixpkgs/issues/235960
+        # The fix is to expose all new attributes "my*" for now.
+        # This post pointed me in the right direction:
+        # https://discourse.nixos.org/t/working-with-haskell-broken-packages/30126/5
+        # TODO would just making the outermost myHaskell different be enough?
+        # TODO did i successfully work around the fix-point issue, or did ghc981 fix docopt?
         haskellOverlay = (final: prev: {
-          haskellPackages = prev.haskellPackages.override {
-            overrides = hFinal: hPrev: {
-              # TODO figure out how to include the DT flake output directly instead?
-              directory-tree = hFinal.callCabal2nix "directory-tree" directory-tree {};
-              docopt = final.haskell.lib.markUnbroken hPrev.docopt;
+          myHaskell = final.lib.recursiveUpdate prev.haskell {
+            myPackages = final.lib.recursiveUpdate prev.haskell.packages {
+              myGhc = prev.haskell.packages.ghc981.override {
+                overrides = hFinal: hPrev: {
+                  # TODO figure out how to include the DT flake output directly instead?
+                  directory-tree = hFinal.callCabal2nix "directory-tree" directory-tree {};
+                  docopt = prev.haskell.lib.markUnbroken hPrev.docopt;
+                };
+              };
             };
           };
         });
 
-        # also works, except also has the fix-point bug:
+        # this style also works:
         # pkgsDynamic = nixpkgs.legacyPackages.${system}.extend haskellOverlay;
         pkgsDynamic = (import nixpkgs {
           inherit system;
@@ -46,8 +53,8 @@
 
         project = devTools:
         let
-          addBuildTools = lib.trivial.flip haskell.lib.addBuildTools devTools;
-          confirmStaticBinaries = lib.trivial.flip haskell.lib.overrideCabal (old: {
+          addBuildTools = lib.trivial.flip myHaskell.lib.addBuildTools devTools;
+          confirmStaticBinaries = lib.trivial.flip myHaskell.lib.overrideCabal (old: {
             # https://cs-syd.eu/posts/2024-04-20-static-linking-haskell-nix
             # We want to confirm it says something like this:
             # ldd: /nix/store/.../bin/bigtrees: Not a valid dynamic program
@@ -60,18 +67,18 @@
             '';
           });
 
-        in haskellPackages.developPackage {
+        in myHaskell.myPackages.myGhc.developPackage {
           # root = lib.sourceFilesBySuffices ./. [ ".cabal" ".hs" ".txt" ];
           root = lib.cleanSource ./.;
           name = "bigtrees";
           returnShellEnv = !(devTools == [ ]);
           modifier = (lib.trivial.flip lib.trivial.pipe) [
             addBuildTools
-            haskell.lib.dontHaddock
-            haskell.lib.enableStaticLibraries
-            haskell.lib.justStaticExecutables
-            haskell.lib.disableLibraryProfiling
-            haskell.lib.disableExecutableProfiling
+            myHaskell.lib.dontHaddock
+            myHaskell.lib.enableStaticLibraries
+            myHaskell.lib.justStaticExecutables
+            myHaskell.lib.disableLibraryProfiling
+            myHaskell.lib.disableExecutableProfiling
             confirmStaticBinaries
           ];
         };
