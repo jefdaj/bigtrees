@@ -12,8 +12,13 @@ backups" use case.
 ``` .sh
 git clone https://github.com/jefdaj/bigtrees
 cd bigtrees
+
+# old way, still works:
 nix-shell
 stack test
+
+# new way, static build in progress:
+nix build
 ```
 
 #### Done
