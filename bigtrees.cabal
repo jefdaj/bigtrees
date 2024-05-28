@@ -75,6 +75,7 @@ library
     , th-utilities
     , time
     , unix
+    , unix-compat
     , unordered-containers
     , utf8-string
   default-language: Haskell2010
@@ -255,6 +256,7 @@ test-suite test-doctests
     , time
     , unbounded-delays
     , unix
+    , unix-compat
     , unordered-containers
     , utf8-string
   default-language: Haskell2010
@@ -320,5 +322,6 @@ test-suite test-lib
     , th-utilities
     , time
     , unix
+    , unix-compat
     , unordered-containers
   default-language: Haskell2010

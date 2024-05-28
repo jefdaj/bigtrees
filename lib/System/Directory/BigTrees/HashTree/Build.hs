@@ -9,12 +9,14 @@ import System.Directory.BigTrees.Hash (hashFile)
 import System.Directory.BigTrees.HashLine (ModTime(..), NBytes(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, sumNodes, hashContents)
 import System.Directory.BigTrees.Name
-import System.Directory (getFileSize, getModificationTime)
+import System.Directory (getFileSize, getModificationTime, pathIsSymbolicLink)
 import qualified System.Directory.Tree as DT
 import System.FilePath ((</>))
 import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith, compile)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import System.PosixCompat.Files (getSymbolicLinkStatus, modificationTime, fileSize)
+import Foreign.C.Types (CTime(..))
 
 keepPath :: [String] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) (map compile excludes)
@@ -130,13 +132,25 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
 -- TODO going to have to update dirs recursively based on newest content change
 getModTime :: FilePath -> IO ModTime
 getModTime f = do
-  mt <- getModificationTime f
-  let sec = round $ utcTimeToPOSIXSeconds mt
-  return $ ModTime sec
+  isLink <- pathIsSymbolicLink f
+  mt <- if isLink
+          then do
+            -- TODO is this right?
+            (CTime s) <- modificationTime <$> getSymbolicLinkStatus f
+            return $ toInteger s
+          else do
+            s <- getModificationTime f
+            return $ toInteger $ round $ utcTimeToPOSIXSeconds s
+  return $ ModTime mt
 
 -- NBytes in bytes
 getNBytes :: FilePath -> IO NBytes
-getNBytes f = NBytes <$> getFileSize f
+getNBytes f = do
+  isLink <- pathIsSymbolicLink f
+  n <- if isLink
+         then getSymbolicLinkStatus f >>= return . toInteger . fileSize
+         else getFileSize f
+  return $ NBytes n
 
 -- TODO unit_symlink_to_dir_read_as_file
 -- TODO unit_symlink_to_file_read_as_file_hash_path

@@ -61,6 +61,7 @@ library:
   - regex-tdfa
   - th-utilities
   - unix
+  - unix-compat
   - unordered-containers
   - utf8-string
  
@@ -153,6 +154,7 @@ tests:
     - regex-tdfa
     - th-utilities
     - unix
+    - unix-compat
     - unordered-containers
  
   test-app:
@@ -263,5 +265,6 @@ tests:
     - th-utilities
     - unbounded-delays
     - unix
+    - unix-compat
     - unordered-containers
     - utf8-string
