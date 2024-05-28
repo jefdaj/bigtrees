@@ -64,8 +64,8 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   let fPath = DT.nappend a n
   -- TODO hold up, are we reading the file twice here?
   --      oh right: not usually a problem because readFileFn is a no-op in production
-  !mt <- getModTime fPath
-  !s  <- getNBytes fPath
+  !mt <- getFileDirModTime fPath
+  !s  <- getFileDirNBytes fPath
   !h  <- unsafeInterleaveIO $ hashFile v fPath -- TODO symlink bug here?
   !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
@@ -104,12 +104,12 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- We want the overall mod time to be the most recent of the dir + all dirContents.
   -- If there are any dirContents at all, by definition they're newer than the dir, right?
   -- So we only need the root mod time when the dir is empty...
-  -- !mt <- getModTime root
+  -- !mt <- getFileDirModTime root
   mt <- if null cs''
-          then getModTime root
+          then getFileDirModTime root
           else return $ maximum $ map (modTime . nodeData) cs''
 
-  !s  <- getNBytes root -- TODO is this always 4096?
+  !s  <- getFileDirNBytes root -- TODO is this always 4096?
 
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?
@@ -127,25 +127,44 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
               }
             }
 
+-- TODO move these to Util:
+
+-- Mod time of a symlink itself (not the target)
+getSymlinkLiteralModTime :: FilePath -> IO ModTime
+getSymlinkLiteralModTime p = do
+  (CTime s) <- modificationTime <$> getSymbolicLinkStatus p
+  return $ ModTime $ toInteger s
+
+-- Mod time of a symlink target, if it exists
+-- TODO does this work recursively?
+-- TODO is it ever needed?
+getSymlinkTargetModTime :: FilePath -> IO (Maybe ModTime)
+getSymlinkTargetModTime p = undefined
+
 -- https://stackoverflow.com/a/17909816
+-- Be sure to check that it isn't a symlink before calling this!
+-- It works on directories as well as regular files, but only updates dirs if
+-- the dir itself changes, *not* if the contents change.
 -- TODO if git reports file is older than mod time does, trust git?
 -- TODO going to have to update dirs recursively based on newest content change
-getModTime :: FilePath -> IO ModTime
-getModTime f = do
-  isLink <- pathIsSymbolicLink f
-  mt <- if isLink
-          then do
-            -- TODO is this right?
-            (CTime s) <- modificationTime <$> getSymbolicLinkStatus f
-            return $ toInteger s
-          else do
-            s <- getModificationTime f
-            return $ toInteger $ round $ utcTimeToPOSIXSeconds s
-  return $ ModTime mt
+getFileDirModTime :: FilePath -> IO ModTime
+getFileDirModTime f = do
+  s <- getModificationTime f
+  return $ ModTime $ toInteger $ round $ utcTimeToPOSIXSeconds s
 
--- NBytes in bytes
-getNBytes :: FilePath -> IO NBytes
-getNBytes f = do
+getSymlinkLiteralNBytes :: FilePath -> IO NBytes
+getSymlinkLiteralNBytes p = do
+  status <- getSymbolicLinkStatus p
+  return $ NBytes $ toInteger $ fileSize status
+
+-- TODO does this work recursively?
+-- TODO is it ever needed?
+getSymlinkTargetNBytes :: FilePath -> IO (Maybe NBytes)
+getSymlinkTargetNBytes = undefined
+
+-- Size of a regular file or directory (not including directory contents, of course)
+getFileDirNBytes :: FilePath -> IO NBytes
+getFileDirNBytes f = do
   isLink <- pathIsSymbolicLink f
   n <- if isLink
          then getSymbolicLinkStatus f >>= return . toInteger . fileSize
