@@ -5,11 +5,11 @@ module System.Directory.BigTrees.HashTree.Build where
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
-import System.Directory.BigTrees.Hash (hashFile)
+import System.Directory.BigTrees.Hash (hashFile, hashSymlinkTarget, hashSymlinkLiteral)
 import System.Directory.BigTrees.HashLine (ModTime(..), NBytes(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, sumNodes, hashContents)
 import System.Directory.BigTrees.Name
-import System.Directory (getFileSize, getModificationTime, pathIsSymbolicLink)
+import System.Directory (getFileSize, getModificationTime, pathIsSymbolicLink, doesPathExist)
 import qualified System.Directory.Tree as DT
 import System.FilePath ((</>))
 import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith, compile)
@@ -17,6 +17,7 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import System.PosixCompat.Files (getSymbolicLinkStatus, modificationTime, fileSize)
 import Foreign.C.Types (CTime(..))
+import System.Posix.Files (readSymbolicLink)
 
 keepPath :: [String] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) (map compile excludes)
@@ -45,7 +46,6 @@ lazyDirDepth = 4
 buildProdTree :: Bool -> [String] -> FilePath -> IO ProdTree
 buildProdTree = buildTree (return . const ())
 
--- TODO are dirContents sorted? they probably should be for stable hashes
 buildTree :: (FilePath -> IO a) -> Bool -> [String] -> FilePath -> IO (HashTree a)
 buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
@@ -55,34 +55,73 @@ buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ show tree
   buildTree' readFileFn beVerbose 0 excludes tree
 
--- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
+
 -- TODO catch and re-throw errors with better description and/or handle them here
 buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ DT.nappend a n ++ ": " ++ show e
+
+-- A "File" can be a real file, but also several variants of symlink.
+-- We handle them all here.
+-- Note that readFileFn and hashFile both read the file, but in practice that
+-- isn't a problem because readFileFn is a no-op in production.
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
-  -- TODO how to exclude these?
   let fPath = DT.nappend a n
-  -- TODO hold up, are we reading the file twice here?
-  --      oh right: not usually a problem because readFileFn is a no-op in production
-  !mt <- getFileDirModTime fPath
-  !s  <- getFileDirNBytes fPath
-  !h  <- unsafeInterleaveIO $ hashFile v fPath -- TODO symlink bug here?
-  !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
-  -- seems not to help with memory usage?
-  -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }
-  -- return File { name = n, hash = h }
-  return $ (if depth < lazyDirDepth
-              then id
-              else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
-         $ File
-            { nodeData = NodeData
-              { name = n
-              , hash = h
-              , modTime = mt
-              , nBytes = s
-              }
-            , fileData = fd
-            }
+  isLink <- pathIsSymbolicLink fPath
+  if isLink
+    then do
+      notBroken <- doesPathExist fPath
+      if notBroken
+
+        then do
+          -- the symlink target is the relevant file for most data,
+          -- except the mod time which should be the more recent of the two
+          -- (in case the link target changed to a different valid file)
+          -- TODO handle the extra case here where it exists but is outside the tree!
+          !mt1 <- getSymlinkLiteralModTime fPath -- TODO interleave?
+          !mt2 <- getSymlinkTargetModTime  fPath -- TODO interleave?
+          let mt = maximum [mt1, mt2]
+          !s  <- getSymlinkTargetNBytes fPath -- TODO interleave?
+          !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
+          !fd <- unsafeInterleaveIO $ readFileFn fPath
+          return $ (if depth < lazyDirDepth
+                      then id
+                      else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
+                 $ File
+                    { nodeData = NodeData
+                      { name = n
+                      , hash = h
+                      , modTime = mt
+                      , nBytes = s
+                      }
+                    , fileData = fd
+                    }
+
+
+        else do
+          -- the symlink itself is the relevant file to pull info from
+          undefined
+
+    else do
+      -- regular file
+      !mt <- getFileDirModTime fPath -- TODO interleave?
+      !s  <- getFileDirNBytes fPath -- TODO interleave?
+      !h  <- unsafeInterleaveIO $ hashFile v fPath
+      !fd <- unsafeInterleaveIO $ readFileFn fPath
+      -- seems not to help with memory usage?
+      -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }
+      -- return File { name = n, hash = h }
+      return $ (if depth < lazyDirDepth
+                  then id
+                  else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
+             $ File
+                { nodeData = NodeData
+                  { name = n
+                  , hash = h
+                  , modTime = mt
+                  , nBytes = s
+                  }
+                , fileData = fd
+                }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = DT.nappend a n
@@ -136,10 +175,9 @@ getSymlinkLiteralModTime p = do
   return $ ModTime $ toInteger s
 
 -- Mod time of a symlink target, if it exists
--- TODO does this work recursively?
--- TODO is it ever needed?
-getSymlinkTargetModTime :: FilePath -> IO (Maybe ModTime)
-getSymlinkTargetModTime p = undefined
+-- TODO fix this so it works recursively in case of more than one link!
+getSymlinkTargetModTime :: FilePath -> IO ModTime
+getSymlinkTargetModTime p = readSymbolicLink p >>= getFileDirModTime
 
 -- https://stackoverflow.com/a/17909816
 -- Be sure to check that it isn't a symlink before calling this!
@@ -159,8 +197,8 @@ getSymlinkLiteralNBytes p = do
 
 -- TODO does this work recursively?
 -- TODO is it ever needed?
-getSymlinkTargetNBytes :: FilePath -> IO (Maybe NBytes)
-getSymlinkTargetNBytes = undefined
+getSymlinkTargetNBytes :: FilePath -> IO NBytes
+getSymlinkTargetNBytes p = readSymbolicLink p >>= getFileDirNBytes
 
 -- Size of a regular file or directory (not including directory contents, of course)
 getFileDirNBytes :: FilePath -> IO NBytes
