@@ -23,6 +23,10 @@ module System.Directory.BigTrees.Hash
   , hashBytes
   , hashString
   , hashFile
+  , looksLikeAnnexPath
+  , hashFromAnnexPath
+  , hashSymlinkLiteral
+  , hashSymlinkTarget
 
   -- tests
   , unit_hash_ByteString
@@ -51,13 +55,15 @@ import qualified Streaming.ByteString.Char8 as Q
 import qualified Streaming.Prelude as S
 import qualified System.Directory as SD
 import System.Directory (pathIsSymbolicLink)
-import System.FilePath (takeBaseName)
+import System.FilePath (takeBaseName, takeFileName)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
 import TH.Derive (Deriving, derive)
+import Text.Regex.TDFA ((=~))
+
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -114,21 +120,32 @@ hashBytesStreaming bs = do
 hashString :: String -> Hash
 hashString = hashBytes . B.pack
 
-{- This applies to directories as well as files because when trying to traverse
- - non-annex symlinks there can be infinite cycles. For example it will fail on
- - /usr/bin/X11.
- -}
-hashSymlink :: FilePath -> IO (Maybe Hash)
-hashSymlink path = do
-  isLink <- pathIsSymbolicLink path -- TODO error here?
-  if not isLink
-    then return Nothing
-    else do
-      link <- readSymbolicLink path
-      return $ Just $ if ".git/annex/objects/" `isInfixOf` link
-                      && "SHA256E-" `isPrefixOf` takeBaseName link
-        then Hash $ compress $ B.pack $ last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
-        else hashString link -- TODO should this be a user-facing error instead?
+-- Hashes the target path itself as a string, because contents are either
+-- missing or outside the tree being scanned.
+hashSymlinkLiteral :: FilePath -> IO Hash
+hashSymlinkLiteral path = readSymbolicLink path >>= return . hashString
+
+-- Hashes target file contents.
+-- TODO will it work recursively?
+-- TODO guard against this pointing outside the tree being scanned;
+--      we want to treat that as a broken link instead
+hashSymlinkTarget :: FilePath -> IO Hash
+hashSymlinkTarget path = readSymbolicLink path >>= hashFileContentsStreaming
+
+-- TODO Was the .git/annex/objects prefix important?
+--      If not, don't want to make matching the actual content files any harder by adding it
+looksLikeAnnexPath :: FilePath -> Bool
+looksLikeAnnexPath p = (takeFileName p) =~ regex
+  where
+    regex = "^SHA256E-[a-z0-9]{4}--[0-9a-f]{64}(\\..*)?$" :: String
+
+-- Tests that this looks like an annex path, then returns the implied sha256sum.
+-- TODO proper fmap idiom here
+-- TODO extract a match from the regex rather than separately here
+hashFromAnnexPath :: FilePath -> Maybe Hash
+hashFromAnnexPath p = if looksLikeAnnexPath p then Just $ pHash p else Nothing
+  where
+    pHash = Hash . compress . B.pack . last . splitOn "--" . head . splitOn "." . takeFileName
 
 -- see: https://stackoverflow.com/a/30537010
 -- hashFileContents :: FilePath -> IO Hash
@@ -145,12 +162,9 @@ hashFileContentsStreaming path = BL.readFile path >>= hashBytesStreaming
 -- Hashes if necessary, but tries to read it from a link first
 -- Note that this can only print file hashes, not the whole streaming trees format
 -- TODO remove the unused verbose flag?
+-- TODO handle case where the file is itself a git-annex content file!
 hashFile :: Bool -> FilePath -> IO Hash
-hashFile _ path = do
-  sHash <- hashSymlink path
-  case sHash of
-    Just h  -> return h
-    Nothing -> hashFileContentsStreaming path
+hashFile _ path = hashFileContentsStreaming path
 
 -- note: no need to explicitly match against sha256sum because the manual examples cover that
 -- TODO but make sure they match manually! how to handle the base64 encoding part?
