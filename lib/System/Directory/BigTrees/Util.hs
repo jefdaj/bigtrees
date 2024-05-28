@@ -26,6 +26,9 @@ module System.Directory.BigTrees.Util
   -- TODO pathComponents tests
   -- TODO symlink handling tests
 
+  , isAnnexSymlink
+  , isNonAnnexSymlink
+
   )
   where
 
@@ -212,17 +215,25 @@ prop_absolutePaths_strips_redundant_dot (Path path) = monadicIO $ do
 -- Special handling of git-annex symlinks. If we trust the links, we can
 -- read sha256sums from them rather than re-hashing the referenced files.
 
--- | We treat these as files rather than following to avoid infinite cycles
--- TODO refactor to use isAnnexSymlink?
+-- We reuse the existing SHA256SUM from the link
+-- TODO also check that the link points *inside* the current tree!
+-- TODO separate function for this vs for checking whether a link points in the tree?
+isAnnexSymlink :: FilePath -> IO Bool
+isAnnexSymlink path = do
+  status <- getSymbolicLinkStatus path
+  if not (isSymbolicLink status)
+    then return False
+    else do
+      l <- readSymbolicLink path
+      return $ ".git/annex/objects/" `isInfixOf` l
+             && "SHA256E-" `isPrefixOf` (SF.takeBaseName l)
+
 isNonAnnexSymlink :: FilePath -> IO Bool
 isNonAnnexSymlink path = do
   status <- getSymbolicLinkStatus path
   if not (isSymbolicLink status)
     then return False
-    else do
-      link <- readSymbolicLink path
-      return $ not $ (".git/annex/objects/" `isInfixOf` link)
-                  && ("SHA256E-" `isPrefixOf` SF.takeBaseName link)
+    else not <$> isAnnexSymlink path
 
 --------------
 -- old code --
