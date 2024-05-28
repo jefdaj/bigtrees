@@ -86,7 +86,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           return $ (if depth < lazyDirDepth
                       then id
                       else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
-                 $ File
+                 $ File -- TODO Link
                     { nodeData = NodeData
                       { name = n
                       , hash = h
@@ -99,7 +99,23 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
 
         else do
           -- the symlink itself is the relevant file to pull info from
-          undefined
+          !mt <- getSymlinkLiteralModTime fPath -- TODO interleave?
+          !s  <- getSymlinkLiteralNBytes  fPath -- TODO interleave?
+          !h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
+          !fd <- unsafeInterleaveIO $ undefined fPath -- TODO should be Nothing in the Link here
+          return $ (if depth < lazyDirDepth
+                      then id
+                      else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
+                 $ File -- TODO Link
+                    { nodeData = NodeData
+                      { name = n
+                      , hash = h
+                      , modTime = mt
+                      , nBytes = s
+                      }
+                    , fileData = fd
+                    }
+
 
     else do
       -- regular file
