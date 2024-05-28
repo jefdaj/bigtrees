@@ -1,8 +1,10 @@
 {
 
   inputs = {
-    # TODO stable release? nixpkgs-unstable? see what ppl are doing these days
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-unstable;
+    # nixpkgs.url = github:NixOS/nixpkgs/nixos-23.11;
+    # TODO is this reasonable? https://github.com/nh2/static-haskell-nix/pull/125
+    nixpkgs.url = github:jonathanlking/nixpkgs/static-haskell-nix-nixos-23.11;
+
     flake-utils.url = "github:numtide/flake-utils";
     # TODO consider removing the git submodule in favor of this
     directory-tree = {
@@ -26,7 +28,7 @@
         haskellOverlay = (final: prev: {
           myHaskell = final.lib.recursiveUpdate prev.haskell {
             myPackages = final.lib.recursiveUpdate prev.haskell.packages {
-              myGhc = prev.haskell.packages.ghc981.override {
+              myGhc = prev.haskell.packages.ghc963.override {
           # myHaskellPackages = prev.haskellPackages.override {
                 overrides = hFinal: hPrev: {
                   # TODO figure out how to include the DT flake output directly instead?
