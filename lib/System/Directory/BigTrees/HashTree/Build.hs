@@ -137,3 +137,7 @@ getModTime f = do
 -- NBytes in bytes
 getNBytes :: FilePath -> IO NBytes
 getNBytes f = NBytes <$> getFileSize f
+
+-- TODO unit_symlink_to_dir_read_as_file
+-- TODO unit_symlink_to_file_read_as_file_hash_path
+-- TODO unit_symlink_to_annex_read_as_file_hash_content
