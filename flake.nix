@@ -39,8 +39,12 @@
         #     ghc981 th-orphans fails
         #     ghc963-4 ghc itself marked broken
         #     ghc948 ...
+        #   haskell-nix:
+        #     ghc962 fails while comiling itself?
+        #     ghc96 == 962
+        #     ghc944 fails on docopt interestingly, saying it doesn't have template haskell
         #
-        myGhcVersion = "ghc962";
+        myGhcVersion = "ghc944";
 
         # https://cs-syd.eu/posts/2024-04-20-static-linking-haskell-nix
         # Unnecessary these days? The same exact ghc builds with and without it.
@@ -54,7 +58,6 @@
         # The fix is to expose all new attributes "my*" for now.
         # This post pointed me in the right direction:
         # https://discourse.nixos.org/t/working-with-haskell-broken-packages/30126/5
-        # TODO would just making the outermost myHaskell different be enough?
         # TODO did i successfully work around the fix-point issue, or did ghc981 fix docopt?
         haskellOverlay = (final: prev: {
           myHaskell = final.lib.recursiveUpdate prev.haskell {
@@ -66,7 +69,21 @@
 
                   # TODO figure out how to include the DT flake output directly instead?
                   directory-tree = hFinal.callCabal2nix "directory-tree" directory-tree {};
-                  docopt = prev.haskell.lib.markUnbroken hPrev.docopt;
+
+                  # recent nixpkgs + ghc combos just need markUnbroken:
+                  # docopt = prev.haskell.lib.markUnbroken hPrev.docopt;
+
+                  # bug ghc944 needs all these and probably some more:
+                  docopt = hFinal.callHackageDirect {
+                    pkg = "docopt";
+                    ver = "0.7.0.8";
+                    sha256 = "sha256-f98RS35lPogWPc9R719AKmdGiivpYEkU2Ku8oFX67dc=";
+                  } {};
+                  aeson = hPrev.aeson_2_2_0_0;
+                  th-orphans = hPrev.th-orphans.overrideAttrs (old: {
+                    librarySystemDepends = old.librarySystemDepends or [] ++ [final.gmp];
+                  });
+
                 };
               };
             };
