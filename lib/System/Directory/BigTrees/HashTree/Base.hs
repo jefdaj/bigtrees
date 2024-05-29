@@ -105,6 +105,10 @@ data HashTree a
       }
   deriving (Generic, Ord, Read, Show)
 
+isErr :: forall a. HashTree a -> Bool
+isErr (Err {}) = True
+isErr _ = False
+
 -- TODO should this be a lens or something? going to want a setter too at some point
 treeName :: HashTree a -> Name
 treeName (Err  {errName =n }) = n

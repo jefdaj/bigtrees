@@ -30,9 +30,11 @@ module System.Directory.BigTrees.HashTree
   , roundtripTestTreeToDir
   , dropFileData
   , writeTestTreeDir
+  , isErr
   , prop_roundtrip_ProdTree_to_ByteString
   , prop_roundtrip_ProdTree_to_hashes
   , prop_roundtrip_TestTree_to_dir
+  , unit_tree_from_bad_path_is_Err
 
   )
   where
@@ -52,7 +54,7 @@ import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree, sumNodes,
-                                                dropFileData)
+                                                dropFileData, isErr)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
@@ -60,6 +62,7 @@ import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readT
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeTestTreeDir,
                                                  hWriteTree, writeTree)
+import Test.HUnit (Assertion, assertBool)
 
 -- import System.Directory.BigTrees.Util (absolutePath)
 
@@ -144,3 +147,12 @@ prop_roundtrip_TestTree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundtripTestTreeToDir t1
   assert $ t2 == t1 -- force evaluation to prevent any possible conflicts
+
+-- TODO roundtrip err to hashes
+
+unit_tree_from_bad_path_is_Err ::Assertion
+unit_tree_from_bad_path_is_Err =
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+    let badPath = tmpDir </> "doesnotexist"
+    tree <- buildProdTree False [] badPath
+    assertBool "tree built from non-existent path should be Err" $ isErr tree
