@@ -77,7 +77,7 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = exceptionToErrTree n e
 -- We handle them all here.
 -- Note that readFileFn and hashFile both read the file, but in practice that
 -- isn't a problem because readFileFn is a no-op in production.
-buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
+buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (exceptionToErrTree n) $ do
   let fPath = DT.nappend a n
   isLink <- pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
   if isLink
@@ -145,7 +145,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
         , fileData = fd
         }
 
-buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
+buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = handleAny (exceptionToErrTree n) $ do
   let root = DT.nappend a n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
