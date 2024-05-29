@@ -2,6 +2,7 @@
 
 module System.Directory.BigTrees.HashTree.Build where
 
+import Control.Exception.Safe (handleAny, Exception, MonadCatch)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
@@ -58,14 +59,19 @@ buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ show tree
   buildTree' readFileFn beVerbose 0 excludes tree
 
+-- This is mainly meant as an error handler, but also works for the trivial
+-- case of re-wrapping directory-tree error nodes.
+exceptionToErrTree :: (Monad m, Exception e) => Name -> e -> m (HashTree a)
+exceptionToErrTree n e =
+  return $ Err
+    { errName = n
+    , errMsg = ErrMsg $ show e -- TODO clean it up a bit more?
+    }
+
 -- TODO rename buildTreeL'?
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
 
-buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) =
-  return $ Err
-    { errName = n
-    , errMsg = ErrMsg $ show e -- TODO clean it up a bit more
-    }
+buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = exceptionToErrTree n e
 
 -- A "File" can be a real file, but also several variants of symlink.
 -- We handle them all here.
