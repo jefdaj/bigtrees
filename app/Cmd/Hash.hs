@@ -5,7 +5,7 @@ module Cmd.Hash where
 import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
-import Data.List (sort)
+import Data.List (sort, isPrefixOf)
 import System.Directory.BigTrees (buildProdTree, printTree, hWriteTree)
 import System.Directory.BigTrees.HeadFoot (hWriteHeader, hWriteFooter)
 import System.Directory.BigTrees.Util (absolutePath)
@@ -35,6 +35,15 @@ cmdHash cfg path = bracket open close write
       hWriteTree hdl tree
       hWriteFooter hdl
 
+-- The scan output includes current date + other metadata,
+-- which we have to ignore if the tests are going to be reproducible.
+-- The simplest thing for now is to remove all the comment lines.
+-- TODO should the parser be robust to missing comments?
+-- TODO if not, be careful not to re-use these for parsing tests
+-- TODO or do a more specific list of regex substitutions (ew...)
+stripComments :: String -> String
+stripComments = unlines . filter (\l -> not ("#" `isPrefixOf` l)) . lines
+
 hashTarXzAction :: FilePath -> IO BLU.ByteString
 hashTarXzAction xzPath = do
   (Just xzPath') <- absolutePath xzPath
@@ -44,10 +53,11 @@ hashTarXzAction xzPath = do
     _ <- readCreateProcess ((proc "tar" ["-xf", xzPath']) {cwd = Just tmpDir}) ""
     (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig dPath
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
-    return $ BLU.fromString out
+    return $ BLU.fromString $ stripComments out
 
 mkHashTarXzTest :: FilePath -> TestTree
 mkHashTarXzTest xzPath =
+  -- TODO different extension since these aren't technically the same without comments?
   let gldPath = dropExtension (dropExtension xzPath) <.> "bigtree"
   in goldenVsString
        xzPath
