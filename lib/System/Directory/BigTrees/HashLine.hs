@@ -178,6 +178,17 @@ hashLineFields = ["type", "depth", "hash", "modtime", "nbytes", "nfiles", "name"
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
+
+prettyLine breadcrumbs (ErrLine (Depth n, ErrMsg m, name)) =
+  let node = case breadcrumbs of
+               Nothing -> n2fp name
+               Just ns -> breadcrumbs2fp $ name:ns
+  in join
+       [ B8.pack $ show n
+       , B8.pack $ show m -- unlike other hashline components, this should be quoted
+       , B8.pack node
+       ]
+
 prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
