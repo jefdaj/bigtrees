@@ -42,6 +42,7 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
 
 -- TODO Integer? not sure how big it could get
 sumNodes :: HashTree a -> NNodes
+sumNodes (Err  {}) = NNodes 1 -- TODO is this right?
 sumNodes (File {}) = NNodes 1
 sumNodes (Link {}) = NNodes 1 -- TODO is this right?
 sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
@@ -150,6 +151,7 @@ type TestTree = HashTree B8.ByteString
 -- this should have sum of nNodes == size... or is it nNodes-1?
 -- TODO test prop for that
 arbitraryContents :: Int -> Gen [TestTree]
+arbitraryContents n | n < 1 = return []
 arbitraryContents arbsize = arbitraryContentsHelper arbsize `suchThat` uniqNames
   where
     uniqNames cs = cs == nubBy duplicateNames cs
@@ -209,7 +211,7 @@ arbitraryDirSized arbsize = do
   n  <- arbitrary :: Gen Name
   -- !cs <- nubBy duplicateNames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
   -- TODO put back the nubBy part!
-  !cs <- arbitraryContents arbsize -- TODO (s-1)?
+  !cs <- arbitraryContents $ arbsize - 1
   !mt <- arbitrary :: Gen ModTime
   !s <- fmap NBytes $ return 4096 -- TODO does dir size vary?
   -- TODO assert that nNodes == s here?
