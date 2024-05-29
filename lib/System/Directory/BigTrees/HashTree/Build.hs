@@ -72,8 +72,9 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   if isLink
     then do
       notBroken <- trace ("exists? " ++ fPath) $ doesPathExist fPath
-      isDir <- isDirectory <$> getFileStatus fPath
-      if notBroken && not isDir -- we treat links to dirs as broken for now
+      notDir <- if not notBroken then return False -- TODO why is this needed? shouldn't it short-circuit anyway?
+                else not . isDirectory <$> (trace ("getFileStatus " ++ fPath) $ getFileStatus fPath)
+      if notBroken && notDir -- we treat links to dirs as broken for now
 
         then do
           -- non-broken symlink, so
