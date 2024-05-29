@@ -33,7 +33,7 @@ wrapInEmptyDir n t = Dir
     { name     = fp2n n
     , hash     = h
     , modTime  = modTime $ nodeData t
-    , nBytes   = nBytes (nodeData t) + NBytes 4096 -- TODO does this vary?
+    , nBytes   = nBytes (nodeData t) + NBytes 4096 -- TODO how to determine this??
     }
   }
   where

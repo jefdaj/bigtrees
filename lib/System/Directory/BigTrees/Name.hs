@@ -36,6 +36,7 @@ module System.Directory.BigTrees.Name
   , myShrinkText
   , isValidName
   , roundtripNameToFileName
+  , prop_roundtrip_Name_to_String
   , prop_roundtrip_Name_to_FileName
   , prop_roundtrip_Name_to_filepath
 
@@ -101,6 +102,7 @@ instance Arbitrary Name where
 
 -- TODO is there ever another separator, except on windows?
 -- TODO use this in the arbitrary filepath instance too?
+-- TODO is GHC rejecting some of these??
 isValidName :: T.Text -> Bool
 isValidName t
   = notElem t ["", ".", ".."]
@@ -146,6 +148,9 @@ instance DT.IsName Name where
 -- TODO should this have the option for a decoding error?
 -- bs2n :: BU.ByteString -> Name
 -- bs2n = fp2n . BU.toString
+
+prop_roundtrip_Name_to_String :: Name -> Bool
+prop_roundtrip_Name_to_String n = read (show n) == n
 
 prop_roundtrip_Name_to_filepath :: Name -> Bool
 prop_roundtrip_Name_to_filepath n = fp2n (n2fp n) == n

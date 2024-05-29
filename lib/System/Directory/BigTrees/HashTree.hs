@@ -43,7 +43,6 @@ module System.Directory.BigTrees.HashTree
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
 
--- import Control.DeepSeq (force)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
 import System.Directory.BigTrees.Name (n2fp)
@@ -128,7 +127,7 @@ prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
 -- TODO oh, have to test equality ignoring mod times, right? otherwise they'll always update
 roundtripTestTreeToDir :: TestTree -> IO TestTree
 roundtripTestTreeToDir t =
-  -- TODO is this not used?
+
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     -- let tmpRoot = tmpDir </> "round-trip-tests" -- TODO use root
     -- SD.createDirectoryIfMissing True tmpDir -- TODO False?
@@ -143,11 +142,12 @@ roundtripTestTreeToDir t =
     let treeRootDir = tmpDir </> n2fp (name $ nodeData t) -- TODO use IsName here
     readTestTree Nothing False [] treeRootDir
 
+-- TODO is the forcing unnecessary?
 prop_roundtrip_TestTree_to_dir :: Property
 prop_roundtrip_TestTree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundtripTestTreeToDir t1
-  assert $ t2 == t1 -- force evaluation to prevent any possible conflicts
+  assert $ t2 == t1
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion
 unit_tree_from_bad_path_is_Err =
