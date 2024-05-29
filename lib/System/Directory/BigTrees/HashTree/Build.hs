@@ -57,8 +57,8 @@ buildTree readFileFn beVerbose excludes path = do
 
 -- This is mainly meant as an error handler, but also works for the trivial
 -- case of re-wrapping directory-tree error nodes.
-exceptionToErrTree :: (Monad m, Exception e) => Name -> e -> m (HashTree a)
-exceptionToErrTree n e =
+mkErrTree :: (Monad m, Exception e) => Name -> e -> m (HashTree a)
+mkErrTree n e =
   return $ Err
     { errName = n
     , errMsg = ErrMsg $ show e -- TODO clean it up a bit more?
@@ -67,13 +67,13 @@ exceptionToErrTree n e =
 -- TODO rename buildTreeL'?
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
 
-buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = exceptionToErrTree n e
+buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
 
 -- A "File" can be a real file, but also several variants of symlink.
 -- We handle them all here.
 -- Note that readFileFn and hashFile both read the file, but in practice that
 -- isn't a problem because readFileFn is a no-op in production.
-buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (exceptionToErrTree n) $ do
+buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n) $ do
   let fPath = DT.nappend a n
   isLink <- pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
   if isLink
@@ -141,7 +141,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (exceptionT
         , fileData = fd
         }
 
-buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = handleAny (exceptionToErrTree n) $ do
+buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = handleAny (mkErrTree n) $ do
   let root = DT.nappend a n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
