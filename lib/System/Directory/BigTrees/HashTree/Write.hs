@@ -44,7 +44,7 @@ flattenTree = flattenTree' ""
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
 flattenTree' dir (Err {errName=n, errMsg=m})
-  = [] -- TODO finish
+  = [ErrLine (Depth $ length (splitPath dir), m, n)]
 flattenTree' dir (File {nodeData=nd})
   = [HashLine (F, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, 1, name nd)]
 flattenTree' dir (Link {linkData=ld, nodeData=nd}) =

@@ -106,7 +106,7 @@ newtype NNodes = NNodes Int
 -- TODO remove the tuple part now?
 data HashLine
   = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
-  | ErrLine  (TreeType, Depth, ErrMsg, Name)
+  | ErrLine  (Depth, ErrMsg, Name)
   deriving (Eq, Ord, Read, Show, Generic)
 
 instance NFData HashLine
@@ -207,7 +207,7 @@ sepP = char sepChar
 
 typeP :: Parser TreeType
 typeP = do
-  t <- choice [char 'D', char 'F', char 'L', char 'B', char 'E'] <* pSep
+  t <- choice [char 'D', char 'F', char 'L', char 'B', char 'E'] <* sepP
   return $ read [t]
 
 hashP :: Parser Hash
