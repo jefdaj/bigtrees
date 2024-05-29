@@ -8,11 +8,10 @@ Usage:
   bigtrees [-v] dupes [-t <txt>] [-d <maxdepth>] <hashes>
 
   bigtrees [-vc]  oldcat    <path>
-  bigtrees [-vfc] oldupdate <main> <sub> <path>
+  bigtrees [-vc] oldupdate <main> <sub> <path>
   bigtrees [-vc]  oldtest   <path>...
 
 Options:
-  -f, --force    Change existing files without requiring confirmation.
   -v, --verbose  Explain each step as it runs.
   -c, --check    Afterwards, re-hash to check that all files are as expected.
   -e <exclude>   Read a list of globs and exclude any files matching it.

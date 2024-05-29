@@ -2,6 +2,7 @@
 
 module System.Directory.BigTrees.HashTree.Build where
 
+import Control.DeepSeq (force)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
@@ -92,12 +93,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           fd <- unsafeInterleaveIO $ readFileFn fPath
           return $ Link
             { nodeData = NodeData
-              { name = n
-              , hash = h
-              , modTime = mt
-              , nBytes = s
+              { name = force n
+              , hash = force h
+              , modTime = force mt
+              , nBytes = force s
               }
-            , linkData = Just fd
+            , linkData = Just fd -- TODO force? needs NFData constraint
             }
 
         else do
@@ -108,10 +109,10 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
           return $ Link
             { nodeData = NodeData
-              { name = n
-              , hash = h
-              , modTime = mt
-              , nBytes = s
+              { name = force n
+              , hash = force h
+              , modTime = force mt
+              , nBytes = force s
               }
             , linkData = Nothing
             }
@@ -127,12 +128,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
       -- return File { name = n, hash = h }
       return $ File
         { nodeData = NodeData
-          { name = n
-          , hash = h
-          , modTime = mt
-          , nBytes = s
+          { name = force n
+          , hash = force h
+          , modTime = force mt
+          , nBytes = force s
           }
-        , fileData = fd
+        , fileData = fd -- TODO force? needs NFData constraint
         }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
@@ -166,7 +167,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- TODO should that be configurable or something?
   return $ (if depth < lazyDirDepth
               then id
-              else (\r -> (nodeData r `seq` nNodes r) `seq` r)) -- TODO what else needs to be here??
+              else (\r -> (cs'' `seq` nodeData r `seq` nNodes r) `seq` r)) -- TODO what else needs to be here??
          $ Dir
             { dirContents = cs''
             , nNodes  = sum $ 1 : map sumNodes cs''

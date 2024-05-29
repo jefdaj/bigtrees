@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Config
   ( Config(..)
   , defaultConfig
@@ -5,6 +7,8 @@ module Config
   )
   where
 
+import GHC.Generics (Generic)
+import Control.DeepSeq (NFData)
 import Control.Monad (when)
 import Prelude hiding (log)
 
@@ -20,20 +24,22 @@ data Config
       { txt      :: Maybe FilePath
       , maxdepth :: Maybe Int
       , verbose  :: Bool
-      , force    :: Bool
+      -- , force    :: Bool
       , check    :: Bool
       , exclude  :: [String]
       , metafmt  :: Maybe String
       , regex    :: Maybe String
       }
-  deriving (Read, Show)
+  deriving (Read, Show, Generic)
+
+instance NFData Config
 
 defaultConfig :: Config
 defaultConfig = Config
   { txt      = Nothing
   , maxdepth = Nothing
   , verbose  = True
-  , force    = False
+  -- , force    = False
   , check    = True
   -- TODO add .nix-* things with cyclic symlinks? or fix upstream
   , exclude  = ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]

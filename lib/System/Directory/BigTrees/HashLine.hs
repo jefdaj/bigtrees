@@ -63,7 +63,9 @@ instance NFData TreeType
 
 newtype Depth
   = Depth Int
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Ord, Read, Show, Generic)
+
+instance NFData Depth
 
 newtype ModTime = ModTime Integer
   deriving (Eq, Ord, Num, Read, Show, Generic)
@@ -97,7 +99,10 @@ newtype NNodes = NNodes Int
 -- TODO remove the tuple part now?
 newtype HashLine
   = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Ord, Read, Show, Generic)
+
+-- if i never needed this before, it can't be the only way to force evaluation...
+instance NFData HashLine
 
 ---------------
 -- instances --
