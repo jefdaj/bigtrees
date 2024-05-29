@@ -76,7 +76,7 @@ data HashTree a
   | Dir
       { name     :: !Name
       , hash     :: Hash -- TODO strict?
-      , modTime  :: !ModTime
+      , modTime  :: ModTime
       , contents :: [HashTree a] -- TODO rename dirContents?
       , nINodes  :: Int -- TODO strict?
       }

@@ -94,9 +94,10 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- If there are any contents at all, by definition they're newer than the dir, right?
   -- So we only need the root mod time when the dir is empty...
   -- !mt <- getModTime root
-  mt <- if null cs''
-          then getModTime root
-          else return $ maximum $ map modTime cs''
+  mt <- getModTime root
+  -- mt <- if null cs''
+  --         then getModTime root
+  --         else return $ maximum $ map modTime cs''
 
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?
