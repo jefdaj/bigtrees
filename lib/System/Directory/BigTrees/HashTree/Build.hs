@@ -19,8 +19,6 @@ import System.PosixCompat.Files (getSymbolicLinkStatus, modificationTime, fileSi
 import Foreign.C.Types (CTime(..))
 import System.Posix.Files (readSymbolicLink, getFileStatus, isDirectory)
 
-import Debug.Trace
-
 keepPath :: [String] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) (map compile excludes)
   where
@@ -68,12 +66,12 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ DT.nappend a n ++ ": " 
 -- isn't a problem because readFileFn is a no-op in production.
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   let fPath = DT.nappend a n
-  isLink <- trace ("is link? " ++ fPath) $ pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
+  isLink <- pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
   if isLink
     then do
-      notBroken <- trace ("exists? " ++ fPath) $ doesPathExist fPath
+      notBroken <- doesPathExist fPath
       notDir <- if not notBroken then return False -- TODO why is this needed? shouldn't it short-circuit anyway?
-                else not . isDirectory <$> (trace ("getFileStatus " ++ fPath) $ getFileStatus fPath)
+                else not . isDirectory <$> getFileStatus fPath
       if notBroken && notDir -- we treat links to dirs as broken for now
 
         then do
@@ -82,12 +80,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           -- except the mod time which should be the more recent of the two
           -- (in case the link target changed to a different valid file)
           -- TODO handle the extra case here where it exists but is outside the tree!
-          !mt1 <- trace ("non-broken symlink " ++ fPath) $ unsafeInterleaveIO $ getSymlinkLiteralModTime fPath -- not this
-          !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath -- not this one
-          let mt = trace ("mod times: " ++ show [mt1, mt2]) $ maximum [mt1, mt2]
-          !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath -- not this one then
-          !h  <- unsafeInterleaveIO $ trace ("hashSymlinkTarget " ++ fPath) $ hashSymlinkTarget fPath -- not this one
-          !fd <- unsafeInterleaveIO $ trace ("readFileFn " ++ fPath) $ readFileFn fPath -- not this one
+          !mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
+          !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
+          let mt = maximum [mt1, mt2]
+          !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
+          !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
+          !fd <- unsafeInterleaveIO $ readFileFn fPath
           return $ (if depth < lazyDirDepth
                       then id
                       else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
@@ -104,7 +102,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
         else do
           -- broken symlink, so
           -- the symlink itself is the relevant file to pull info from
-          !mt <- trace ("broken symlink " ++ fPath) $ unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
+          !mt <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
           !s  <- unsafeInterleaveIO $ getSymlinkLiteralNBytes  fPath
           !h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
           return $ (if depth < lazyDirDepth
@@ -122,7 +120,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
 
     else do
       -- regular file
-      !mt <- trace ("regular file " ++ fPath) $ unsafeInterleaveIO $ getFileDirModTime fPath
+      !mt <- unsafeInterleaveIO $ getFileDirModTime fPath
       !s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
       !h  <- unsafeInterleaveIO $ hashFile v fPath
       !fd <- unsafeInterleaveIO $ readFileFn fPath
@@ -199,7 +197,7 @@ getSymlinkTargetModTime :: FilePath -> IO ModTime
 getSymlinkTargetModTime p = do
   target <- readSymbolicLink p
   let p' = takeDirectory p </> target
-  trace ("p': " ++ p') $ getFileDirModTime p'
+  getFileDirModTime p'
 
 -- https://stackoverflow.com/a/17909816
 -- Be sure to check that it isn't a symlink before calling this!
