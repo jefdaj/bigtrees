@@ -84,3 +84,4 @@ writeTestTreeDir root (Dir {nodeData=nd, dirContents = cs}) = do
   -- putStrLn $ "write test dir: " ++ root'
   SD.createDirectoryIfMissing False root' -- TODO true?
   mapM_ (writeTestTreeDir root') cs
+-- TODO finish Link branch here!

@@ -43,9 +43,11 @@ lazyDirDepth = 4
 
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
+-- TODO rename buildProdTreeL?
 buildProdTree :: Bool -> [String] -> FilePath -> IO ProdTree
 buildProdTree = buildTree (return . const ())
 
+-- TODO rename buildTreeL?
 buildTree :: (FilePath -> IO a) -> Bool -> [String] -> FilePath -> IO (HashTree a)
 buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
@@ -55,6 +57,7 @@ buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ show tree
   buildTree' readFileFn beVerbose 0 excludes tree
 
+-- TODO rename buildTreeL'?
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
 
 -- TODO catch and re-throw errors with better description and/or handle them here
