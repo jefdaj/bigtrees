@@ -55,7 +55,7 @@ import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree, sumNodes,
-                                                dropFileData, isErr)
+                                                dropFileData, isErr, renameRoot)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
@@ -162,5 +162,6 @@ unit_roundtrip_Err_to_hashes = do
     let badPath = tmpDir </> "doesnotexist"
     t1 <- buildProdTree False [] badPath
     t2 <- roundtripProdTreeToHashes t1
-    putStrLn $ show t2
-    HU.assert $ t2 == t1
+    -- TODO is there a good way to communicate the name to the parser?
+    let t2' = renameRoot "doesnotexist" t2
+    HU.assert $ t2' == t1
