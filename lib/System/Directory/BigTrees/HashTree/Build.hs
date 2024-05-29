@@ -107,7 +107,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
          $ Dir
             { name     = n
             , contents = cs''
-            , modTime  = mt
+            , modTime  = maximum $ mt : map modTime cs''
             , hash     = hashContents cs''
             , nINodes  = sum $ 1 : map totalINodes cs''
             }
