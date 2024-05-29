@@ -66,10 +66,10 @@ hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash
 -- TODO is it OK to make the entire thing strict for File but not Dir?
 -- TODO should Eq be based only on the hash, or also the rest of it? 
 data NodeData = NodeData
-  { name     :: !Name
-  , hash     :: !Hash
-  , modTime  :: !ModTime
-  , nBytes   :: !NBytes
+  { name     :: Name
+  , hash     :: Hash
+  , modTime  :: ModTime
+  , nBytes   :: NBytes
   }
   deriving (Eq, Ord, Read, Show, Generic)
 

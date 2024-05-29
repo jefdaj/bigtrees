@@ -150,18 +150,18 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
-  let cs'' = sortBy (compare `on` (name . nodeData)) subTrees
+  let cs'' = sortBy (compare `on` (name . nodeData)) subTrees -- TODO space leak by evaluating nodedata?
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
   -- We want the overall mod time to be the most recent of the dir + all dirContents.
   -- If there are any dirContents at all, by definition they're newer than the dir, right?
   -- So we only need the root mod time when the dir is empty...
-  -- !mt <- getFileDirModTime root
-  mt <- if null cs''
-          then getFileDirModTime root
-          else return $ maximum $ map (modTime . nodeData) cs''
+  !mt <- getFileDirModTime root
+  -- mt <- if null cs''
+  --         then getFileDirModTime root
+  --         else return $ maximum $ map (modTime . nodeData) cs''
 
-  s  <- getFileDirNBytes root -- TODO is this always 4096?
+  !s  <- getFileDirNBytes root -- TODO is this always 4096?
 
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?
@@ -173,7 +173,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
             , nNodes  = sum $ 1 : map sumNodes cs''
             , nodeData = NodeData
               { name     = n
-              , modTime  = mt
+              , modTime  = maximum $ mt : map (modTime . nodeData) cs''
               , nBytes   = sum $ s : map (nBytes . nodeData) cs''
               , hash     = hashContents cs''
               }
