@@ -17,6 +17,7 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
 import Control.Exception (bracket) -- TODO .Safe?
+import System.Info (os)
 
 cmdHash :: Config -> FilePath -> IO ()
 cmdHash cfg path = bracket open close write
@@ -58,7 +59,8 @@ hashTarXzAction xzPath = do
 mkHashTarXzTest :: FilePath -> TestTree
 mkHashTarXzTest xzPath =
   -- TODO different extension since these aren't technically the same without comments?
-  let gldPath = dropExtension (dropExtension xzPath) <.> "bigtree"
+  -- TODO something cleaner for os-specific golden files
+  let gldPath = dropExtension (dropExtension xzPath) ++ "_" ++ os <.> "bigtree"
   in goldenVsString
        xzPath
        gldPath
