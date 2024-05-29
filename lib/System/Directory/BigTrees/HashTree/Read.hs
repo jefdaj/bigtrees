@@ -3,7 +3,7 @@ module System.Directory.BigTrees.HashTree.Read where
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
-import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (D, F),
+import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..),
                                            parseHashLines)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree,
                                                 sumNodes)
@@ -46,6 +46,26 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                    }
                  }
        in cs ++ [(Depth i, f)]
+  B -> let l = Link
+                 { linkData = Nothing -- TODO is this meaningully different from L?
+                 , nodeData = NodeData
+                   { name = p
+                   , hash = h
+                   , modTime = mt
+                   , nBytes = s
+                   }
+                 }
+       in cs ++ [(Depth i, l)]
+  L -> let l = Link
+                 { linkData = Just ()
+                 , nodeData = NodeData
+                   { name = p
+                   , hash = h
+                   , modTime = mt
+                   , nBytes = s
+                   }
+                 }
+       in cs ++ [(Depth i, l)]
   D -> let (children, siblings) = partition (\(Depth i2, _) -> i2 > i) cs
            dir = Dir
                    { dirContents = map snd children

@@ -53,7 +53,8 @@ import GHC.Generics (Generic)
 -----------
 
 -- for distinguishing beween files and dirs
-data TreeType = D | F
+-- TODO is B a good notation for broken link, or should that be LB?
+data TreeType = D | F | L | B
   deriving (Eq, Ord, Read, Show)
 
 instance NFData TreeType
@@ -193,7 +194,7 @@ pSep = char sepChar
 
 typeP :: Parser TreeType
 typeP = do
-  t <- choice [char 'D', char 'F'] <* pSep
+  t <- choice [char 'D', char 'F', char 'L', char 'B'] <* pSep
   return $ read [t]
 
 hashP :: Parser Hash
