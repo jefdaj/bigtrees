@@ -5,11 +5,12 @@ import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
 import System.Directory.BigTrees.HashLine (HashLine (..), Depth (Depth), NNodes(..),
-                                           TreeType (D, F), prettyLine)
+                                           TreeType (..), prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitPath, (</>))
 import System.IO (IOMode (..), hFlush, stdout, withFile, Handle)
+import Data.Maybe (isNothing)
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
@@ -45,6 +46,9 @@ flattenTree = flattenTree' ""
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
 flattenTree' dir (File {nodeData=nd})
   = [HashLine (F, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, 1, name nd)]
+flattenTree' dir (Link {linkData=ld, nodeData=nd}) =
+  let tt = if isNothing ld then B else L
+  in [HashLine (tt, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, 1, name nd)]
 flattenTree' dir (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
