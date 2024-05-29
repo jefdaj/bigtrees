@@ -93,6 +93,10 @@ data HashTree a
       , nNodes      :: NNodes -- TODO Integer? include in tree files
       , dirContents :: [HashTree a] -- TODO rename dirContents?
       }
+  | Link
+      { nodeData :: !NodeData
+      , linkData :: !(Maybe a) -- Nothing if the link is broken/points outside tree
+      }
   deriving (Generic, Ord, Read, Show)
 
 -- We only need the file decoration for testing, so we can leave it off the production types
@@ -110,6 +114,7 @@ instance Functor HashTree where
   fmap :: (a -> b) -> HashTree a -> HashTree b
   fmap fn f@(File {}) = f { fileData = fn (fileData f) }
   fmap fn d@(Dir  {}) = d { dirContents = map (fmap fn) (dirContents d) }
+  fmap fn l@(Link {}) = l { linkData = fmap fn (linkData l) }
 
 -- TODO test functor identity law
 
@@ -224,7 +229,8 @@ instance Arbitrary TestTree where
 -- TODO rewrite this in terms of a generic map/fold so it works with other types
 dropFileData :: HashTree a -> ProdTree
 dropFileData d@(Dir {dirContents = cs}) = d {dirContents = map dropFileData cs}
-dropFileData f@(File {})             = f {fileData = ()}
+dropFileData f@(File {})                = f {fileData = ()}
+dropFileData l@(Link {})                = l {linkData = Just ()}
 
 instance Arbitrary ProdTree where
   arbitrary :: Gen ProdTree
@@ -233,6 +239,10 @@ instance Arbitrary ProdTree where
 confirmFileHashes :: TestTree -> Bool
 confirmFileHashes (File {fileData = f, nodeData=nd}) = hashBytes f == hash nd
 confirmFileHashes (Dir {dirContents = cs})           = all confirmFileHashes cs
+confirmFileHashes (Link {linkData = l, nodeData=nd}) =
+  case l of
+    Nothing -> True
+    Just ld -> hashBytes ld == hash nd
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes
