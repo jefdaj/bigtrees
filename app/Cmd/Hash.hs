@@ -47,7 +47,7 @@ stripComments = unlines . filter (\l -> not ("#" `isPrefixOf` l)) . lines
 hashTarXzAction :: FilePath -> IO BLU.ByteString
 hashTarXzAction xzPath = do
   (Just xzPath') <- absolutePath xzPath
-  withSystemTempDirectory "/tmp/bigtrees" $ \tmpDir -> do
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     let dPath = tmpDir </> dropExtension (takeBaseName xzPath') -- assumes .tar.something
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xzPath']) {cwd = Just tmpDir}) ""
