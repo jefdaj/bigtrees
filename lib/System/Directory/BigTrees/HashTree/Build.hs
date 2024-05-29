@@ -11,7 +11,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), Pro
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime, pathIsSymbolicLink, doesPathExist)
 import qualified System.Directory.Tree as DT
-import System.FilePath ((</>))
+import System.FilePath ((</>), takeDirectory)
 import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith, compile)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -68,10 +68,10 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ DT.nappend a n ++ ": " 
 -- isn't a problem because readFileFn is a no-op in production.
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   let fPath = DT.nappend a n
-  isLink <- pathIsSymbolicLink fPath
+  isLink <- trace ("is link? " ++ fPath) $ pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
   if isLink
     then do
-      notBroken <- doesPathExist fPath
+      notBroken <- trace ("exists? " ++ fPath) $ doesPathExist fPath
       isDir <- isDirectory <$> getFileStatus fPath
       if notBroken && not isDir -- we treat links to dirs as broken for now
 
@@ -81,12 +81,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           -- except the mod time which should be the more recent of the two
           -- (in case the link target changed to a different valid file)
           -- TODO handle the extra case here where it exists but is outside the tree!
-          !mt1 <- trace ("non-broken symlink " ++ fPath) $ unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
-          !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
-          let mt = maximum [mt1, mt2]
-          !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
-          !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
-          !fd <- unsafeInterleaveIO $ readFileFn fPath
+          !mt1 <- trace ("non-broken symlink " ++ fPath) $ unsafeInterleaveIO $ getSymlinkLiteralModTime fPath -- not this
+          !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath -- not this one
+          let mt = trace ("mod times: " ++ show [mt1, mt2]) $ maximum [mt1, mt2]
+          !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath -- not this one then
+          !h  <- unsafeInterleaveIO $ trace ("hashSymlinkTarget " ++ fPath) $ hashSymlinkTarget fPath -- not this one
+          !fd <- unsafeInterleaveIO $ trace ("readFileFn " ++ fPath) $ readFileFn fPath -- not this one
           return $ (if depth < lazyDirDepth
                       then id
                       else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
@@ -195,7 +195,10 @@ getSymlinkLiteralModTime p = do
 -- Mod time of a symlink target, if it exists
 -- TODO fix this so it works recursively in case of more than one link!
 getSymlinkTargetModTime :: FilePath -> IO ModTime
-getSymlinkTargetModTime p = readSymbolicLink p >>= getFileDirModTime
+getSymlinkTargetModTime p = do
+  target <- readSymbolicLink p
+  let p' = takeDirectory p </> target
+  trace ("p': " ++ p') $ getFileDirModTime p'
 
 -- https://stackoverflow.com/a/17909816
 -- Be sure to check that it isn't a symlink before calling this!
@@ -216,16 +219,19 @@ getSymlinkLiteralNBytes p = do
 -- TODO does this work recursively?
 -- TODO is it ever needed?
 getSymlinkTargetNBytes :: FilePath -> IO NBytes
-getSymlinkTargetNBytes p = readSymbolicLink p >>= getFileDirNBytes
+getSymlinkTargetNBytes p = do
+  target <- readSymbolicLink p
+  let p' = takeDirectory p </> target
+  getFileDirNBytes p'
 
 -- Size of a regular file or directory (not including directory contents, of course)
 getFileDirNBytes :: FilePath -> IO NBytes
-getFileDirNBytes f = do
-  isLink <- pathIsSymbolicLink f
-  n <- if isLink
-         then getSymbolicLinkStatus f >>= return . toInteger . fileSize
-         else getFileSize f
-  return $ NBytes n
+getFileDirNBytes p = getFileSize p >>= return . NBytes
+  -- isLink <- pathIsSymbolicLink f
+  -- n <- if isLink
+  --        then getSymbolicLinkStatus f >>= return . toInteger . fileSize
+  --        else getFileSize f
+  -- return $ NBytes n
 
 -- TODO unit_symlink_to_dir_read_as_file
 -- TODO unit_symlink_to_file_read_as_file_hash_path

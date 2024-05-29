@@ -55,7 +55,7 @@ import qualified Streaming.ByteString.Char8 as Q
 import qualified Streaming.Prelude as S
 import qualified System.Directory as SD
 import System.Directory (pathIsSymbolicLink)
-import System.FilePath (takeBaseName, takeFileName)
+import System.FilePath (takeDirectory, takeBaseName, takeFileName, (</>))
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
@@ -131,7 +131,10 @@ hashSymlinkLiteral path = readSymbolicLink path >>= return . hashString
 --      we want to treat that as a broken link instead
 -- TODO fails on dirs?
 hashSymlinkTarget :: FilePath -> IO Hash
-hashSymlinkTarget path = readSymbolicLink path >>= hashFileContentsStreaming
+hashSymlinkTarget path = do
+  target <- readSymbolicLink path
+  let p' = takeDirectory path </> target
+  hashFileContentsStreaming p'
 
 -- TODO Was the .git/annex/objects prefix important?
 --      If not, don't want to make matching the actual content files any harder by adding it
