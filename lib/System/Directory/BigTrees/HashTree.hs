@@ -162,4 +162,5 @@ unit_roundtrip_Err_to_hashes = do
     let badPath = tmpDir </> "doesnotexist"
     t1 <- buildProdTree False [] badPath
     t2 <- roundtripProdTreeToHashes t1
+    putStrLn $ show t2
     HU.assert $ t2 == t1
