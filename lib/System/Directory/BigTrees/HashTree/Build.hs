@@ -17,7 +17,9 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import System.PosixCompat.Files (getSymbolicLinkStatus, modificationTime, fileSize)
 import Foreign.C.Types (CTime(..))
-import System.Posix.Files (readSymbolicLink)
+import System.Posix.Files (readSymbolicLink, getFileStatus, isDirectory)
+
+import Debug.Trace
 
 keepPath :: [String] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) (map compile excludes)
@@ -70,7 +72,8 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   if isLink
     then do
       notBroken <- doesPathExist fPath
-      if notBroken
+      isDir <- isDirectory <$> getFileStatus fPath
+      if notBroken && not isDir -- we treat links to dirs as broken for now
 
         then do
           -- non-broken symlink, so
@@ -78,7 +81,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           -- except the mod time which should be the more recent of the two
           -- (in case the link target changed to a different valid file)
           -- TODO handle the extra case here where it exists but is outside the tree!
-          !mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
+          !mt1 <- trace ("non-broken symlink " ++ fPath) $ unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
           !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
           let mt = maximum [mt1, mt2]
           !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
@@ -100,10 +103,10 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
         else do
           -- broken symlink, so
           -- the symlink itself is the relevant file to pull info from
-          !mt <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
+          !mt <- trace ("broken symlink " ++ fPath) $ unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
           !s  <- unsafeInterleaveIO $ getSymlinkLiteralNBytes  fPath
           !h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
-          !fd <- unsafeInterleaveIO $ undefined fPath -- TODO should be Nothing in the Link here
+          -- !fd <- unsafeInterleaveIO $ undefined fPath -- TODO should be Nothing in the Link here
           return $ (if depth < lazyDirDepth
                       then id
                       else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
@@ -114,12 +117,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
                       , modTime = mt
                       , nBytes = s
                       }
-                    , fileData = fd
+                    , fileData = undefined
                     }
 
     else do
       -- regular file
-      !mt <- unsafeInterleaveIO $ getFileDirModTime fPath
+      !mt <- trace ("regular file " ++ fPath) $ unsafeInterleaveIO $ getFileDirModTime fPath
       !s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
       !h  <- unsafeInterleaveIO $ hashFile v fPath
       !fd <- unsafeInterleaveIO $ readFileFn fPath

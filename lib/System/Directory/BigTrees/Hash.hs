@@ -129,6 +129,7 @@ hashSymlinkLiteral path = readSymbolicLink path >>= return . hashString
 -- TODO will it work recursively?
 -- TODO guard against this pointing outside the tree being scanned;
 --      we want to treat that as a broken link instead
+-- TODO fails on dirs?
 hashSymlinkTarget :: FilePath -> IO Hash
 hashSymlinkTarget path = readSymbolicLink path >>= hashFileContentsStreaming
 
