@@ -42,6 +42,7 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
 -- TODO Integer? not sure how big it could get
 sumNodes :: HashTree a -> NNodes
 sumNodes (File {}) = NNodes 1
+sumNodes (Link {}) = NNodes 1 -- TODO is this right?
 sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 
 -- TODO is this needed, or will the fields be total?
