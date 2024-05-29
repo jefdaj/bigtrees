@@ -76,7 +76,6 @@ executable:
   - base
   - bigtrees
   - bytestring
-  - deepseq
   - docopt
   - filepath
   - pretty-simple

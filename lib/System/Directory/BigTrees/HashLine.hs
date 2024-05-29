@@ -101,7 +101,6 @@ newtype HashLine
   = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
   deriving (Eq, Ord, Read, Show, Generic)
 
--- if i never needed this before, it can't be the only way to force evaluation...
 instance NFData HashLine
 
 ---------------

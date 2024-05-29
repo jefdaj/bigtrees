@@ -61,9 +61,10 @@ hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash
 
 -- TODO separate module for NodeData
 
--- All the fields shat should be common to File + Dir constructors
+-- All the fields shat should be common to File + Dir constructors.
+-- Note that it's important NOT to make the hash, mod time, or nbytes strict in Dirs.
+-- TODO strict name though?
 -- TODO come up with a better name?
--- TODO is it OK to make the entire thing strict for File but not Dir?
 -- TODO should Eq be based only on the hash, or also the rest of it? 
 data NodeData = NodeData
   { name     :: Name

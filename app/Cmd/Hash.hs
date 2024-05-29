@@ -2,8 +2,6 @@ module Cmd.Hash where
 
 -- TODO guess and check hashes
 
-import Control.DeepSeq (deepseq, force)
-import Control.Exception (evaluate)
 import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
@@ -28,11 +26,9 @@ cmdHash cfg path = bracket open close write
              Just p  -> openBinaryFile p WriteMode
     close = hClose
     write hdl = do
-      -- TODO it should be simple at least to force the header to print, right?? lol
-      --      why doesn't even the putStrLn run?
-      putStrLn "start write"
       hWriteHeader hdl (exclude cfg)
-      hWriteTree hdl =<< buildProdTree (verbose cfg) (exclude cfg) path
+      tree <- buildProdTree (verbose cfg) (exclude cfg) path
+      hWriteTree hdl tree
       hWriteFooter hdl
 
 hashTarXzAction :: FilePath -> IO BLU.ByteString

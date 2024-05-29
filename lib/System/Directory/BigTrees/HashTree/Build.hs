@@ -2,7 +2,6 @@
 
 module System.Directory.BigTrees.HashTree.Build where
 
-import Control.DeepSeq (force)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
@@ -93,12 +92,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           fd <- unsafeInterleaveIO $ readFileFn fPath
           return $ Link
             { nodeData = NodeData
-              { name = force n
-              , hash = force h
-              , modTime = force mt
-              , nBytes = force s
+              { name = n
+              , hash = h
+              , modTime = mt
+              , nBytes = s
               }
-            , linkData = Just fd -- TODO force? needs NFData constraint
+            , linkData = Just fd
             }
 
         else do
@@ -109,10 +108,10 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
           return $ Link
             { nodeData = NodeData
-              { name = force n
-              , hash = force h
-              , modTime = force mt
-              , nBytes = force s
+              { name = n
+              , hash = h
+              , modTime = mt
+              , nBytes = s
               }
             , linkData = Nothing
             }
@@ -128,12 +127,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
       -- return File { name = n, hash = h }
       return $ File
         { nodeData = NodeData
-          { name = force n
-          , hash = force h
-          , modTime = force mt
-          , nBytes = force s
+          { name = n
+          , hash = h
+          , modTime = mt
+          , nBytes = s
           }
-        , fileData = fd -- TODO force? needs NFData constraint
+        , fileData = fd
         }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
@@ -150,18 +149,14 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
-  let cs'' = sortBy (compare `on` (name . nodeData)) subTrees -- TODO space leak by evaluating nodedata?
+  let cs'' = sortBy (compare `on` (name . nodeData)) subTrees
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
   -- We want the overall mod time to be the most recent of the dir + all dirContents.
   -- If there are any dirContents at all, by definition they're newer than the dir, right?
-  -- So we only need the root mod time when the dir is empty...
-  !mt <- getFileDirModTime root
-  -- mt <- if null cs''
-  --         then getFileDirModTime root
-  --         else return $ maximum $ map (modTime . nodeData) cs''
-
-  !s  <- getFileDirNBytes root -- TODO is this always 4096?
+  -- So we only need this root mod time when the dir is empty.
+  mt <- getFileDirModTime root
+  s  <- getFileDirNBytes root
 
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?

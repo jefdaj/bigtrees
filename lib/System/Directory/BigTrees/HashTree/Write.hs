@@ -1,7 +1,5 @@
 module System.Directory.BigTrees.HashTree.Write where
 
-import Control.DeepSeq (force)
--- import Control.Exception (evaluate)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
@@ -54,7 +52,7 @@ flattenTree' dir (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
     n = name nd
-    subtrees = concatMap (force $ flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
+    subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
     wholeDir = HashLine (D, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, f, n)
 
 -- this is to catch the case where it tries to write the same file twice

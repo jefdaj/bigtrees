@@ -7,8 +7,6 @@ module Config
   )
   where
 
-import GHC.Generics (Generic)
-import Control.DeepSeq (NFData)
 import Control.Monad (when)
 import Prelude hiding (log)
 
@@ -30,9 +28,7 @@ data Config
       , metafmt  :: Maybe String
       , regex    :: Maybe String
       }
-  deriving (Read, Show, Generic)
-
-instance NFData Config
+  deriving (Read, Show)
 
 defaultConfig :: Config
 defaultConfig = Config
