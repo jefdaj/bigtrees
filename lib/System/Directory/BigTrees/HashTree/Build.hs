@@ -39,10 +39,6 @@ excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
     keep a (DT.File n _) = keepPath excludes $ DT.nappend a n
     keep a b             = True
 
--- TODO take this as a command-line argument?
-lazyDirDepth :: Int
-lazyDirDepth = 4
-
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
 -- TODO rename buildProdTreeL?
@@ -168,12 +164,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = handleAny (exception
   mt <- getFileDirModTime root
   s  <- getFileDirNBytes root
 
-  -- use lazy evaluation up to 5 levels deep, then strict
-  -- TODO should that be configurable or something?
-  return $ (if depth < lazyDirDepth
-              then id
-              else (\r -> (cs'' `seq` nodeData r `seq` nNodes r) `seq` r)) -- TODO what else needs to be here??
-         $ Dir
+  return $ Dir
             { dirContents = cs''
             , nNodes  = sum $ 1 : map sumNodes cs''
             , nodeData = NodeData
