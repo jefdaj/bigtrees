@@ -40,7 +40,11 @@ deserializeTree md bs = case foldr accTrees [] $ reverse $ parseHashLines md bs 
 --   | otherwise  = accTrees' hl cs
 
 -- TODO verify nfiles here, or just ignore it? should always be recalculated anyway
+-- TODO use a more efficient list append type? or reverse order?
 accTrees :: HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
+
+accTrees (ErrLine (d, m, n)) cs = cs ++ [(d, Err { errMsg = m, errName = n })]
+
 accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
   F -> let f = File
                  { fileData = ()
