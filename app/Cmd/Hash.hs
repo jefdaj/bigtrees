@@ -24,7 +24,11 @@ cmdHash cfg path = bracket open close write
     open = case txt cfg of
              Nothing -> return stdout
              Just p  -> openBinaryFile p WriteMode
-    close = hClose
+
+    -- TODO why is this required? shouldn't hClose be OK?
+    -- TODO maybe close it, but only if /= stdout?
+    close = \_ -> return ()
+
     write hdl = do
       hWriteHeader hdl (exclude cfg)
       tree <- buildProdTree (verbose cfg) (exclude cfg) path

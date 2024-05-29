@@ -1,6 +1,25 @@
-F	1	ZTgwZDhlZDM3NDUxN2Uy	1713640055	14	file1.txt
-F	2	Y2ZjOTQ5NGVjMTQ4M2I2	1713640055	12	file3.txt
-F	3	OGMwODk5YWZhOTllMWVh	1713640055	20	file2.txt
-D	2	ZDUzYWU5MWIyNTAwNjU5	1713640055	4116	folder2
-D	1	NDEzYWJiZjYyZDY3MmI1	1713640055	8224	folder1
-D	0	OTY2NjU5NzE5MjczZGMx	1713640055	12334	demo1
+# {
+#   "compiler": "ghc 9.6.4",
+#   "excludePatterns": [
+#     "hashes.*",
+#     ".git*",
+#     ".*.sw*",
+#     "._DS_Store",
+#     "*.plist"
+#   ],
+#   "locale": "en_US.UTF-8",
+#   "program": "test-app 0.1.0.0",
+#   "scanStart": 1717023902,
+#   "system": "x86_64-linux",
+#   "treeFormat": 240528
+# }
+# type	depth	hash	modtime	nbytes	nfiles	name
+F	1	ZTgwZDhlZDM3NDUxN2Uy	1713640055	14	1	file1.txt
+F	2	Y2ZjOTQ5NGVjMTQ4M2I2	1713640055	12	1	file3.txt
+F	3	OGMwODk5YWZhOTllMWVh	1713640055	20	1	file2.txt
+D	2	ZDUzYWU5MWIyNTAwNjU5	1713640055	4116	2	folder2
+D	1	NDEzYWJiZjYyZDY3MmI1	1713640055	8224	4	folder1
+D	0	OTY2NjU5NzE5MjczZGMx	1713640055	12334	6	demo1
+# {
+#   "scanEnd": 1717023902
+# }
