@@ -70,7 +70,8 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   if isLink
     then do
       notBroken <- doesPathExist fPath
-      notDir <- if not notBroken then return False -- TODO why is this needed? shouldn't it short-circuit anyway?
+      -- TODO why is the if/else needed? shouldn't it short-circuit below anyway?
+      notDir <- if not notBroken then return False
                 else not . isDirectory <$> getFileStatus fPath
       if notBroken && notDir -- we treat links to dirs as broken for now
 
@@ -80,65 +81,56 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
           -- except the mod time which should be the more recent of the two
           -- (in case the link target changed to a different valid file)
           -- TODO handle the extra case here where it exists but is outside the tree!
-          !mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
-          !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
+          mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
+          mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
           let mt = maximum [mt1, mt2]
-          !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
-          !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
-          !fd <- unsafeInterleaveIO $ readFileFn fPath
-          return $ (if depth < lazyDirDepth
-                      then id
-                      else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
-                 $ Link
-                    { nodeData = NodeData
-                      { name = n
-                      , hash = h
-                      , modTime = mt
-                      , nBytes = s
-                      }
-                    , linkData = Just fd
-                    }
+          s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
+          h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
+          fd <- unsafeInterleaveIO $ readFileFn fPath
+          return $ Link
+            { nodeData = NodeData
+              { name = n
+              , hash = h
+              , modTime = mt
+              , nBytes = s
+              }
+            , linkData = Just fd
+            }
 
         else do
           -- broken symlink, so
           -- the symlink itself is the relevant file to pull info from
-          !mt <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
-          !s  <- unsafeInterleaveIO $ getSymlinkLiteralNBytes  fPath
-          !h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
-          return $ (if depth < lazyDirDepth
-                      then id
-                      else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
-                 $ Link
-                    { nodeData = NodeData
-                      { name = n
-                      , hash = h
-                      , modTime = mt
-                      , nBytes = s
-                      }
-                    , linkData = Nothing
-                    }
+          mt <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
+          s  <- unsafeInterleaveIO $ getSymlinkLiteralNBytes  fPath
+          h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
+          return $ Link
+            { nodeData = NodeData
+              { name = n
+              , hash = h
+              , modTime = mt
+              , nBytes = s
+              }
+            , linkData = Nothing
+            }
 
     else do
       -- regular file
-      !mt <- unsafeInterleaveIO $ getFileDirModTime fPath
-      !s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
-      !h  <- unsafeInterleaveIO $ hashFile v fPath
-      !fd <- unsafeInterleaveIO $ readFileFn fPath
+      mt <- unsafeInterleaveIO $ getFileDirModTime fPath
+      s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
+      h  <- unsafeInterleaveIO $ hashFile v fPath
+      fd <- unsafeInterleaveIO $ readFileFn fPath
       -- seems not to help with memory usage?
       -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }
       -- return File { name = n, hash = h }
-      return $ (if depth < lazyDirDepth
-                  then id
-                  else (\x -> nodeData x `seq` x)) -- TODO what else needs to be here??
-             $ File
-                { nodeData = NodeData
-                  { name = n
-                  , hash = h
-                  , modTime = mt
-                  , nBytes = s
-                  }
-                , fileData = fd
-                }
+      return $ File
+        { nodeData = NodeData
+          { name = n
+          , hash = h
+          , modTime = mt
+          , nBytes = s
+          }
+        , fileData = fd
+        }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = DT.nappend a n
@@ -165,7 +157,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
           then getFileDirModTime root
           else return $ maximum $ map (modTime . nodeData) cs''
 
-  !s  <- getFileDirNBytes root -- TODO is this always 4096?
+  s  <- getFileDirNBytes root -- TODO is this always 4096?
 
   -- use lazy evaluation up to 5 levels deep, then strict
   -- TODO should that be configurable or something?
