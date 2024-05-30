@@ -63,6 +63,8 @@ import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, tree
 import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeTestTreeDir,
                                                  hWriteTree, writeTree)
 import qualified Test.HUnit as HU
+import System.Process (cwd, proc, readCreateProcess)
+import System.IO.Temp (withSystemTempDirectory)
 
 -- import System.Directory.BigTrees.Util (absolutePath)
 
@@ -165,3 +167,13 @@ unit_roundtrip_Err_to_hashes = do
     -- TODO is there a good way to communicate the name to the parser?
     let t2' = renameRoot "doesnotexist" t2
     HU.assert $ t2' == t1
+
+-- TODO rename to be more general? i imagine it should apply to any IO error
+unit_buildProdTree_catches_permission_error :: HU.Assertion
+unit_buildProdTree_catches_permission_error = do
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+    let badPath = tmpDir </> "file-without-read-permission.txt"
+    _ <- readCreateProcess ((proc "touch" [badPath]      ) {cwd = Just tmpDir}) ""
+    _ <- readCreateProcess ((proc "chmod" ["-r", badPath]) {cwd = Just tmpDir}) ""
+    t1 <- buildProdTree False [] badPath
+    undefined

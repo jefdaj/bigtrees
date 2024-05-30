@@ -3,6 +3,8 @@
 module System.Directory.BigTrees.HashTree.Build where
 
 import Control.Exception.Safe (handleAny, Exception, MonadCatch)
+-- import Control.Exception -- TODO specifics
+-- import GHC.IO.Exception -- TODO specifics
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
@@ -70,7 +72,10 @@ mkErrTree n e =
     , errMsg = ErrMsg $ show e -- TODO clean it up a bit more?
     }
 
--- TODO rename buildTreeL'?
+-- Note that all the IO operations done on a node itself (everything except dir
+-- contents) should be strict, because we want to be able to immediately wrap
+-- any IO errors in an Err tree constructor.
+-- TODO is there a safer way to do that with lazy evaluation?
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTree Name a -> IO (HashTree a)
 
 buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
@@ -96,12 +101,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
           -- except the mod time which should be the more recent of the two
           -- (in case the link target changed to a different valid file)
           -- TODO handle the extra case here where it exists but is outside the tree!
-          mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
-          mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
+          !mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
+          !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
           let mt = maximum [mt1, mt2]
-          s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
-          h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
-          fd <- unsafeInterleaveIO $ readFileFn fPath
+          !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
+          !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
+          !fd <- unsafeInterleaveIO $ readFileFn fPath
           return $ Link
             { nodeData = NodeData
               { name = n
@@ -115,9 +120,9 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
         else do
           -- broken symlink, so
           -- the symlink itself is the relevant file to pull info from
-          mt <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
-          s  <- unsafeInterleaveIO $ getSymlinkLiteralNBytes  fPath
-          h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
+          !mt <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
+          !s  <- unsafeInterleaveIO $ getSymlinkLiteralNBytes  fPath
+          !h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
           return $ Link
             { nodeData = NodeData
               { name = n
@@ -130,10 +135,10 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
 
     else do
       -- regular file
-      mt <- unsafeInterleaveIO $ getFileDirModTime fPath
-      s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
-      h  <- unsafeInterleaveIO $ hashFile v fPath
-      fd <- unsafeInterleaveIO $ readFileFn fPath
+      !mt <- unsafeInterleaveIO $ getFileDirModTime fPath
+      !s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
+      !h  <- unsafeInterleaveIO $ hashFile v fPath
+      !fd <- unsafeInterleaveIO $ readFileFn fPath
       -- seems not to help with memory usage?
       -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }
       -- return File { name = n, hash = h }
@@ -167,8 +172,8 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = handleAny (mkErrTree
   -- We want the overall mod time to be the most recent of the dir + all dirContents.
   -- If there are any dirContents at all, by definition they're newer than the dir, right?
   -- So we only need this root mod time when the dir is empty.
-  mt <- getFileDirModTime root
-  s  <- getFileDirNBytes root
+  !mt <- getFileDirModTime root
+  !s  <- getFileDirNBytes root
 
   return $ Dir
             { dirContents = cs''
