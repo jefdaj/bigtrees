@@ -10,7 +10,7 @@ import Data.Function (on)
 import Data.List (sortBy)
 import System.Directory.BigTrees.Hash (hashFile, hashSymlinkTarget, hashSymlinkLiteral)
 import System.Directory.BigTrees.HashLine (ModTime(..), NBytes(..), ErrMsg(..))
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, sumNodes, hashContents)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, sumNodes, hashContents, treeName, treeModTime, treeNBytes)
 import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime, pathIsSymbolicLink, doesPathExist)
 import qualified System.Directory.Tree as DT
@@ -166,7 +166,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = handleAny (mkErrTree
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
-  let cs'' = sortBy (compare `on` (name . nodeData)) subTrees
+  let cs'' = sortBy (compare `on` treeName) subTrees
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
   -- We want the overall mod time to be the most recent of the dir + all dirContents.
@@ -180,8 +180,8 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = handleAny (mkErrTree
             , nNodes  = sum $ 1 : map sumNodes cs''
             , nodeData = NodeData
               { name     = n
-              , modTime  = maximum $ mt : map (modTime . nodeData) cs''
-              , nBytes   = sum $ s : map (nBytes . nodeData) cs''
+              , modTime  = maximum $ mt : map treeModTime cs''
+              , nBytes   = sum $ s : map treeNBytes cs''
               , hash     = hashContents cs''
               }
             }

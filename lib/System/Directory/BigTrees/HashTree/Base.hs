@@ -112,10 +112,21 @@ isErr (Err {}) = True
 isErr _ = False
 
 -- TODO should this be a lens or something? going to want a setter too at some point
+-- TODO return Maybe here?
 treeName :: HashTree a -> Name
 treeName (Err  {errName =n }) = n
-treeName (File {nodeData=nd}) = name nd
-treeName (Dir  {nodeData=nd}) = name nd
+treeName t = name $ nodeData t
+
+-- TODO is the handling of Err reasonable? think about it more
+-- TODO return Maybe here?
+treeModTime :: HashTree a -> ModTime
+treeModTime (Err {}) = ModTime 0
+treeModTime t = modTime $ nodeData t
+
+-- TODO return Maybe here?
+treeNBytes :: HashTree a -> NBytes
+treeNBytes (Err {}) = NBytes 0
+treeNBytes t = nBytes $ nodeData t
 
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
