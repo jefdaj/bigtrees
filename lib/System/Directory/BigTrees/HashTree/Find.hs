@@ -13,7 +13,7 @@ import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), TreeType (..), ModTime(..), NBytes(..), sepChar)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), sumNodes)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), sumNodes, treeType)
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
@@ -61,12 +61,6 @@ pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
 ---------------------
 -- format metadata --
 ---------------------
-
--- TODO where should this live?
-treeType :: HashTree a -> Char
-treeType (Err  {}) = 'E'
-treeType (File {}) = 'F'
-treeType (Dir  {}) = 'D'
 
 -- TODO is the type variable a valid here?
 type FmtFn = forall a. Depth -> HashTree a -> B8.ByteString

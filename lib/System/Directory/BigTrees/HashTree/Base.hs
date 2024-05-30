@@ -111,6 +111,13 @@ isErr :: forall a. HashTree a -> Bool
 isErr (Err {}) = True
 isErr _ = False
 
+treeType :: HashTree a -> Char
+treeType (Dir  {}) = 'D'
+treeType (Err  {}) = 'E'
+treeType (File {}) = 'F'
+treeType (Link {linkData = Nothing}) = 'B'
+treeType (Link {}) = 'L'
+
 -- TODO should this be a lens or something? going to want a setter too at some point
 -- TODO return Maybe here?
 treeName :: HashTree a -> Name

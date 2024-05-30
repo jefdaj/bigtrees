@@ -24,6 +24,10 @@ module System.Directory.BigTrees.HashTree
   , writeTree
   , hWriteTree
   , printTreePaths
+  , treeName
+  , treeNBytes
+  , treeModTime
+  , treeType
 
   -- for testing
   , sumNodes
@@ -36,6 +40,7 @@ module System.Directory.BigTrees.HashTree
   , prop_roundtrip_TestTree_to_dir
   , unit_tree_from_bad_path_is_Err
   , unit_roundtrip_Err_to_hashes
+  , unit_buildProdTree_catches_permission_error
 
   )
   where
@@ -45,7 +50,8 @@ module System.Directory.BigTrees.HashTree
 
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
-import System.Directory.BigTrees.Name (n2fp)
+import System.Directory.BigTrees.Name (n2fp, Name(..))
+import System.Directory.BigTrees.HashLine (ErrMsg(..))
 import System.FilePath ((</>))
 -- import System.FilePath.Glob (Pattern)
 import System.IO (hClose)
@@ -54,7 +60,7 @@ import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree, sumNodes,
-                                                dropFileData, isErr, renameRoot)
+                                                dropFileData, isErr, renameRoot, treeName, treeModTime, treeNBytes, treeType)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
@@ -65,6 +71,7 @@ import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, write
 import qualified Test.HUnit as HU
 import System.Process (cwd, proc, readCreateProcess)
 import System.IO.Temp (withSystemTempDirectory)
+import Data.List (isInfixOf)
 
 -- import System.Directory.BigTrees.Util (absolutePath)
 
@@ -172,8 +179,14 @@ unit_roundtrip_Err_to_hashes = do
 unit_buildProdTree_catches_permission_error :: HU.Assertion
 unit_buildProdTree_catches_permission_error = do
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
-    let badPath = tmpDir </> "file-without-read-permission.txt"
+    let badPath = tmpDir </> badName
     _ <- readCreateProcess ((proc "touch" [badPath]      ) {cwd = Just tmpDir}) ""
     _ <- readCreateProcess ((proc "chmod" ["-r", badPath]) {cwd = Just tmpDir}) ""
     t1 <- buildProdTree False [] badPath
-    undefined
+    HU.assertBool "Err looks right" $ errLooksRight t1
+  where
+    badName = "file-without-read-permission.txt"
+    -- TODO proper idiom for this kind of test
+    errLooksRight e@(Err { errName = n, errMsg = ErrMsg m})
+      = n2fp n == badName && "permission denied" `isInfixOf` m
+    errLooksRight _ = False
