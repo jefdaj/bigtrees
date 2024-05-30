@@ -45,26 +45,26 @@ cmdHash cfg path = bracket open close write
 stripComments :: String -> String
 stripComments = unlines . filter (\l -> not ("#" `isPrefixOf` l)) . lines
 
-hashTarXzAction :: FilePath -> IO BLU.ByteString
-hashTarXzAction xzPath = do
+hashTarXzAction :: Config -> FilePath -> IO BLU.ByteString
+hashTarXzAction cfg xzPath = do
   (Just xzPath') <- absolutePath xzPath
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     let dPath = tmpDir </> dropExtension (takeBaseName xzPath') -- assumes .tar.something
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xzPath']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdHash defaultConfig dPath
+    (out, ()) <- hCapture [stdout, stderr] $ cmdHash cfg dPath
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString $ stripComments out
 
-mkHashTarXzTest :: FilePath -> TestTree
-mkHashTarXzTest xzPath =
+mkHashTarXzTest :: Config -> String -> FilePath -> TestTree
+mkHashTarXzTest cfg prefix xzPath =
   -- TODO different extension since these aren't technically the same without comments?
   -- TODO something cleaner for os-specific golden files
-  let gldPath = dropExtension (dropExtension xzPath) ++ "_" ++ os <.> "bigtree"
+  let gldPath = dropExtension (dropExtension xzPath) ++ "_" ++ prefix ++ "_" ++ os <.> "bigtree"
   in goldenVsString
        xzPath
        gldPath
-       (hashTarXzAction xzPath)
+       (hashTarXzAction cfg xzPath)
 
 test_hash_tarxz :: IO TestTree
 test_hash_tarxz = do
@@ -72,4 +72,12 @@ test_hash_tarxz = do
   -- putStrLn $ show xzPaths
   return $ testGroup
     "hash files extracted from tarballs"
-    [mkHashTarXzTest p | p <- xzPaths]
+    [mkHashTarXzTest defaultConfig "default" p | p <- xzPaths]
+
+test_hash_annex1_git_dir :: IO TestTree
+test_hash_annex1_git_dir = do
+  let xzPath = "test/app/annex1.tar.xz"
+      cfg = defaultConfig { exclude = [] } -- disable exclude ptns
+  return $ testGroup
+    "hash annex1 including the .git dir"
+    [mkHashTarXzTest cfg "noexclude" xzPath]
