@@ -2,28 +2,32 @@
 
 module System.Directory.BigTrees.HashTree.Build where
 
-import Control.Exception.Safe (handleAny, Exception, MonadCatch)
+import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 -- import Control.Exception -- TODO specifics
 -- import GHC.IO.Exception -- TODO specifics
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.List (sortBy)
-import System.Directory.BigTrees.Hash (hashFile, hashSymlinkTarget, hashSymlinkLiteral)
-import System.Directory.BigTrees.HashLine (ModTime(..), NBytes(..), ErrMsg(..))
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, sumNodes, hashContents, treeName, treeModTime, treeNBytes)
-import System.Directory.BigTrees.Name
-import System.Directory (getFileSize, getModificationTime, pathIsSymbolicLink, doesPathExist)
-import qualified System.Directory.Tree as DT
-import System.FilePath ((</>), takeDirectory)
-import System.FilePath.Glob (CompOptions(..), compDefault, MatchOptions (..), Pattern, matchWith, compileWith)
-import System.IO.Unsafe (unsafeInterleaveIO)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import System.PosixCompat.Files (getSymbolicLinkStatus, modificationTime, fileSize)
-import Foreign.C.Types (CTime(..))
-import System.Posix.Files (readSymbolicLink, getFileStatus, isDirectory)
+import Foreign.C.Types (CTime (..))
+import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
+import System.Directory.BigTrees.Hash (hashFile, hashSymlinkLiteral, hashSymlinkTarget)
+import System.Directory.BigTrees.HashLine (ErrMsg (..), ModTime (..), NBytes (..))
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
+                                                hashContents, sumNodes, treeModTime, treeNBytes,
+                                                treeName)
+import System.Directory.BigTrees.Name
+import qualified System.Directory.Tree as DT
+import System.FilePath (takeDirectory, (</>))
+import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
+                             matchWith)
+import System.IO.Unsafe (unsafeInterleaveIO)
+import System.Posix.Files (getFileStatus, isDirectory, readSymbolicLink)
+import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
+import Data.Functor ((<&>))
 
 keepPath :: [String] -> FilePath -> Bool
-keepPath excludes path = not $ any (\ptn -> matchWith mOpts ptn path) $ map (compileWith cOpts) excludes
+keepPath excludes path = not $ any ((\ptn -> matchWith mOpts ptn path) . compileWith cOpts) excludes
   where
     cOpts = compDefault
               { recursiveWildcards  = True -- allow ** style globs
@@ -43,9 +47,9 @@ excludeGlobs :: [String]
 excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
   where
     keep a (DT.Failed n _) = keepPath excludes $ DT.nappend a n
-    keep a (DT.Dir  n _) = keepPath excludes $ DT.nappend a n
-    keep a (DT.File n _) = keepPath excludes $ DT.nappend a n
-    keep a b             = True
+    keep a (DT.Dir  n _)   = keepPath excludes $ DT.nappend a n
+    keep a (DT.File n _)   = keepPath excludes $ DT.nappend a n
+    keep a b               = True
 
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
@@ -103,7 +107,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
           -- TODO handle the extra case here where it exists but is outside the tree!
           !mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
           !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
-          let mt = maximum [mt1, mt2]
+          let mt = max mt1 mt2
           !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
           !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
           !fd <- unsafeInterleaveIO $ readFileFn fPath
@@ -228,7 +232,7 @@ getSymlinkTargetNBytes p = do
 
 -- Size of a regular file or directory (not including directory contents, of course)
 getFileDirNBytes :: FilePath -> IO NBytes
-getFileDirNBytes p = getFileSize p >>= return . NBytes
+getFileDirNBytes p = getFileSize p <&> NBytes
   -- isLink <- pathIsSymbolicLink f
   -- n <- if isLink
   --        then getSymbolicLinkStatus f >>= return . toInteger . fileSize

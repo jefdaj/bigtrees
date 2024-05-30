@@ -5,12 +5,12 @@ module System.Directory.BigTrees.HashTree.Read where
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
-import System.Directory.BigTrees.Name (Name(..))
-import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..),
-                                           parseHashLines, ErrMsg(..))
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree,
+import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), TreeType (..),
+                                           parseHashLines)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
+import System.Directory.BigTrees.Name (Name (..))
 -- import System.FilePath.Glob (Pattern)
 
 readTree :: Maybe Int -> FilePath -> IO ProdTree
@@ -23,7 +23,7 @@ readTree md path = deserializeTree md <$> B8.readFile path
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 deserializeTree md bs = case foldr accTrees [] $ reverse $ parseHashLines md bs of
-  [] -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
+  []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
   ((_, tree):_) -> tree
 
 {- This one is confusing! It accumulates a list of trees and their depth,

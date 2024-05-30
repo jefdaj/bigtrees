@@ -1,8 +1,8 @@
-{-# LANGUAGE InstanceSigs        #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module System.Directory.BigTrees.HashLine
 
@@ -42,12 +42,13 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes)
+import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat)
 import TH.Derive ()
-import GHC.Generics (Generic)
+import Data.Functor ((<&>))
 
 -----------
 -- types --
@@ -146,9 +147,9 @@ instance Arbitrary HashLine where
     il <- arbitrary :: Gen Depth
     h  <- arbitrary :: Gen Hash
     mt <- arbitrary :: Gen ModTime
-    s  <- fmap NBytes $ choose (0, 10000) -- TODO does it matter?
+    s  <- NBytes <$> choose (0, 10000) -- TODO does it matter?
     f  <- case tt of
-            D -> fmap NNodes $ choose (0, 10000) -- TODO does it matter?
+            D -> NNodes <$> choose (0, 10000) -- TODO does it matter?
             E -> return 0 -- TODO 1? but it could be a dir with any number really
             F -> return 1
     n  <- arbitrary :: Gen Name
@@ -251,20 +252,20 @@ numStrP = manyTill digit sepP
 
 -- TODO applicative version?
 depthP :: Parser Depth
-depthP = numStrP >>= return . Depth . read
+depthP = numStrP <&> (Depth . read)
 
 -- TODO applicative version?
 modTimeP :: Parser ModTime
-modTimeP = numStrP >>= return . ModTime . read
+modTimeP = numStrP <&> (ModTime . read)
 
 -- TODO applicative version?
 -- TODO rename nbytesP
 sizeP :: Parser NBytes
-sizeP = numStrP >>= return . NBytes . read
+sizeP = numStrP <&> (NBytes . read)
 
 -- TODO applicative version?
 nfilesP :: Parser NNodes
-nfilesP = numStrP >>= return . NNodes . read
+nfilesP = numStrP <&> (NNodes . read)
 
 -- TODO is there a cleaner syntax for this?
 -- TODO this should still count up total files when given a max depth

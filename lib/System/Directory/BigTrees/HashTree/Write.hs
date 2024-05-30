@@ -2,14 +2,14 @@ module System.Directory.BigTrees.HashTree.Write where
 
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
+import Data.Maybe (isNothing)
 import qualified System.Directory as SD
-import System.Directory.BigTrees.HashLine (HashLine (..), Depth (Depth), NNodes(..),
-                                           TreeType (..), prettyLine)
-import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..), TestTree)
+import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
+                                           prettyLine)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitPath, (</>))
-import System.IO (IOMode (..), hFlush, stdout, withFile, Handle)
-import Data.Maybe (isNothing)
+import System.IO (Handle, IOMode (..), hFlush, stdout, withFile)
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?

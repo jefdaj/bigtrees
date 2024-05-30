@@ -9,9 +9,9 @@ module System.Directory.BigTrees.HashTree.Edit
 import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
-import System.Directory.BigTrees.HashLine (NBytes(..))
-import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..),
-                                                sumNodes, hashContents, treeModTime, treeNBytes, treeName)
+import System.Directory.BigTrees.HashLine (NBytes (..))
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), hashContents,
+                                                sumNodes, treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Name (fp2n)

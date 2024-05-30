@@ -55,14 +55,15 @@ import qualified Streaming.ByteString.Char8 as Q
 import qualified Streaming.Prelude as S
 import qualified System.Directory as SD
 import System.Directory (pathIsSymbolicLink)
-import System.FilePath (takeDirectory, takeBaseName, takeFileName, (</>))
+import System.FilePath (takeBaseName, takeDirectory, takeFileName, (</>))
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
-import TH.Derive (Deriving, derive)
 import Text.Regex.TDFA ((=~))
+import TH.Derive (Deriving, derive)
+import Data.Functor ((<&>))
 
 
 {- Checksum (sha256sum?) of a file or folder.
@@ -123,7 +124,7 @@ hashString = hashBytes . B.pack
 -- Hashes the target path itself as a string, because contents are either
 -- missing or outside the tree being scanned.
 hashSymlinkLiteral :: FilePath -> IO Hash
-hashSymlinkLiteral path = readSymbolicLink path >>= return . hashString
+hashSymlinkLiteral path = readSymbolicLink path <&> hashString
 
 -- Hashes target file contents.
 -- TODO will it work recursively?

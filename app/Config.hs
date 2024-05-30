@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+
 
 module Config
   ( Config(..)

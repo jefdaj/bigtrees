@@ -3,7 +3,7 @@ module System.Directory.BigTrees.HashTree.Search where
 import Control.Monad (msum)
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..))
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..))
 import System.Directory.BigTrees.Name (fp2n, n2fp)
 import System.Directory.BigTrees.Util (pathComponents)
 import System.FilePath (joinPath)

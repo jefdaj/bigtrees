@@ -50,8 +50,8 @@ module System.Directory.BigTrees.HashTree
 
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory as SD
-import System.Directory.BigTrees.Name (n2fp, Name(..))
-import System.Directory.BigTrees.HashLine (ErrMsg(..))
+import System.Directory.BigTrees.HashLine (ErrMsg (..))
+import System.Directory.BigTrees.Name (Name (..), n2fp)
 import System.FilePath ((</>))
 -- import System.FilePath.Glob (Pattern)
 import System.IO (hClose)
@@ -59,19 +59,20 @@ import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), ProdTree, TestTree, sumNodes,
-                                                dropFileData, isErr, renameRoot, treeName, treeModTime, treeNBytes, treeType)
+import Data.List (isInfixOf)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
+                                                dropFileData, isErr, renameRoot, sumNodes,
+                                                treeModTime, treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
 import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, readTestTree, readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
-import System.Directory.BigTrees.HashTree.Write (printTree, serializeTree, writeTestTreeDir,
-                                                 hWriteTree, writeTree)
-import qualified Test.HUnit as HU
-import System.Process (cwd, proc, readCreateProcess)
+import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,
+                                                 writeTestTreeDir, writeTree)
 import System.IO.Temp (withSystemTempDirectory)
-import Data.List (isInfixOf)
+import System.Process (cwd, proc, readCreateProcess)
+import qualified Test.HUnit as HU
 
 -- import System.Directory.BigTrees.Util (absolutePath)
 

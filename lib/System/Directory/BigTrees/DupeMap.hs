@@ -33,8 +33,8 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (TreeType (..), NNodes(..))
-import System.Directory.BigTrees.HashTree (HashTree (..), NodeData(..), ProdTree)
+import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..))
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitDirectories, (</>))
 
@@ -219,8 +219,8 @@ allDupes :: ProdTree -> ProdTree -> Bool
 -- allDupes mainTree subTree = all safeToRmHash $ undefined subDupes
 allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
   where
-    mainDupes = undefined $ pathsByHash $ mainTree
-    subDupes  = undefined $ pathsByHash $ subTree
+    mainDupes = undefined $ pathsByHash mainTree
+    subDupes  = undefined $ pathsByHash subTree
     safeToRmHash h = anotherCopy h mainDupes subDupes
 
 -- for warning the user when their action will delete the last copy of a file

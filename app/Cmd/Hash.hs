@@ -4,20 +4,20 @@ module Cmd.Hash where
 
 import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
+import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
-import Data.List (sort, isPrefixOf)
-import System.Directory.BigTrees (buildProdTree, printTree, hWriteTree)
-import System.Directory.BigTrees.HeadFoot (hWriteHeader, hWriteFooter)
+import Data.List (isPrefixOf, sort)
+import System.Directory.BigTrees (buildProdTree, hWriteTree, printTree)
+import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Util (absolutePath)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
-import System.IO (stderr, stdout, openBinaryFile, IOMode(..), Handle, hClose)
+import System.Info (os)
+import System.IO (Handle, IOMode (..), hClose, openBinaryFile, stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
-import Control.Exception (bracket) -- TODO .Safe?
-import System.Info (os)
 
 cmdHash :: Config -> FilePath -> IO ()
 cmdHash cfg path = bracket open close write
@@ -26,15 +26,15 @@ cmdHash cfg path = bracket open close write
              Nothing -> return stdout
              Just p  -> openBinaryFile p WriteMode
 
-    -- TODO why is this required? shouldn't hClose be OK?
-    -- TODO maybe close it, but only if /= stdout?
-    close = \_ -> return ()
-
     write hdl = do
       hWriteHeader hdl (exclude cfg)
       tree <- buildProdTree (verbose cfg) (exclude cfg) path
       hWriteTree hdl tree
       hWriteFooter hdl
+
+    -- TODO why is this required? shouldn't hClose be OK?
+    -- TODO maybe close it, but only if /= stdout?
+    close _ = return ()
 
 -- The scan output includes current date + other metadata,
 -- which we have to ignore if the tests are going to be reproducible.

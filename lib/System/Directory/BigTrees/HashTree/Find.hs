@@ -12,8 +12,10 @@ import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.Directory.BigTrees.HashLine (Depth (..), TreeType (..), ModTime(..), NBytes(..), sepChar)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), sumNodes, treeType, treeName)
+import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), TreeType (..),
+                                           sepChar)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeName,
+                                                treeType)
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA

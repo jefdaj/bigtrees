@@ -2,8 +2,8 @@
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE InstanceSigs        #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module System.Directory.BigTrees.HashTree.Base where
 
@@ -12,14 +12,15 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Char (toLower)
 import Data.List (nubBy, sort)
+import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes)
-import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..), ModTime(..), NBytes(..), bsBytes, NNodes(..), ErrMsg(..))
+import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), ModTime (..),
+                                           NBytes (..), NNodes (..), TreeType (..), bsBytes)
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive (Deriving, derive)
-import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
 
 -- import Debug.Trace
 
@@ -43,9 +44,9 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
 
 -- TODO Integer? not sure how big it could get
 sumNodes :: HashTree a -> NNodes
-sumNodes (Err  {}) = NNodes 1 -- TODO is this right?
-sumNodes (File {}) = NNodes 1
-sumNodes (Link {}) = NNodes 1 -- TODO is this right?
+sumNodes (Err  {})        = NNodes 1 -- TODO is this right?
+sumNodes (File {})        = NNodes 1
+sumNodes (Link {})        = NNodes 1 -- TODO is this right?
 sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 
 -- TODO is this needed, or will the fields be total?
@@ -69,12 +70,12 @@ hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . tree
 -- Note that it's important NOT to make the hash, mod time, or nbytes strict in Dirs.
 -- TODO strict name though?
 -- TODO come up with a better name?
--- TODO should Eq be based only on the hash, or also the rest of it? 
+-- TODO should Eq be based only on the hash, or also the rest of it?
 data NodeData = NodeData
-  { name     :: Name
-  , hash     :: Hash
-  , modTime  :: ModTime
-  , nBytes   :: NBytes
+  { name    :: Name
+  , hash    :: Hash
+  , modTime :: ModTime
+  , nBytes  :: NBytes
   }
   deriving (Eq, Ord, Read, Show, Generic)
 
@@ -111,36 +112,36 @@ data HashTree a
 
 isErr :: forall a. HashTree a -> Bool
 isErr (Err {}) = True
-isErr _ = False
+isErr _        = False
 
 treeType :: HashTree a -> Char
-treeType (Dir  {}) = 'D'
-treeType (Err  {}) = 'E'
-treeType (File {}) = 'F'
+treeType (Dir  {})                   = 'D'
+treeType (Err  {})                   = 'E'
+treeType (File {})                   = 'F'
 treeType (Link {linkData = Nothing}) = 'B'
-treeType (Link {}) = 'L'
+treeType (Link {})                   = 'L'
 
 -- TODO should this be a lens or something? going to want a setter too at some point
 -- TODO return Maybe here?
 treeName :: HashTree a -> Name
 treeName (Err  {errName =n }) = n
-treeName t = name $ nodeData t
+treeName t                    = name $ nodeData t
 
 -- TODO is the handling of Err reasonable? think about it more
 -- TODO return Maybe here?
 treeModTime :: HashTree a -> ModTime
 treeModTime (Err {}) = ModTime 0
-treeModTime t = modTime $ nodeData t
+treeModTime t        = modTime $ nodeData t
 
 -- TODO return Maybe here?
 treeNBytes :: HashTree a -> NBytes
 treeNBytes (Err {}) = NBytes 0
-treeNBytes t = nBytes $ nodeData t
+treeNBytes t        = nBytes $ nodeData t
 
 -- TODO return Maybe here?
 treeHash :: HashTree a -> Hash
 treeHash (Err {}) = Hash "ERROR" -- TODO is this reasonable? we do want it to change parent hash
-treeHash t = hash $ nodeData t
+treeHash t        = hash $ nodeData t
 
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
@@ -150,9 +151,9 @@ type ProdTree = HashTree ()
 instance Eq (HashTree a) where
   (==) :: HashTree a -> HashTree a -> Bool
   t1@(Err {}) == t2@(Err {}) = errName t1 == errName t2 && errMsg t1 == errMsg t2
-  t1@(Err {}) == _ = False
-  _ == t2@(Err {}) = False
-  t1 == t2 = treeHash t1 == treeHash t2
+  t1@(Err {}) == _           = False
+  _ == t2@(Err {})           = False
+  t1 == t2                   = treeHash t1 == treeHash t2
 
 -- TODO once there's also a dirData, should this be BiFunctor instead?
 -- TODO should this also re-hash the file, or is that not part of the fileData idea?
@@ -238,7 +239,7 @@ arbitraryDirSized arbsize = do
   -- TODO put back the nubBy part!
   !cs <- arbitraryContents $ arbsize - 1
   !mt <- arbitrary :: Gen ModTime
-  !s <- fmap NBytes $ return 4096 -- TODO does dir size vary?
+  !s <- NBytes <$> return 4096 -- TODO does dir size vary?
   -- TODO assert that nNodes == s here?
   return $ Dir
     { dirContents = cs
@@ -290,9 +291,9 @@ instance Arbitrary TestTree where
 -- TODO rewrite this in terms of a generic map/fold so it works with other types
 dropFileData :: HashTree a -> ProdTree
 dropFileData d@(Dir {dirContents = cs}) = d {dirContents = map dropFileData cs}
-dropFileData e@(Err  {}) = Err { errName = errName e, errMsg = errMsg e }
-dropFileData f@(File {}) = f {fileData = ()}
-dropFileData l@(Link {}) = l {linkData = Just ()}
+dropFileData e@(Err  {})                = Err { errName = errName e, errMsg = errMsg e }
+dropFileData f@(File {})                = f {fileData = ()}
+dropFileData l@(Link {})                = l {linkData = Just ()}
 
 instance Arbitrary ProdTree where
   arbitrary :: Gen ProdTree

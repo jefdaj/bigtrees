@@ -1,21 +1,22 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module System.Directory.BigTrees.HeadFoot where
 
-import System.Info (os, arch, compilerName, fullCompilerVersion)
 import Data.Version (showVersion)
-import System.Environment (getEnv, getProgName)
 import Paths_bigtrees (version)
 import System.Directory.BigTrees.HashLine (hashLineFields, join)
+import System.Environment (getEnv, getProgName)
+import System.Info (arch, compilerName, fullCompilerVersion, os)
 -- import System.FilePath.Glob (Pattern)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 -- import Data.Time.Clock (secondsToDiffTime)
-import qualified Data.ByteString.Char8 as B8
-import System.IO (Handle)
-import Data.Aeson (ToJSON, FromJSON)
+import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson.Encode.Pretty as AP
+import qualified Data.ByteString.Char8 as B8
 import GHC.Generics (Generic)
+import System.IO (Handle)
+import Data.Functor ((<&>))
 
 {- Header + footer info to write before and after HashLines, respectively.
  - The initial format is to read/write JSON delimited from other lines by '#'.
@@ -39,7 +40,7 @@ apConf = AP.defConfig
   }
 
 now :: IO Integer
-now = getPOSIXTime >>= return . round
+now = getPOSIXTime <&> round
 
 commentLines :: [B8.ByteString] -> [B8.ByteString]
 commentLines = map (B8.append "# ")
