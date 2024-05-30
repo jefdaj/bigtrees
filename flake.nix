@@ -6,7 +6,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     # TODO consider removing the git submodule in favor of this
     directory-tree = {
-      url = github:jefdaj/directory-tree/isname-typeclass;
+      url = github:jefdaj/directory-tree/treat-symlinks-as-files;
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
