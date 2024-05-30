@@ -1,13 +1,79 @@
 name:                bigtrees
 description:         Performant hash trees to dedup large collections of files.
-version:             0.1.0.0
+version:             0.2.0.0
 author:              jefdaj
 maintainer:          jefdaj@users.noreply.github.com
 copyright:           "AGPL-3.0-only"
 
-# data-files:
-#   - examples/*.sh
-#   - examples/*.txt
+# TODO separate them out again?
+dependencies:
+- aeson
+- aeson-pretty
+- attoparsec
+- base
+- base64-bytestring
+- bytestring
+- crypton
+- deepseq
+- directory
+- directory-tree
+- docopt
+- doctest-parallel
+- filepath
+- Glob
+- hashable
+- hashtables
+- HUnit
+- massiv
+- MissingH
+- monad-parallel
+- pretty-simple
+- process
+- QuickCheck
+- quickcheck-instances
+- quickcheck-unicode
+- regex-tdfa
+- safe-exceptions
+- setlocale
+- silently
+- split
+- streaming
+- streaming-bytestring
+- system-filepath
+- tasty
+- tasty-discover
+- tasty-golden
+- tasty-hspec
+- tasty-hunit
+- tasty-quickcheck
+- temporary
+- text
+- th-utilities
+- time
+- unbounded-delays
+- unix
+- unix-compat
+- unordered-containers
+- utf8-string
+
+# TODO which are really needed/helpful for which targets?
+ghc-options:
+- "-O2"
+- "-threaded"
+- "-rtsopts"
+- "-with-rtsopts=-N"
+- "-fwrite-ide-info"
+- "-hiedir=.hie"
+- "-Wall"
+- "-Wcompat"
+- "-Widentities"
+- "-Wincomplete-uni-patterns"
+- "-Wincomplete-record-updates"
+- "-Wredundant-constraints"
+- "-Wmissing-export-lists"
+- "-Wpartial-fields"
+- "-Wmissing-deriving-strategies"
+- "-Wunused-packages"
 
 library:
   source-dirs: lib
@@ -21,250 +87,36 @@ library:
   - System.Directory.BigTrees.Util
   - System.Directory.BigTrees.Hash
   - System.Directory.BigTrees.Delta
-  # System.Directory.Tree
-  dependencies:
-  - Glob
-  - HUnit
-  - MissingH
-  - QuickCheck
-  - aeson
-  - aeson-pretty
-  - attoparsec
-  - base
-  - base64-bytestring
-  - bytestring
-  - crypton
-  - deepseq
-  - directory
-  - directory-tree
-  - filepath
-  - hashable
-  - hashtables
-  - massiv
-  - monad-parallel
-  - quickcheck-instances
-  - quickcheck-unicode
-  - safe-exceptions
-  - split
-  - streaming
-  - streaming-bytestring
-  - system-filepath
-  - tasty
-  - tasty-discover
-  - tasty-golden
-  - tasty-hspec
-  - tasty-hunit
-  - tasty-quickcheck
-  - temporary
-  - text
-  - time
-  - regex-tdfa
-  - th-utilities
-  - unix
-  - unix-compat
-  - unordered-containers
-  - utf8-string
- 
+
 executable:
-  source-dirs: app
   main: Main.hs
-  # TODO which of these options really help?
-  ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
+  source-dirs: app
   dependencies:
-  - QuickCheck
-  - Glob
-  - base
   - bigtrees
-  - bytestring
-  - docopt
-  - filepath
-  - pretty-simple
-  - process
-  - setlocale
-  - silently
-  - tasty
-  - tasty-discover
-  - tasty-golden
-  - tasty-hspec
-  - tasty-hunit
-  - tasty-quickcheck
-  - temporary
-  - unbounded-delays
-  - utf8-string
 
 tests:
 
   test-lib:
+    main: "Test.hs"
     source-dirs:
     - "lib"
     - "test/lib"
-    main: "Test.hs"
-    # TODO which of these options really help?
-    # ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
-    ghc-options:
-    - "-O2"
-    - "-threaded"
-    - "-rtsopts"
-    - "-with-rtsopts=-N"
-    - "-fwrite-ide-info"
-    - "-hiedir=.hie"
-    - "-Wall"
-    - "-Wcompat"
-    - "-Widentities"
-    - "-Wincomplete-uni-patterns"
-    - "-Wincomplete-record-updates"
-    - "-Wredundant-constraints"
-    - "-Wmissing-export-lists"
-    - "-Wpartial-fields"
-    - "-Wmissing-deriving-strategies"
-    - "-Wunused-packages"
     dependencies:
-    - Glob
-    - HUnit
-    - MissingH
-    - QuickCheck
-    - aeson
-    - aeson-pretty
-    - attoparsec
-    - base
-    - base64-bytestring
     - bigtrees
-    - bytestring
-    - crypton
-    - deepseq
-    - directory
-    - directory-tree
-    - filepath
-    - hashable
-    - hashtables
-    - massiv
-    - monad-parallel
-    - quickcheck-instances
-    - safe-exceptions
-    - split
-    - streaming
-    - streaming-bytestring
-    - system-filepath
-    - tasty
-    - tasty-hunit
-    - tasty-quickcheck
-    - temporary
-    - text
-    - time
-    - regex-tdfa
-    - th-utilities
-    - unix
-    - unix-compat
-    - unordered-containers
- 
+
   test-app:
-    source-dirs:
-    - "test/app"
-    - "app"
     main: "Test.hs"
-    # TODO which of these options really help?
-    # ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
-    ghc-options:
-    - "-O2"
-    - "-threaded"
-    - "-rtsopts"
-    - "-with-rtsopts=-N"
-    - "-fwrite-ide-info"
-    - "-hiedir=.hie"
-    - "-Wall"
-    - "-Wcompat"
-    - "-Widentities"
-    - "-Wincomplete-uni-patterns"
-    - "-Wincomplete-record-updates"
-    - "-Wredundant-constraints"
-    - "-Wmissing-export-lists"
-    - "-Wpartial-fields"
-    - "-Wmissing-deriving-strategies"
-    - "-Wunused-packages"
-    # TODO extract a common list of exe dependencies
+    source-dirs:
+    - "app"
+    - "test/app"
     dependencies:
-    - QuickCheck
-    - Glob
-    - base
     - bigtrees
-    - bytestring
-    - filepath
-    - pretty-simple
-    - process
-    - silently
-    - tasty
-    - tasty-golden
-    - tasty-quickcheck
-    - temporary
-    - unbounded-delays
-    - utf8-string
 
   test-doctests:
-    source-dirs:
-    - "test/doc"
-    - "lib"
-    - "app"
     main: "doctest.hs"
-    # TODO which of these options really help?
-    # ghc-options: "-Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info"
-    ghc-options:
-    - "-O2"
-    - "-threaded"
-    - "-rtsopts"
-    - "-with-rtsopts=-N"
-    - "-fwrite-ide-info"
-    - "-hiedir=.hie"
-    - "-Wall"
-    - "-Wcompat"
-    - "-Widentities"
-    - "-Wincomplete-uni-patterns"
-    - "-Wincomplete-record-updates"
-    - "-Wredundant-constraints"
-    - "-Wmissing-export-lists"
-    - "-Wpartial-fields"
-    - "-Wmissing-deriving-strategies"
-    - "-Wunused-packages"
-    # TODO extract a common list of exe dependencies
+    source-dirs:
+    - "app"
+    - "lib"
+    - "test/doc"
     dependencies:
-    - Glob
-    - HUnit
-    - MissingH
-    - QuickCheck
-    - aeson
-    - aeson-pretty
-    - attoparsec
-    - base
-    - base64-bytestring
     - bigtrees
-    - bytestring
-    - crypton
-    - deepseq
-    - directory
-    - directory-tree
-    - doctest-parallel
-    - filepath
-    - hashable
-    - hashtables
-    - massiv
-    - monad-parallel
-    - pretty-simple
-    - process
-    - quickcheck-instances
-    - safe-exceptions
-    - silently
-    - split
-    - streaming
-    - streaming-bytestring
-    - system-filepath
-    - tasty
-    - tasty-golden
-    - temporary
-    - text
-    - time
-    - regex-tdfa
-    - th-utilities
-    - unbounded-delays
-    - unix
-    - unix-compat
-    - unordered-containers
-    - utf8-string

@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           bigtrees
-version:        0.1.0.0
+version:        0.2.0.0
 description:    Performant hash trees to dedup large collections of files.
 author:         jefdaj
 maintainer:     jefdaj@users.noreply.github.com
@@ -36,6 +36,7 @@ library
       Paths_bigtrees
   hs-source-dirs:
       lib
+  ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info -hiedir=.hie -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages
   build-depends:
       Glob
     , HUnit
@@ -51,15 +52,21 @@ library
     , deepseq
     , directory
     , directory-tree
+    , docopt
+    , doctest-parallel
     , filepath
     , hashable
     , hashtables
     , massiv
     , monad-parallel
+    , pretty-simple
+    , process
     , quickcheck-instances
     , quickcheck-unicode
     , regex-tdfa
     , safe-exceptions
+    , setlocale
+    , silently
     , split
     , streaming
     , streaming-bytestring
@@ -74,6 +81,7 @@ library
     , text
     , th-utilities
     , time
+    , unbounded-delays
     , unix
     , unix-compat
     , unordered-containers
@@ -103,19 +111,42 @@ executable bigtrees
       Paths_bigtrees
   hs-source-dirs:
       app
-  ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info
+  ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info -hiedir=.hie -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages
   build-depends:
       Glob
+    , HUnit
+    , MissingH
     , QuickCheck
+    , aeson
+    , aeson-pretty
+    , attoparsec
     , base
+    , base64-bytestring
     , bigtrees
     , bytestring
+    , crypton
+    , deepseq
+    , directory
+    , directory-tree
     , docopt
+    , doctest-parallel
     , filepath
+    , hashable
+    , hashtables
+    , massiv
+    , monad-parallel
     , pretty-simple
     , process
+    , quickcheck-instances
+    , quickcheck-unicode
+    , regex-tdfa
+    , safe-exceptions
     , setlocale
     , silently
+    , split
+    , streaming
+    , streaming-bytestring
+    , system-filepath
     , tasty
     , tasty-discover
     , tasty-golden
@@ -123,7 +154,13 @@ executable bigtrees
     , tasty-hunit
     , tasty-quickcheck
     , temporary
+    , text
+    , th-utilities
+    , time
     , unbounded-delays
+    , unix
+    , unix-compat
+    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
@@ -151,24 +188,58 @@ test-suite test-app
       Run
       Paths_bigtrees
   hs-source-dirs:
-      test/app
       app
+      test/app
   ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info -hiedir=.hie -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages
   build-depends:
       Glob
+    , HUnit
+    , MissingH
     , QuickCheck
+    , aeson
+    , aeson-pretty
+    , attoparsec
     , base
+    , base64-bytestring
     , bigtrees
     , bytestring
+    , crypton
+    , deepseq
+    , directory
+    , directory-tree
+    , docopt
+    , doctest-parallel
     , filepath
+    , hashable
+    , hashtables
+    , massiv
+    , monad-parallel
     , pretty-simple
     , process
+    , quickcheck-instances
+    , quickcheck-unicode
+    , regex-tdfa
+    , safe-exceptions
+    , setlocale
     , silently
+    , split
+    , streaming
+    , streaming-bytestring
+    , system-filepath
     , tasty
+    , tasty-discover
     , tasty-golden
+    , tasty-hspec
+    , tasty-hunit
     , tasty-quickcheck
     , temporary
+    , text
+    , th-utilities
+    , time
     , unbounded-delays
+    , unix
+    , unix-compat
+    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
@@ -176,22 +247,6 @@ test-suite test-doctests
   type: exitcode-stdio-1.0
   main-is: doctest.hs
   other-modules:
-      System.Directory.BigTrees
-      System.Directory.BigTrees.Delta
-      System.Directory.BigTrees.DupeMap
-      System.Directory.BigTrees.Hash
-      System.Directory.BigTrees.HashLine
-      System.Directory.BigTrees.HashTree
-      System.Directory.BigTrees.HashTree.Base
-      System.Directory.BigTrees.HashTree.Build
-      System.Directory.BigTrees.HashTree.Edit
-      System.Directory.BigTrees.HashTree.Find
-      System.Directory.BigTrees.HashTree.Read
-      System.Directory.BigTrees.HashTree.Search
-      System.Directory.BigTrees.HashTree.Write
-      System.Directory.BigTrees.HeadFoot
-      System.Directory.BigTrees.Name
-      System.Directory.BigTrees.Util
       Cmd
       Cmd.Diff
       Cmd.Dupes
@@ -210,11 +265,27 @@ test-suite test-doctests
       OldCmd.Test
       OldCmd.Update
       Run
+      System.Directory.BigTrees
+      System.Directory.BigTrees.Delta
+      System.Directory.BigTrees.DupeMap
+      System.Directory.BigTrees.Hash
+      System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.HashTree
+      System.Directory.BigTrees.HashTree.Base
+      System.Directory.BigTrees.HashTree.Build
+      System.Directory.BigTrees.HashTree.Edit
+      System.Directory.BigTrees.HashTree.Find
+      System.Directory.BigTrees.HashTree.Read
+      System.Directory.BigTrees.HashTree.Search
+      System.Directory.BigTrees.HashTree.Write
+      System.Directory.BigTrees.HeadFoot
+      System.Directory.BigTrees.Name
+      System.Directory.BigTrees.Util
       Paths_bigtrees
   hs-source-dirs:
-      test/doc
-      lib
       app
+      lib
+      test/doc
   ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info -hiedir=.hie -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages
   build-depends:
       Glob
@@ -232,6 +303,7 @@ test-suite test-doctests
     , deepseq
     , directory
     , directory-tree
+    , docopt
     , doctest-parallel
     , filepath
     , hashable
@@ -241,15 +313,21 @@ test-suite test-doctests
     , pretty-simple
     , process
     , quickcheck-instances
+    , quickcheck-unicode
     , regex-tdfa
     , safe-exceptions
+    , setlocale
     , silently
     , split
     , streaming
     , streaming-bytestring
     , system-filepath
     , tasty
+    , tasty-discover
     , tasty-golden
+    , tasty-hspec
+    , tasty-hunit
+    , tasty-quickcheck
     , temporary
     , text
     , th-utilities
@@ -302,26 +380,38 @@ test-suite test-lib
     , deepseq
     , directory
     , directory-tree
+    , docopt
+    , doctest-parallel
     , filepath
     , hashable
     , hashtables
     , massiv
     , monad-parallel
+    , pretty-simple
+    , process
     , quickcheck-instances
+    , quickcheck-unicode
     , regex-tdfa
     , safe-exceptions
+    , setlocale
+    , silently
     , split
     , streaming
     , streaming-bytestring
     , system-filepath
     , tasty
+    , tasty-discover
+    , tasty-golden
+    , tasty-hspec
     , tasty-hunit
     , tasty-quickcheck
     , temporary
     , text
     , th-utilities
     , time
+    , unbounded-delays
     , unix
     , unix-compat
     , unordered-containers
+    , utf8-string
   default-language: Haskell2010

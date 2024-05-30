@@ -70,7 +70,7 @@ instance FromJSON Header
 -- update when changing anything that might break the parser, and keep track of
 -- prev versions with git tags in order to implement upgrade fns later
 currentTreeFormat :: Int
-currentTreeFormat = 240528
+currentTreeFormat = 240529
 
 makeHeaderNow :: [String] -> IO Header
 makeHeaderNow es = do
