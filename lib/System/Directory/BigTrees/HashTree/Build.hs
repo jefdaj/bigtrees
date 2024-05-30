@@ -13,7 +13,7 @@ import System.Directory.BigTrees.Name
 import System.Directory (getFileSize, getModificationTime, pathIsSymbolicLink, doesPathExist)
 import qualified System.Directory.Tree as DT
 import System.FilePath ((</>), takeDirectory)
-import System.FilePath.Glob (MatchOptions (..), Pattern, matchWith, compile)
+import System.FilePath.Glob (CompOptions(..), compDefault, MatchOptions (..), Pattern, matchWith, compileWith)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import System.PosixCompat.Files (getSymbolicLinkStatus, modificationTime, fileSize)
@@ -21,9 +21,15 @@ import Foreign.C.Types (CTime(..))
 import System.Posix.Files (readSymbolicLink, getFileStatus, isDirectory)
 
 keepPath :: [String] -> FilePath -> Bool
-keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) (map compile excludes)
+keepPath excludes path = not $ any (\ptn -> matchWith mOpts ptn path) $ map (compileWith cOpts) excludes
   where
-    opts = MatchOptions
+    cOpts = compDefault
+              { recursiveWildcards  = True -- allow ** style globs
+              -- these two together should make it match '/' literally:
+              , pathSepInRanges     = False
+              , errorRecovery       = True
+              }
+    mOpts = MatchOptions
              { matchDotsImplicitly = True
              , ignoreCase          = False
              , ignoreDotSlash      = True

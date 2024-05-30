@@ -37,8 +37,7 @@ defaultConfig = Config
   , verbose  = True
   -- , force    = False
   , check    = True
-  -- TODO add .nix-* things with cyclic symlinks? or fix upstream
-  , exclude  = ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
+  , exclude  = ["**/.git*", "**/.*.sw*", "**/._DS_Store", "**/*.plist"]
   , metafmt  = Nothing
   , regex    = Nothing
   }
