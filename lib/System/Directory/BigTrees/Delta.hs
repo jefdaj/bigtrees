@@ -25,7 +25,7 @@ import Control.Monad (foldM, unless)
 import qualified Data.ByteString.Char8 as B
 import Data.List (find)
 import Data.Maybe (fromJust)
-import System.Directory.BigTrees.HashTree (HashTree (..), NodeData(..), ProdTree, addSubTree, dropTo, rmSubTree)
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData(..), ProdTree, addSubTree, dropTo, rmSubTree, treeName)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath ((</>))
 
@@ -69,10 +69,10 @@ diff' a t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where
-    adds  = [Add (a </> n2fp (name $ nodeData x)) x | x <- ns, name (nodeData x) `notElem` map (name . nodeData) os]
-    rms   = [Rm  (a </> n2fp (name $ nodeData x))   | x <- os, name (nodeData x) `notElem` map (name . nodeData) ns]
-    edits = concat [diff' (a </> n2fp (name (nodeData o))) o n | o <- os, n <- ns,
-                                               o /= n, name (nodeData o) == name (nodeData n)]
+    adds  = [Add (a </> n2fp (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
+    rms   = [Rm  (a </> n2fp (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
+    edits = concat [diff' (a </> n2fp (treeName o)) o n | o <- os, n <- ns,
+                                               o /= n, treeName o == treeName n]
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
 -- TODO need an initial tree too to check if the hashes match

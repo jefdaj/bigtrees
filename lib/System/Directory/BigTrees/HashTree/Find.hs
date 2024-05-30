@@ -13,7 +13,7 @@ import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), TreeType (..), ModTime(..), NBytes(..), sepChar)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), sumNodes, treeType)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData(..), sumNodes, treeType, treeName)
 import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
@@ -43,7 +43,7 @@ printTreePaths mRegex fmt =
  -}
 printTreePaths' :: Filter -> FmtFn -> Depth -> [Name] -> HashTree a -> IO ()
 printTreePaths' fExpr fmtFn (Depth i) ns t = do
-  let ns' = (name $ nodeData t):ns
+  let ns' = treeName t:ns
       tt  = treeType t
   case t of
     (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (Depth $ i+1) ns') (dirContents t)
@@ -56,7 +56,7 @@ pathLine :: FmtFn -> Depth -> [Name] -> HashTree a -> B8.ByteString
 pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
   where
     meta = fmtFn i t
-    path = B8.pack $ breadcrumbs2fp $ (name $ nodeData t):ns -- TODO ns already includes name t?
+    path = B8.pack $ breadcrumbs2fp $ treeName t:ns -- TODO ns already includes name t?
 
 ---------------------
 -- format metadata --

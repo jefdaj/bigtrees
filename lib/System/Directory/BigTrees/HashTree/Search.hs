@@ -41,6 +41,7 @@ dropTo t@(Dir  {nodeData=nd1, dirContents=cs}) f2
 
 treeContainsHash :: HashTree a -> Hash -> Bool
 treeContainsHash (Err {}) _ = False
+treeContainsHash (Link {nodeData=nd1}) h2 = hash nd1 == h2
 treeContainsHash (File {nodeData=nd1}) h2 = hash nd1 == h2
 treeContainsHash (Dir  {nodeData=nd1, dirContents=cs}) h2
   | hash nd1 == h2 = True

@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module System.Directory.BigTrees.HashTree.Base where
 
@@ -12,7 +13,7 @@ import qualified Data.ByteString.Short as BS
 import Data.Char (toLower)
 import Data.List (nubBy, sort)
 import GHC.Generics (Generic)
-import System.Directory.BigTrees.Hash (Hash (unHash), hashBytes)
+import System.Directory.BigTrees.Hash (Hash (..), hashBytes)
 import System.Directory.BigTrees.HashLine (HashLine (..), Depth (..), TreeType (..), ModTime(..), NBytes(..), bsBytes, NNodes(..), ErrMsg(..))
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
 import System.Info (os)
@@ -35,10 +36,10 @@ renameRoot newName tree = tree { nodeData = nd' }
 duplicateNames :: HashTree a -> HashTree a -> Bool
 duplicateNames = if os == "darwin" then macDupes else unixDupes
   where
-    macDupes  a b = map toLower (n2fp $ name $ nodeData a)
-                 == map toLower (n2fp $ name $ nodeData b)
-    unixDupes a b = n2fp (name $ nodeData a)
-                 == n2fp (name $ nodeData b)
+    macDupes  a b = map toLower (n2fp $ treeName a)
+                 == map toLower (n2fp $ treeName b)
+    unixDupes a b = n2fp (treeName a)
+                 == n2fp (treeName b)
 
 -- TODO Integer? not sure how big it could get
 sumNodes :: HashTree a -> NNodes
@@ -58,8 +59,9 @@ sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 -- totalModTime (File {}) = undefined -- TODO add mod time field
 -- totalModTime (Dir  {}) = undefined -- TODO add mod time field
 
+-- TODO handle Err case
 hashContents :: [HashTree a] -> Hash
-hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash . nodeData)
+hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . treeHash)
 
 -- TODO separate module for NodeData
 
@@ -135,6 +137,11 @@ treeNBytes :: HashTree a -> NBytes
 treeNBytes (Err {}) = NBytes 0
 treeNBytes t = nBytes $ nodeData t
 
+-- TODO return Maybe here?
+treeHash :: HashTree a -> Hash
+treeHash (Err {}) = Hash "ERROR" -- TODO is this reasonable? we do want it to change parent hash
+treeHash t = hash $ nodeData t
+
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
 
@@ -145,7 +152,7 @@ instance Eq (HashTree a) where
   t1@(Err {}) == t2@(Err {}) = errName t1 == errName t2 && errMsg t1 == errMsg t2
   t1@(Err {}) == _ = False
   _ == t2@(Err {}) = False
-  t1 == t2 = (hash . nodeData) t1 == (hash . nodeData) t2
+  t1 == t2 = treeHash t1 == treeHash t2
 
 -- TODO once there's also a dirData, should this be BiFunctor instead?
 -- TODO should this also re-hash the file, or is that not part of the fileData idea?

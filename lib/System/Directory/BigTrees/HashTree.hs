@@ -148,7 +148,7 @@ roundtripTestTreeToDir t =
 
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
-    let treeRootDir = tmpDir </> n2fp (name $ nodeData t) -- TODO use IsName here
+    let treeRootDir = tmpDir </> n2fp (treeName t) -- TODO use IsName here
     readTestTree Nothing False [] treeRootDir
 
 -- TODO is the forcing unnecessary?

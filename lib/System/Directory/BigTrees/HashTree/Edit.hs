@@ -11,7 +11,7 @@ import Data.Function (on)
 import Data.List (delete, find, sortBy)
 import System.Directory.BigTrees.HashLine (NBytes(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree(..), NodeData(..),
-                                                sumNodes, hashContents)
+                                                sumNodes, hashContents, treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Name (fp2n)
@@ -32,8 +32,8 @@ wrapInEmptyDir n t = Dir
   , nodeData = NodeData
     { name     = fp2n n
     , hash     = h
-    , modTime  = modTime $ nodeData t
-    , nBytes   = nBytes (nodeData t) + NBytes 4096 -- TODO how to determine this??
+    , modTime  = treeModTime t
+    , nBytes   = treeNBytes t + NBytes 4096 -- TODO how to determine this??
     }
   }
   where
@@ -59,15 +59,15 @@ addSubTree main sub path = main { nodeData = nd', dirContents = cs', nNodes = n'
     h'     = hashContents cs'
     nd'    = (nodeData main) { hash = h', modTime = mt', nBytes = s' }
     cs'    = sortBy
-               (compare `on` (name . nodeData)) $
+               (compare `on` treeName) $
                filter
-                 (\c -> (name . nodeData) c /= fp2n p1)
+                 (\c -> treeName c /= fp2n p1)
                  ((dirContents main) ++ [newSub])
     n'     = sumNodes main + sumNodes newSub - maybe 0 sumNodes oldSub
-    s'     = nBytes (nodeData main) + nBytes (nodeData newSub) - (maybe 0 (nBytes . nodeData) oldSub)
-    mt'    = maximum $ map (modTime . nodeData) [main, newSub]
+    s'     = treeNBytes main + treeNBytes newSub - (maybe 0 treeNBytes oldSub)
+    mt'    = maximum $ map treeModTime [main, newSub]
     sub'   = sub { nodeData=(nodeData sub) {name = fp2n $ last comps }}
-    oldSub = find (\c -> (name . nodeData) c == fp2n p1) (dirContents main)
+    oldSub = find (\c -> treeName c == fp2n p1) (dirContents main)
     newSub = if length comps == 1
                then sub'
                else case oldSub of
