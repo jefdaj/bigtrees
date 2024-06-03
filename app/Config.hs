@@ -37,7 +37,7 @@ defaultConfig = Config
   , verbose  = True
   -- , force    = False
   , check    = True
-  , exclude  = ["**/.git*", "**/.*.sw*", "**/.DS_Store", "**/*.plist"]
+  , exclude  = ["**/.git*", "**/.*.sw*", "**/.DS_Store", "**/*.plist", "**/.snakemake*"]
   , metafmt  = Nothing
   , regex    = Nothing
   }
