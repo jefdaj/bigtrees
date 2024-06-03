@@ -46,6 +46,7 @@ import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
+import System.Directory.BigTrees.HeadFoot (Header, parseHeader)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat)
 import TH.Derive ()
 import Data.Functor ((<&>))
@@ -330,3 +331,12 @@ parseHashLines md = fromRight [] . parseOnly (fileP md)
 
 parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
 parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")
+
+commentLineP = do
+  _ <- char '#'
+  manyTill anyChar endOfLine
+
+headerP = do
+  _ <- char '#'
+  headerLines <- manyTill commentLineP breakP
+  parseHeader headerLines

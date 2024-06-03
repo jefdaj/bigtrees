@@ -140,8 +140,8 @@ parseFooter = decode . B8.fromStrict
 
 -- Header is the same, except we have to lob off the final header line
 -- TODO also confirm it looks as expected? tree format should be enough tho
-parseHeader :: B8.ByteString -> Maybe Header
-parseHeader s = case B8.lines s of
+parseHeader :: [B8.ByteString] -> Maybe Header
+parseHeader s = case s of
   [ ] -> Nothing -- should never happen, right?
   [l] -> Nothing -- should never happen, right?
   ls  -> decode $ B8.fromStrict $ B8.unlines $ init ls
