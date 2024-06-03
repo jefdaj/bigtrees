@@ -31,9 +31,11 @@ readTree md path = deserializeTree md <$> B8.readFile path
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
-deserializeTree md bs = case foldr accTrees [] $ reverse $ parseHashLines md bs of
-  []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
-  ((_, tree):_) -> tree
+deserializeTree md bs =
+  let (_, ls, _) = parseTreeFile md bs
+  in case foldr accTrees [] $ reverse ls of
+    []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
+    ((_, tree):_) -> tree
 
 {- This one is confusing! It accumulates a list of trees and their depth,
  - and when it comes across a dir it uses the depths to determine
@@ -106,16 +108,23 @@ readTestTree md = buildTree B8.readFile
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
-parseHashLines :: Maybe Int -> B8.ByteString -> [HashLine]
-parseHashLines md = fromRight [] . parseOnly (fileP md)
+parseTreeFile :: Maybe Int -> B8.ByteString -> (Header, [HashLine], Footer)
+parseTreeFile md = fromRight (undefined, [], undefined) . parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
   hls <- sepBy' (hashLineP md) endOfLine
   return $ catMaybes hls -- TODO count skipped lines here?
 
-fileP :: Maybe Int -> Parser [HashLine]
-fileP md = linesP md <* endOfLine <* endOfInput
+bodyP :: Maybe Int -> Parser [HashLine]
+bodyP md = linesP md <* endOfLine <* (lookAhead $ char '#')
+
+fileP :: Maybe Int -> Parser (Header, [HashLine], Footer)
+fileP md = do
+  h <- headerP
+  b <- bodyP md
+  f <- footerP
+  return (h, b, f)
 
 commentLineP = do
   _ <- char '#'
@@ -127,11 +136,17 @@ headerP = do
     Nothing -> fail "failed to parse header"
     Just h -> return h
 
+footerP = do
+  footerLines <- manyTill commentLineP endOfInput
+  case parseFooter footerLines of
+    Nothing -> fail "failed to parse footer"
+    Just h -> return h
+
 -- The main Attoparsec parser(s) can separate the commented section,
 -- then the uncommented JSON is handled here.
 -- TODO is it an Either?
-parseFooter :: B8.ByteString -> Maybe Footer
-parseFooter = decode . B8.fromStrict
+parseFooter :: [String] -> Maybe Footer
+parseFooter = decode . B8.fromStrict . B8.pack . unlines
 
 -- Header is the same, except we have to lob off the final header line
 -- TODO also confirm it looks as expected? tree format should be enough tho
