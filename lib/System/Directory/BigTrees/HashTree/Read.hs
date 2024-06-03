@@ -124,20 +124,21 @@ fileP md = do
   h <- headerP
   b <- bodyP md
   f <- footerP
+  _ <- endOfInput
   return (h, b, f)
 
 commentLineP = do
   _ <- char '#'
-  manyTill anyChar endOfLine
+  manyTill anyChar $ lookAhead endOfLine
 
 headerP = do
-  headerLines <- manyTill commentLineP breakP
+  headerLines <- sepBy' commentLineP endOfLine
   case parseHeader headerLines of
     Nothing -> fail "failed to parse header"
     Just h -> return h
 
 footerP = do
-  footerLines <- manyTill commentLineP endOfInput
+  footerLines <- sepBy' commentLineP endOfLine
   case parseFooter footerLines of
     Nothing -> fail "failed to parse footer"
     Just h -> return h
