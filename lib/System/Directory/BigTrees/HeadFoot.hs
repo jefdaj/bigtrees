@@ -131,17 +131,3 @@ hWriteFooter :: Handle -> IO ()
 hWriteFooter hdl = do
   ftr <- makeFooterNow
   B8.hPutStr hdl $ renderFooter ftr
-
--- The main Attoparsec parser(s) can separate the commented section,
--- then the uncommented JSON is handled here.
--- TODO is it an Either?
-parseFooter :: B8.ByteString -> Maybe Footer
-parseFooter = decode . B8.fromStrict
-
--- Header is the same, except we have to lob off the final header line
--- TODO also confirm it looks as expected? tree format should be enough tho
-parseHeader :: [B8.ByteString] -> Maybe Header
-parseHeader s = case s of
-  [ ] -> Nothing -- should never happen, right?
-  [l] -> Nothing -- should never happen, right?
-  ls  -> decode $ B8.fromStrict $ B8.unlines $ init ls

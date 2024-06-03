@@ -6,12 +6,21 @@ module System.Directory.BigTrees.HashTree.Read where
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), TreeType (..),
-                                           parseHashLines)
+                                           hashLineP, breakP)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.Name (Name (..))
 -- import System.FilePath.Glob (Pattern)
+import Data.Attoparsec.ByteString (skipWhile)
+import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
+                                         endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
+import qualified Data.Attoparsec.ByteString.Char8 as A8
+import Data.Attoparsec.Combinator (lookAhead)
+import Data.Either (fromRight)
+import Data.Maybe (catMaybes)
+import System.Directory.BigTrees.HeadFoot (Header(..), Footer(..))
+import Data.Aeson (FromJSON, ToJSON, decode)
 
 readTree :: Maybe Int -> FilePath -> IO ProdTree
 readTree md path = deserializeTree md <$> B8.readFile path
@@ -91,3 +100,43 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
 
 readTestTree :: Maybe Int -> Bool -> [String] -> FilePath -> IO TestTree
 readTestTree md = buildTree B8.readFile
+
+--- attoparsec parsers ---
+
+-- TODO use bytestring the whole time rather than converting
+-- TODO should this propogate the Either?
+-- TODO any more elegant way to make the parsing strict?
+parseHashLines :: Maybe Int -> B8.ByteString -> [HashLine]
+parseHashLines md = fromRight [] . parseOnly (fileP md)
+
+linesP :: Maybe Int -> Parser [HashLine]
+linesP md = do
+  hls <- sepBy' (hashLineP md) endOfLine
+  return $ catMaybes hls -- TODO count skipped lines here?
+
+fileP :: Maybe Int -> Parser [HashLine]
+fileP md = linesP md <* endOfLine <* endOfInput
+
+commentLineP = do
+  _ <- char '#'
+  manyTill anyChar endOfLine
+
+headerP = do
+  headerLines <- manyTill commentLineP breakP
+  case parseHeader headerLines of
+    Nothing -> fail "failed to parse header"
+    Just h -> return h
+
+-- The main Attoparsec parser(s) can separate the commented section,
+-- then the uncommented JSON is handled here.
+-- TODO is it an Either?
+parseFooter :: B8.ByteString -> Maybe Footer
+parseFooter = decode . B8.fromStrict
+
+-- Header is the same, except we have to lob off the final header line
+-- TODO also confirm it looks as expected? tree format should be enough tho
+parseHeader :: [String] -> Maybe Header
+parseHeader s = case s of
+  [ ] -> Nothing -- should never happen, right?
+  [l] -> Nothing -- should never happen, right?
+  ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ init ls

@@ -16,15 +16,15 @@ module System.Directory.BigTrees.HashLine
   , bsBytes
   -- , Hash(..) TODO re-export here? And Name too?
   , prettyLine
-  , parseHashLine -- TODO remove? not actually used
-  , parseHashLines
+  , hashLineP
+  , breakP -- TODO should this be internal?
+  -- , parseHashLine
   , sepChar
   , hashLineFields
   , join
 
   -- for testing (TODO remove?)
   -- , nameP
-  -- , lineP
   -- , linesP
 
   )
@@ -46,7 +46,6 @@ import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
-import System.Directory.BigTrees.HeadFoot (Header, parseHeader)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat)
 import TH.Derive ()
 import Data.Functor ((<&>))
@@ -270,8 +269,8 @@ nfilesP = numStrP <&> (NNodes . read)
 
 -- TODO is there a cleaner syntax for this?
 -- TODO this should still count up total files when given a max depth
-lineP :: Maybe Int -> Parser (Maybe HashLine)
-lineP md = do
+hashLineP :: Maybe Int -> Parser (Maybe HashLine)
+hashLineP md = do
   t <- typeP
   (Depth i) <- depthP
   case md of
@@ -315,28 +314,7 @@ parseTheRest t i = do
   -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
   return $ HashLine (t, i, h, mt, s, f, p)
 
-linesP :: Maybe Int -> Parser [HashLine]
-linesP md = do
-  hls <- sepBy' (lineP md) endOfLine
-  return $ catMaybes hls -- TODO count skipped lines here?
-
-fileP :: Maybe Int -> Parser [HashLine]
-fileP md = linesP md <* endOfLine <* endOfInput
-
--- TODO use bytestring the whole time rather than converting
--- TODO should this propogate the Either?
--- TODO any more elegant way to make the parsing strict?
-parseHashLines :: Maybe Int -> B8.ByteString -> [HashLine]
-parseHashLines md = fromRight [] . parseOnly (fileP md)
-
-parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
-parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")
-
-commentLineP = do
-  _ <- char '#'
-  manyTill anyChar endOfLine
-
-headerP = do
-  _ <- char '#'
-  headerLines <- manyTill commentLineP breakP
-  parseHeader headerLines
+-- works, but not used so far
+-- TODO use in testing? remove?
+-- parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
+-- parseHashLine bs = A8.parseOnly (hashLineP Nothing) (B8.append bs "\n")
