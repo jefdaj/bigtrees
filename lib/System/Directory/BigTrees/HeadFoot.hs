@@ -11,7 +11,7 @@ import System.Info (arch, compilerName, fullCompilerVersion, os)
 -- import System.FilePath.Glob (Pattern)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 -- import Data.Time.Clock (secondsToDiffTime)
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (FromJSON, ToJSON, decode)
 import qualified Data.Aeson.Encode.Pretty as AP
 import qualified Data.ByteString.Char8 as B8
 import GHC.Generics (Generic)
@@ -131,3 +131,17 @@ hWriteFooter :: Handle -> IO ()
 hWriteFooter hdl = do
   ftr <- makeFooterNow
   B8.hPutStr hdl $ renderFooter ftr
+
+-- The main Attoparsec parser(s) can separate the commented section,
+-- then the uncommented JSON is handled here.
+-- TODO is it an Either?
+parseFooter :: B8.ByteString -> Maybe Footer
+parseFooter = decode . B8.fromStrict
+
+-- Header is the same, except we have to lob off the final header line
+-- TODO also confirm it looks as expected? tree format should be enough tho
+parseHeader :: B8.ByteString -> Maybe Header
+parseHeader s = case B8.lines s of
+  [ ] -> Nothing -- should never happen, right?
+  [l] -> Nothing -- should never happen, right?
+  ls  -> decode $ B8.fromStrict $ B8.unlines $ init ls
