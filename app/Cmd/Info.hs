@@ -6,20 +6,28 @@ import Control.Exception.Safe -- TODO specifics
 -- import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.HashLine (HashLine, parseHashLine)
 import System.Directory.BigTrees.HashTree (parseHeader, parseFooter)
-import System.Directory.BigTrees.HeadFoot (Header, Footer)
+import System.Directory.BigTrees.HeadFoot (Header(..), Footer, scanSeconds)
 import qualified Data.ByteString.Char8 as B8
 import Control.DeepSeq (force)
 import Control.Monad (forM)
 
 cmdInfo :: Config -> FilePath -> IO ()
 cmdInfo cfg path = do
-  putStrLn "cmdInfo"
-  putStrLn $ "path: " ++ show path
-  putStrLn $ "cfg: " ++ show cfg
-  -- TODO parse and print header without reading much of the file
-  -- TODO parse and print footer from the end, again without reading the middle
-  -- TODO calculate scan time
-  -- TODO also pick up some stats from the last line of the body
+  mH  <- readHeader path
+  mLF <- readLastHashLineAndFooter path
+  case (mH, mLF) of
+    (Just h, Just (l, f)) -> printInfo path h f l
+    _ -> error $ "failed to read info from '" ++ path ++ "'"
+
+printInfo :: FilePath -> Header -> Footer -> HashLine -> IO ()
+printInfo path header footer lastLine = do
+  let seconds = scanSeconds (header, footer)
+  mapM_ putStrLn
+    [ path
+    , "\tformat " ++ show (treeFormat header)
+    , "\thashing took " ++ show seconds ++ " seconds" -- TODO min, hours, days
+    -- , show header
+    ]
 
 --- read header info from the beginning of the file ---
 
