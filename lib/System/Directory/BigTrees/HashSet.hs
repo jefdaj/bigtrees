@@ -1,5 +1,22 @@
 {-# LANGUAGE DeriveGeneric       #-}
 
+{-|
+Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
+copy numbers. It's meant as a compact on-disk store of a set of hashes for a
+user-defined purpose, simpler and smaller than a `HashTree`. Example use cases:
+
+* Hashes that have already been trashed and can be trashed when seen again
+* Hashes of lost files to scan for and retreive
+* Hashes of all parts of a tree in one location that are over 10M or 100 files,
+  to detect dupes in another location.
+
+The "note" field defaults to the `Name` of the tree node, but can be overridden
+in batches from the command line. For example you might have a huge set of
+hashes simply labeled "backed up" or "delete".
+
+The `NBytes` and `NNodes` fields are for filtering the set to make it smaller.
+-}
+
 module System.Directory.BigTrees.HashSet where
 
 -- TODO which of these are needed?
