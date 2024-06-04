@@ -158,4 +158,4 @@ parseHeader :: [String] -> Maybe Header
 parseHeader s = case s of
   [ ] -> Nothing -- should never happen, right?
   [l] -> Nothing -- should never happen, right?
-  ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ init ls
+  ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ map (replace "# " "") $ init ls

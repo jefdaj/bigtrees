@@ -5,8 +5,8 @@ import Config (Config (..))
 import Control.Exception.Safe -- TODO specifics
 -- import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.HashLine (HashLine, parseHashLine)
-import System.Directory.BigTrees.HashTree.Read (parseFooter)
-import System.Directory.BigTrees.HeadFoot (Footer)
+import System.Directory.BigTrees.HashTree.Read (parseHeader, parseFooter)
+import System.Directory.BigTrees.HeadFoot (Header, Footer)
 import qualified Data.ByteString.Char8 as B8
 import Control.DeepSeq (force)
 import Control.Monad (forM)
@@ -24,10 +24,11 @@ cmdInfo cfg path = do
 --- read header info from the beginning of the file ---
 
 -- TODO document 100 line limit
-readHeader :: FilePath -> IO [String]
+readHeader :: FilePath -> IO (Maybe Header)
 readHeader path =
   withFile path ReadMode $ \h -> do
-    fmap (takeWhile isCommentLine) $ forM [1..100] $ \_ -> hGetLine h
+    commentLines <- fmap (takeWhile isCommentLine) $ forM [1..100] $ \_ -> hGetLine h
+    return $ parseHeader commentLines
 
 isCommentLine :: String -> Bool
 isCommentLine ('#':_) = True
