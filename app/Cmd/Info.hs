@@ -19,25 +19,30 @@ cmdInfo cfg path = do
   -- TODO calculate scan time
   -- TODO also pick up some stats from the last line of the body
 
--- https://stackoverflow.com/a/41658016
-hGetLastLines :: Handle -> IO String
-hGetLastLines hdl = go "" (-1)
-  where
-  go s i = do
-    hSeek hdl SeekFromEnd i
-    c <- hGetChar hdl
-    if c == '\n'
-      then pure s
-      else go (c:s) (i-1)
+--- read header ---
 
--- Option 1:
--- skip final empty line if any
--- accumulate as long as lines start with #
--- also get the first line that doesn't
+--- read footer + last hash line ---
 
--- Option 2:
--- search back by char until the pattern:
--- new line starts with something other than '#'
+-- TODO move to HeadFoot? HashTree.Read?
+readEndOfTreeFile :: FilePath -> IO (Maybe (HashLine, Footer))
+readEndOfTreeFile path = do
+  mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 1000
+  case mTxt of
+    Nothing -> return Nothing
+    Just txt -> case filter (not . null) $ lines txt of
+      [] -> return Nothing
+      [_] -> return Nothing
+      (l:ls) -> do
+        let ml = parseHashLine $ B8.pack $ l
+            mf = parseFooter $ ls
+        case (ml, mf) of
+          (Just l, Just f) -> return $ Just (l, f)
+          _ -> return Nothing
+
+-- Tests whether the string looks like a newline + HashLine with Depth 0
+isDepthZeroLine :: String -> Bool
+isDepthZeroLine ('\n':_:'\t':'0':_) = True
+isDepthZeroLine _ = False
 
 -- Note that max is a positive number, the max chars to take,
 -- whereas the seek index is a negative number from the end.
@@ -56,8 +61,7 @@ hTakePrevUntil pred max hdl = handleAnyDeep (\_ -> return Nothing) $ do
   hSeek hdl SeekFromEnd 0
   hTakePrevUntil' pred max hdl ""
 
--- The internal helper that also takes a seek position and the accumulated
--- string from that point on. Note that the integer index should be negative.
+-- Internal helper that also takes a seek position and the accumulated string.
 hTakePrevUntil' :: (String -> Bool) -> Int -> Handle -> String -> IO (Maybe String)
 hTakePrevUntil' _ max _ _ | max < 0 = return Nothing
 hTakePrevUntil' pred max hdl cs = do
@@ -67,27 +71,3 @@ hTakePrevUntil' pred max hdl cs = do
   if pred cs'
     then return $ Just cs'
     else hTakePrevUntil' pred (max-1) hdl cs'
-
-isDepthZeroLine :: String -> Bool
-isDepthZeroLine ('\n':_:'\t':'0':_) = True
-isDepthZeroLine _ = False
-
-readEndOfTreeFile :: FilePath -> IO (Maybe (HashLine, Footer))
-readEndOfTreeFile path = do
-  mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 1000
-  -- putStrLn $ show mTxt
-  case mTxt of
-    Nothing -> return Nothing
-    Just txt -> case filter (not . null) $ lines txt of
-      [] -> return Nothing
-      [_] -> return Nothing
-      (l:ls) -> do
-        -- putStrLn $ show l
-        -- putStrLn $ show ls
-        let ml = parseHashLine $ B8.pack $ l
-            mf = parseFooter $ ls
-        -- putStrLn $ show ml
-        -- putStrLn $ show mf
-        case (ml, mf) of
-          (Just l, Just f) -> return $ Just (l, f)
-          _ -> return Nothing
