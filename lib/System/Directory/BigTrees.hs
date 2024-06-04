@@ -46,6 +46,9 @@ module System.Directory.BigTrees
   , Filter(..)
   , pathMatches
 
+  -- hashset
+  , HashSet(..)
+
   -- delta
   , Delta(..)
   , diff
@@ -90,3 +93,4 @@ import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printT
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp,
                                        roundtripNameToFileName)
+import System.Directory.BigTrees.HashSet (HashSet(..))
