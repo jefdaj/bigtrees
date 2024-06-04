@@ -122,7 +122,7 @@ roundtripProdTreeToHashes :: ProdTree -> IO ProdTree
 roundtripProdTreeToHashes t =
   withSystemTempFile "bigtrees" $ \path hdl -> do
     hClose hdl
-    writeTree path t
+    writeTree [] path t -- TODO exclude defaultConfig?
     readTree Nothing path
 
 prop_roundtrip_ProdTree_to_hashes :: Property

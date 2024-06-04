@@ -29,7 +29,7 @@ cmdHash cfg path = bracket open close write
     write hdl = do
       hWriteHeader hdl (exclude cfg)
       tree <- buildProdTree (verbose cfg) (exclude cfg) path
-      hWriteTree hdl tree
+      hWriteTree (exclude cfg) hdl tree
       hWriteFooter hdl
 
     -- TODO why is this required? shouldn't hClose be OK?

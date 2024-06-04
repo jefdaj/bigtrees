@@ -8,4 +8,4 @@ oldCmdCat cfg path = do
   tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
   case txt cfg of
     Nothing -> printTree   tree
-    Just p  -> writeTree p tree
+    Just p  -> writeTree (exclude cfg) p tree
