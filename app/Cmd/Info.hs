@@ -27,17 +27,17 @@ printInfo path header footer lastLine = do
       lineInfo = case lastLine of
         (ErrLine (_, ErrMsg m,_)) -> ["ERROR: " ++ m]
         (HashLine (_, _, h, ModTime m, NBytes b, NNodes n, _)) ->
-          [ "hash " ++ B8.unpack (prettyHash h)
-          , "modified " ++ show m
-          , show n ++ " files"
-          , show b ++ " bytes"
+          [ "contains info on " ++ show n ++ " files totaling " ++ show b ++ " bytes"
+          , "overall hash is " ++ B8.unpack (prettyHash h)
+          -- TODO is this accurate/useful? "modified " ++ show m
           ]
-  mapM_ putStrLn $ path : (map ('\t':) $
-    lineInfo ++
-    [ "bigtree format " ++ show (treeFormat header)
+  mapM_ putStrLn $ (path ++ ":") : (map ("  " ++) $
+    [ "bigtree " ++ show (treeFormat header) ++ " format"
+    , "took " ++ show seconds ++ " seconds to create" -- TODO min, hours, days
+    ]
+    ++ lineInfo)
     -- TODO hash start date
-    , "hashing took " ++ show seconds ++ " seconds" -- TODO min, hours, days
-    ])
+    -- TODO n errors
 
 --- read header info from the beginning of the file ---
 
