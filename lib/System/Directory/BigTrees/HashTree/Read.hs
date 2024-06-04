@@ -33,7 +33,7 @@ readTree md path = deserializeTree md <$> B8.readFile path
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 deserializeTree md bs = case parseTreeFile md bs of
-  Left msg -> error msg -- TODO Err tree here?
+  Left msg -> Err { errName = Name "deserializeTree", errMsg = ErrMsg msg }
   Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of
     []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
     ((_, tree):_) -> tree

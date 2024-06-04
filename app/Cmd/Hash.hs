@@ -8,7 +8,6 @@ import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (isPrefixOf, sort)
 import System.Directory.BigTrees (buildProdTree, hWriteTree, printTree)
-import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Util (absolutePath)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.Info (os)
@@ -27,10 +26,8 @@ cmdHash cfg path = bracket open close write
              Just p  -> openBinaryFile p WriteMode
 
     write hdl = do
-      hWriteHeader hdl (exclude cfg)
       tree <- buildProdTree (verbose cfg) (exclude cfg) path
       hWriteTree (exclude cfg) hdl tree
-      hWriteFooter hdl
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?
