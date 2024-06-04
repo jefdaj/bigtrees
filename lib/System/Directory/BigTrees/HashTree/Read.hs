@@ -29,11 +29,12 @@ readTree md path = deserializeTree md <$> B8.readFile path
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
+-- TODO also return header + footer?
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
-deserializeTree md bs =
-  let (_, ls, _) = parseTreeFile md bs
-  in case foldr accTrees [] $ reverse ls of
+deserializeTree md bs = case parseTreeFile md bs of
+  Left msg -> error msg -- TODO Err tree here?
+  Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of
     []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
     ((_, tree):_) -> tree
 
@@ -109,8 +110,8 @@ readTestTree md = buildTree B8.readFile
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
 -- TODO parse rather than parseOnly?
-parseTreeFile :: Maybe Int -> B8.ByteString -> (Header, [HashLine], Footer)
-parseTreeFile md = fromRight (undefined, [], undefined) . parseOnly (fileP md) -- TODO fix this!
+parseTreeFile :: Maybe Int -> B8.ByteString -> Either String (Header, [HashLine], Footer)
+parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
