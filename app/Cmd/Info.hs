@@ -8,6 +8,8 @@ import System.Directory.BigTrees.HashLine (HashLine, parseHashLine)
 import System.Directory.BigTrees.HashTree.Read (parseFooter)
 import System.Directory.BigTrees.HeadFoot (Footer)
 import qualified Data.ByteString.Char8 as B8
+import Control.DeepSeq (force)
+import Control.Monad (forM)
 
 cmdInfo :: Config -> FilePath -> IO ()
 cmdInfo cfg path = do
@@ -19,14 +21,25 @@ cmdInfo cfg path = do
   -- TODO calculate scan time
   -- TODO also pick up some stats from the last line of the body
 
---- read header ---
+--- read header info from the beginning of the file ---
 
---- read footer + last hash line ---
+-- TODO document 100 line limit
+readHeader :: FilePath -> IO [String]
+readHeader path =
+  withFile path ReadMode $ \h -> do
+    fmap (takeWhile isCommentLine) $ forM [1..100] $ \_ -> hGetLine h
+
+isCommentLine :: String -> Bool
+isCommentLine ('#':_) = True
+isCommentLine _ = False
+
+--- read summary info from the end of the file ---
 
 -- TODO move to HeadFoot? HashTree.Read?
-readEndOfTreeFile :: FilePath -> IO (Maybe (HashLine, Footer))
-readEndOfTreeFile path = do
-  mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 1000
+-- TODO factor out/document the max char thing
+readLastHashLineAndFooter :: FilePath -> IO (Maybe (HashLine, Footer))
+readLastHashLineAndFooter path = do
+  mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 10000
   case mTxt of
     Nothing -> return Nothing
     Just txt -> case filter (not . null) $ lines txt of
@@ -41,7 +54,7 @@ readEndOfTreeFile path = do
 
 -- Tests whether the string looks like a newline + HashLine with Depth 0
 isDepthZeroLine :: String -> Bool
-isDepthZeroLine ('\n':_:'\t':'0':_) = True
+isDepthZeroLine ('\n':_:'\t':'0':'\t':_) = True
 isDepthZeroLine _ = False
 
 -- Note that max is a positive number, the max chars to take,
