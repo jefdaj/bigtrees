@@ -9,7 +9,6 @@ import System.Directory.BigTrees.HashLine (HashLine(..), ErrMsg(..), ModTime(..)
 import System.Directory.BigTrees.HashTree (HashTree(..), parseHeader, parseFooter)
 import System.Directory.BigTrees.HeadFoot (Header(..), Footer, scanSeconds)
 import qualified Data.ByteString.Char8 as B8
-import Control.DeepSeq (force)
 import Control.Monad (forM)
 -- import qualified Data.ByteString.Short as BS
 
@@ -41,6 +40,7 @@ printInfo path header footer lastLine = do
 
 --- read header info from the beginning of the file ---
 
+-- TODO close file bug here :/
 -- TODO document 100 line limit
 readHeader :: FilePath -> IO (Maybe Header)
 readHeader path =
