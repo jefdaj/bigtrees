@@ -237,7 +237,7 @@ hashP = do
  - TODO can it use null-separated lines instead like -print0?
  -}
 breakP :: Parser ()
-breakP = endOfLine >> choice [typeP >> numStrP >> hashP >> return (), endOfInput]
+breakP = endOfLine >> choice [char '#' >> return (), typeP >> numStrP >> hashP >> return (), endOfInput]
 
 -- TODO should anyChar be anything except forward slash and the null char?
 nameP :: Parser Name

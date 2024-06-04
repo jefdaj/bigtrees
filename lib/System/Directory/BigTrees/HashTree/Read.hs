@@ -108,23 +108,24 @@ readTestTree md = buildTree B8.readFile
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
+-- TODO parse rather than parseOnly?
 parseTreeFile :: Maybe Int -> B8.ByteString -> (Header, [HashLine], Footer)
 parseTreeFile md = fromRight (undefined, [], undefined) . parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
-  hls <- sepBy' (hashLineP md) endOfLine
+  hls <- sepBy' (hashLineP md) endOfLine <* endOfLine
   return $ catMaybes hls -- TODO count skipped lines here?
 
-bodyP :: Maybe Int -> Parser [HashLine]
-bodyP md = linesP md <* endOfLine <* (lookAhead $ char '#')
+-- bodyP :: Maybe Int -> Parser [HashLine]
+-- bodyP md = linesP md -- <* endOfLine -- <* (lookAhead $ char '#')
 
 fileP :: Maybe Int -> Parser (Header, [HashLine], Footer)
 fileP md = do
   h <- headerP
-  b <- bodyP md
+  b <- linesP md
   f <- footerP
-  _ <- endOfInput
+  -- _ <- endOfInput
   return (h, b, f)
 
 commentLineP = do
@@ -132,13 +133,13 @@ commentLineP = do
   manyTill anyChar $ lookAhead endOfLine
 
 headerP = do
-  headerLines <- sepBy' commentLineP endOfLine
+  headerLines <- sepBy' commentLineP endOfLine <* endOfLine
   case parseHeader headerLines of
     Nothing -> fail "failed to parse header"
     Just h -> return h
 
 footerP = do
-  footerLines <- sepBy' commentLineP endOfLine
+  footerLines <- sepBy' commentLineP endOfLine -- <* endOfLine
   case parseFooter footerLines of
     Nothing -> fail "failed to parse footer"
     Just h -> return h
