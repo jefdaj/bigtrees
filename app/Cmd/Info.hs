@@ -4,12 +4,14 @@ import System.IO -- TODO specifics
 import Config (Config (..))
 import Control.Exception.Safe -- TODO specifics
 -- import System.Directory.BigTrees.HashTree
-import System.Directory.BigTrees.HashLine (HashLine, parseHashLine)
-import System.Directory.BigTrees.HashTree (parseHeader, parseFooter)
+import System.Directory.BigTrees.Hash (Hash(..), prettyHash)
+import System.Directory.BigTrees.HashLine (HashLine(..), ErrMsg(..), ModTime(..), NBytes(..), NNodes(..), parseHashLine)
+import System.Directory.BigTrees.HashTree (HashTree(..), parseHeader, parseFooter)
 import System.Directory.BigTrees.HeadFoot (Header(..), Footer, scanSeconds)
 import qualified Data.ByteString.Char8 as B8
 import Control.DeepSeq (force)
 import Control.Monad (forM)
+-- import qualified Data.ByteString.Short as BS
 
 cmdInfo :: Config -> FilePath -> IO ()
 cmdInfo cfg path = do
@@ -22,12 +24,20 @@ cmdInfo cfg path = do
 printInfo :: FilePath -> Header -> Footer -> HashLine -> IO ()
 printInfo path header footer lastLine = do
   let seconds = scanSeconds (header, footer)
-  mapM_ putStrLn
-    [ path
-    , "\tformat " ++ show (treeFormat header)
-    , "\thashing took " ++ show seconds ++ " seconds" -- TODO min, hours, days
-    -- , show header
-    ]
+      lineInfo = case lastLine of
+        (ErrLine (_, ErrMsg m,_)) -> ["ERROR: " ++ m]
+        (HashLine (_, _, h, ModTime m, NBytes b, NNodes n, _)) ->
+          [ "hash " ++ B8.unpack (prettyHash h)
+          , "modified " ++ show m
+          , show n ++ " files"
+          , show b ++ " bytes"
+          ]
+  mapM_ putStrLn $ path : (map ('\t':) $
+    lineInfo ++
+    [ "bigtree format " ++ show (treeFormat header)
+    -- TODO hash start date
+    , "hashing took " ++ show seconds ++ " seconds" -- TODO min, hours, days
+    ])
 
 --- read header info from the beginning of the file ---
 
