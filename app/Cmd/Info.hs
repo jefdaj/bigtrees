@@ -2,7 +2,12 @@ module Cmd.Info where
 
 import System.IO -- TODO specifics
 import Config (Config (..))
+import Control.Exception.Safe -- TODO specifics
 -- import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.HashLine (HashLine, parseHashLine)
+import System.Directory.BigTrees.HashTree.Read (parseFooter)
+import System.Directory.BigTrees.HeadFoot (Footer)
+import qualified Data.ByteString.Char8 as B8
 
 cmdInfo :: Config -> FilePath -> IO ()
 cmdInfo cfg path = do
@@ -47,7 +52,7 @@ hGetLastLines hdl = go "" (-1)
 -- Nothing
 --
 hTakePrevUntil :: (String -> Bool) -> Int -> Handle -> IO (Maybe String)
-hTakePrevUntil pred max hdl = do
+hTakePrevUntil pred max hdl = handleAnyDeep (\_ -> return Nothing) $ do
   hSeek hdl SeekFromEnd (-2)
   hTakePrevUntil' pred max hdl ""
 
@@ -58,8 +63,6 @@ hTakePrevUntil' _ max _ _ | max < 0 = return Nothing
 hTakePrevUntil' pred max hdl cs = do
   hSeek hdl RelativeSeek (-2)
   c <- hGetChar hdl
-  -- n <- hGetPosn hdl
-  -- putStrLn $ show n ++ " " ++ [c]
   let cs' = c:cs
   if pred cs'
     then return $ Just cs'
@@ -68,3 +71,23 @@ hTakePrevUntil' pred max hdl cs = do
 isDepthZeroLine :: String -> Bool
 isDepthZeroLine ('\n':_:'\t':'0':_) = True
 isDepthZeroLine _ = False
+
+readEndOfTreeFile :: FilePath -> IO (Maybe (HashLine, Footer))
+readEndOfTreeFile path = do
+  mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 1000
+  putStrLn $ show mTxt
+  case mTxt of
+    Nothing -> return Nothing
+    Just txt -> case filter (not . null) $ lines txt of
+      [] -> return Nothing
+      [_] -> return Nothing
+      (l:ls) -> do
+        putStrLn $ show l
+        putStrLn $ show ls
+        let ml = parseHashLine $ B8.pack l
+            mf = parseFooter $ ls
+        putStrLn $ show ml
+        putStrLn $ show mf
+        case (ml, mf) of
+          (Just l, Just f) -> return $ Just (l, f)
+          _ -> return Nothing

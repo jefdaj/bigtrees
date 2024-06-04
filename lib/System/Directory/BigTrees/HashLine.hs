@@ -18,7 +18,7 @@ module System.Directory.BigTrees.HashLine
   , prettyLine
   , hashLineP
   , breakP -- TODO should this be internal?
-  -- , parseHashLine
+  , parseHashLine
   , sepChar
   , hashLineFields
   , join
@@ -314,7 +314,10 @@ parseTheRest t i = do
   -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
   return $ HashLine (t, i, h, mt, s, f, p)
 
--- works, but not used so far
--- TODO use in testing? remove?
--- parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
--- parseHashLine bs = A8.parseOnly (hashLineP Nothing) (B8.append bs "\n")
+-- TODO proper eitherToMaybe or similar idiom
+-- TODO use String here?
+parseHashLine :: B8.ByteString -> Maybe HashLine
+parseHashLine bs = case A8.parseOnly (hashLineP Nothing) (B8.append bs "\n") of
+  Left _ -> Nothing
+  Right Nothing -> Nothing
+  Right (Just x) -> Just x
