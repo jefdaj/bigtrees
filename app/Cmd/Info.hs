@@ -34,30 +34,37 @@ hGetLastLines hdl = go "" (-1)
 -- search back by char until the pattern:
 -- new line starts with something other than '#'
 
+-- Note that max is a positive number, the max chars to take,
+-- whereas the seek index is a negative number from the end.
 -- TODO handle the case where we get to the beginning of the file?
--- TODO why is 2 required rather than 1?
 --
 -- Example usage:
 --
--- >>> withFile "stack-work.bigtree"  ReadMode $ hTakePrevUntil (\s -> "\n# {" `isPrefixOf` s)
+-- >>> withFile "stack-work.bigtree"  ReadMode $ hTakePrevUntil (\s -> "\n# {" `isPrefixOf` s) 100
 -- "\n# {\n#   \"scanEnd\": 1717518711\n#"
 --
-hTakePrevUntil :: (String -> Bool) -> Handle -> IO String
-hTakePrevUntil pred hdl = do
+-- >>> withFile "stack-work.bigtree"  ReadMode $ hTakePrevUntil (\s -> "\n# {" `isPrefixOf` s) 10
+-- Nothing
+--
+hTakePrevUntil :: (String -> Bool) -> Int -> Handle -> IO (Maybe String)
+hTakePrevUntil pred max hdl = do
   hSeek hdl SeekFromEnd (-2)
-  hTakePrevUntil' pred hdl ""
+  hTakePrevUntil' pred max hdl ""
 
 -- The internal helper that also takes a seek position and the accumulated
 -- string from that point on. Note that the integer index should be negative.
--- TODO negate so the index is positive?
--- TODO why is 2 required rather than 1?
-hTakePrevUntil' :: (String -> Bool) -> Handle -> String -> IO String
-hTakePrevUntil' pred hdl cs = do
+hTakePrevUntil' :: (String -> Bool) -> Int -> Handle -> String -> IO (Maybe String)
+hTakePrevUntil' _ max _ _ | max < 0 = return Nothing
+hTakePrevUntil' pred max hdl cs = do
   hSeek hdl RelativeSeek (-2)
   c <- hGetChar hdl
   -- n <- hGetPosn hdl
   -- putStrLn $ show n ++ " " ++ [c]
   let cs' = c:cs
   if pred cs'
-    then pure cs'
-    else hTakePrevUntil' pred hdl cs'
+    then return $ Just cs'
+    else hTakePrevUntil' pred (max-1) hdl cs'
+
+isDepthZeroLine :: String -> Bool
+isDepthZeroLine ('\n':_:'\t':'0':_) = True
+isDepthZeroLine _ = False
