@@ -21,6 +21,7 @@ import Data.Either (fromRight)
 import Data.Maybe (catMaybes)
 import System.Directory.BigTrees.HeadFoot (Header(..), Footer(..))
 import Data.Aeson (FromJSON, ToJSON, decode)
+import Data.String.Utils (replace)
 
 readTree :: Maybe Int -> FilePath -> IO ProdTree
 readTree md path = deserializeTree md <$> B8.readFile path
@@ -149,7 +150,7 @@ footerP = do
 -- then the uncommented JSON is handled here.
 -- TODO is it an Either?
 parseFooter :: [String] -> Maybe Footer
-parseFooter = decode . B8.fromStrict . B8.pack . unlines
+parseFooter = decode . B8.fromStrict . B8.pack . unlines . map (replace "# " "")
 
 -- Header is the same, except we have to lob off the final header line
 -- TODO also confirm it looks as expected? tree format should be enough tho

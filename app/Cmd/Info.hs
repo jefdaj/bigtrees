@@ -53,7 +53,7 @@ hGetLastLines hdl = go "" (-1)
 --
 hTakePrevUntil :: (String -> Bool) -> Int -> Handle -> IO (Maybe String)
 hTakePrevUntil pred max hdl = handleAnyDeep (\_ -> return Nothing) $ do
-  hSeek hdl SeekFromEnd (-2)
+  hSeek hdl SeekFromEnd 0
   hTakePrevUntil' pred max hdl ""
 
 -- The internal helper that also takes a seek position and the accumulated
@@ -75,19 +75,19 @@ isDepthZeroLine _ = False
 readEndOfTreeFile :: FilePath -> IO (Maybe (HashLine, Footer))
 readEndOfTreeFile path = do
   mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 1000
-  putStrLn $ show mTxt
+  -- putStrLn $ show mTxt
   case mTxt of
     Nothing -> return Nothing
     Just txt -> case filter (not . null) $ lines txt of
       [] -> return Nothing
       [_] -> return Nothing
       (l:ls) -> do
-        putStrLn $ show l
-        putStrLn $ show ls
-        let ml = parseHashLine $ B8.pack l
+        -- putStrLn $ show l
+        -- putStrLn $ show ls
+        let ml = parseHashLine $ B8.pack $ l
             mf = parseFooter $ ls
-        putStrLn $ show ml
-        putStrLn $ show mf
+        -- putStrLn $ show ml
+        -- putStrLn $ show mf
         case (ml, mf) of
           (Just l, Just f) -> return $ Just (l, f)
           _ -> return Nothing
