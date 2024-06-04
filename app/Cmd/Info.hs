@@ -5,7 +5,7 @@ import Config (Config (..))
 import Control.Exception.Safe -- TODO specifics
 -- import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.HashLine (HashLine, parseHashLine)
-import System.Directory.BigTrees.HashTree.Read (parseHeader, parseFooter)
+import System.Directory.BigTrees.HashTree (parseHeader, parseFooter)
 import System.Directory.BigTrees.HeadFoot (Header, Footer)
 import qualified Data.ByteString.Char8 as B8
 import Control.DeepSeq (force)
