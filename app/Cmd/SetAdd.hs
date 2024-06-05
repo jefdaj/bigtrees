@@ -1,13 +1,13 @@
 module Cmd.SetAdd where
 
 import Text.Pretty.Simple (pPrint)
-import Config (Config(..))
+import Prelude hiding (log)
+import Config (Config(..), log)
 import Control.Monad (forM, foldM)
-import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..))
-import Control.Monad.ST.Strict (runST)
+import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), NNodes(..), sumNodes)
 import Control.DeepSeq (force)
 import qualified System.Directory as SD
-import Data.Text as T
+import qualified Data.Text as T
 
 -- bigtrees [-v] set-add -s <set> [-n <note>] <tree>...
 cmdSetAdd :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
@@ -23,14 +23,19 @@ cmdSetAdd cfg setPath mNoteStr treePaths = do
     Left msg -> error msg
     Right before -> do
       -- TODO does doing the trees one at a time fix the RAM leak?
-      afterL <- foldM (readAndAddTree cfg mNote) before treePaths
+      log cfg $ "initial '" ++ setPath ++ "' contains " ++ show (length before) ++ " hashes"
+      afterL <- foldM (force . readAndAddTree cfg mNote) before treePaths
+      log cfg $ "final '" ++ setPath ++ "' contains " ++ show (length afterL) ++ " hashes"
       writeHashList setPath afterL
 
 readAndAddTree :: Config -> Maybe Note -> HashList -> FilePath -> IO HashList
 readAndAddTree cfg mNote before path = do
   tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
+  let (NNodes n) = sumNodes tree
+  log cfg $ "adding " ++ show n ++ " hashes from '" ++ path ++ "'"
   -- TODO is it weird that toSortedList includes runST?
-  return $ toSortedList $ do
-    after <- hashSetFromList before
-    addTreeToHashSet mNote after tree
-    return after
+  let res = toSortedList $ do
+        after <- hashSetFromList before
+        addTreeToHashSet mNote after tree
+        return after
+  return res
