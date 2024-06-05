@@ -29,6 +29,7 @@ module System.Directory.BigTrees.HashSet
   ( SetData(..)
   , HashList
   , HashSet
+  , Note(..)
   , emptyHashSet
   , hashSetFromTree
   , hashSetFromList
@@ -36,6 +37,7 @@ module System.Directory.BigTrees.HashSet
   , toSortedList
   , writeHashList
   , readHashList
+  , setNote
 
   , prop_roundtrip_HashSet_to_ByteString
   )
@@ -49,6 +51,7 @@ import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Massiv.Array as A
 import Control.Monad.ST (ST, runST)
 import Control.Monad (forM)
+import Data.Maybe (fromMaybe)
 
 import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
@@ -107,7 +110,7 @@ emptyHashSet = H.newSized 1
 hashSetFromTree :: ProdTree -> ST s (HashSet s)
 hashSetFromTree t = do
   h <- H.newSized 1
-  addTreeToHashSet h t
+  addTreeToHashSet Nothing h t
   return h
 
 hashSetFromList :: HashList -> ST s (HashSet s)
@@ -120,32 +123,29 @@ hashSetFromList ls = do
 -- addToHashSet h = addToHashSet' h ""
 
 -- inserts all nodes from a tree into an existing hashset in ST s
-addTreeToHashSet :: HashSet s -> ProdTree -> ST s ()
-addTreeToHashSet _ (Err {}) = return ()
-addTreeToHashSet s t@(Dir {}) = do
-  addNodeToHashSet s (treeHash t) $ setDataFromNode t
-  mapM_ (addTreeToHashSet s) $ dirContents t
-addTreeToHashSet s t =
-  addNodeToHashSet s (treeHash t) $ setDataFromNode t
+addTreeToHashSet :: Maybe Note -> HashSet s -> ProdTree -> ST s ()
+addTreeToHashSet _ _ (Err {}) = return ()
+addTreeToHashSet mn s t@(Dir {}) = do
+  addNodeToHashSet s (treeHash t) $ setDataFromNode mn t
+  mapM_ (addTreeToHashSet mn s) $ dirContents t
+addTreeToHashSet mn s t =
+  addNodeToHashSet s (treeHash t) $ setDataFromNode mn t
 
-setDataFromNode :: HashTree () -> SetData
-setDataFromNode tree =
+setDataFromNode :: Maybe Note -> HashTree () -> SetData
+setDataFromNode mn tree =
   let (Name n) = treeName tree
   in SetData
-       { sdNote  = Note n
+       { sdNote  = fromMaybe (Note n) mn
        , sdBytes = treeNBytes tree
        , sdNodes = sumNodes tree
        }
 
--- inserts one node into an existing dupemap in ST s
--- TODO should a new name override an old one? currently old is kept
+-- inserts one node into an existing dupemap in ST s,
+-- overwriting the existing note if any (all other fields should be the same)
+-- TODO assert that other fields are the same? prop test for that
 -- TODO should this return the set?
 addNodeToHashSet :: HashSet s -> Hash -> SetData -> ST s ()
-addNodeToHashSet s h sd = do
-  existing <- H.lookup s h
-  case existing of
-    Nothing -> H.insert s h sd
-    Just _  -> return ()
+addNodeToHashSet s h sd = H.insert s h sd
 
 
 --- quicksort hashset to list ---
@@ -257,3 +257,9 @@ prop_roundtrip_HashSet_to_ByteString = monadicIO $ do
   let l1  = toSortedList $ hashSetFromTree t
       eL2 = roundtripHashListToByteString l1
   assert $ eL2 == Right l1
+
+
+--- set notes ---
+
+setNote :: Note -> HashList -> HashList
+setNote note = map (\(h, sd) -> (h, sd { sdNote = note }))
