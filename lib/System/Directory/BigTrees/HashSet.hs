@@ -30,6 +30,8 @@ module System.Directory.BigTrees.HashSet
   , HashList
   , HashSet
   , hashSetFromTree
+  , hashSetFromList
+  , addTreeToHashSet
   , toSortedList
   , writeHashList
   , readHashList
@@ -45,6 +47,7 @@ import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Massiv.Array as A
 import Control.Monad.ST (ST, runST)
+import Control.Monad (forM)
 
 import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
@@ -101,6 +104,12 @@ hashSetFromTree t = do
   h <- H.newSized 1
   addTreeToHashSet h t
   return h
+
+hashSetFromList :: HashList -> ST s (HashSet s)
+hashSetFromList ls = do
+  s <- H.newSized 1
+  forM ls $ \(h, sd) -> addNodeToHashSet s h sd
+  return s
 
 -- addToHashSet :: HashSet s -> ProdTree -> ST s ()
 -- addToHashSet h = addToHashSet' h ""
@@ -229,6 +238,7 @@ parseHashList bs = parseHashSetLines bs >>= return . map f
 -- TODO throw IO error rather than Left here?
 readHashList :: FilePath -> IO (Either String HashList)
 readHashList path = B8.readFile path >>= return . parseHashList
+
 
 --- round-trip tests ---
 
