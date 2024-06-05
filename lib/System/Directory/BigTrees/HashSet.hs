@@ -18,7 +18,14 @@ hashes simply labeled "backed up" or "delete".
 The `NBytes` and `NNodes` fields are for filtering the set to make it smaller.
 -}
 
-module System.Directory.BigTrees.HashSet where
+module System.Directory.BigTrees.HashSet
+  ( SetData(..)
+  , HashList
+  , HashSet
+  , hashSetFromTree
+  , sortHashSet
+  )
+  where
 
 -- TODO which of these are needed?
 import qualified Data.HashMap.Strict as M
