@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE RankNTypes       #-}
 
 {-|
 Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
@@ -24,6 +25,7 @@ import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
+import qualified Data.Massiv.Array as A
 import Control.Monad.ST (ST, runST)
 
 import Control.DeepSeq (NFData)
@@ -102,12 +104,22 @@ addNodeToHashSet s h sd = do
 
 --- quicksort hashset to list ---
 
--- type HashSetVec = A.Array A.BN A.Ix1 DupeSet
--- dupesByNNodes :: (forall s. ST s (DupeTable s)) -> [DupeList]
--- dupesByNNodes ht = simplifyDupes $ Prelude.map fixElem sortedL
+-- Some of this is cargo-culted from my own DupeMap code,
+-- and could use some optimization/cutting down here.
+
+type HashSetVec = A.Array A.BN A.Ix1 (Hash, SetData)
+
+sortHashSet :: (forall s. ST s (HashSet s)) -> HashList
+sortHashSet hs = sortedL
+  where
+    unsortedL = runST $ hashSetToList =<< hs
+    unsorted = A.fromList A.Par unsortedL :: HashSetVec
+    sorted   = A.quicksort $ A.compute unsorted :: HashSetVec
+    sortedL  = A.toList sorted
+
+-- TODO any need to adjust the hash for different scoring here?
+-- Basically just want alphabetical, which should be the default.
+hashSetToList :: HashSet s -> ST s HashList
+hashSetToList = H.foldM (\hs h -> return (h:hs)) []
   -- where
-    -- sets     = runST $ scoreSets =<< ht
-    -- unsorted = A.fromList A.Par sets :: DupeSetVec
-    -- sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
-    -- sortedL  = A.toList sorted
-    -- fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
+    -- score (Hash h, _) = h -- alphabetical, right?
