@@ -47,8 +47,10 @@ import qualified Data.Text as T
 
 import System.Directory.BigTrees.Name (Name(..))
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..))
+import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..), join)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
+import qualified Data.ByteString.Char8 as B8
+import System.Directory.BigTrees.Hash (Hash, prettyHash)
 
 
 --- types ---
@@ -152,3 +154,16 @@ data HashSetLine
   deriving (Eq, Ord, Read, Show, Generic)
 
 instance NFData HashSetLine
+
+listToLines :: HashList -> [HashSetLine]
+listToLines = map elemToLine
+  where
+    elemToLine (h, sd) = HashSetLine (h, sdNodes sd, sdBytes sd, sdNote sd)
+
+prettySetLine :: HashSetLine -> B8.ByteString
+prettySetLine (HashSetLine (h, nn, nb, Note n)) = join
+  [ prettyHash h
+  , B8.pack $ show nn
+  , B8.pack $ show nb
+  , B8.pack $ T.unpack n -- TODO that can't be the best way, can it?
+  ]
