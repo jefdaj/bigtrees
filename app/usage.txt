@@ -6,6 +6,7 @@ Usage:
   bigtrees [-v] hash [-e <exclude>] [-t <txt>] <path>
   bigtrees [-v] diff <old> <new>
   bigtrees [-v] dupes [-t <txt>] [-d <maxdepth>] <hashes>
+  bigtrees [-v] set-add -o <outfile> [-n <note>] <tree>...
   bigtrees [-v] oldcat    <path>
   bigtrees [-v] oldupdate <main> <sub> <path>
   bigtrees [-v] oldtest   <path>...
@@ -25,6 +26,10 @@ Options:
                  beginning of each line. Options are: "h" (hash),
                  "t" (type), "d" (depth) For example: "ht" -> hash, type
   -r <regex>     Regex filter filenames.
+  -o <outfile>   Write to an outfile rather than stdout.
+  -n <note>      Replace all hashset notes with the given string.
+
+bigtrees [-v] set-add -o <outfile> [-n <note>] <tree>...
 
 Commands:
   info       Succinct summary of a tree file: stats, etc

@@ -98,6 +98,7 @@ executable bigtrees
       Cmd.Find
       Cmd.Hash
       Cmd.Info
+      Cmd.SetAdd
       Config
       OldCmd
       OldCmd.Add
@@ -175,6 +176,7 @@ test-suite test-app
       Cmd.Find
       Cmd.Hash
       Cmd.Info
+      Cmd.SetAdd
       Config
       Main
       OldCmd
@@ -254,6 +256,7 @@ test-suite test-doctests
       Cmd.Find
       Cmd.Hash
       Cmd.Info
+      Cmd.SetAdd
       Config
       Main
       OldCmd

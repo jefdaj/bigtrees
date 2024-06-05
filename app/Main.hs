@@ -7,6 +7,7 @@ module Main where
 
 import Cmd.Diff (cmdDiff)
 import Cmd.Dupes (cmdDupes)
+import Cmd.SetAdd (cmdSetAdd)
 import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
@@ -32,21 +33,22 @@ main = do
   args <- D.parseArgsOrExit ptns =<< getArgs
   let cmd   n = D.isPresent args $ D.command n
       arg   n = D.getArgOrExitWith ptns args $ D.argument n
-      -- lst   n = D.getAllArgs args $ D.argument n
+      lst   n = D.getAllArgs args $ D.argument n
       short n = D.getArgOrExitWith ptns args $ D.shortOption n
       flag  n = D.isPresent args $ D.shortOption n
+      shortO n = D.getArg args $ D.shortOption n
   eList <- if flag 'e'
              then short 'e' >>= readFile <&> lines
              else return $ exclude defaultConfig
   let cfg = Config
-        { txt      = D.getArg args $ D.shortOption 't'
-        , maxdepth = fmap (read :: String -> Int) $ D.getArg args $ D.shortOption 'd'
+        { txt      = shortO 't'
+        , maxdepth = fmap (read :: String -> Int) $ shortO 'd'
         , verbose  = flag 'v'
         -- , force    = flag 'f'
         , check    = flag 'c'
         , exclude  = eList
-        , metafmt  = D.getArg args $ D.shortOption 'm'
-        , regex    = D.getArg args $ D.shortOption 'r'
+        , metafmt  = shortO 'm'
+        , regex    = shortO 'r'
         }
 
   -- pPrint cfg
@@ -60,6 +62,12 @@ main = do
   else if cmd "dupes" then do
     hashes <- arg "hashes"
     cmdDupes cfg hashes
+
+  else if cmd "set-add" then do
+    outfile <- short 'o'
+    let note  = shortO 'n'
+        trees = lst "tree"
+    cmdSetAdd cfg outfile note trees
 
   else if cmd "find" then do
     path <- arg "path"
