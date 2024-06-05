@@ -197,7 +197,7 @@ serializeHashList :: HashList -> B8.ByteString
 serializeHashList = B8.unlines . map prettySetLine . listToLines
 
 hWriteHashListBody :: Handle -> HashList -> IO ()
-hWriteHashListBody h l = B8.hPutStrLn h $ serializeHashList l
+hWriteHashListBody h l = B8.hPutStr h $ serializeHashList l
 
 writeHashList :: FilePath -> HashList -> IO ()
 writeHashList path l = withFile path WriteMode $ \h -> hWriteHashListBody h l
