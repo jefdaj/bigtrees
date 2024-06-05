@@ -66,8 +66,8 @@ main = do
   else if cmd "set-add" then do
     set <- short 's'
     let note  = shortO 'n'
-        trees = lst "tree"
-    cmdSetAdd cfg set note trees
+        paths = lst "path"
+    cmdSetAdd cfg set note paths
 
   else if cmd "find" then do
     path <- arg "path"
