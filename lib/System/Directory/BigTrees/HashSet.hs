@@ -49,7 +49,7 @@ import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Massiv.Array as A
-import Control.Monad.ST (ST, runST)
+import Control.Monad.ST.Strict (ST, runST)
 import Control.Monad (forM)
 import Data.Maybe (fromMaybe)
 
