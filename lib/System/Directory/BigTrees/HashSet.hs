@@ -25,12 +25,12 @@ The `NBytes` and `NNodes` fields are for filtering the set to make it smaller.
 -}
 
 module System.Directory.BigTrees.HashSet
-  ( SetData(..)
-  , HashList
-  , HashSet
-  , hashSetFromTree
-  , toSortedList
-  )
+  -- ( SetData(..)
+  -- , HashList
+  -- , HashSet
+  -- , hashSetFromTree
+  -- , toSortedList
+  -- )
   where
 
 -- TODO which of these are needed?
@@ -51,6 +51,7 @@ import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..), join)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
+import System.IO (Handle) -- , IOMode (..), hFlush, stdout, withFile)
 
 
 --- types ---
@@ -167,3 +168,18 @@ prettySetLine (HashSetLine (h, nn, nb, Note n)) = join
   , B8.pack $ show nb
   , B8.pack $ T.unpack n -- TODO that can't be the best way, can it?
   ]
+
+serializeHashList :: HashList -> [B8.ByteString]
+serializeHashList = map prettySetLine . listToLines
+
+hWriteHashListBody :: Handle -> HashList -> IO ()
+hWriteHashListBody h l = mapM_ (B8.hPutStrLn h) $ serializeHashList l
+
+-- writeTree :: [String] -> FilePath -> HashTree a -> IO ()
+-- writeTree es path tree = withFile path WriteMode $ \h -> hWriteTree es h tree
+
+-- hWriteTree :: [String] -> Handle -> HashTree a -> IO ()
+-- hWriteTree es h tree = do
+--   hWriteHeader   h es
+--   hWriteTreeBody h tree
+--   hWriteFooter   h
