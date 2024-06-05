@@ -2,7 +2,7 @@ module Cmd.SetAdd where
 
 import Text.Pretty.Simple (pPrint)
 import Config (Config(..))
-import Control.Monad (forM)
+import Control.Monad (forM, foldM)
 import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..))
 import Control.Monad.ST (runST)
 import Control.DeepSeq (force)
@@ -22,10 +22,15 @@ cmdSetAdd cfg setPath mNoteStr treePaths = do
   case eBefore of
     Left msg -> error msg
     Right before -> do
-      trees  <- forM treePaths $ readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg)
-      -- TODO is it weird that toSortedList includes runST?
-      let afterL = toSortedList $ do
-            after <- hashSetFromList before
-            mapM_ (addTreeToHashSet mNote after) trees
-            return after
+      -- TODO does doing the trees one at a time fix the RAM leak?
+      afterL <- foldM (force . readAndAddTree cfg mNote) before treePaths
       writeHashList setPath afterL
+
+readAndAddTree :: Config -> Maybe Note -> HashList -> FilePath -> IO HashList
+readAndAddTree cfg mNote before path = do
+  tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
+  -- TODO is it weird that toSortedList includes runST?
+  return $ toSortedList $ do
+    after <- hashSetFromList before
+    addTreeToHashSet mNote after tree
+    return after
