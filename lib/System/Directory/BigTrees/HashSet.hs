@@ -35,6 +35,9 @@ import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
 
+
+--- types ---
+
 -- | Hopefully this won't be too big for RAM in most cases, because we're only
 -- storing hashes and one note which can be short, rather than a list of full
 -- paths like in `DupeMap`s.
@@ -47,9 +50,16 @@ data SetData = SetData
 
 instance NFData SetData
 
+-- | For debugging and simpler read/write. Should be readily convertable
+-- to/from HashSet.
+type HashList = [(Hash, SetData)]
+
 -- TODO rename BigSet and HashTree -> BigTree?
 -- TODO would the unwrapped bytestring hash be more efficient here?
 type HashSet s = C.HashTable s Hash SetData
+
+
+--- hash set from tree ---
 
 -- TODO can this be done with other hashtrees generically, or have to drop data first?
 hashSetFromTree :: ProdTree -> ST s (HashSet s)
@@ -64,14 +74,20 @@ hashSetFromTree t = do
 -- inserts all nodes from a tree into an existing hashset in ST s
 addTreeToHashSet :: HashSet s -> ProdTree -> ST s ()
 addTreeToHashSet _ (Err {}) = return ()
-addTreeToHashSet s tree =
+addTreeToHashSet s t@(Dir {}) = do
+  addNodeToHashSet s (treeHash t) $ setDataFromNode t
+  mapM_ (addTreeToHashSet s) $ dirContents t
+addTreeToHashSet s t =
+  addNodeToHashSet s (treeHash t) $ setDataFromNode t
+
+setDataFromNode :: HashTree () -> SetData
+setDataFromNode tree =
   let (Name n) = treeName tree
-      sd = SetData
-             { sdNote  = n
-             , sdBytes = treeNBytes tree
-             , sdNodes = sumNodes tree
-             }
-  in addNodeToHashSet s (treeHash tree) sd
+  in SetData
+       { sdNote  = n
+       , sdBytes = treeNBytes tree
+       , sdNodes = sumNodes tree
+       }
 
 -- inserts one node into an existing dupemap in ST s
 -- TODO should a new name override an old one? currently old is kept
@@ -82,3 +98,16 @@ addNodeToHashSet s h sd = do
   case existing of
     Nothing -> H.insert s h sd
     Just _  -> return ()
+
+
+--- quicksort hashset to list ---
+
+-- type HashSetVec = A.Array A.BN A.Ix1 DupeSet
+-- dupesByNNodes :: (forall s. ST s (DupeTable s)) -> [DupeList]
+-- dupesByNNodes ht = simplifyDupes $ Prelude.map fixElem sortedL
+  -- where
+    -- sets     = runST $ scoreSets =<< ht
+    -- unsorted = A.fromList A.Par sets :: DupeSetVec
+    -- sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
+    -- sortedL  = A.toList sorted
+    -- fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
