@@ -47,11 +47,14 @@ import qualified Data.Text as T
 
 import System.Directory.BigTrees.Name (Name(..))
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..), join)
+import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..), join, hashP, nfilesP, sizeP)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.IO (Handle, IOMode(..), withFile) -- , IOMode (..), hFlush, stdout, withFile)
+import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly, anyChar, endOfLine)
+import Data.Attoparsec.Combinator (lookAhead, manyTill, sepBy')
+import Data.Either -- TODO remove? or specifics
 
 
 --- types ---
@@ -183,3 +186,35 @@ writeHashList path l = withFile path WriteMode $ \h -> hWriteHashListBody h l
 --   hWriteHeader   h es
 --   hWriteTreeBody h tree
 --   hWriteFooter   h
+
+
+--- parse hashset from file ---
+
+-- This doesn't require a fancy parser, but might as well do one because we
+-- have most of the primitives already...
+
+noteP :: Parser Note
+noteP = do
+  c  <- anyChar
+  cs <- manyTill anyChar $ lookAhead endOfLine
+  return $ Note $ T.pack $ c:cs
+
+-- TODO document valid note chars
+setLineP :: Parser HashSetLine
+setLineP = do
+  h  <- hashP
+  nn <- nfilesP
+  nb <- sizeP
+  n  <- noteP -- TODO allow slashes in notes? newlines?
+  return $ HashSetLine (h, nn, nb, n)
+
+linesP :: Parser [HashSetLine]
+linesP = sepBy' setLineP endOfLine <* endOfLine
+
+parseHashSetLines :: B8.ByteString -> Either String [HashSetLine]
+parseHashSetLines = parseOnly linesP
+
+parseHashList :: B8.ByteString -> Either String HashList
+parseHashList bs = parseHashSetLines bs >>= return . map f
+  where
+    f (HashSetLine (h, nn, nb, n)) = (h, SetData nn nb n)

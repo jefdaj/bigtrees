@@ -22,6 +22,10 @@ module System.Directory.BigTrees.HashLine
   , sepChar
   , hashLineFields
   , join
+  , hashP
+  , nfilesP
+  , sizeP
+  , nameP
 
   -- for testing (TODO remove?)
   -- , nameP

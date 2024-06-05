@@ -89,17 +89,17 @@ isDepthZeroLine _ = False
 -- Nothing
 --
 hTakePrevUntil :: (String -> Bool) -> Int -> Handle -> IO (Maybe String)
-hTakePrevUntil pred max hdl = handleAnyDeep (\_ -> return Nothing) $ do
+hTakePrevUntil cond maxChars hdl = handleAnyDeep (\_ -> return Nothing) $ do
   hSeek hdl SeekFromEnd 0
-  hTakePrevUntil' pred max hdl ""
+  hTakePrevUntil' cond maxChars hdl ""
 
 -- Internal helper that also takes a seek position and the accumulated string.
 hTakePrevUntil' :: (String -> Bool) -> Int -> Handle -> String -> IO (Maybe String)
-hTakePrevUntil' _ max _ _ | max < 0 = return Nothing
-hTakePrevUntil' pred max hdl cs = do
+hTakePrevUntil' _ maxChars _ _ | maxChars < 0 = return Nothing
+hTakePrevUntil' cond maxChars hdl cs = do
   hSeek hdl RelativeSeek (-2)
   c <- hGetChar hdl
   let cs' = c:cs
-  if pred cs'
+  if cond cs'
     then return $ Just cs'
-    else hTakePrevUntil' pred (max-1) hdl cs'
+    else hTakePrevUntil' cond (maxChars-1) hdl cs'
