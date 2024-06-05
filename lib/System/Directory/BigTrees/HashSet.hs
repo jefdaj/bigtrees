@@ -51,7 +51,7 @@ import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..), join)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.IO (Handle) -- , IOMode (..), hFlush, stdout, withFile)
+import System.IO (Handle, IOMode(..), withFile) -- , IOMode (..), hFlush, stdout, withFile)
 
 
 --- types ---
@@ -162,7 +162,7 @@ listToLines = map elemToLine
     elemToLine (h, sd) = HashSetLine (h, sdNodes sd, sdBytes sd, sdNote sd)
 
 prettySetLine :: HashSetLine -> B8.ByteString
-prettySetLine (HashSetLine (h, nn, nb, Note n)) = join
+prettySetLine (HashSetLine (h, NNodes nn, NBytes nb, Note n)) = join
   [ prettyHash h
   , B8.pack $ show nn
   , B8.pack $ show nb
@@ -175,8 +175,8 @@ serializeHashList = map prettySetLine . listToLines
 hWriteHashListBody :: Handle -> HashList -> IO ()
 hWriteHashListBody h l = mapM_ (B8.hPutStrLn h) $ serializeHashList l
 
--- writeTree :: [String] -> FilePath -> HashTree a -> IO ()
--- writeTree es path tree = withFile path WriteMode $ \h -> hWriteTree es h tree
+writeHashList :: FilePath -> HashList -> IO ()
+writeHashList path l = withFile path WriteMode $ \h -> hWriteHashListBody h l
 
 -- hWriteTree :: [String] -> Handle -> HashTree a -> IO ()
 -- hWriteTree es h tree = do
