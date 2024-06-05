@@ -235,6 +235,7 @@ readHashList path = B8.readFile path >>= return . parseHashList
 roundtripHashListToByteString :: HashList -> Either String HashList
 roundtripHashListToByteString l = parseHashList $ serializeHashList l
 
+-- TODO rewrite without monadicIO?
 prop_roundtrip_HashSet_to_ByteString :: Property
 prop_roundtrip_HashSet_to_ByteString = monadicIO $ do
   (t :: ProdTree) <- pick arbitrary
