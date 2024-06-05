@@ -6,12 +6,17 @@ import Control.Monad (forM)
 import System.Directory.BigTrees (buildProdTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList)
 import Control.Monad.ST (runST)
 import Control.DeepSeq (force)
+import qualified System.Directory as SD
 
 -- bigtrees [-v] set-add -s <set> [-n <note>] <tree>...
 cmdSetAdd :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
 cmdSetAdd cfg setPath mNote treePaths = do
-  -- force ensures read is strict here so it doesn't conflict with write
-  eBefore <- fmap force $ readHashList setPath
+  exists <- SD.doesPathExist setPath
+  eBefore <- if exists
+               -- force ensures read is strict here so it doesn't conflict with
+               -- writing to the same file below
+               then fmap force $ readHashList setPath
+               else return $ Right []
   case eBefore of
     Left msg -> error msg
     Right before -> do
