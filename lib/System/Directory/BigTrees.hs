@@ -55,7 +55,7 @@ module System.Directory.BigTrees
   , HashList
   , HashSet
   , hashSetFromTree
-  , sortHashSet
+  , toSortedList
 
   -- delta
   , Delta(..)
@@ -101,4 +101,4 @@ import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printT
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp,
                                        roundtripNameToFileName)
-import System.Directory.BigTrees.HashSet (HashSet, SetData(..), HashList, hashSetFromTree, sortHashSet)
+import System.Directory.BigTrees.HashSet (HashSet, SetData(..), HashList, hashSetFromTree, toSortedList)

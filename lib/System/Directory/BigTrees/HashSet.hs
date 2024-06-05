@@ -4,7 +4,13 @@
 {-|
 Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
 copy numbers. It's meant as a compact on-disk store of a set of hashes for a
-user-defined purpose, simpler and smaller than a `HashTree`. Example use cases:
+user-defined purpose, simpler and smaller than a `HashTree`.
+
+Because it has to be deduplicated, there's also no point trying to stream
+creating a HashSet without holding it all in memory. Therefore reading +
+writing it is simpler. It can even be kept in sorted order.
+
+Example use cases:
 
 * Hashes that have already been trashed and can be trashed when seen again
 * Hashes of lost files to scan for and retreive
@@ -23,7 +29,7 @@ module System.Directory.BigTrees.HashSet
   , HashList
   , HashSet
   , hashSetFromTree
-  , sortHashSet
+  , toSortedList
   )
   where
 
@@ -47,13 +53,19 @@ import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTre
 
 --- types ---
 
+-- TODO which string type would be best for use in the sets?
+newtype Note = Note T.Text
+  deriving (Eq, Ord, Read, Show, Generic)
+
+instance NFData Note
+
 -- | Hopefully this won't be too big for RAM in most cases, because we're only
 -- storing hashes and one note which can be short, rather than a list of full
 -- paths like in `DupeMap`s.
 data SetData = SetData
   { sdNodes :: NNodes
   , sdBytes :: NBytes
-  , sdNote  :: T.Text -- TODO which string type would be best here?
+  , sdNote  :: Note
   } 
   deriving (Eq, Ord, Read, Show, Generic)
 
@@ -93,7 +105,7 @@ setDataFromNode :: HashTree () -> SetData
 setDataFromNode tree =
   let (Name n) = treeName tree
   in SetData
-       { sdNote  = n
+       { sdNote  = Note n
        , sdBytes = treeNBytes tree
        , sdNodes = sumNodes tree
        }
@@ -116,17 +128,27 @@ addNodeToHashSet s h sd = do
 
 type HashSetVec = A.Array A.BN A.Ix1 (Hash, SetData)
 
-sortHashSet :: (forall s. ST s (HashSet s)) -> HashList
-sortHashSet hs = sortedL
+toSortedList :: (forall s. ST s (HashSet s)) -> HashList
+toSortedList hs = sortedL
   where
-    unsortedL = runST $ hashSetToList =<< hs
+    unsortedL = runST $ toUnsortedList =<< hs
     unsorted = A.fromList A.Par unsortedL :: HashSetVec
     sorted   = A.quicksort $ A.compute unsorted :: HashSetVec
     sortedL  = A.toList sorted
 
+-- | Not-for-export helper
 -- TODO any need to adjust the hash for different scoring here?
 -- Basically just want alphabetical, which should be the default.
-hashSetToList :: HashSet s -> ST s HashList
-hashSetToList = H.foldM (\hs h -> return (h:hs)) []
+toUnsortedList :: HashSet s -> ST s HashList
+toUnsortedList = H.foldM (\hs h -> return (h:hs)) []
   -- where
     -- score (Hash h, _) = h -- alphabetical, right?
+
+
+--- write hashset to file ---
+
+data HashSetLine
+  = HashSetLine (Hash, NNodes, NBytes, Note)
+  deriving (Eq, Ord, Read, Show, Generic)
+
+instance NFData HashSetLine
