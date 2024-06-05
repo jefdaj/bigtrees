@@ -64,10 +64,10 @@ main = do
     cmdDupes cfg hashes
 
   else if cmd "set-add" then do
-    outfile <- short 'o'
+    set <- short 's'
     let note  = shortO 'n'
         trees = lst "tree"
-    cmdSetAdd cfg outfile note trees
+    cmdSetAdd cfg set note trees
 
   else if cmd "find" then do
     path <- arg "path"
