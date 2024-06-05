@@ -51,9 +51,9 @@ import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTre
 -- storing hashes and one note which can be short, rather than a list of full
 -- paths like in `DupeMap`s.
 data SetData = SetData
-  { sdNote  :: T.Text -- TODO which string type would be best here?
+  { sdNodes :: NNodes
   , sdBytes :: NBytes
-  , sdNodes :: NNodes
+  , sdNote  :: T.Text -- TODO which string type would be best here?
   } 
   deriving (Eq, Ord, Read, Show, Generic)
 
