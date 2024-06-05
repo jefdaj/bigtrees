@@ -45,6 +45,10 @@ module System.Directory.BigTrees
   , printTreePaths
   , Filter(..)
   , pathMatches
+  , treeName
+  , treeHash
+  , treeNBytes
+  , sumNodes -- TODO rename treeNNodes?
 
   -- hashset
   , HashSet(..)
@@ -83,7 +87,7 @@ import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHas
 import System.Directory.BigTrees.HashLine (ModTime (..), NBytes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
-                                                hashContents, renameRoot)
+                                                hashContents, renameRoot, treeName, treeHash, treeNBytes, treeModTime, sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)

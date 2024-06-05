@@ -25,14 +25,15 @@ module System.Directory.BigTrees.HashTree
   , hWriteTree
   , printTreePaths
   , treeName
+  , treeHash
   , treeNBytes
   , treeModTime
   , treeType
   , parseHeader
   , parseFooter
+  , sumNodes
 
   -- for testing
-  , sumNodes
   , roundtripTestTreeToDir
   , dropFileData
   , writeTestTreeDir
@@ -64,7 +65,8 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import Data.List (isInfixOf)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 dropFileData, isErr, renameRoot, sumNodes,
-                                                treeModTime, treeNBytes, treeName, treeType)
+                                                treeModTime, treeNBytes, treeName, treeType,
+                                                treeHash)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
