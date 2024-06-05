@@ -25,12 +25,14 @@ The `NBytes` and `NNodes` fields are for filtering the set to make it smaller.
 -}
 
 module System.Directory.BigTrees.HashSet
-  -- ( SetData(..)
-  -- , HashList
-  -- , HashSet
-  -- , hashSetFromTree
-  -- , toSortedList
-  -- )
+  ( SetData(..)
+  , HashList
+  , HashSet
+  , hashSetFromTree
+  , toSortedList
+  , writeHashList
+  , readHashList
+  )
   where
 
 -- TODO which of these are needed?
@@ -218,3 +220,7 @@ parseHashList :: B8.ByteString -> Either String HashList
 parseHashList bs = parseHashSetLines bs >>= return . map f
   where
     f (HashSetLine (h, nn, nb, n)) = (h, SetData nn nb n)
+
+-- TODO throw IO error rather than Left here?
+readHashList :: FilePath -> IO (Either String HashList)
+readHashList path = B8.readFile path >>= return . parseHashList
