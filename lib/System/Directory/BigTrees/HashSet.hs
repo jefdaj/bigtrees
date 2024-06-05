@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE RankNTypes       #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 
 {-|
 Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
@@ -32,6 +33,8 @@ module System.Directory.BigTrees.HashSet
   , toSortedList
   , writeHashList
   , readHashList
+
+  , prop_roundtrip_HashSet_to_ByteString
   )
   where
 
@@ -50,13 +53,15 @@ import qualified Data.Text as T
 import System.Directory.BigTrees.Name (Name(..))
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..), join, hashP, nfilesP, sizeP)
-import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
+import System.Directory.BigTrees.HashTree (HashTree (..), TestTree(..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.IO (Handle, IOMode(..), withFile) -- , IOMode (..), hFlush, stdout, withFile)
 import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly, anyChar, endOfLine)
 import Data.Attoparsec.Combinator (lookAhead, manyTill, sepBy')
 import Data.Either -- TODO remove? or specifics
+import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
+import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
 
 --- types ---
@@ -174,11 +179,11 @@ prettySetLine (HashSetLine (h, NNodes nn, NBytes nb, Note n)) = join
   , B8.pack $ T.unpack n -- TODO that can't be the best way, can it?
   ]
 
-serializeHashList :: HashList -> [B8.ByteString]
-serializeHashList = map prettySetLine . listToLines
+serializeHashList :: HashList -> B8.ByteString
+serializeHashList = B8.unlines . map prettySetLine . listToLines
 
 hWriteHashListBody :: Handle -> HashList -> IO ()
-hWriteHashListBody h l = mapM_ (B8.hPutStrLn h) $ serializeHashList l
+hWriteHashListBody h l = B8.hPutStrLn h $ serializeHashList l
 
 writeHashList :: FilePath -> HashList -> IO ()
 writeHashList path l = withFile path WriteMode $ \h -> hWriteHashListBody h l
@@ -224,3 +229,15 @@ parseHashList bs = parseHashSetLines bs >>= return . map f
 -- TODO throw IO error rather than Left here?
 readHashList :: FilePath -> IO (Either String HashList)
 readHashList path = B8.readFile path >>= return . parseHashList
+
+--- round-trip tests ---
+
+roundtripHashListToByteString :: HashList -> Either String HashList
+roundtripHashListToByteString l = parseHashList $ serializeHashList l
+
+prop_roundtrip_HashSet_to_ByteString :: Property
+prop_roundtrip_HashSet_to_ByteString = monadicIO $ do
+  (t :: ProdTree) <- pick arbitrary
+  let l1  = toSortedList $ hashSetFromTree t
+      eL2 = roundtripHashListToByteString l1
+  assert $ eL2 == Right l1
