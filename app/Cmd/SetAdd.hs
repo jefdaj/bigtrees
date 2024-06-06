@@ -3,8 +3,8 @@ module Cmd.SetAdd where
 import Text.Pretty.Simple (pPrint)
 import Prelude hiding (log)
 import Config (Config(..), log)
-import Control.Monad (forM, foldM)
-import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), NNodes(..), sumNodes, HashLine(..), readLastHashLineAndFooter, headerP, linesP, hashSetDataFromLine)
+import Control.Monad (forM, forM_, foldM)
+import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), NNodes(..), sumNodes, HashLine(..), readLastHashLineAndFooter, headerP, linesP, hashSetDataFromLine, addNodeToHashSet)
 import System.Directory.BigTrees.HashSet (emptyHashSet)
 import Control.DeepSeq (force)
 import qualified System.Directory as SD
@@ -83,7 +83,11 @@ cmdSetAdd2 cfg setPath mNoteStr treePaths = do
   log cfg $ "max expected set size: " ++ show maxSetSize
 
   -- create empty hashset and fold over the trees to add elements
-  let s = emptyHashSet maxSetSize
+  hl <- concat <$> mapM (readTreeHashList mNote) treePaths
+  let sortedL = toSortedList $ do
+                  s <- emptyHashSet maxSetSize
+                  forM_ hl $ \(h, sd) -> addNodeToHashSet s h sd
+                  return s
 
   -- exists <- SD.doesPathExist setPath
   return ()

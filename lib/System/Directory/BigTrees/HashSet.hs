@@ -34,6 +34,7 @@ module System.Directory.BigTrees.HashSet
   , hashSetFromTree
   , hashSetFromList
   , addTreeToHashSet
+  , addNodeToHashSet
   , toSortedList
   , writeHashList
   , readHashList
