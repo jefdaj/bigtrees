@@ -11,7 +11,7 @@ import qualified System.Directory as SD
 import qualified Data.Text as T
 import Data.Maybe (catMaybes)
 import qualified Data.HashTable.Class as H
-import Data.Attoparsec.ByteString.Char8 (parseOnly)
+import Data.Attoparsec.ByteString.Char8 (parseOnly, char)
 import System.IO (withFile, IOMode(..))
 import qualified Data.ByteString.Char8 as B8
 
@@ -57,11 +57,14 @@ getTreeSize path = readLastHashLineAndFooter path >>= return . getN
     getN Nothing = Nothing
 
 -- TODO does this stream, or does it read all the lines at once?
-readTreeLines :: FilePath -> IO (Either String [HashLine])
+-- TODO pass on the Left rather than throwing IO error here?
+readTreeLines :: FilePath -> IO [HashLine]
 readTreeLines path = do
   bs <- B8.readFile path
   let eSL = parseOnly (headerP *> linesP Nothing) bs
-  return eSL
+  case eSL of
+    Left msg -> error $ "failed to parse '" ++ path ++ "': " ++ show msg
+    Right ls -> return ls
 
 cmdSetAdd2 :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
 cmdSetAdd2 _ _ _ [] = return () -- Docopt should prevent this, but just in case

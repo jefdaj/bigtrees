@@ -180,7 +180,7 @@ parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
-  hls <- sepBy' (hashLineP md) breakP <* endOfLine
+  hls <- manyTill (hashLineP md <* endOfLine) commentLineP <* endOfLine
   return $ catMaybes hls -- TODO count skipped lines here?
 
 -- bodyP :: Maybe Int -> Parser [HashLine]
