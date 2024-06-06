@@ -13,6 +13,9 @@ module System.Directory.BigTrees
   , hashBytes
   , hashFile
 
+  -- hashline
+  , HashLine(..)
+
   -- hashtree
   , HashTree(..)
   , NodeData(..)
@@ -97,7 +100,7 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNNo
                                           listLostFiles, mergeDupeSets, pathsByHash, printDupes,
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
-import System.Directory.BigTrees.HashLine (ModTime (..), NBytes (..), TreeType (..), NNodes(..))
+import System.Directory.BigTrees.HashLine (HashLine(..), ModTime (..), NBytes (..), TreeType (..), NNodes(..))
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
                                                 hashContents, renameRoot, treeName, treeHash, treeNBytes, treeModTime, sumNodes)
