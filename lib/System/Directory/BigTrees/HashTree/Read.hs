@@ -35,7 +35,7 @@ deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 deserializeTree md bs = case parseTreeFile md bs of
   Left msg -> Err { errName = Name "deserializeTree", errMsg = ErrMsg msg }
-  Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of
+  Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of -- TODO leak here?
     []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
     ((_, tree):_) -> tree
 
