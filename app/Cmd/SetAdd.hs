@@ -22,16 +22,15 @@ cmdSetAdd :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
 cmdSetAdd cfg setPath mNoteStr treePaths = do
   let mNote = (Note . T.pack) <$> mNoteStr
   exists <- SD.doesPathExist setPath
-  -- force ensures read is strict here so it doesn't conflict with
-  -- writing to the same file below
-  eBefore <- fmap force $ if exists
+  eBefore <- if exists
                then readHashList setPath
                else return $ Right []
   case eBefore of
     Left msg -> error msg
     Right before -> do
+      -- TODO does this force it even without verbose flag?
       log cfg $ "initial '" ++ setPath ++ "' contains " ++ show (length before) ++ " hashes"
-      afterL <- foldM (force . readAndAddTree cfg mNote) before treePaths
+      afterL <- foldM (readAndAddTree cfg mNote) before treePaths
       log cfg $ "final '" ++ setPath ++ "' contains " ++ show (length afterL) ++ " hashes"
       writeHashList setPath afterL
 
@@ -93,7 +92,7 @@ cmdSetAdd2 cfg setPath mNoteStr treePaths = do
   -- force ensures read is strict here so it doesn't conflict with
   -- writing to the same file below
   exists <- SD.doesPathExist setPath
-  before <- fmap force $ if exists
+  before <- if exists
               then do
                 hl <- readHashListIO cfg setPath
                 log cfg $
@@ -117,7 +116,7 @@ cmdSetAdd2 cfg setPath mNoteStr treePaths = do
   hl <- concat <$> mapM (readTreeHashList cfg mNote) treePaths
   let afterL = toSortedList $ do
                  s <- emptyHashSet maxSetSize'
-                 forM_ (before ++ hl) $ \(h, sd) -> addNodeToHashSet s h $ force sd
+                 forM_ (before ++ hl) $ \(h, sd) -> addNodeToHashSet s h sd
                  return s
 
   log cfg $ "final '" ++ setPath ++ "' contains " ++ show (length afterL) ++ " hashes"
