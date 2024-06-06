@@ -55,13 +55,15 @@ module System.Directory.BigTrees
   , sumNodes -- TODO rename treeNNodes?
   , readHeader
   , readLastHashLineAndFooter
+  , headerP
+  , linesP
 
   -- hashset
   , SetData(..)
   , HashList
   , HashSet
   , Note(..)
-  -- , emptyHashSet
+  , emptyHashSet
   , hashSetFromTree
   , hashSetFromList
   , addTreeToHashSet
@@ -101,7 +103,7 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNNo
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (HashLine(..), ModTime (..), NBytes (..), TreeType (..), NNodes(..))
-import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
+import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree, linesP, headerP)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
                                                 hashContents, renameRoot, treeName, treeHash, treeNBytes, treeModTime, sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
@@ -113,4 +115,4 @@ import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printT
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp,
                                        roundtripNameToFileName)
-import System.Directory.BigTrees.HashSet (HashSet, SetData(..), HashList, hashSetFromTree, hashSetFromList, addTreeToHashSet, toSortedList, readHashList, writeHashList, Note(..))
+import System.Directory.BigTrees.HashSet (HashSet, SetData(..), HashList, hashSetFromTree, hashSetFromList, addTreeToHashSet, toSortedList, readHashList, writeHashList, Note(..), emptyHashSet)

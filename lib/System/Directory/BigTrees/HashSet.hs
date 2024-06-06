@@ -30,7 +30,7 @@ module System.Directory.BigTrees.HashSet
   , HashList
   , HashSet
   , Note(..)
-  -- , emptyHashSet
+  , emptyHashSet
   , hashSetFromTree
   , hashSetFromList
   , addTreeToHashSet
@@ -102,9 +102,8 @@ type HashSet s = C.HashTable s Hash SetData
 
 --- hash set from tree ---
 
--- TODO remove? not sure if useful
--- emptyHashSet :: ST s (HashSet s)
--- emptyHashSet = H.newSized 1
+emptyHashSet :: Int -> ST s (HashSet s)
+emptyHashSet = H.newSized
 
 -- TODO can this be done with other hashtrees generically, or have to drop data first?
 hashSetFromTree :: ProdTree -> ST s (HashSet s)

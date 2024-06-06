@@ -39,7 +39,7 @@ module System.Directory.BigTrees.HashLine
 import Control.DeepSeq (NFData (..))
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
-                                         endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
+                                         endOfLine, isEndOfLine, manyTill, parseOnly, take)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead)
 import qualified Data.ByteString.Char8 as B8

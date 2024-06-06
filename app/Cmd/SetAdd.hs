@@ -4,11 +4,16 @@ import Text.Pretty.Simple (pPrint)
 import Prelude hiding (log)
 import Config (Config(..), log)
 import Control.Monad (forM, foldM)
-import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), NNodes(..), sumNodes, HashLine(..), readLastHashLineAndFooter)
+import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), NNodes(..), sumNodes, HashLine(..), readLastHashLineAndFooter, headerP, linesP)
+import System.Directory.BigTrees.HashSet (emptyHashSet)
 import Control.DeepSeq (force)
 import qualified System.Directory as SD
 import qualified Data.Text as T
 import Data.Maybe (catMaybes)
+import qualified Data.HashTable.Class as H
+import Data.Attoparsec.ByteString.Char8 (parseOnly)
+import System.IO (withFile, IOMode(..))
+import qualified Data.ByteString.Char8 as B8
 
 --- old version: works but slow + high mem usage ---
 
@@ -44,13 +49,19 @@ readAndAddTree cfg mNote before path = do
 
 --- new version: hopefully faster and leaner ---
 
--- HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
-
+-- TODO move to Util?
 getTreeSize :: FilePath -> IO (Maybe Int)
 getTreeSize path = readLastHashLineAndFooter path >>= return . getN
   where
     getN (Just (HashLine (_,_,_,_,_, NNodes n, _), _)) = Just n
     getN Nothing = Nothing
+
+-- TODO does this stream, or does it read all the lines at once?
+readTreeLines :: FilePath -> IO (Either String [HashLine])
+readTreeLines path = do
+  bs <- B8.readFile path
+  let eSL = parseOnly (headerP *> linesP Nothing) bs
+  return eSL
 
 cmdSetAdd2 :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
 cmdSetAdd2 _ _ _ [] = return () -- Docopt should prevent this, but just in case
@@ -61,6 +72,9 @@ cmdSetAdd2 cfg setPath mNoteStr treePaths = do
   -- but this will prevent having to do any resizing
   maxSetSize <- (sum . catMaybes) <$> mapM getTreeSize treePaths
   log cfg $ "max expected set size: " ++ show maxSetSize
+
+  -- create empty hashset and fold over the trees to add elements
+  let s = emptyHashSet maxSetSize
 
   -- exists <- SD.doesPathExist setPath
   return ()
