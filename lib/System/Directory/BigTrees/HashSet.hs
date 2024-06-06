@@ -100,7 +100,7 @@ type HashList = [(Hash, SetData)]
 type HashSet s = C.HashTable s Hash SetData
 
 
---- create hash sets ---
+--- hash set from tree ---
 
 -- TODO remove? not sure if useful
 -- emptyHashSet :: ST s (HashSet s)
@@ -109,8 +109,8 @@ type HashSet s = C.HashTable s Hash SetData
 -- TODO can this be done with other hashtrees generically, or have to drop data first?
 hashSetFromTree :: ProdTree -> ST s (HashSet s)
 hashSetFromTree t = do
-  let (NNodes n) = sumNodes t
-  h <- H.newSized n
+  -- let (NNodes n) = 1000 -- sumNodes t -- TODO leak here? would force evaluation
+  h <- H.newSized 1000
   addTreeToHashSet Nothing h t
   return h
 
@@ -127,8 +127,8 @@ hashSetFromList ls = do
 addTreeToHashSet :: Maybe Note -> HashSet s -> ProdTree -> ST s ()
 addTreeToHashSet _ _ (Err {}) = return ()
 addTreeToHashSet mn s t@(Dir {}) = do
-  addNodeToHashSet s (treeHash t) $ setDataFromNode mn t
   mapM_ (addTreeToHashSet mn s) $ dirContents t
+  addNodeToHashSet s (treeHash t) $ setDataFromNode mn t
 addTreeToHashSet mn s t =
   addNodeToHashSet s (treeHash t) $ setDataFromNode mn t
 
@@ -147,6 +147,9 @@ setDataFromNode mn tree =
 -- TODO should this return the set?
 addNodeToHashSet :: HashSet s -> Hash -> SetData -> ST s ()
 addNodeToHashSet s h sd = H.insert s h sd
+
+
+--- hash set from .bigtree file (streaming) ---
 
 
 --- quicksort hashset to list ---
