@@ -72,24 +72,39 @@ readTreeHashList mn path = do
   let hl = catMaybes $ map (hashSetDataFromLine mn) ls
   return hl
 
+readHashListIO :: FilePath -> IO HashList
+readHashListIO path = do
+  eHL <- readHashList path
+  case eHL of
+    Left msg -> error $ "failed to read '" ++ path ++ "'"
+    Right hl -> return hl
+
 cmdSetAdd2 :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
 cmdSetAdd2 _ _ _ [] = return () -- Docopt should prevent this, but just in case
 cmdSetAdd2 cfg setPath mNoteStr treePaths = do
-  let mNote = (Note . T.pack) <$> mNoteStr
 
+  -- force ensures read is strict here so it doesn't conflict with
+  -- writing to the same file below
+  exists <- SD.doesPathExist setPath
+  before <- fmap force $ if exists
+              then readHashListIO setPath
+              else return []
+  log cfg $ "initial '" ++ setPath ++ "' contains " ++ show (length before) ++ " hashes"
+ 
   -- the actual set should be smaller (assuming some dupes),
   -- but this will prevent having to do any resizing
   maxSetSize <- (sum . catMaybes) <$> mapM getTreeSize treePaths
-  log cfg $ "max expected set size: " ++ show maxSetSize
+  let maxSetSize' = maxSetSize + length before
+  log cfg $ "max expected set size: " ++ show maxSetSize'
+
+  let mNote = (Note . T.pack) <$> mNoteStr
 
   -- create empty hashset and fold over the trees to add elements
   hl <- concat <$> mapM (readTreeHashList mNote) treePaths
-  let sortedL = toSortedList $ do
-                  s <- emptyHashSet maxSetSize
-                  forM_ hl $ \(h, sd) -> addNodeToHashSet s h sd
-                  return s
+  let afterL = toSortedList $ do
+                 s <- emptyHashSet maxSetSize'
+                 forM_ (before ++ hl) $ \(h, sd) -> addNodeToHashSet s h sd
+                 return s
 
-  -- exists <- SD.doesPathExist setPath
-  return ()
-  -- TODO make initial set the size of the (first) tree
-  -- TODO read hash lines and insert them individually without building a tree
+  log cfg $ "final '" ++ setPath ++ "' contains " ++ show (length afterL) ++ " hashes"
+  writeHashList setPath afterL
