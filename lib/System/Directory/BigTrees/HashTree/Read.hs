@@ -6,7 +6,7 @@ module System.Directory.BigTrees.HashTree.Read where
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), TreeType (..),
-                                           hashLineP, breakP, parseHashLine)
+                                           hashLineP, parseHashLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
@@ -17,7 +17,7 @@ import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
-import Data.Attoparsec.Combinator (lookAhead)
+import Data.Attoparsec.Combinator (lookAhead, many')
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes)
 import System.Directory.BigTrees.HeadFoot (Header(..), Footer(..))
@@ -180,7 +180,7 @@ parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
-  hls <- manyTill (hashLineP md <* endOfLine) commentLineP <* endOfLine
+  hls <- many' (hashLineP md <* endOfLine) -- commentLineP <* endOfLine
   return $ catMaybes hls -- TODO count skipped lines here?
 
 -- bodyP :: Maybe Int -> Parser [HashLine]
