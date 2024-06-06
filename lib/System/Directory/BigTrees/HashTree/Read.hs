@@ -6,11 +6,12 @@ module System.Directory.BigTrees.HashTree.Read where
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), TreeType (..),
-                                           hashLineP, breakP)
+                                           hashLineP, breakP, parseHashLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.Util (hTakePrevUntil)
 -- import System.FilePath.Glob (Pattern)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
@@ -22,6 +23,69 @@ import Data.Maybe (catMaybes)
 import System.Directory.BigTrees.HeadFoot (Header(..), Footer(..))
 import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.String.Utils (replace)
+import System.IO (hGetLine, IOMode(..), withFile, Handle)
+import Control.Monad (forM)
+
+
+--- read header info from the beginning of the file ---
+
+commentLineP = do
+  _ <- char '#'
+  manyTill anyChar $ lookAhead endOfLine
+
+headerP = do
+  headerLines <- sepBy' commentLineP endOfLine <* endOfLine
+  case parseHeader headerLines of
+    Nothing -> fail "failed to parse header"
+    Just h -> return h
+
+-- TODO close file bug here :/
+-- TODO document 100 line limit
+readHeader :: FilePath -> IO (Maybe Header)
+readHeader path =
+  withFile path ReadMode $ \h -> do
+    commentLines <- fmap (takeWhile isCommentLine) $ forM [1..100] $ \_ -> hGetLine h
+    return $ parseHeader commentLines
+
+-- Header is the same, except we have to lob off the final header line
+-- TODO also confirm it looks as expected? tree format should be enough tho
+parseHeader :: [String] -> Maybe Header
+parseHeader s = case s of
+  [ ] -> Nothing -- should never happen, right?
+  [l] -> Nothing -- should never happen, right?
+  ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ map (replace "# " "") $ init ls
+
+isCommentLine :: String -> Bool
+isCommentLine ('#':_) = True
+isCommentLine _ = False
+
+
+--- read summary info from the end of the file ---
+
+-- TODO move to HeadFoot? HashTree.Read?
+-- TODO factor out/document the max char thing
+readLastHashLineAndFooter :: FilePath -> IO (Maybe (HashLine, Footer))
+readLastHashLineAndFooter path = do
+  mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 10000
+  case mTxt of
+    Nothing -> return Nothing
+    Just txt -> case filter (not . null) $ lines txt of
+      [] -> return Nothing
+      [_] -> return Nothing
+      (l:ls) -> do
+        let ml = parseHashLine $ B8.pack $ l
+            mf = parseFooter $ ls
+        case (ml, mf) of
+          (Just l, Just f) -> return $ Just (l, f)
+          _ -> return Nothing
+
+-- Tests whether the string looks like a newline + HashLine with Depth 0
+isDepthZeroLine :: String -> Bool
+isDepthZeroLine ('\n':_:'\t':'0':'\t':_) = True
+isDepthZeroLine _ = False
+
+
+--- read the main tree ---
 
 readTree :: Maybe Int -> FilePath -> IO ProdTree
 readTree md path = deserializeTree md <$> B8.readFile path
@@ -130,16 +194,6 @@ fileP md = do
   -- _ <- endOfInput
   return (h, b, f)
 
-commentLineP = do
-  _ <- char '#'
-  manyTill anyChar $ lookAhead endOfLine
-
-headerP = do
-  headerLines <- sepBy' commentLineP endOfLine <* endOfLine
-  case parseHeader headerLines of
-    Nothing -> fail "failed to parse header"
-    Just h -> return h
-
 footerP = do
   footerLines <- sepBy' commentLineP endOfLine -- <* endOfLine
   case parseFooter footerLines of
@@ -151,11 +205,3 @@ footerP = do
 -- TODO is it an Either?
 parseFooter :: [String] -> Maybe Footer
 parseFooter = decode . B8.fromStrict . B8.pack . unlines . map (replace "# " "")
-
--- Header is the same, except we have to lob off the final header line
--- TODO also confirm it looks as expected? tree format should be enough tho
-parseHeader :: [String] -> Maybe Header
-parseHeader s = case s of
-  [ ] -> Nothing -- should never happen, right?
-  [l] -> Nothing -- should never happen, right?
-  ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ map (replace "# " "") $ init ls

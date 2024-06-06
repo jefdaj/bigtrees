@@ -50,6 +50,8 @@ module System.Directory.BigTrees
   , treeHash
   , treeNBytes
   , sumNodes -- TODO rename treeNNodes?
+  , readHeader
+  , readLastHashLineAndFooter
 
   -- hashset
   , SetData(..)
@@ -102,7 +104,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dr
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
-import System.Directory.BigTrees.HashTree.Read (readTree, parseHeader, parseFooter)
+import System.Directory.BigTrees.HashTree.Read (readTree, readHeader, readLastHashLineAndFooter)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)

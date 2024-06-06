@@ -29,6 +29,7 @@ module System.Directory.BigTrees.Util
   , isAnnexSymlink
   , isNonAnnexSymlink
 
+  , hTakePrevUntil
   )
   where
 
@@ -45,6 +46,8 @@ import qualified System.Directory.Tree as DT
 import qualified System.FilePath as SF
 import System.FilePath ((</>))
 import System.Info (os)
+import System.IO (Handle, hGetChar, hSeek, SeekMode(..))
+import Control.Exception.Safe (handleAnyDeep)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
@@ -234,6 +237,36 @@ isNonAnnexSymlink path = do
   if not (isSymbolicLink status)
     then return False
     else not <$> isAnnexSymlink path
+
+--- read backwards from the end of a file ---
+
+-- Note that max is a positive number, the max chars to take,
+-- whereas the seek index is a negative number from the end.
+-- TODO handle the case where we get to the beginning of the file?
+--
+-- Example usage:
+--
+-- >>> withFile "stack-work.bigtree"  ReadMode $ hTakePrevUntil (\s -> "\n# {" `isPrefixOf` s) 100
+-- "\n# {\n#   \"scanEnd\": 1717518711\n#"
+--
+-- >>> withFile "stack-work.bigtree"  ReadMode $ hTakePrevUntil (\s -> "\n# {" `isPrefixOf` s) 10
+-- Nothing
+--
+hTakePrevUntil :: (String -> Bool) -> Int -> Handle -> IO (Maybe String)
+hTakePrevUntil cond maxChars hdl = handleAnyDeep (\_ -> return Nothing) $ do
+  hSeek hdl SeekFromEnd 0
+  hTakePrevUntil' cond maxChars hdl ""
+
+-- Internal helper that also takes a seek position and the accumulated string.
+hTakePrevUntil' :: (String -> Bool) -> Int -> Handle -> String -> IO (Maybe String)
+hTakePrevUntil' _ maxChars _ _ | maxChars < 0 = return Nothing
+hTakePrevUntil' cond maxChars hdl cs = do
+  hSeek hdl RelativeSeek (-2)
+  c <- hGetChar hdl
+  let cs' = c:cs
+  if cond cs'
+    then return $ Just cs'
+    else hTakePrevUntil' cond (maxChars-1) hdl cs'
 
 --------------
 -- old code --
