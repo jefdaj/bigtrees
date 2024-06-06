@@ -72,8 +72,9 @@ readTreeHashList mn path = do
   let hl = catMaybes $ map (hashSetDataFromLine mn) ls
   return hl
 
-readHashListIO :: FilePath -> IO HashList
-readHashListIO path = do
+readHashListIO :: Config -> FilePath -> IO HashList
+readHashListIO cfg path = do
+  log cfg $ "adding hashes from '" ++ path ++ "'"
   eHL <- readHashList path
   case eHL of
     Left msg -> error $ "failed to read '" ++ path ++ "'"
@@ -87,7 +88,7 @@ cmdSetAdd2 cfg setPath mNoteStr treePaths = do
   -- writing to the same file below
   exists <- SD.doesPathExist setPath
   before <- fmap force $ if exists
-              then readHashListIO setPath
+              then readHashListIO cfg setPath
               else return []
   log cfg $ "initial '" ++ setPath ++ "' contains " ++ show (length before) ++ " hashes"
  
