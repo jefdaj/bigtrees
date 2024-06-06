@@ -4,7 +4,7 @@ import Text.Pretty.Simple (pPrint)
 import Prelude hiding (log)
 import Config (Config(..), log)
 import Control.Monad (forM, foldM)
-import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), NNodes(..), sumNodes, HashLine(..), readLastHashLineAndFooter, headerP, linesP)
+import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), NNodes(..), sumNodes, HashLine(..), readLastHashLineAndFooter, headerP, linesP, hashSetDataFromLine)
 import System.Directory.BigTrees.HashSet (emptyHashSet)
 import Control.DeepSeq (force)
 import qualified System.Directory as SD
@@ -65,6 +65,12 @@ readTreeLines path = do
   case eSL of
     Left msg -> error $ "failed to parse '" ++ path ++ "': " ++ show msg
     Right ls -> return ls
+
+readTreeHashList :: Maybe Note -> FilePath -> IO HashList
+readTreeHashList mn path = do
+  ls <- readTreeLines path
+  let hl = catMaybes $ map (hashSetDataFromLine mn) ls
+  return hl
 
 cmdSetAdd2 :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
 cmdSetAdd2 _ _ _ [] = return () -- Docopt should prevent this, but just in case

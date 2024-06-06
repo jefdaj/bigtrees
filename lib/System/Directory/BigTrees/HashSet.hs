@@ -39,6 +39,8 @@ module System.Directory.BigTrees.HashSet
   , readHashList
   , setNote
 
+  , hashSetDataFromLine
+
   , prop_roundtrip_HashSet_to_ByteString
   )
   where
@@ -59,7 +61,7 @@ import qualified Data.Text as T
 
 import System.Directory.BigTrees.Name (Name(..))
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..), join, hashP, nfilesP, sizeP)
+import System.Directory.BigTrees.HashLine (HashLine(..), NBytes(..), NNodes (..), join, hashP, nfilesP, sizeP)
 import System.Directory.BigTrees.HashTree (HashTree (..), TestTree(..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
@@ -149,6 +151,15 @@ addNodeToHashSet s h sd = H.insert s h sd
 
 
 --- hash set from .bigtree file (streaming) ---
+
+hashSetDataFromLine :: Maybe Note -> HashLine -> Maybe (Hash, SetData)
+hashSetDataFromLine mn (ErrLine {}) = Nothing
+hashSetDataFromLine mn (HashLine (_,_,h,_,nb,nn,Name n)) = Just (h, sd)
+  where sd = SetData
+               { sdNote  = fromMaybe (Note n) mn
+               , sdBytes = nb
+               , sdNodes = nn
+               }
 
 
 --- quicksort hashset to list ---
