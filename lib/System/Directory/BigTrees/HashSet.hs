@@ -68,7 +68,7 @@ import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.IO (Handle, IOMode(..), withFile) -- , IOMode (..), hFlush, stdout, withFile)
 import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly, anyChar, endOfLine)
-import Data.Attoparsec.Combinator (lookAhead, manyTill, sepBy')
+import Data.Attoparsec.Combinator (lookAhead, manyTill, many')
 import Data.Either -- TODO remove? or specifics
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
@@ -245,10 +245,11 @@ setLineP = do
   nn <- nfilesP
   nb <- sizeP
   n  <- noteP -- TODO allow slashes in notes? newlines?
+  _  <- endOfLine
   return $ HashSetLine (h, nn, nb, n)
 
 linesP :: Parser [HashSetLine]
-linesP = sepBy' setLineP endOfLine <* endOfLine
+linesP = many' setLineP
 
 parseHashSetLines :: B8.ByteString -> Either String [HashSetLine]
 parseHashSetLines = parseOnly linesP

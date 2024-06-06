@@ -70,8 +70,10 @@ readTreeHashList :: Config -> Maybe Note -> FilePath -> IO HashList
 readTreeHashList cfg mn path = do
   ls <- readTreeLines path
   let hl = catMaybes $ map (hashSetDataFromLine mn) ls
-  log cfg $ "adding " ++ show (length hl) ++ " hashes from '" ++ path ++ "'"
-  return $ force hl
+  log cfg $ "adding hashes from '" ++ path ++ "'"
+  -- log cfg $ "adding " ++ show (length hl) ++ " hashes from '" ++ path ++ "'"
+  -- return $ force hl
+  return hl
 
 readHashListIO :: Config -> FilePath -> IO HashList
 readHashListIO cfg path = do
@@ -79,8 +81,10 @@ readHashListIO cfg path = do
   case eHL of
     Left msg -> error $ "failed to read '" ++ path ++ "'"
     Right hl -> do
-      log cfg $ "adding " ++ show (length hl) ++ " hashes from '" ++ path ++ "'"
-      return $ force hl -- TODO deep evaluation, right?
+      log cfg $ "adding hashes from '" ++ path ++ "'"
+      -- log cfg $ "adding " ++ show (length hl) ++ " hashes from '" ++ path ++ "'"
+      -- return $ force hl -- TODO deep evaluation, right?
+      return hl
 
 cmdSetAdd2 :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
 cmdSetAdd2 _ _ _ [] = return () -- Docopt should prevent this, but just in case
