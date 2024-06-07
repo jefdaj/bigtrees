@@ -21,6 +21,11 @@ import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 -- import Text.Pretty.Simple (pPrint)
+import Data.Version (showVersion)
+import Paths_bigtrees (version)
+
+printVersion :: IO ()
+printVersion = putStrLn $ showVersion version
 
 main :: IO ()
 main = do
@@ -94,6 +99,9 @@ main = do
     subTree  <- arg "sub"
     subPath  <- arg "path"
     oldCmdUpdate cfg mainTree subTree subPath
+
+  else if cmd "version" then
+    printVersion
 
   -- TODO actual exception here?
   else do
