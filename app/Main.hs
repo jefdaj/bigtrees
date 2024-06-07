@@ -7,7 +7,7 @@ module Main where
 
 import Cmd.Diff (cmdDiff)
 import Cmd.Dupes (cmdDupes)
-import Cmd.SetAdd (cmdSetAdd2)
+import Cmd.SetAdd (cmdSetAdd)
 import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
@@ -67,7 +67,7 @@ main = do
     set <- short 's'
     let note  = shortO 'n'
         paths = lst "path"
-    cmdSetAdd2 cfg set note paths
+    cmdSetAdd cfg set note paths
 
   else if cmd "find" then do
     path <- arg "path"

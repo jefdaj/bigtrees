@@ -7,7 +7,7 @@ import Control.DeepSeq (force)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (partition)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), TreeType (..),
-                                           hashLineP, parseHashLine)
+                                           hashLineP, parseHashLine, NNodes(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
@@ -85,6 +85,25 @@ readLastHashLineAndFooter path = do
 isDepthZeroLine :: String -> Bool
 isDepthZeroLine ('\n':_:'\t':'0':'\t':_) = True
 isDepthZeroLine _ = False
+
+
+--- read info for set-add ---
+
+getTreeSize :: FilePath -> IO (Maybe Int)
+getTreeSize path = readLastHashLineAndFooter path >>= return . getN
+  where
+    getN (Just (HashLine (_,_,_,_,_, NNodes n, _), _)) = Just n
+    getN Nothing = Nothing
+
+-- TODO does this stream, or does it read all the lines at once?
+-- TODO pass on the Left rather than throwing IO error here?
+readTreeLines :: FilePath -> IO [HashLine]
+readTreeLines path = do
+  bs <- B8.readFile path
+  let eSL = parseOnly (headerP *> linesP Nothing) bs
+  case eSL of
+    Left msg -> error $ "failed to parse '" ++ path ++ "': " ++ show msg
+    Right ls -> return ls
 
 
 --- read the main tree ---
