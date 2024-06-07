@@ -7,10 +7,10 @@ import qualified System.Directory as SD
 import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
+import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Name (n2fp)
 import System.FilePath (splitPath, (</>))
 import System.IO (Handle, IOMode (..), hFlush, stdout, withFile)
-import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?

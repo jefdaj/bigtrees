@@ -14,9 +14,9 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Aeson (FromJSON, ToJSON, decode)
 import qualified Data.Aeson.Encode.Pretty as AP
 import qualified Data.ByteString.Char8 as B8
+import Data.Functor ((<&>))
 import GHC.Generics (Generic)
 import System.IO (Handle)
-import Data.Functor ((<&>))
 
 {- Header + footer info to write before and after HashLines, respectively.
  - The initial format is to read/write JSON delimited from other lines by '#'.

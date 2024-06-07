@@ -1,24 +1,28 @@
 module Cmd.SetAdd (cmdSetAdd) where
 
-import Text.Pretty.Simple (pPrint)
-import Prelude hiding (log)
-import Config (Config(..), log)
-import Control.Monad (forM, forM_, foldM)
-import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), sumNodes, HashLine(..), readLastHashLineAndFooter, headerP, linesP, hashSetDataFromLine, addNodeToHashSet, readTreeLines, getTreeSize)
-import System.Directory.BigTrees.HashSet (emptyHashSet)
+import Config (Config (..), log)
 import Control.DeepSeq (force)
-import qualified System.Directory as SD
-import qualified Data.Text as T
-import Data.Maybe (catMaybes)
-import qualified Data.HashTable.Class as H
-import Data.Attoparsec.ByteString.Char8 (parseOnly, char)
-import System.IO (withFile, IOMode(..))
+import Control.Monad (foldM, forM, forM_)
+import Data.Attoparsec.ByteString.Char8 (char, parseOnly)
 import qualified Data.ByteString.Char8 as B8
+import qualified Data.HashTable.Class as H
+import Data.Maybe (catMaybes, mapMaybe)
+import qualified Data.Text as T
+import Prelude hiding (log)
+import qualified System.Directory as SD
+import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToHashSet,
+                                  addTreeToHashSet, getTreeSize, hashSetDataFromLine,
+                                  hashSetFromList, headerP, linesP, readHashList,
+                                  readLastHashLineAndFooter, readOrBuildTree, readTreeLines,
+                                  sumNodes, toSortedList, writeHashList)
+import System.Directory.BigTrees.HashSet (emptyHashSet)
+import System.IO (IOMode (..), withFile)
+import Text.Pretty.Simple (pPrint)
 
 readTreeHashList :: Config -> Maybe Note -> FilePath -> IO HashList
 readTreeHashList cfg mn path = do
   ls <- readTreeLines path
-  let hl = catMaybes $ map (hashSetDataFromLine mn) ls
+  let hl = mapMaybe (hashSetDataFromLine mn) ls
   log cfg $ "adding hashes from '" ++ path ++ "'"
   return hl
 
@@ -47,7 +51,7 @@ cmdSetAdd cfg setPath mNoteStr treePaths = do
               else do
                 log cfg $ "'" ++ setPath ++ "' does not exist yet"
                 return []
- 
+
   -- the actual set should be smaller (assuming some dupes),
   -- but this will prevent having to do any resizing
   maxSetSize <- (sum . catMaybes) <$> mapM getTreeSize treePaths
@@ -60,7 +64,7 @@ cmdSetAdd cfg setPath mNoteStr treePaths = do
   hl <- concat <$> mapM (readTreeHashList cfg mNote) treePaths
   let afterL = toSortedList $ do
                  s <- emptyHashSet maxSetSize'
-                 forM_ (before ++ hl) $ \(h, sd) -> addNodeToHashSet s h sd
+                 forM_ (before ++ hl) $ uncurry (addNodeToHashSet s)
                  return s
 
   writeHashList setPath afterL

@@ -1,15 +1,16 @@
 module Cmd.Info where
 
-import System.IO -- TODO specifics
 import Config (Config (..))
-import Control.Exception.Safe -- TODO specifics
+import Control.Exception.Safe
+import System.IO
 -- import System.Directory.BigTrees.HashTree
-import System.Directory.BigTrees.Hash (Hash(..), prettyHash)
-import System.Directory.BigTrees.HashLine (HashLine(..), ErrMsg(..), ModTime(..), NBytes(..), NNodes(..), parseHashLine)
-import System.Directory.BigTrees.HashTree (HashTree(..), readHeader, readLastHashLineAndFooter)
-import System.Directory.BigTrees.HeadFoot (Header(..), Footer, scanSeconds)
-import qualified Data.ByteString.Char8 as B8
 import Control.Monad (forM)
+import qualified Data.ByteString.Char8 as B8
+import System.Directory.BigTrees.Hash (Hash (..), prettyHash)
+import System.Directory.BigTrees.HashLine (ErrMsg (..), HashLine (..), ModTime (..), NBytes (..),
+                                           NNodes (..), parseHashLine)
+import System.Directory.BigTrees.HashTree (HashTree (..), readHeader, readLastHashLineAndFooter)
+import System.Directory.BigTrees.HeadFoot (Footer, Header (..), scanSeconds)
 -- import qualified Data.ByteString.Short as BS
 
 cmdInfo :: Config -> FilePath -> IO ()
@@ -18,7 +19,7 @@ cmdInfo cfg path = do
   mLF <- readLastHashLineAndFooter path
   case (mH, mLF) of
     (Just h, Just (l, f)) -> printInfo path h f l
-    _ -> error $ "failed to read info from '" ++ path ++ "'"
+    _                     -> error $ "failed to read info from '" ++ path ++ "'"
 
 printInfo :: FilePath -> Header -> Footer -> HashLine -> IO ()
 printInfo path header footer lastLine = do
@@ -30,8 +31,7 @@ printInfo path header footer lastLine = do
           , "overall hash is " ++ B8.unpack (prettyHash h)
           -- TODO is this accurate/useful? "modified " ++ show m
           ]
-  mapM_ putStrLn $ (path ++ ":") : (map ("  " ++) $
-    [ "bigtree " ++ show (treeFormat header) ++ " format"
+  mapM_ putStrLn $ (path ++ ":") : map ("  " ++) ([ "bigtree " ++ show (treeFormat header) ++ " format"
     , "took " ++ show seconds ++ " seconds to create" -- TODO min, hours, days
     ]
     ++ lineInfo)

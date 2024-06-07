@@ -7,10 +7,10 @@ module Main where
 
 import Cmd.Diff (cmdDiff)
 import Cmd.Dupes (cmdDupes)
-import Cmd.SetAdd (cmdSetAdd)
 import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
+import Cmd.SetAdd (cmdSetAdd)
 import Config (Config (..), defaultConfig)
 import Data.Functor ((<&>))
 import OldCmd.Cat (oldCmdCat)
@@ -42,7 +42,7 @@ main = do
              else return $ exclude defaultConfig
   let cfg = Config
         { txt      = shortO 't'
-        , maxdepth = fmap (read :: String -> Int) $ shortO 'd'
+        , maxdepth = (read :: String -> Int) <$> shortO 'd'
         , verbose  = flag 'v'
         -- , force    = flag 'f'
         , check    = flag 'c'

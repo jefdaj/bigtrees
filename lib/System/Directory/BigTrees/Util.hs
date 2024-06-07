@@ -33,6 +33,7 @@ module System.Directory.BigTrees.Util
   )
   where
 
+import Control.Exception.Safe (handleAnyDeep)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
@@ -46,8 +47,7 @@ import qualified System.Directory.Tree as DT
 import qualified System.FilePath as SF
 import System.FilePath ((</>))
 import System.Info (os)
-import System.IO (Handle, hGetChar, hSeek, SeekMode(..))
-import Control.Exception.Safe (handleAnyDeep)
+import System.IO (Handle, SeekMode (..), hGetChar, hSeek)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)

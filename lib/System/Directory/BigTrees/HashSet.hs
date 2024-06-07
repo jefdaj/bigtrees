@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-|
 Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
@@ -47,29 +47,31 @@ module System.Directory.BigTrees.HashSet
   where
 
 -- TODO which of these are needed?
+import Control.Monad (forM_)
+import Control.Monad.ST.Strict (ST, runST)
+import Data.Functor ((<&>))
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Massiv.Array as A
-import Control.Monad.ST.Strict (ST, runST)
-import Control.Monad (forM)
 import Data.Maybe (fromMaybe)
 
 import Control.DeepSeq (NFData)
-import GHC.Generics (Generic)
 import qualified Data.Text as T
+import GHC.Generics (Generic)
 
-import System.Directory.BigTrees.Name (Name(..))
-import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (HashLine(..), NBytes(..), NNodes (..), join, hashP, nfilesP, sizeP)
-import System.Directory.BigTrees.HashTree (HashTree (..), TestTree(..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
+import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, endOfLine, parseOnly)
+import Data.Attoparsec.Combinator (lookAhead, many', manyTill)
 import qualified Data.ByteString.Char8 as B8
+import Data.Either
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.IO (Handle, IOMode(..), withFile) -- , IOMode (..), hFlush, stdout, withFile)
-import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly, anyChar, endOfLine)
-import Data.Attoparsec.Combinator (lookAhead, manyTill, many')
-import Data.Either -- TODO remove? or specifics
+import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, join,
+                                           nfilesP, sizeP)
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, TestTree (..),
+                                           sumNodes, treeHash, treeNBytes, treeName)
+import System.Directory.BigTrees.Name (Name (..))
+import System.IO (Handle, IOMode (..), withFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
@@ -89,7 +91,7 @@ data SetData = SetData
   { sdNodes :: NNodes
   , sdBytes :: NBytes
   , sdNote  :: Note
-  } 
+  }
   deriving (Eq, Ord, Read, Show, Generic)
 
 instance NFData SetData
@@ -119,7 +121,7 @@ hashSetFromTree t = do
 hashSetFromList :: HashList -> ST s (HashSet s)
 hashSetFromList ls = do
   s <- H.newSized $ length ls
-  forM ls $ \(h, sd) -> addNodeToHashSet s h sd
+  forM_ ls $ uncurry (addNodeToHashSet s)
   return s
 
 -- addToHashSet :: HashSet s -> ProdTree -> ST s ()
@@ -255,13 +257,13 @@ parseHashSetLines :: B8.ByteString -> Either String [HashSetLine]
 parseHashSetLines = parseOnly linesP
 
 parseHashList :: B8.ByteString -> Either String HashList
-parseHashList bs = parseHashSetLines bs >>= return . map f
+parseHashList bs = parseHashSetLines bs <&> map f
   where
     f (HashSetLine (h, nn, nb, n)) = (h, SetData nn nb n)
 
 -- TODO throw IO error rather than Left here?
 readHashList :: FilePath -> IO (Either String HashList)
-readHashList path = B8.readFile path >>= return . parseHashList
+readHashList path = B8.readFile path <&> parseHashList
 
 
 --- round-trip tests ---

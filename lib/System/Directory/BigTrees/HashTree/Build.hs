@@ -7,6 +7,7 @@ import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 -- import GHC.IO.Exception -- TODO specifics
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
+import Data.Functor ((<&>))
 import Data.List (sortBy)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Foreign.C.Types (CTime (..))
@@ -24,7 +25,6 @@ import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compD
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Posix.Files (getFileStatus, isDirectory, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
-import Data.Functor ((<&>))
 
 keepPath :: [String] -> FilePath -> Bool
 keepPath excludes path = not $ any ((\ptn -> matchWith mOpts ptn path) . compileWith cOpts) excludes
