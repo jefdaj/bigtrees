@@ -2,16 +2,22 @@
 
 module System.Directory.BigTrees.HashTree.Read where
 
+import Control.DeepSeq (force)
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
+import Data.Functor ((<&>))
 import Data.List (partition)
-import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), TreeType (..),
-                                           hashLineP, breakP)
+import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..),
+                                           TreeType (..), hashLineP, parseHashLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.Util (hTakePrevUntil)
 -- import System.FilePath.Glob (Pattern)
+import Control.Applicative (many)
+import Control.Monad (forM, replicateM)
+import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
@@ -19,9 +25,89 @@ import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead)
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes)
-import System.Directory.BigTrees.HeadFoot (Header(..), Footer(..))
-import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.String.Utils (replace)
+import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..))
+import System.IO (Handle, IOMode (..), hGetLine, withFile)
+
+
+--- read header info from the beginning of the file ---
+
+commentLineP = do
+  _ <- char '#'
+  manyTill anyChar $ lookAhead endOfLine
+
+headerP = do
+  headerLines <- sepBy' commentLineP endOfLine <* endOfLine
+  case parseHeader headerLines of
+    Nothing -> fail "failed to parse header"
+    Just h  -> return h
+
+-- TODO close file bug here :/
+-- TODO document 100 line limit
+readHeader :: FilePath -> IO (Maybe Header)
+readHeader path =
+  withFile path ReadMode $ \h -> do
+    commentLines <- fmap (takeWhile isCommentLine) $ replicateM 100 (hGetLine h)
+    return $ parseHeader commentLines
+
+-- Header is the same, except we have to lob off the final header line
+-- TODO also confirm it looks as expected? tree format should be enough tho
+parseHeader :: [String] -> Maybe Header
+parseHeader s = case s of
+  [ ] -> Nothing -- should never happen, right?
+  [l] -> Nothing -- should never happen, right?
+  ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ map (replace "# " "") $ init ls
+
+isCommentLine :: String -> Bool
+isCommentLine ('#':_) = True
+isCommentLine _       = False
+
+
+--- read summary info from the end of the file ---
+
+-- TODO move to HeadFoot? HashTree.Read?
+-- TODO factor out/document the max char thing
+readLastHashLineAndFooter :: FilePath -> IO (Maybe (HashLine, Footer))
+readLastHashLineAndFooter path = do
+  mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 10000
+  case mTxt of
+    Nothing -> return Nothing
+    Just txt -> case filter (not . null) $ lines txt of
+      [] -> return Nothing
+      [_] -> return Nothing
+      (l:ls) -> do
+        let ml = parseHashLine $ B8.pack l
+            mf = parseFooter ls
+        case (ml, mf) of
+          (Just l, Just f) -> return $ Just (l, f)
+          _                -> return Nothing
+
+-- Tests whether the string looks like a newline + HashLine with Depth 0
+isDepthZeroLine :: String -> Bool
+isDepthZeroLine ('\n':_:'\t':'0':'\t':_) = True
+isDepthZeroLine _                        = False
+
+
+--- read info for set-add ---
+
+getTreeSize :: FilePath -> IO (Maybe Int)
+getTreeSize path = readLastHashLineAndFooter path <&> getN
+  where
+    getN (Just (HashLine (_,_,_,_,_, NNodes n, _), _)) = Just n
+    getN Nothing                                       = Nothing
+
+-- TODO does this stream, or does it read all the lines at once?
+-- TODO pass on the Left rather than throwing IO error here?
+readTreeLines :: FilePath -> IO [HashLine]
+readTreeLines path = do
+  bs <- B8.readFile path
+  let eSL = parseOnly (headerP *> linesP Nothing) bs
+  case eSL of
+    Left msg -> error $ "failed to parse '" ++ path ++ "': " ++ show msg
+    Right ls -> return ls
+
+
+--- read the main tree ---
 
 readTree :: Maybe Int -> FilePath -> IO ProdTree
 readTree md path = deserializeTree md <$> B8.readFile path
@@ -35,7 +121,7 @@ deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 deserializeTree md bs = case parseTreeFile md bs of
   Left msg -> Err { errName = Name "deserializeTree", errMsg = ErrMsg msg }
-  Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of
+  Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of -- TODO leak here?
     []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
     ((_, tree):_) -> tree
 
@@ -116,7 +202,7 @@ parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
-  hls <- sepBy' (hashLineP md) endOfLine <* endOfLine
+  hls <- many (hashLineP md <* endOfLine) -- commentLineP <* endOfLine
   return $ catMaybes hls -- TODO count skipped lines here?
 
 -- bodyP :: Maybe Int -> Parser [HashLine]
@@ -130,32 +216,14 @@ fileP md = do
   -- _ <- endOfInput
   return (h, b, f)
 
-commentLineP = do
-  _ <- char '#'
-  manyTill anyChar $ lookAhead endOfLine
-
-headerP = do
-  headerLines <- sepBy' commentLineP endOfLine <* endOfLine
-  case parseHeader headerLines of
-    Nothing -> fail "failed to parse header"
-    Just h -> return h
-
 footerP = do
   footerLines <- sepBy' commentLineP endOfLine -- <* endOfLine
   case parseFooter footerLines of
     Nothing -> fail "failed to parse footer"
-    Just h -> return h
+    Just h  -> return h
 
 -- The main Attoparsec parser(s) can separate the commented section,
 -- then the uncommented JSON is handled here.
 -- TODO is it an Either?
 parseFooter :: [String] -> Maybe Footer
 parseFooter = decode . B8.fromStrict . B8.pack . unlines . map (replace "# " "")
-
--- Header is the same, except we have to lob off the final header line
--- TODO also confirm it looks as expected? tree format should be enough tho
-parseHeader :: [String] -> Maybe Header
-parseHeader s = case s of
-  [ ] -> Nothing -- should never happen, right?
-  [l] -> Nothing -- should never happen, right?
-  ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ map (replace "# " "") $ init ls

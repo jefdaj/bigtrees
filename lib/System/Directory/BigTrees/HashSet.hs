@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-|
 Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
@@ -30,43 +30,48 @@ module System.Directory.BigTrees.HashSet
   , HashList
   , HashSet
   , Note(..)
-  -- , emptyHashSet
+  , emptyHashSet
   , hashSetFromTree
   , hashSetFromList
   , addTreeToHashSet
+  , addNodeToHashSet
   , toSortedList
   , writeHashList
   , readHashList
   , setNote
+
+  , hashSetDataFromLine
 
   , prop_roundtrip_HashSet_to_ByteString
   )
   where
 
 -- TODO which of these are needed?
+import Control.Monad (forM_)
+import Control.Monad.ST.Strict (ST, runST)
+import Data.Functor ((<&>))
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Massiv.Array as A
-import Control.Monad.ST.Strict (ST, runST)
-import Control.Monad (forM)
 import Data.Maybe (fromMaybe)
 
 import Control.DeepSeq (NFData)
-import GHC.Generics (Generic)
 import qualified Data.Text as T
+import GHC.Generics (Generic)
 
-import System.Directory.BigTrees.Name (Name(..))
-import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (NBytes(..), NNodes (..), join, hashP, nfilesP, sizeP)
-import System.Directory.BigTrees.HashTree (HashTree (..), TestTree(..), NodeData (..), ProdTree, sumNodes, treeName, treeHash, treeNBytes)
+import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, endOfLine, parseOnly)
+import Data.Attoparsec.Combinator (lookAhead, many', manyTill)
 import qualified Data.ByteString.Char8 as B8
+import Data.Either
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.IO (Handle, IOMode(..), withFile) -- , IOMode (..), hFlush, stdout, withFile)
-import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly, anyChar, endOfLine)
-import Data.Attoparsec.Combinator (lookAhead, manyTill, sepBy')
-import Data.Either -- TODO remove? or specifics
+import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, join,
+                                           nfilesP, sizeP)
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, TestTree (..),
+                                           sumNodes, treeHash, treeNBytes, treeName)
+import System.Directory.BigTrees.Name (Name (..))
+import System.IO (Handle, IOMode (..), withFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
@@ -86,7 +91,7 @@ data SetData = SetData
   { sdNodes :: NNodes
   , sdBytes :: NBytes
   , sdNote  :: Note
-  } 
+  }
   deriving (Eq, Ord, Read, Show, Generic)
 
 instance NFData SetData
@@ -100,24 +105,23 @@ type HashList = [(Hash, SetData)]
 type HashSet s = C.HashTable s Hash SetData
 
 
---- create hash sets ---
+--- hash set from tree ---
 
--- TODO remove? not sure if useful
--- emptyHashSet :: ST s (HashSet s)
--- emptyHashSet = H.newSized 1
+emptyHashSet :: Int -> ST s (HashSet s)
+emptyHashSet = H.newSized
 
 -- TODO can this be done with other hashtrees generically, or have to drop data first?
 hashSetFromTree :: ProdTree -> ST s (HashSet s)
 hashSetFromTree t = do
-  let (NNodes n) = sumNodes t
-  h <- H.newSized n
+  -- let (NNodes n) = 1000 -- sumNodes t -- TODO leak here? would force evaluation
+  h <- H.newSized 1000
   addTreeToHashSet Nothing h t
   return h
 
 hashSetFromList :: HashList -> ST s (HashSet s)
 hashSetFromList ls = do
   s <- H.newSized $ length ls
-  forM ls $ \(h, sd) -> addNodeToHashSet s h sd
+  forM_ ls $ uncurry (addNodeToHashSet s)
   return s
 
 -- addToHashSet :: HashSet s -> ProdTree -> ST s ()
@@ -127,8 +131,8 @@ hashSetFromList ls = do
 addTreeToHashSet :: Maybe Note -> HashSet s -> ProdTree -> ST s ()
 addTreeToHashSet _ _ (Err {}) = return ()
 addTreeToHashSet mn s t@(Dir {}) = do
-  addNodeToHashSet s (treeHash t) $ setDataFromNode mn t
   mapM_ (addTreeToHashSet mn s) $ dirContents t
+  addNodeToHashSet s (treeHash t) $ setDataFromNode mn t
 addTreeToHashSet mn s t =
   addNodeToHashSet s (treeHash t) $ setDataFromNode mn t
 
@@ -147,6 +151,18 @@ setDataFromNode mn tree =
 -- TODO should this return the set?
 addNodeToHashSet :: HashSet s -> Hash -> SetData -> ST s ()
 addNodeToHashSet s h sd = H.insert s h sd
+
+
+--- hash set from .bigtree file (streaming) ---
+
+hashSetDataFromLine :: Maybe Note -> HashLine -> Maybe (Hash, SetData)
+hashSetDataFromLine mn (ErrLine {}) = Nothing
+hashSetDataFromLine mn (HashLine (_,_,h,_,nb,nn,Name n)) = Just (h, sd)
+  where sd = SetData
+               { sdNote  = fromMaybe (Note n) mn
+               , sdBytes = nb
+               , sdNodes = nn
+               }
 
 
 --- quicksort hashset to list ---
@@ -212,6 +228,9 @@ writeHashList path l = withFile path WriteMode $ \h -> hWriteHashListBody h l
 
 --- parse hashset from file ---
 
+
+
+
 -- This doesn't require a fancy parser, but might as well do one because we
 -- have most of the primitives already...
 
@@ -228,22 +247,23 @@ setLineP = do
   nn <- nfilesP
   nb <- sizeP
   n  <- noteP -- TODO allow slashes in notes? newlines?
+  _  <- endOfLine
   return $ HashSetLine (h, nn, nb, n)
 
 linesP :: Parser [HashSetLine]
-linesP = sepBy' setLineP endOfLine <* endOfLine
+linesP = many' setLineP
 
 parseHashSetLines :: B8.ByteString -> Either String [HashSetLine]
 parseHashSetLines = parseOnly linesP
 
 parseHashList :: B8.ByteString -> Either String HashList
-parseHashList bs = parseHashSetLines bs >>= return . map f
+parseHashList bs = parseHashSetLines bs <&> map f
   where
     f (HashSetLine (h, nn, nb, n)) = (h, SetData nn nb n)
 
 -- TODO throw IO error rather than Left here?
 readHashList :: FilePath -> IO (Either String HashList)
-readHashList path = B8.readFile path >>= return . parseHashList
+readHashList path = B8.readFile path <&> parseHashList
 
 
 --- round-trip tests ---

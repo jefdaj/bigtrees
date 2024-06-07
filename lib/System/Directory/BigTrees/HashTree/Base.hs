@@ -239,7 +239,7 @@ arbitraryDirSized arbsize = do
   -- TODO put back the nubBy part!
   !cs <- arbitraryContents $ arbsize - 1
   !mt <- arbitrary :: Gen ModTime
-  !s <- NBytes <$> return 4096 -- TODO does dir size vary?
+  !s <- return (NBytes 4096) -- TODO does dir size vary?
   -- TODO assert that nNodes == s here?
   return $ Dir
     { dirContents = cs

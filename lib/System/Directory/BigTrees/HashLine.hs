@@ -37,14 +37,16 @@ module System.Directory.BigTrees.HashLine
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
 import Control.DeepSeq (NFData (..))
+import Control.Monad (void)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
-                                         endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
+                                         endOfLine, isEndOfLine, manyTill, parseOnly, take)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead)
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Either (fromRight)
+import Data.Functor ((<&>))
 import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
@@ -52,7 +54,6 @@ import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat)
 import TH.Derive ()
-import Data.Functor ((<&>))
 
 -----------
 -- types --
@@ -241,7 +242,7 @@ hashP = do
  - TODO can it use null-separated lines instead like -print0?
  -}
 breakP :: Parser ()
-breakP = endOfLine >> choice [char '#' >> return (), typeP >> numStrP >> hashP >> return (), endOfInput]
+breakP = endOfLine >> choice [void (char '#'), typeP >> numStrP >> hashP >> return (), endOfInput]
 
 -- TODO should anyChar be anything except forward slash and the null char?
 nameP :: Parser Name
@@ -322,6 +323,6 @@ parseTheRest t i = do
 -- TODO use String here?
 parseHashLine :: B8.ByteString -> Maybe HashLine
 parseHashLine bs = case A8.parseOnly (hashLineP Nothing) (B8.append bs "\n") of
-  Left _ -> Nothing
-  Right Nothing -> Nothing
+  Left _         -> Nothing
+  Right Nothing  -> Nothing
   Right (Just x) -> Just x

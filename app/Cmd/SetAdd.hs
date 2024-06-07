@@ -1,41 +1,71 @@
-module Cmd.SetAdd where
+module Cmd.SetAdd (cmdSetAdd) where
 
-import Text.Pretty.Simple (pPrint)
-import Prelude hiding (log)
-import Config (Config(..), log)
-import Control.Monad (forM, foldM)
-import System.Directory.BigTrees (readOrBuildTree, readHashList, writeHashList, hashSetFromList, addTreeToHashSet, toSortedList, HashList, Note(..), NNodes(..), sumNodes)
+import Config (Config (..), log)
 import Control.DeepSeq (force)
-import qualified System.Directory as SD
+import Control.Monad (foldM, forM, forM_)
+import Data.Attoparsec.ByteString.Char8 (char, parseOnly)
+import qualified Data.ByteString.Char8 as B8
+import qualified Data.HashTable.Class as H
+import Data.Maybe (catMaybes, mapMaybe)
 import qualified Data.Text as T
+import Prelude hiding (log)
+import qualified System.Directory as SD
+import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToHashSet,
+                                  addTreeToHashSet, getTreeSize, hashSetDataFromLine,
+                                  hashSetFromList, headerP, linesP, readHashList,
+                                  readLastHashLineAndFooter, readOrBuildTree, readTreeLines,
+                                  sumNodes, toSortedList, writeHashList)
+import System.Directory.BigTrees.HashSet (emptyHashSet)
+import System.IO (IOMode (..), withFile)
+import Text.Pretty.Simple (pPrint)
 
--- bigtrees [-v] set-add -s <set> [-n <note>] <tree>...
+readTreeHashList :: Config -> Maybe Note -> FilePath -> IO HashList
+readTreeHashList cfg mn path = do
+  ls <- readTreeLines path
+  let hl = mapMaybe (hashSetDataFromLine mn) ls
+  log cfg $ "adding hashes from '" ++ path ++ "'"
+  return hl
+
+readHashListIO :: Config -> FilePath -> IO HashList
+readHashListIO cfg path = do
+  log cfg $ "adding hashes from '" ++ path ++ "'"
+  eHL <- readHashList path
+  case eHL of
+    Left msg -> error $ "failed to read '" ++ path ++ "'"
+    Right hl -> return hl
+
 cmdSetAdd :: Config -> FilePath -> Maybe String -> [FilePath] -> IO ()
+cmdSetAdd _ _ _ [] = return () -- Docopt should prevent this, but just in case
 cmdSetAdd cfg setPath mNoteStr treePaths = do
-  let mNote = (Note . T.pack) <$> mNoteStr
-  exists <- SD.doesPathExist setPath
-  -- force ensures read is strict here so it doesn't conflict with
-  -- writing to the same file below
-  eBefore <- fmap force $ if exists
-               then readHashList setPath
-               else return $ Right []
-  case eBefore of
-    Left msg -> error msg
-    Right before -> do
-      -- TODO does doing the trees one at a time fix the RAM leak?
-      log cfg $ "initial '" ++ setPath ++ "' contains " ++ show (length before) ++ " hashes"
-      afterL <- foldM (force . readAndAddTree cfg mNote) before treePaths
-      log cfg $ "final '" ++ setPath ++ "' contains " ++ show (length afterL) ++ " hashes"
-      writeHashList setPath afterL
 
-readAndAddTree :: Config -> Maybe Note -> HashList -> FilePath -> IO HashList
-readAndAddTree cfg mNote before path = do
-  tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
-  let (NNodes n) = sumNodes tree
-  log cfg $ "adding " ++ show n ++ " hashes from '" ++ path ++ "'"
-  -- TODO is it weird that toSortedList includes runST?
-  let res = toSortedList $ do
-        after <- hashSetFromList before
-        addTreeToHashSet mNote after tree
-        return after
-  return res
+  -- TODO can this conflict with writing the file later? (length should force it)
+  exists <- SD.doesPathExist setPath
+  before <- if exists
+              then do
+                hl <- readHashListIO cfg setPath
+                log cfg $
+                  "initial '" ++ setPath ++
+                  "' contains " ++ show (length hl) ++
+                  " hashes"
+                return hl
+              else do
+                log cfg $ "'" ++ setPath ++ "' does not exist yet"
+                return []
+
+  -- the actual set should be smaller (assuming some dupes),
+  -- but this will prevent having to do any resizing
+  maxSetSize <- (sum . catMaybes) <$> mapM getTreeSize treePaths
+  let maxSetSize' = maxSetSize + length before
+  log cfg $ "max expected set size: " ++ show maxSetSize'
+
+  let mNote = (Note . T.pack) <$> mNoteStr
+
+  -- create empty hashset and fold over the trees to add elements
+  hl <- concat <$> mapM (readTreeHashList cfg mNote) treePaths
+  let afterL = toSortedList $ do
+                 s <- emptyHashSet maxSetSize'
+                 forM_ (before ++ hl) $ uncurry (addNodeToHashSet s)
+                 return s
+
+  writeHashList setPath afterL
+  log cfg $ "final '" ++ setPath ++ "' contains " ++ show (length afterL) ++ " hashes"

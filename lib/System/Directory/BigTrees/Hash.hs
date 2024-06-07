@@ -46,6 +46,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Short as BS
+import Data.Functor ((<&>))
 import Data.Hashable (Hashable (..))
 import Data.List (isInfixOf, isPrefixOf)
 import Data.List.Split (splitOn)
@@ -63,7 +64,6 @@ import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, s
 import Test.QuickCheck.Instances.ByteString ()
 import Text.Regex.TDFA ((=~))
 import TH.Derive (Deriving, derive)
-import Data.Functor ((<&>))
 
 
 {- Checksum (sha256sum?) of a file or folder.
