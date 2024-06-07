@@ -9,10 +9,11 @@ import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.List (sortBy)
+import Data.Maybe (isJust)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Foreign.C.Types (CTime (..))
 import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
-import System.Directory.BigTrees.Hash (hashFile, hashSymlinkLiteral, hashSymlinkTarget)
+import System.Directory.BigTrees.Hash (hashFile, hashSymlinkLiteral, hashSymlinkTarget, hashFromAnnexPath)
 import System.Directory.BigTrees.HashLine (ErrMsg (..), ModTime (..), NBytes (..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
                                                 hashContents, sumNodes, treeModTime, treeNBytes,
@@ -141,7 +142,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
       -- regular file
       !mt <- unsafeInterleaveIO $ getFileDirModTime fPath
       !s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
-      !h  <- unsafeInterleaveIO $ hashFile v fPath
+
+      -- try to get hash from annex path, or hash if needed
+      !h <- case hashFromAnnexPath fPath of
+              Just h  -> return h
+              Nothing -> unsafeInterleaveIO $ hashFile v fPath
+
       !fd <- unsafeInterleaveIO $ readFileFn fPath
       -- seems not to help with memory usage?
       -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }

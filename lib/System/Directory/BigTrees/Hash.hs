@@ -142,7 +142,8 @@ hashSymlinkTarget path = do
 looksLikeAnnexPath :: FilePath -> Bool
 looksLikeAnnexPath p = (takeFileName p) =~ regex
   where
-    regex = "^SHA256E-[a-z0-9]{4}--[0-9a-f]{64}(\\..*)?$" :: String
+    -- TODO check that this isn't missing any variations
+    regex = "^SHA256E-[a-z0-9]{2,}--[0-9a-f]{64}(\\..*)?$" :: String
 
 -- Tests that this looks like an annex path, then returns the implied sha256sum.
 -- TODO proper fmap idiom here
