@@ -48,6 +48,7 @@ module System.Directory.BigTrees.HashTree
   , unit_roundtrip_Err_to_hashes
   , unit_buildProdTree_catches_permission_error
   , bench_fibo
+  , bench_roundtrip_ProdTree_to_ByteString
 
   )
   where
@@ -63,7 +64,7 @@ import System.FilePath ((</>))
 -- import System.FilePath.Glob (Pattern)
 import System.IO (hClose)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
-import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
+import Test.QuickCheck (Arbitrary (..), Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
 import Data.List (isInfixOf)
@@ -125,6 +126,13 @@ prop_roundtrip_ProdTree_to_ByteString t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
+
+bench_roundtrip_ProdTree_to_ByteString :: Int -> IO ()
+bench_roundtrip_ProdTree_to_ByteString n = do
+  (t1 :: ProdTree) <- generate $ resize n arbitrary
+  t2 <- roundtripProdTreeToHashes t1
+  -- assert $ t2 == t1
+  return ()
 
 -- TODO put in the main tmpdir
 roundtripProdTreeToHashes :: ProdTree -> IO ProdTree

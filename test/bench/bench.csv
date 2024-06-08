@@ -1,2 +1,5 @@
 Name,Mean (ps),2*Stdev (ps),Allocated,Copied,Peak Memory
-All.fibo   20,183034484,1867966,282616,36,6291456
+All.fibo   20,87310257,3493618,282616,39,6291456
+All.round-trip ProdTree to ByteString 1,249447974,21073656,154825,3324,28311552
+All.round-trip ProdTree to ByteString 2,380432302,37911978,180281,3359,28311552
+All.round-trip ProdTree to ByteString 5,537310609,25884338,246670,3526,28311552
