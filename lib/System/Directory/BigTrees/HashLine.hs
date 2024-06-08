@@ -30,19 +30,20 @@ module System.Directory.BigTrees.HashLine
   -- for testing (TODO remove?)
   -- , nameP
   -- , linesP
+  , bench_roundtrip_HashLines_to_ByteString
 
   )
   where
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq (NFData (..), force)
 import Control.Monad (void)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, take)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
-import Data.Attoparsec.Combinator (lookAhead)
+import Data.Attoparsec.Combinator (lookAhead, sepBy')
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Either (fromRight)
@@ -52,7 +53,7 @@ import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
 import TH.Derive ()
 
 -----------
@@ -210,6 +211,31 @@ prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f,
        , B8.pack $ show f
        , B8.pack node -- TODO n2b?
        ]
+
+-- Note that these random lines can't be parsed into a valid tree;
+-- the only test the HashLine parser
+bench_roundtrip_HashLines_to_ByteString :: Int -> IO Bool
+bench_roundtrip_HashLines_to_ByteString n = do
+  (ls :: [HashLine]) <- generate $ resize n arbitrary
+  let bs  = B8.unlines $ map (prettyLine Nothing) ls
+      eLs = catMaybes <$> parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
+  return $ eLs == Right ls
+
+-- prop_roundtrip_ProdTree_to_hashes :: Property
+-- prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
+  -- t1 <- pick arbitrary
+  -- t2 <- run $ roundtripProdTreeToHashes t1
+  -- assert $ t2 == t1
+
+-- linesP :: Maybe Int -> Parser [HashLine]
+-- linesP md = do
+  -- hls <- many (hashLineP md <* endOfLine) -- commentLineP <* endOfLine
+  -- return $ catMaybes hls -- TODO count skipped lines here?
+-- prop_roundtrip_ProdTree_to_ByteString t = t' == t
+  -- where
+    -- bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
+    -- t' = deserializeTree Nothing bs
+
 
 ------------
 -- parser --
