@@ -133,3 +133,5 @@ benchmarks:
       - "test/bench"
     dependencies:
       - bigtrees
+    ghc-options:
+      - "-with-rtsopts=-T"
