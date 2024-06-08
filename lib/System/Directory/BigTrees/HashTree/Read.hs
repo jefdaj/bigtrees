@@ -30,6 +30,7 @@ import Data.String.Utils (replace)
 import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..))
 import System.IO (Handle, IOMode (..), hGetLine, withFile)
 
+import Debug.Trace
 
 --- read header info from the beginning of the file ---
 
@@ -123,7 +124,7 @@ deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 deserializeTree md bs = case parseTreeFile md bs of
   Left msg -> Err { errName = Name "deserializeTree", errMsg = ErrMsg msg }
-  Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of -- TODO leak here?
+  Right (h, ls, f) -> case foldr accTrees [] $ (trace "reverse" reverse) (trace "ls" ls) of -- TODO leak here?
     []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
     ((_, tree):_) -> tree
 
@@ -146,9 +147,9 @@ accTrees :: HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 
 accTrees (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} (d, Err { errMsg = m, errName = n }):cs
 
-accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
-
-  F -> let f = File
+accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = trace "accTrees" $ case t of
+  F -> trace "F" $
+       let f = File
                  { fileData = ()
                  , nodeData = {-# SCC "FNodeData" #-} NodeData
                    { name = p
@@ -157,9 +158,9 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Fappend" #-} (Depth i, f):cs
-
-  B -> let l = Link
+       in cs ++ [(Depth i, f)]
+  B -> trace "B" $
+       let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
                  , nodeData = {-# SCC "BNodeData" #-} NodeData
                    { name = p
@@ -168,9 +169,9 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Bappend" #-} (Depth i, l):cs
-
-  L -> let l = Link
+       in cs ++ [(Depth i, l)]
+  L -> trace "L" $
+       let l = Link
                  { linkData = Just ()
                  , nodeData = {-# SCC "LNodeData" #-} NodeData
                    { name = p
@@ -179,10 +180,10 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Lappend" #-} (Depth i, l):cs
-
-  D -> let (children, siblings) = partitionChildrenSiblings i cs
-           childrenSorted = sortBy (compare `on` (treeName . snd)) children
+       in cs ++ [(Depth i, l)]
+  -- TODO bug in partition? wherever it is, put traces all around here to find it...
+  D -> trace "D" $
+       let (children, siblings) = partition (\(Depth i2, _) -> trace ("i2:" ++ show i2) i2 > (trace ("i:" ++ show i) i)) cs
            dir = Dir
                    { dirContents = {-# SCC "DdirContents" #-} map snd childrenSorted
                    , nNodes = {-# SCC "DnNodes" #-} (sum $ 1 : map (sumNodes . snd) childrenSorted)
@@ -193,9 +194,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} (Depth i, dir):siblings
-
-partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
+       in (trace "siblings" siblings) ++ [(Depth (trace "i" i), (trace "dir" dir))]
 
 readTestTree :: Maybe Int -> Bool -> [String] -> FilePath -> IO TestTree
 readTestTree md = buildTree B8.readFile
@@ -224,12 +223,11 @@ linesP md = do
 -- TODO warn about using linesP separately? Or put a deepseq in there too?
 fileP :: Maybe Int -> Parser (Header, [HashLine], Footer)
 fileP md = do
-  h <- headerP
-  b <- linesP md
-  f <- footerP
-  let res = (h, b, f)
-  -- _ <- endOfInput -- TODO put back?
-  return $ deepseq res res
+  h <- trace "headerP" headerP
+  b <- trace "linesP" $ linesP md
+  f <- trace "footerP" footerP
+  -- _ <- endOfInput
+  return (h, b, f)
 
 footerP = do
   footerLines <- sepBy' commentLineP endOfLine -- <* endOfLine

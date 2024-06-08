@@ -6,6 +6,9 @@ module Main where
 
 import System.IO
 import qualified Data.ByteString.Char8 as B8
+import System.Directory.BigTrees
+import System.Directory.BigTrees.HashTree.Read
+import Data.Attoparsec.ByteString.Char8
 
 f = "/tmp/test-trees/2017-03-27_mono_old-legacy_userhome.tar.lzo.bigtree"
 
@@ -22,9 +25,17 @@ makeReverseChunks blksize h top
         rest <- makeReverseChunks blksize h offset
         return $ blk : rest
 
+-- https://stackoverflow.com/a/25533374
+skipToNextBreak :: Parser ()
+skipToNextBreak = skipWhile undefined
+
+parseHashLinesFromChunk :: B8.ByteString -> [HashLine]
+parseHashLinesFromChunk bs = []
+
 main :: IO ()
 main = do
   B8.putStrLn "main start"
+
   withFile f ReadMode $ \h -> do
 
     fileSizeInBytes <- hFileSize h
@@ -37,7 +48,8 @@ main = do
 
     chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
 
-    putStrLn $ show $ B8.length $ head chunks
+    putStrLn $ show $ parseHashLinesFromChunk $ head chunks
 
     return ()
+
   B8.putStrLn "main finish"
