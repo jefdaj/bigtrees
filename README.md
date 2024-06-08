@@ -19,6 +19,9 @@ stack test
 
 # new way, static build in progress:
 nix build
+
+# benchmarking
+stack bench --ba --baseline=test/bench/bench.csv
 ```
 
 #### Done

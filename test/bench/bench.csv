@@ -1,0 +1,2 @@
+Name,Mean (ps),2*Stdev (ps),Allocated,Copied,Peak Memory
+All.fibo   20,183034484,1867966,282616,36,6291456
