@@ -73,6 +73,7 @@ library
     , streaming-bytestring
     , system-filepath
     , tasty
+    , tasty-bench
     , tasty-discover
     , tasty-golden
     , tasty-hspec
@@ -150,6 +151,7 @@ executable bigtrees
     , streaming-bytestring
     , system-filepath
     , tasty
+    , tasty-bench
     , tasty-discover
     , tasty-golden
     , tasty-hspec
@@ -230,6 +232,106 @@ test-suite test-app
     , streaming-bytestring
     , system-filepath
     , tasty
+    , tasty-bench
+    , tasty-discover
+    , tasty-golden
+    , tasty-hspec
+    , tasty-hunit
+    , tasty-quickcheck
+    , temporary
+    , text
+    , th-utilities
+    , time
+    , unbounded-delays
+    , unix
+    , unix-compat
+    , unordered-containers
+    , utf8-string
+  default-language: Haskell2010
+
+test-suite test-bench
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  other-modules:
+      System.Directory.BigTrees
+      System.Directory.BigTrees.Delta
+      System.Directory.BigTrees.DupeMap
+      System.Directory.BigTrees.Hash
+      System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.HashSet
+      System.Directory.BigTrees.HashTree
+      System.Directory.BigTrees.HashTree.Base
+      System.Directory.BigTrees.HashTree.Build
+      System.Directory.BigTrees.HashTree.Edit
+      System.Directory.BigTrees.HashTree.Find
+      System.Directory.BigTrees.HashTree.Read
+      System.Directory.BigTrees.HashTree.Search
+      System.Directory.BigTrees.HashTree.Write
+      System.Directory.BigTrees.HeadFoot
+      System.Directory.BigTrees.Name
+      System.Directory.BigTrees.Util
+      Cmd
+      Cmd.Diff
+      Cmd.Dupes
+      Cmd.Find
+      Cmd.Hash
+      Cmd.Info
+      Cmd.SetAdd
+      Config
+      Main
+      OldCmd
+      OldCmd.Add
+      OldCmd.Cat
+      OldCmd.Dedup
+      OldCmd.Init
+      OldCmd.Mv
+      OldCmd.Rm
+      OldCmd.Test
+      OldCmd.Update
+      Run
+      Paths_bigtrees
+  hs-source-dirs:
+      lib
+      app
+      test/bench
+  ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info -hiedir=.hie -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages
+  build-depends:
+      Glob
+    , HUnit
+    , MissingH
+    , QuickCheck
+    , aeson
+    , aeson-pretty
+    , attoparsec
+    , base
+    , base64-bytestring
+    , bigtrees
+    , bytestring
+    , crypton
+    , deepseq
+    , directory
+    , directory-tree
+    , docopt
+    , doctest-parallel
+    , filepath
+    , hashable
+    , hashtables
+    , massiv
+    , monad-parallel
+    , pretty-simple
+    , process
+    , quickcheck-instances
+    , quickcheck-unicode
+    , regex-tdfa
+    , safe-exceptions
+    , setlocale
+    , silently
+    , split
+    , streaming
+    , streaming-bytestring
+    , system-filepath
+    , tasty
+    , tasty-bench
     , tasty-discover
     , tasty-golden
     , tasty-hspec
@@ -328,6 +430,7 @@ test-suite test-doctests
     , streaming-bytestring
     , system-filepath
     , tasty
+    , tasty-bench
     , tasty-discover
     , tasty-golden
     , tasty-hspec
@@ -406,6 +509,7 @@ test-suite test-lib
     , streaming-bytestring
     , system-filepath
     , tasty
+    , tasty-bench
     , tasty-discover
     , tasty-golden
     , tasty-hspec

@@ -41,6 +41,7 @@ dependencies:
 - streaming-bytestring
 - system-filepath
 - tasty
+- tasty-bench
 - tasty-discover
 - tasty-golden
 - tasty-hspec
@@ -121,3 +122,12 @@ tests:
     - "test/doc"
     dependencies:
     - bigtrees
+
+  test-bench:
+    main: "Bench.hs"
+    source-dirs:
+      - "lib"
+      - "app"
+      - "test/bench"
+    dependencies:
+      - bigtrees
