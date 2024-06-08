@@ -47,7 +47,6 @@ module System.Directory.BigTrees.HashTree
   , unit_tree_from_bad_path_is_Err
   , unit_roundtrip_Err_to_hashes
   , unit_buildProdTree_catches_permission_error
-  , bench_fibo
   , bench_roundtrip_ProdTree_to_ByteString
 
   )
@@ -208,6 +207,3 @@ unit_buildProdTree_catches_permission_error = do
     errLooksRight e@(Err { errName = n, errMsg = ErrMsg m})
       = n2fp n == badName && "permission denied" `isInfixOf` m
     errLooksRight _ = False
-
-bench_fibo :: Int -> Integer
-bench_fibo n = if n < 2 then toInteger n else bench_fibo (n - 1) + bench_fibo (n - 2)

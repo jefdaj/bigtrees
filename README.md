@@ -21,7 +21,7 @@ stack test
 nix build
 
 # benchmarking
-stack bench --ba --baseline=test/bench/bench.csv
+stack bench --ba --baseline=test/bench/bench.csv --timeout=60s
 ```
 
 #### Done
