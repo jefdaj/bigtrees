@@ -123,6 +123,8 @@ tests:
     dependencies:
     - bigtrees
 
+benchmarks:
+
   test-bench:
     main: "Bench.hs"
     source-dirs:
