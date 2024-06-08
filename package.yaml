@@ -135,3 +135,7 @@ benchmarks:
       - bigtrees
     ghc-options:
       - "-with-rtsopts=-T"
+      - "-fproc-alignment=64"
+    # TODO how to get it to recognize these?
+    # benchmark-arguments:
+    #   - "--csv test/bench/bench.csv"

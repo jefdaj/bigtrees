@@ -472,7 +472,7 @@ benchmark test-bench
       lib
       app
       test/bench
-  ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info -hiedir=.hie -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages -with-rtsopts=-T
+  ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N -fwrite-ide-info -hiedir=.hie -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages -with-rtsopts=-T -fproc-alignment=64
   build-depends:
       Glob
     , HUnit
