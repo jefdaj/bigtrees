@@ -11,12 +11,13 @@ import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree.Read
 import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.Combinator
+import Control.Monad (forM_)
 
 -- Return all the text before the next hashline break, which should be a
 -- partial line, so it can be appended to the next chunk and properly parsed
 -- there.
 endofprevP :: Parser B8.ByteString
-endofprevP = fmap B8.pack $ manyTill anyChar $ lookAhead breakP
+endofprevP = fmap B8.pack $ (manyTill anyChar $ lookAhead breakP) <* endOfLine
 
 f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
 
@@ -42,7 +43,8 @@ type EndOfPrev = B8.ByteString
 parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrev)
 parseHashLinesFromChunk = do
   eop <- endofprevP
-  return ([], eop)
+  hls <- linesP Nothing
+  return (reverse hls, eop) -- TODO right spot to reverse? TODO also force/deepseq?
 
 main :: IO ()
 main = do
@@ -59,8 +61,9 @@ main = do
 
     chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
 
-    let res = parseOnly parseHashLinesFromChunk $ head chunks
-    putStrLn $ show res
+    case parseOnly parseHashLinesFromChunk $ (B8.append (head chunks) "") of
+      Left msg -> error msg
+      Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
 
     -- TODO tentative algorithm:
     --      1. find the first break(P) in a chunks
