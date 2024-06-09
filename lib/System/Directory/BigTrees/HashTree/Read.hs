@@ -117,6 +117,7 @@ readTree md path = deserializeTree md <$> B8.readFile path
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
 -- TODO also return header + footer?
+-- TODO should this return a *list* of trees? or is only one possible now that forests are gone?
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 deserializeTree md bs = case parseTreeFile md bs of
@@ -142,7 +143,7 @@ deserializeTree md bs = case parseTreeFile md bs of
 -- TODO use a more efficient list append type? or reverse order?
 accTrees :: HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 
-accTrees (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} cs ++ [(d, Err { errMsg = m, errName = n })]
+accTrees (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} (d, Err { errMsg = m, errName = n }):cs
 
 accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
 
@@ -155,7 +156,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Fappend" #-} cs ++ [(Depth i, f)]
+       in {-# SCC "Fappend" #-} (Depth i, f):cs
 
   B -> let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
@@ -166,7 +167,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Bappend" #-} cs ++ [(Depth i, l)]
+       in {-# SCC "Bappend" #-} (Depth i, l):cs
 
   L -> let l = Link
                  { linkData = Just ()
@@ -177,7 +178,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Lappend" #-} cs ++ [(Depth i, l)]
+       in {-# SCC "Lappend" #-} (Depth i, l):cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            dir = Dir
@@ -190,7 +191,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} siblings ++ [(Depth i, dir)]
+       in {-# SCC "Dappend" #-} (Depth i, dir):siblings
 
 partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
 
