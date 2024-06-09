@@ -2,7 +2,7 @@
 
 module System.Directory.BigTrees.HashTree.Read where
 
-import Control.DeepSeq (force)
+import Control.DeepSeq (deepseq)
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.Functor ((<&>))
@@ -197,13 +197,14 @@ readTestTree md = buildTree B8.readFile
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
 -- TODO parse rather than parseOnly?
+-- TODO count skipped lines here?
 parseTreeFile :: Maybe Int -> B8.ByteString -> Either String (Header, [HashLine], Footer)
 parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
-  hls <- many (hashLineP md <* endOfLine) -- commentLineP <* endOfLine
-  return $ catMaybes hls -- TODO count skipped lines here?
+  hls <- many (hashLineP md <* endOfLine)
+  return $ catMaybes $ deepseq hls hls -- <- force reading entire file here
 
 -- bodyP :: Maybe Int -> Parser [HashLine]
 -- bodyP md = linesP md -- <* endOfLine -- <* (lookAhead $ char '#')
