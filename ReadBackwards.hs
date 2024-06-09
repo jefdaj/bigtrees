@@ -11,7 +11,7 @@ import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree.Read
 import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.Combinator
-import Control.Monad (forM_)
+import Control.Monad (forM_, foldM)
 import Control.DeepSeq (deepseq)
 
 -- Return all the text before the next hashline break, which should be a
@@ -24,7 +24,7 @@ f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
 
 -- create list of data chunks, backwards in order through the file
 -- https://stackoverflow.com/a/33853796
-makeReverseChunks :: Int -> Handle -> Int -> IO [B8.ByteString]
+makeReverseChunks :: Int -> Handle -> Int -> IO [Chunk]
 makeReverseChunks blksize h top
   | top == 0 = return []
   | top < 0  = error "negative file index"
@@ -39,13 +39,30 @@ makeReverseChunks blksize h top
 -- skipToNextBreak :: Parser ()
 -- skipToNextBreak = skipWhile undefined
 
-type EndOfPrev = B8.ByteString
+type EndOfPrevChunk = B8.ByteString
+type Chunk          = B8.ByteString
 
-parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrev)
+parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
 parseHashLinesFromChunk = do
   eop <- endofprevP
   hls <- reverse <$> linesP Nothing
   return (deepseq hls hls, eop) -- TODO right spot to deepseq?
+
+-- Note that "prev" is the next chunk here. TODO reverse notation?
+accHashLines
+  :: ([HashLine], EndOfPrevChunk)
+  -> Chunk
+  -> Either String ([HashLine], EndOfPrevChunk)
+accHashLines (hs, eop) prev =
+  let prev' = B8.append prev eop
+  in case parseOnly parseHashLinesFromChunk prev' of
+       Left msg -> error msg
+       Right (hs', eop') -> Right (hs ++ hs', eop')
+
+-- accHashLines' hs eop next = undefined
+
+foldOverChunks :: [Chunk] -> Either String [HashLine]
+foldOverChunks cs = fmap fst $ foldM accHashLines ([], "") cs
 
 main :: IO ()
 main = do
@@ -62,9 +79,19 @@ main = do
 
     chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
 
-    case parseOnly parseHashLinesFromChunk $ (B8.append (head chunks) "") of
+    -- case parseOnly parseHashLinesFromChunk $ (B8.append (head chunks) "") of
+    --   Left msg -> error msg
+    --   Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
+
+    -- case foldM accHashLines ([], "") chunks of
+    --  Left msg -> error msg
+    --   Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
+
+    -- let hls = foldr accHashLines ([], "") chunks
+    -- mapM_ (either error (B8.putStrLn . prettyLine Nothing)) hls
+    case foldOverChunks chunks of
       Left msg -> error msg
-      Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
+      Right hs -> mapM_ (B8.putStrLn . prettyLine Nothing) hs
 
     -- TODO tentative algorithm:
     --      1. find the first break(P) in a chunks
