@@ -30,7 +30,9 @@ module System.Directory.BigTrees.HashLine
   -- for testing (TODO remove?)
   -- , nameP
   -- , linesP
-  , bench_roundtrip_HashLines_to_ByteString
+  -- , bench_roundtrip_HashLines_to_ByteString
+  , genHashLinesBS
+  , parseHashLinesBS
 
   )
   where
@@ -212,14 +214,29 @@ prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f,
        , B8.pack node -- TODO n2b?
        ]
 
+-- TODO do this without IO?
+genHashLinesBS :: Int -> IO B8.ByteString
+genHashLinesBS n = do
+  -- TODO is this resizing the lines themselves in addition to the list?
+  (ls :: [HashLine]) <- generate $ resize n arbitrary
+  let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
+  return bs
+
+-- This returns the length of the list, which can either be throw out or used
+-- to double-check that all the HashLines parsed correctly.
+parseHashLinesBS :: B8.ByteString -> Either String Int
+parseHashLinesBS bs = 
+  (length . force . catMaybes) <$>
+  parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
+
 -- Note that these random lines can't be parsed into a valid tree;
 -- the only test the HashLine parser
 bench_roundtrip_HashLines_to_ByteString :: Int -> IO Bool
 bench_roundtrip_HashLines_to_ByteString n = do
-  (ls :: [HashLine]) <- generate $ resize n arbitrary
-  let bs  = B8.unlines $ map (prettyLine Nothing) ls
-      eLs = catMaybes <$> parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
-  return $ eLs == Right ls
+  bs <- genHashLinesBS n
+  case parseHashLinesBS bs of
+    Left msg -> error msg
+    Right n' -> return $ n' == n
 
 -- prop_roundtrip_ProdTree_to_hashes :: Property
 -- prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
