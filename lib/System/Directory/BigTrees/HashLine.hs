@@ -3,6 +3,7 @@
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE BangPatterns               #-}
 
 module System.Directory.BigTrees.HashLine
 
@@ -319,8 +320,8 @@ nfilesP = numStrP <&> (NNodes . read)
 -- TODO this should still count up total files when given a max depth
 hashLineP :: Maybe Int -> Parser (Maybe HashLine)
 hashLineP md = do
-  t <- typeP
-  (Depth i) <- depthP
+  !t <- typeP
+  !(Depth i) <- depthP
   case md of
     Nothing -> Just <$> parseTheRest t (Depth i)
     Just d -> do
@@ -340,25 +341,25 @@ quoteP = char quoteChar
 
 errP :: Parser ErrMsg
 errP = do
-  _ <- quoteP
-  msg <- manyTill anyChar quoteP
+  !_ <- quoteP
+  !msg <- manyTill anyChar quoteP
   -- _ <- quoteP -- TODO does msg already parse this?
   return $ ErrMsg msg
 
 parseTheRest :: TreeType -> Depth -> Parser HashLine
 
 parseTheRest E i = do
-  m <- errP
-  n <- nameP
+  !m <- errP
+  !n <- nameP
   return $ ErrLine (i, m, n)
 
 -- this works on F or D; only E is different so far
 parseTheRest t i = do
-  h <- hashP
-  mt <- modTimeP
-  s <- sizeP
-  f <- nfilesP
-  p <- nameP
+  !h <- hashP
+  !mt <- modTimeP
+  !s <- sizeP
+  !f <- nfilesP
+  !p <- nameP
   -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
   return $ HashLine (t, i, h, mt, s, f, p)
 
