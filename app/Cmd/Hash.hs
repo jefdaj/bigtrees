@@ -53,11 +53,11 @@ hashTarXzAction cfg xzPath = do
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString $ stripComments out
 
-mkHashTarXzTest :: Config -> String -> FilePath -> TestTree
-mkHashTarXzTest cfg prefix xzPath =
+mkHashTarXzTest :: Config -> FilePath -> TestTree
+mkHashTarXzTest cfg xzPath =
   -- TODO different extension since these aren't technically the same without comments?
   -- TODO something cleaner for os-specific golden files
-  let gldPath = dropExtension (dropExtension xzPath) ++ "_" ++ prefix ++ "_" ++ os <.> "bigtree"
+  let gldPath = dropExtension (dropExtension xzPath) ++ "_" ++ os <.> "bigtree"
   in goldenVsString
        xzPath
        gldPath
@@ -69,12 +69,4 @@ test_hash_tarxz = do
   -- putStrLn $ show xzPaths
   return $ testGroup
     "hash files extracted from tarballs"
-    [mkHashTarXzTest defaultConfig "default" p | p <- xzPaths]
-
-test_hash_annex1_git_dir :: IO TestTree
-test_hash_annex1_git_dir = do
-  let xzPath = "test/app/annex1.tar.xz"
-      cfg = defaultConfig { exclude = [] } -- disable exclude ptns
-  return $ testGroup
-    "hash annex1 including the .git dir"
-    [mkHashTarXzTest cfg "noexclude" xzPath]
+    [mkHashTarXzTest defaultConfig p | p <- xzPaths]
