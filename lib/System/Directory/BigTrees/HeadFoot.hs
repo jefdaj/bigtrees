@@ -3,6 +3,7 @@
 
 module System.Directory.BigTrees.HeadFoot where
 
+import Control.DeepSeq (NFData)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.Directory.BigTrees.HashLine (hashLineFields, join)
@@ -65,6 +66,7 @@ data Header = Header
   }
   deriving (Eq, Read, Show, Generic)
 
+instance NFData   Header
 instance ToJSON   Header
 instance FromJSON Header
 
@@ -109,6 +111,7 @@ data Footer = Footer
   }
   deriving (Eq, Read, Show, Generic)
 
+instance NFData   Footer
 instance ToJSON   Footer
 instance FromJSON Footer
 

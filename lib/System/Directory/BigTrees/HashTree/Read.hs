@@ -204,18 +204,23 @@ parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
   hls <- many (hashLineP md <* endOfLine)
-  return $ catMaybes $ deepseq hls hls -- <- force reading entire file here
+  return $ catMaybes hls
 
 -- bodyP :: Maybe Int -> Parser [HashLine]
 -- bodyP md = linesP md -- <* endOfLine -- <* (lookAhead $ char '#')
 
+-- Without `deepseq`, the large chunk of memory needed by the parsers will be
+-- kept longer than necesary. Might as well force it as soon as we have the
+-- data in `NFData` structures.
+-- TODO warn about using linesP separately? Or put a deepseq in there too?
 fileP :: Maybe Int -> Parser (Header, [HashLine], Footer)
 fileP md = do
   h <- headerP
   b <- linesP md
   f <- footerP
-  -- _ <- endOfInput
-  return (h, b, f)
+  let res = (h, b, f)
+  -- _ <- endOfInput -- TODO put back?
+  return $ deepseq res res
 
 footerP = do
   footerLines <- sepBy' commentLineP endOfLine -- <* endOfLine
