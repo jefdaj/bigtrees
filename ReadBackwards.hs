@@ -34,11 +34,15 @@ makeReverseChunks blksize h top
         return $ blk : rest
 
 -- https://stackoverflow.com/a/25533374
-skipToNextBreak :: Parser ()
-skipToNextBreak = skipWhile undefined
+-- skipToNextBreak :: Parser ()
+-- skipToNextBreak = skipWhile undefined
 
-parseHashLinesFromChunk :: B8.ByteString -> [HashLine]
-parseHashLinesFromChunk bs = []
+type EndOfPrevHashLine = B8.ByteString
+
+parseHashLinesFromChunk :: Parser ([HashLine], Maybe EndOfPrevHashLine)
+parseHashLinesFromChunk = do
+  eop <- bsTillBreak
+  return ([], Just eop)
 
 main :: IO ()
 main = do
@@ -55,7 +59,8 @@ main = do
 
     chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
 
-    putStrLn $ show $ parseHashLinesFromChunk $ head chunks
+    let res = parseOnly parseHashLinesFromChunk $ head chunks
+    putStrLn $ show res
 
     -- TODO tentative algorithm:
     --      1. find the first break(P) in a chunks
