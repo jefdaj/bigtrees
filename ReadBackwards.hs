@@ -7,8 +7,16 @@ module Main where
 import System.IO
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
+import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree.Read
 import Data.Attoparsec.ByteString.Char8
+import Data.Attoparsec.Combinator
+
+-- Return all the text before the next hashline break, which should be a
+-- partial line, so it can be appended to the next chunk and properly parsed
+-- there.
+bsTillBreak :: Parser B8.ByteString
+bsTillBreak = fmap B8.pack $ manyTill anyChar $ lookAhead breakP
 
 f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
 
