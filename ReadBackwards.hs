@@ -12,6 +12,7 @@ import System.Directory.BigTrees.HashTree.Read
 import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.Combinator
 import Control.Monad (forM_)
+import Control.DeepSeq (deepseq)
 
 -- Return all the text before the next hashline break, which should be a
 -- partial line, so it can be appended to the next chunk and properly parsed
@@ -43,8 +44,8 @@ type EndOfPrev = B8.ByteString
 parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrev)
 parseHashLinesFromChunk = do
   eop <- endofprevP
-  hls <- linesP Nothing
-  return (reverse hls, eop) -- TODO right spot to reverse? TODO also force/deepseq?
+  hls <- reverse <$> linesP Nothing
+  return (deepseq hls hls, eop) -- TODO right spot to deepseq?
 
 main :: IO ()
 main = do
