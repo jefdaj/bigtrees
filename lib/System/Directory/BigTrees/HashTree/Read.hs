@@ -142,51 +142,55 @@ deserializeTree md bs = case parseTreeFile md bs of
 -- TODO use a more efficient list append type? or reverse order?
 accTrees :: HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 
-accTrees (ErrLine (d, m, n)) cs = cs ++ [(d, Err { errMsg = m, errName = n })]
+accTrees (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} cs ++ [(d, Err { errMsg = m, errName = n })]
 
 accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
+
   F -> let f = File
                  { fileData = ()
-                 , nodeData = NodeData
+                 , nodeData = {-# SCC "FNodeData" #-} NodeData
                    { name = p
                    , hash = h
                    , modTime = mt
                    , nBytes = s
                    }
                  }
-       in cs ++ [(Depth i, f)]
+       in {-# SCC "Fappend" #-} cs ++ [(Depth i, f)]
+
   B -> let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
-                 , nodeData = NodeData
+                 , nodeData = {-# SCC "BNodeData" #-} NodeData
                    { name = p
                    , hash = h
                    , modTime = mt
                    , nBytes = s
                    }
                  }
-       in cs ++ [(Depth i, l)]
+       in {-# SCC "Bappend" #-} cs ++ [(Depth i, l)]
+
   L -> let l = Link
                  { linkData = Just ()
-                 , nodeData = NodeData
+                 , nodeData = {-# SCC "LNodeData" #-} NodeData
                    { name = p
                    , hash = h
                    , modTime = mt
                    , nBytes = s
                    }
                  }
-       in cs ++ [(Depth i, l)]
+       in {-# SCC "Lappend" #-} cs ++ [(Depth i, l)]
+
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            dir = Dir
-                   { dirContents = map snd children
-                   , nNodes = (sum $ 1 : map (sumNodes . snd) children)
-                   , nodeData = NodeData
+                   { dirContents = {-# SCC "DdirContents" #-} map snd children
+                   , nNodes = {-# SCC "DnNodes" #-} (sum $ 1 : map (sumNodes . snd) children)
+                   , nodeData = {-# SCC "DNodeData" #-} NodeData
                      { name = p
                      , hash = h
                      , modTime = mt
                      , nBytes = s
                      }
                    }
-       in siblings ++ [(Depth i, dir)]
+       in {-# SCC "Dappend" #-} siblings ++ [(Depth i, dir)]
 
 partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
 
