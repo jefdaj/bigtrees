@@ -10,7 +10,7 @@ import System.Directory.BigTrees
 import System.Directory.BigTrees.HashTree.Read
 import Data.Attoparsec.ByteString.Char8
 
-f = "/tmp/test-trees/2017-03-27_mono_old-legacy_userhome.tar.lzo.bigtree"
+f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
 
 -- create list of data chunks, backwards in order through the file
 -- https://stackoverflow.com/a/33853796
@@ -41,14 +41,21 @@ main = do
     fileSizeInBytes <- hFileSize h
     putStrLn $ "size: " ++ show fileSizeInBytes
 
-		-- TODO what's a good idea here? this seems long at first, but there are
-    -- 108 chunks in the file so it's probably reasonable
+    -- TODO what's a good size here? can I pick it up from a system call?
     let blksize = 64*1024 :: Int
     putStrLn $ "blksize: " ++ show blksize
 
     chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
 
     putStrLn $ show $ parseHashLinesFromChunk $ head chunks
+
+    -- TODO tentative algorithm:
+    --      1. find the first break(P) in a chunks
+    --      2. cut off everything before that and keep it to append to the next chunk
+    --      3. if there's a prev cut off part, append to the current chunk before parsing
+    --      3. parse with hashLineP/linesP
+    --      4. deepseq each thunk's list of hashlines, then reverse them
+    --      5. although chunks are strict, at the top level we want the list of them to be lazy
 
     return ()
 
