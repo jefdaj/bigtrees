@@ -6,11 +6,12 @@ import Control.DeepSeq (deepseq)
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.Functor ((<&>))
-import Data.List (partition)
+import Data.List (partition, sortBy)
+import Data.Function (on)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..),
                                            TreeType (..), hashLineP, parseHashLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
-                                                sumNodes)
+                                                sumNodes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.Name (Name (..))
 import System.Directory.BigTrees.Util (hTakePrevUntil)
@@ -181,9 +182,10 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
        in {-# SCC "Lappend" #-} (Depth i, l):cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
+           childrenSorted = sortBy (compare `on` (treeName . snd)) children
            dir = Dir
-                   { dirContents = {-# SCC "DdirContents" #-} map snd children
-                   , nNodes = {-# SCC "DnNodes" #-} (sum $ 1 : map (sumNodes . snd) children)
+                   { dirContents = {-# SCC "DdirContents" #-} map snd childrenSorted
+                   , nNodes = {-# SCC "DnNodes" #-} (sum $ 1 : map (sumNodes . snd) childrenSorted)
                    , nodeData = {-# SCC "DNodeData" #-} NodeData
                      { name = p
                      , hash = h
