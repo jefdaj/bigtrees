@@ -175,7 +175,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                    }
                  }
        in cs ++ [(Depth i, l)]
-  D -> let (children, siblings) = partition (\(Depth i2, _) -> i2 > i) cs
+  D -> let (children, siblings) = partitionChildrenSiblings i cs
            dir = Dir
                    { dirContents = map snd children
                    , nNodes = (sum $ 1 : map (sumNodes . snd) children)
@@ -187,6 +187,8 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
                      }
                    }
        in siblings ++ [(Depth i, dir)]
+
+partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
 
 readTestTree :: Maybe Int -> Bool -> [String] -> FilePath -> IO TestTree
 readTestTree md = buildTree B8.readFile
