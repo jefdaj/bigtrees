@@ -15,8 +15,8 @@ import Data.Attoparsec.Combinator
 -- Return all the text before the next hashline break, which should be a
 -- partial line, so it can be appended to the next chunk and properly parsed
 -- there.
-bsTillBreak :: Parser B8.ByteString
-bsTillBreak = fmap B8.pack $ manyTill anyChar $ lookAhead breakP
+endofprevP :: Parser B8.ByteString
+endofprevP = fmap B8.pack $ manyTill anyChar $ lookAhead breakP
 
 f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
 
@@ -37,12 +37,12 @@ makeReverseChunks blksize h top
 -- skipToNextBreak :: Parser ()
 -- skipToNextBreak = skipWhile undefined
 
-type EndOfPrevHashLine = B8.ByteString
+type EndOfPrev = B8.ByteString
 
-parseHashLinesFromChunk :: Parser ([HashLine], Maybe EndOfPrevHashLine)
+parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrev)
 parseHashLinesFromChunk = do
-  eop <- bsTillBreak
-  return ([], Just eop)
+  eop <- endofprevP
+  return ([], eop)
 
 main :: IO ()
 main = do
