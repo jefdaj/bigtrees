@@ -32,7 +32,8 @@ f = "yesod-blog.tar.bigtree"
 -- f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
 
 -- create list of data chunks, backwards in order through the file
--- https://stackoverflow.com/a/33853796
+-- based on https://stackoverflow.com/a/33853796
+-- but i fixed a couple bugs(?)
 makeReverseChunks :: Int -> Handle -> Int -> IO [Chunk]
 makeReverseChunks blksize h end
   | end == 0 = return []
@@ -40,10 +41,10 @@ makeReverseChunks blksize h end
   | otherwise   = do
         let start = max (end - fromIntegral blksize) 0
         hSeek h AbsoluteSeek (fromIntegral start)
-        blk <- B8.hGet h (end - start)
+        blk <- B8.hGet h blksize
         rest <- makeReverseChunks blksize h start
-        -- return $ (trace ("blk " ++ show start ++ "-" ++ show end ++ ":" ++ show blk) blk) : rest
-        return $ blk : rest
+        return $ (trace ("blk " ++ show start ++ "-" ++ show end ++ ":" ++ show blk) blk) : rest
+        -- return $ blk : rest
 
 type EndOfPrevChunk = B8.ByteString
 type Chunk          = B8.ByteString
@@ -101,10 +102,10 @@ lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkPa
     initial = Right ([], "")
 
 -- TODO is 4096 a good default to assume when there really isn't any?
-getBlockSize :: FilePath -> IO Int
+getBlockSize :: FilePath -> IO Integer
 getBlockSize path = do
   stat <- getFileStatus path
-  return $ fromMaybe 4096 $ fmap fromIntegral $ fileBlockSize stat
+  return $ fromMaybe 4096 $ fmap toInteger $ fileBlockSize stat
 
 main :: IO ()
 main = do
@@ -112,6 +113,9 @@ main = do
 
   -- TODO use a multiple of this?
   blksize <- getBlockSize f
+  -- TODO what's a good size here? can I pick it up from a system call?
+  -- let blksize = 1*1024 :: Int -- TODO changing this uncovers bugs?
+  putStrLn $ "blksize: " ++ show blksize
 
   withFile f ReadMode $ \h -> do
     withFile (f ++ ".after") WriteMode $ \h2 -> do
@@ -119,11 +123,10 @@ main = do
       fileSizeInBytes <- hFileSize h
       putStrLn $ "size: " ++ show fileSizeInBytes
 
-      -- TODO what's a good size here? can I pick it up from a system call?
-      -- let blksize = 1*1024 :: Int -- TODO changing this uncovers bugs?
-      putStrLn $ "blksize: " ++ show blksize
+      let size2 = ceiling (fromInteger fileSizeInBytes / fromInteger blksize) * (fromInteger blksize)
+      putStrLn $ "size2: " ++ show size2
 
-      chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
+      chunks <- makeReverseChunks (fromIntegral blksize) h (fromInteger size2)
       -- putStrLn $ "n chunks: " ++ show (length chunks)
       -- putStrLn $ show $ Prelude.head chunks
 
