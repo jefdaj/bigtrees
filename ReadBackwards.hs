@@ -47,12 +47,12 @@ parseHashLinesFromChunk = do
 -- The list of lines here is only used by scanl, not inside this fn;
 -- the end of prev chunk is only used inside this fn and ignored by scanl.
 -- TODO come up with a better way of handling Left besides infinite recursion
-strictParseChunkHelper
+strictRevChunkParse
   :: Either String ([HashLine], EndOfPrevChunk)
   -> Chunk
   -> Either String ([HashLine], EndOfPrevChunk)
-strictParseChunkHelper (Left m) _ = Left m
-strictParseChunkHelper (Right (_, eop)) prev =
+strictRevChunkParse (Left m) _ = Left m
+strictRevChunkParse (Right (_, eop)) prev =
   let prev' = B8.append prev eop
       res   = parseOnly parseHashLinesFromChunk prev'
   in deepseq res res
@@ -61,7 +61,7 @@ strictParseChunkHelper (Right (_, eop)) prev =
 -- once accessed.
 -- WARNING once it hits an error (Left), it will keep repeating that error indefinitely
 lazyListOfStrictParsedChunks :: [Chunk] -> [Either String [HashLine]]
-lazyListOfStrictParsedChunks cs = map (fmap fst) $ scanl strictParseChunkHelper initial cs
+lazyListOfStrictParsedChunks cs = map (fmap fst) $ scanl strictRevChunkParse initial cs
   where
     initial = Right ([], "")
 
@@ -70,23 +70,24 @@ main = do
   B8.putStrLn "main start"
 
   withFile f ReadMode $ \h -> do
+    withFile (f ++ ".after") WriteMode $ \h2 -> do
 
-    fileSizeInBytes <- hFileSize h
-    putStrLn $ "size: " ++ show fileSizeInBytes
+      fileSizeInBytes <- hFileSize h
+      putStrLn $ "size: " ++ show fileSizeInBytes
 
-    -- TODO what's a good size here? can I pick it up from a system call?
-    let blksize = 64*1024 :: Int
-    putStrLn $ "blksize: " ++ show blksize
+      -- TODO what's a good size here? can I pick it up from a system call?
+      let blksize = 64*1024 :: Int
+      putStrLn $ "blksize: " ++ show blksize
 
-    chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
+      chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
 
-    -- This is an odd pattern, but seems to work alright.
-    -- The main weirdness is that if we were to ignore a Left rather than erroring,
-    -- it would then repeat that Left infinitely.
-    -- TODO think about whether there's a better idiom for this
-    let hls = lazyListOfStrictParsedChunks chunks
-    mapM_ (either error $ mapM_ $ B8.putStrLn . prettyLine Nothing) hls
+      -- This is an odd pattern, but seems to work alright.
+      -- The main weirdness is that if we were to ignore a Left rather than erroring,
+      -- it would then repeat that Left infinitely.
+      -- TODO think about whether there's a better idiom for this
+      let hls = lazyListOfStrictParsedChunks chunks
+      mapM_ (either error $ mapM_ $ B8.hPutStrLn h2 . prettyLine Nothing) hls
 
-    return ()
+      return ()
 
   B8.putStrLn "main finish"
