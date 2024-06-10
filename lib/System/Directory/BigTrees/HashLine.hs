@@ -27,6 +27,8 @@ module System.Directory.BigTrees.HashLine
   , nfilesP
   , sizeP
   , nameP
+  , numStrP
+  , typeP
 
   -- for testing (TODO remove?)
   -- , nameP
