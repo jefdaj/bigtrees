@@ -288,7 +288,7 @@ hashP = do
  - TODO can it use null-separated lines instead like -print0?
  -}
 breakP :: Parser ()
-breakP = endOfLine >> choice [void (char '#'), typeP >> numStrP >> hashP >> return (), endOfInput]
+breakP = endOfLine >> choice [void (char '#'), typeP >> numStrP >> return (), endOfInput]
 
 -- TODO should anyChar be anything except forward slash and the null char?
 nameP :: Parser Name
