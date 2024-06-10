@@ -107,12 +107,11 @@ main = do
     putStrLn $ "blksize: " ++ show blksize
 
     chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
-    -- TODO let hls = map ??? chunks
 
-    -- case parseOnly parseHashLinesFromChunk $ (B8.append (head chunks) "") of
-    --   Left msg -> error msg
-    --   Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
-
+    -- This is an odd pattern, but seems to work alright.
+    -- The main weirdness is that if we were to ignore a Left rather than erroring,
+    -- it would then repeat that Left infinitely.
+    -- TODO think about whether there's a better idiom for this
     let hls = attempt2 chunks
     mapM_ (either error $ mapM_ $ B8.putStrLn . prettyLine Nothing) hls
 
