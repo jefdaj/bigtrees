@@ -18,7 +18,7 @@ import Debug.Trace
 
 -- like regular breakP, except "no comments": it doesn't recognize '#'
 breakPNC :: Parser ()
-breakPNC = endOfLine >> choice [typeP >> numStrP >> hashP >> numStrP >> return (), endOfInput]
+breakPNC = endOfLine >> choice [typeP >> numStrP >> return (), endOfInput]
 
 -- Return all the text before the next hashline break, which should be a
 -- partial line, so it can be appended to the next chunk and properly parsed
@@ -71,9 +71,9 @@ parseHashLinesFromChunk = do
 
   remain <- manyTill anyChar endOfInput
   _ <- endOfInput
-  -- let tfn x = if null remain then x else trace ("remain: '" ++ remain ++ "'") x
-  -- return $ tfn $ (hls, eop)
-  return (hls, eop)
+  let tfn x = if null remain then x else trace ("remain: '" ++ remain ++ "'") x
+  return $ tfn $ (hls, eop)
+  -- return (hls, eop)
 
 -- The list of lines here is only used by scanl, not inside this fn;
 -- the end of prev chunk is only used inside this fn and ignored by scanl.
@@ -86,7 +86,7 @@ strictRevChunkParse (Left m) _ = Left m
 strictRevChunkParse (Right (_, eop)) prev =
   let prev' = B8.append prev $ B8.append eop "\n" -- TODO what about newline before eop here??
       res   = case parseOnly parseHashLinesFromChunk prev' of
-                Left "not enough input" -> Right ([], "")
+                Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 x -> x
   in deepseq res res
 
@@ -121,7 +121,7 @@ main = do
       -- it would then repeat that Left infinitely.
       -- TODO think about whether there's a better idiom for this
       let hls = lazyListOfStrictParsedChunks chunks
-      putStrLn $ show hls
+      -- putStrLn $ show hls
       mapM_ (either error $ mapM_ $ B8.hPutStrLn h2 . prettyLine Nothing) hls
 
       return ()
