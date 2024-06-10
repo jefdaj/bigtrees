@@ -14,6 +14,8 @@ import Data.Attoparsec.Combinator
 import Control.Monad (forM_, foldM)
 import Control.DeepSeq (deepseq)
 
+import Debug.Trace
+
 -- Return all the text before the next hashline break, which should be a
 -- partial line, so it can be appended to the next chunk and properly parsed
 -- there.
@@ -40,8 +42,13 @@ type Chunk          = B8.ByteString
 
 parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
 parseHashLinesFromChunk = do
+  -- if this is the first chunk in the file (last in iteration),
+  -- there will be a header to skip before the lines start
+  _ <- option undefined headerP -- TODO undefined should be safe here, no?
   eop <- endofprevP
   hls <- reverse <$> linesP Nothing
+  -- same with the footer, if this is the final chunk in the file (first read)
+  _ <- option undefined footerP
   return (hls, eop)
 
 -- The list of lines here is only used by scanl, not inside this fn;
@@ -53,7 +60,7 @@ strictRevChunkParse
   -> Either String ([HashLine], EndOfPrevChunk)
 strictRevChunkParse (Left m) _ = Left m
 strictRevChunkParse (Right (_, eop)) prev =
-  let prev' = B8.append prev eop
+  let prev' = B8.append prev $ B8.append eop "\n"
       res   = parseOnly parseHashLinesFromChunk prev'
   in deepseq res res
 
@@ -61,7 +68,7 @@ strictRevChunkParse (Right (_, eop)) prev =
 -- once accessed.
 -- WARNING once it hits an error (Left), it will keep repeating that error indefinitely
 lazyListOfStrictParsedChunks :: [Chunk] -> [Either String [HashLine]]
-lazyListOfStrictParsedChunks cs = map (fmap fst) $ scanl strictRevChunkParse initial cs
+lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkParse initial cs
   where
     initial = Right ([], "")
 
@@ -80,12 +87,15 @@ main = do
       putStrLn $ "blksize: " ++ show blksize
 
       chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
+      -- putStrLn $ "n chunks: " ++ show (length chunks)
+      -- putStrLn $ show $ Prelude.head chunks
 
       -- This is an odd pattern, but seems to work alright.
       -- The main weirdness is that if we were to ignore a Left rather than erroring,
       -- it would then repeat that Left infinitely.
       -- TODO think about whether there's a better idiom for this
       let hls = lazyListOfStrictParsedChunks chunks
+      -- putStrLn $ show hls
       mapM_ (either error $ mapM_ $ B8.hPutStrLn h2 . prettyLine Nothing) hls
 
       return ()
