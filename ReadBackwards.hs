@@ -13,6 +13,8 @@ import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.Combinator
 import Control.Monad (forM_, foldM)
 import Control.DeepSeq (deepseq)
+import System.Posix.Files
+import Data.Maybe (fromMaybe)
 
 import Debug.Trace
 
@@ -98,9 +100,18 @@ lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkPa
   where
     initial = Right ([], "")
 
+-- TODO is 4096 a good default to assume when there really isn't any?
+getBlockSize :: FilePath -> IO Int
+getBlockSize path = do
+  stat <- getFileStatus path
+  return $ fromMaybe 4096 $ fmap fromIntegral $ fileBlockSize stat
+
 main :: IO ()
 main = do
   B8.putStrLn "main start"
+
+  -- TODO use a multiple of this?
+  blksize <- getBlockSize f
 
   withFile f ReadMode $ \h -> do
     withFile (f ++ ".after") WriteMode $ \h2 -> do
@@ -109,7 +120,7 @@ main = do
       putStrLn $ "size: " ++ show fileSizeInBytes
 
       -- TODO what's a good size here? can I pick it up from a system call?
-      let blksize = 1*1024 :: Int -- TODO changing this uncovers bugs?
+      -- let blksize = 1*1024 :: Int -- TODO changing this uncovers bugs?
       putStrLn $ "blksize: " ++ show blksize
 
       chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
