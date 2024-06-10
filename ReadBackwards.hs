@@ -51,7 +51,11 @@ parseHashLinesFromChunk = do
   hls <- reverse <$> linesP Nothing
   -- same with the footer, if this is the final chunk in the file (first read)
   _ <- option [] $ sepBy' commentLineP endOfLine
-  return (hls, eop)
+  _ <- option [] $ many' endOfLine
+  mystery <- manyTill anyChar endOfInput
+  _ <- endOfInput
+  let tfn x = if null mystery then x else trace ("mystery: '" ++ mystery ++ "'") x
+  return $ tfn $ (hls, eop)
 
 -- The list of lines here is only used by scanl, not inside this fn;
 -- the end of prev chunk is only used inside this fn and ignored by scanl.
