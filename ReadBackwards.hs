@@ -56,12 +56,14 @@ accHashLines
   -> Chunk
   -> Either String ([[HashLine]], EndOfPrevChunk)
 accHashLines (hss, eop) prev = do
-  let prev' = B8.append prev $ trace (show $ map length hss) eop
+  let prev' = B8.append prev $ trace (show $ length hss) eop
   (hs, eop') <- parseOnly parseHashLinesFromChunk prev'
   return (hss ++ [deepseq hs hs], eop')
 
 -- accHashLines' hs eop next = undefined
 
+-- This eventually returns the right result, but we want to be able to process
+-- the list as it's running!
 foldOverChunks :: [Chunk] -> Either String [[HashLine]]
 foldOverChunks cs = fmap fst $ foldM accHashLines ([], "") cs
 
@@ -79,10 +81,11 @@ main = do
     putStrLn $ "blksize: " ++ show blksize
 
     chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
+    -- TODO let hls = map ??? chunks
 
-    -- case parseOnly parseHashLinesFromChunk $ (B8.append (head chunks) "") of
-    --   Left msg -> error msg
-    --   Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
+    case parseOnly parseHashLinesFromChunk $ (B8.append (head chunks) "") of
+      Left msg -> error msg
+      Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
 
     -- case foldM accHashLines ([], "") chunks of
     --  Left msg -> error msg
@@ -95,8 +98,10 @@ main = do
     --   Left msg -> error msg
     --   Right hss -> forM_ hss $ \hs -> mapM_ (B8.putStrLn . prettyLine Nothing) hs
 
-    forM_ (foldOverChunks chunks) $ \hs -> 
-      mapM_ (putStrLn . show) hs
+    -- forM_ (foldOverChunks chunks) $ \hs -> 
+    --   mapM_ (putStrLn . show) hs
+
+    -- let hls = map () chunks
 
     -- TODO tentative algorithm:
     --      1. find the first break(P) in a chunks
