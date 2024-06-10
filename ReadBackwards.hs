@@ -14,8 +14,6 @@ import Data.Attoparsec.Combinator
 import Control.Monad (forM_, foldM)
 import Control.DeepSeq (deepseq)
 
-import Debug.Trace
-
 -- Return all the text before the next hashline break, which should be a
 -- partial line, so it can be appended to the next chunk and properly parsed
 -- there.
@@ -37,10 +35,6 @@ makeReverseChunks blksize h top
         rest <- makeReverseChunks blksize h offset
         return $ blk : rest
 
--- https://stackoverflow.com/a/25533374
--- skipToNextBreak :: Parser ()
--- skipToNextBreak = skipWhile undefined
-
 type EndOfPrevChunk = B8.ByteString
 type Chunk          = B8.ByteString
 
@@ -48,50 +42,28 @@ parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
 parseHashLinesFromChunk = do
   eop <- endofprevP
   hls <- reverse <$> linesP Nothing
-  return (hls, eop) -- TODO right spot to deepseq?
+  return (hls, eop)
 
-
---- first attempt at a fold ---
-
--- attempt1 eventually returns the right result (I think),
--- but doesn't allow doing it lazily.
-
--- Note that "prev" is the next chunk here. TODO reverse notation?
-accHashLines
-  :: ([[HashLine]], EndOfPrevChunk)
-  -> Chunk
-  -> Either String ([[HashLine]], EndOfPrevChunk)
-accHashLines (hss, eop) prev = do
-  let prev' = B8.append prev $ trace (show $ length hss) eop
-  (hs, eop') <- parseOnly parseHashLinesFromChunk prev'
-  return (hss ++ [deepseq hs hs], eop')
-
-attempt1 :: [Chunk] -> Either String [[HashLine]]
-attempt1 cs = fmap fst $ foldM accHashLines ([], "") cs
-
-
---- second attempt ---
-
--- This time I'm only returning the new hashlines. Will that work?
--- Only the end of the prev chunk is really passed on; the hashlines are
--- accumulated by scanl but would otherwise be thrown away.
-acc2
+-- The list of lines here is only used by scanl, not inside this fn;
+-- the end of prev chunk is only used inside this fn and ignored by scanl.
+-- TODO come up with a better way of handling Left besides infinite recursion
+strictParseChunkHelper
   :: Either String ([HashLine], EndOfPrevChunk)
   -> Chunk
-  -> Either String ([HashLine], EndOfPrevChunk) 
-acc2 (Left m) _ = Left m
-acc2 (Right (_, eop)) prev = 
+  -> Either String ([HashLine], EndOfPrevChunk)
+strictParseChunkHelper (Left m) _ = Left m
+strictParseChunkHelper (Right (_, eop)) prev =
   let prev' = B8.append prev eop
       res   = parseOnly parseHashLinesFromChunk prev'
   in deepseq res res
 
-attempt2 :: [Chunk] -> [Either String [HashLine]]
-attempt2 cs = map (fmap fst) $ scanl acc2 acc cs
+-- This returns a lazy list of chunk parse results, but each one will fully evaluate
+-- once accessed.
+-- WARNING once it hits an error (Left), it will keep repeating that error indefinitely
+lazyListOfStrictParsedChunks :: [Chunk] -> [Either String [HashLine]]
+lazyListOfStrictParsedChunks cs = map (fmap fst) $ scanl strictParseChunkHelper initial cs
   where
-    acc = Right ([], "")
-
-
---- main ---
+    initial = Right ([], "")
 
 main :: IO ()
 main = do
@@ -112,7 +84,7 @@ main = do
     -- The main weirdness is that if we were to ignore a Left rather than erroring,
     -- it would then repeat that Left infinitely.
     -- TODO think about whether there's a better idiom for this
-    let hls = attempt2 chunks
+    let hls = lazyListOfStrictParsedChunks chunks
     mapM_ (either error $ mapM_ $ B8.putStrLn . prettyLine Nothing) hls
 
     return ()
