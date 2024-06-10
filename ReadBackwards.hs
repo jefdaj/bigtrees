@@ -50,6 +50,12 @@ parseHashLinesFromChunk = do
   hls <- reverse <$> linesP Nothing
   return (hls, eop) -- TODO right spot to deepseq?
 
+
+--- first attempt at a fold ---
+
+-- attempt1 eventually returns the right result (I think),
+-- but doesn't allow doing it lazily.
+
 -- Note that "prev" is the next chunk here. TODO reverse notation?
 accHashLines
   :: ([[HashLine]], EndOfPrevChunk)
@@ -60,12 +66,32 @@ accHashLines (hss, eop) prev = do
   (hs, eop') <- parseOnly parseHashLinesFromChunk prev'
   return (hss ++ [deepseq hs hs], eop')
 
--- accHashLines' hs eop next = undefined
+attempt1 :: [Chunk] -> Either String [[HashLine]]
+attempt1 cs = fmap fst $ foldM accHashLines ([], "") cs
 
--- This eventually returns the right result, but we want to be able to process
--- the list as it's running!
-foldOverChunks :: [Chunk] -> Either String [[HashLine]]
-foldOverChunks cs = fmap fst $ foldM accHashLines ([], "") cs
+
+--- second attempt ---
+
+-- This time I'm only returning the new hashlines. Will that work?
+-- Only the end of the prev chunk is really passed on; the hashlines are
+-- accumulated by scanl but would otherwise be thrown away.
+acc2
+  :: Either String ([HashLine], EndOfPrevChunk)
+  -> Chunk
+  -> Either String ([HashLine], EndOfPrevChunk) 
+acc2 (Left m) _ = Left m
+acc2 (Right (_, eop)) prev = 
+  let prev' = B8.append prev eop
+      res   = parseOnly parseHashLinesFromChunk prev'
+  in deepseq res res
+
+attempt2 :: [Chunk] -> [Either String [HashLine]]
+attempt2 cs = map (fmap fst) $ scanl acc2 acc cs
+  where
+    acc = Right ([], "")
+
+
+--- main ---
 
 main :: IO ()
 main = do
@@ -83,33 +109,12 @@ main = do
     chunks <- makeReverseChunks blksize h (fromIntegral fileSizeInBytes)
     -- TODO let hls = map ??? chunks
 
-    case parseOnly parseHashLinesFromChunk $ (B8.append (head chunks) "") of
-      Left msg -> error msg
-      Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
-
-    -- case foldM accHashLines ([], "") chunks of
-    --  Left msg -> error msg
+    -- case parseOnly parseHashLinesFromChunk $ (B8.append (head chunks) "") of
+    --   Left msg -> error msg
     --   Right (hs, eop) -> forM_ hs $ B8.putStrLn . prettyLine Nothing
 
-    -- let hls = foldr accHashLines ([], "") chunks
-    -- mapM_ (either error (B8.putStrLn . prettyLine Nothing)) hls
-
-    -- case foldOverChunks chunks of
-    --   Left msg -> error msg
-    --   Right hss -> forM_ hss $ \hs -> mapM_ (B8.putStrLn . prettyLine Nothing) hs
-
-    -- forM_ (foldOverChunks chunks) $ \hs -> 
-    --   mapM_ (putStrLn . show) hs
-
-    -- let hls = map () chunks
-
-    -- TODO tentative algorithm:
-    --      1. find the first break(P) in a chunks
-    --      2. cut off everything before that and keep it to append to the next chunk
-    --      3. if there's a prev cut off part, append to the current chunk before parsing
-    --      3. parse with hashLineP/linesP
-    --      4. deepseq each thunk's list of hashlines, then reverse them
-    --      5. although chunks are strict, at the top level we want the list of them to be lazy
+    let hls = attempt2 chunks
+    mapM_ (either error $ mapM_ $ B8.putStrLn . prettyLine Nothing) hls
 
     return ()
 
