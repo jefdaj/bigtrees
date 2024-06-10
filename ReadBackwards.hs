@@ -14,6 +14,8 @@ import Data.Attoparsec.Combinator
 import Control.Monad (forM_, foldM)
 import Control.DeepSeq (deepseq)
 
+import Debug.Trace
+
 -- Return all the text before the next hashline break, which should be a
 -- partial line, so it can be appended to the next chunk and properly parsed
 -- there.
@@ -46,22 +48,21 @@ parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
 parseHashLinesFromChunk = do
   eop <- endofprevP
   hls <- reverse <$> linesP Nothing
-  return (deepseq hls hls, eop) -- TODO right spot to deepseq?
+  return (hls, eop) -- TODO right spot to deepseq?
 
 -- Note that "prev" is the next chunk here. TODO reverse notation?
 accHashLines
-  :: ([HashLine], EndOfPrevChunk)
+  :: ([[HashLine]], EndOfPrevChunk)
   -> Chunk
-  -> Either String ([HashLine], EndOfPrevChunk)
-accHashLines (hs, eop) prev =
-  let prev' = B8.append prev eop
-  in case parseOnly parseHashLinesFromChunk prev' of
-       Left msg -> error msg
-       Right (hs', eop') -> Right (hs ++ hs', eop')
+  -> Either String ([[HashLine]], EndOfPrevChunk)
+accHashLines (hss, eop) prev = do
+  let prev' = B8.append prev $ trace (show $ map length hss) eop
+  (hs, eop') <- parseOnly parseHashLinesFromChunk prev'
+  return (hss ++ [deepseq hs hs], eop')
 
 -- accHashLines' hs eop next = undefined
 
-foldOverChunks :: [Chunk] -> Either String [HashLine]
+foldOverChunks :: [Chunk] -> Either String [[HashLine]]
 foldOverChunks cs = fmap fst $ foldM accHashLines ([], "") cs
 
 main :: IO ()
@@ -89,9 +90,13 @@ main = do
 
     -- let hls = foldr accHashLines ([], "") chunks
     -- mapM_ (either error (B8.putStrLn . prettyLine Nothing)) hls
-    case foldOverChunks chunks of
-      Left msg -> error msg
-      Right hs -> mapM_ (B8.putStrLn . prettyLine Nothing) hs
+
+    -- case foldOverChunks chunks of
+    --   Left msg -> error msg
+    --   Right hss -> forM_ hss $ \hs -> mapM_ (B8.putStrLn . prettyLine Nothing) hs
+
+    forM_ (foldOverChunks chunks) $ \hs -> 
+      mapM_ (putStrLn . show) hs
 
     -- TODO tentative algorithm:
     --      1. find the first break(P) in a chunks
