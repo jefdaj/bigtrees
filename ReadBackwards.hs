@@ -22,6 +22,7 @@ import Debug.Trace
 endofprevP :: Parser B8.ByteString
 endofprevP = fmap B8.pack $ (manyTill anyChar $ lookAhead breakP) <* endOfLine
 
+-- f = "yesod-blog.tar.bigtree"
 f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
 
 -- create list of data chunks, backwards in order through the file
@@ -44,11 +45,12 @@ parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
 parseHashLinesFromChunk = do
   -- if this is the first chunk in the file (last in iteration),
   -- there will be a header to skip before the lines start
-  _ <- option undefined headerP -- TODO undefined should be safe here, no?
+  -- _ <- option undefined headerP -- TODO undefined should be safe here, no?
+  _ <- option [] $ sepBy' commentLineP endOfLine
   eop <- endofprevP
   hls <- reverse <$> linesP Nothing
   -- same with the footer, if this is the final chunk in the file (first read)
-  _ <- option undefined footerP
+  _ <- option [] $ sepBy' commentLineP endOfLine
   return (hls, eop)
 
 -- The list of lines here is only used by scanl, not inside this fn;
