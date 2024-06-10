@@ -28,8 +28,8 @@ breakPNC = endOfLine >> choice [typeP >> numStrP >> return (), endOfInput]
 endofprevP :: Parser B8.ByteString
 endofprevP = fmap B8.pack $ (manyTill anyChar $ lookAhead breakPNC) <* endOfLine
 
-f = "yesod-blog.tar.bigtree"
--- f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
+-- f = "yesod-blog.tar.bigtree"
+f = "2022-02-17_arachno-dom0-annex.tar.lzo.bigtree"
 
 -- create list of data chunks, backwards in order through the file
 -- based on https://stackoverflow.com/a/33853796
@@ -43,8 +43,8 @@ makeReverseChunks blksize h end
         hSeek h AbsoluteSeek (fromIntegral start)
         blk <- B8.hGet h blksize
         rest <- makeReverseChunks blksize h start
-        return $ (trace ("blk " ++ show start ++ "-" ++ show end ++ ":" ++ show blk) blk) : rest
-        -- return $ blk : rest
+        -- return $ (trace ("blk " ++ show start ++ "-" ++ show end ++ ":" ++ show blk) blk) : rest
+        return $ blk : rest
 
 type EndOfPrevChunk = B8.ByteString
 type Chunk          = B8.ByteString
@@ -72,10 +72,12 @@ parseHashLinesFromChunk = do
 
   _ <- option undefined footerP
 
+  -- TODO comment out for production
   remain <- manyTill anyChar endOfInput
   _ <- endOfInput
   let tfn x = if null remain then x else trace ("remain: '" ++ remain ++ "'") x
   return $ tfn $ (hls, eop)
+
   -- return (hls, eop)
 
 -- The list of lines here is only used by scanl, not inside this fn;
@@ -90,6 +92,7 @@ strictRevChunkParse (Right (_, eop)) prev =
   let prev' = B8.append prev $ B8.append eop "\n" -- TODO what about newline before eop here??
       res   = case parseOnly parseHashLinesFromChunk prev' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
+                Left msg -> trace ("Left " ++ show msg) (Left msg)
                 x -> x
   in deepseq res res
 
