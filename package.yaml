@@ -19,7 +19,9 @@ dependencies:
 - directory-tree
 - docopt
 - doctest-parallel
+- file-io
 - filepath
+- filepath-bytestring
 - Glob
 - hashable
 - hashtables

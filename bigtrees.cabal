@@ -55,7 +55,9 @@ library
     , directory-tree
     , docopt
     , doctest-parallel
+    , file-io
     , filepath
+    , filepath-bytestring
     , hashable
     , hashtables
     , massiv
@@ -133,7 +135,9 @@ executable bigtrees
     , directory-tree
     , docopt
     , doctest-parallel
+    , file-io
     , filepath
+    , filepath-bytestring
     , hashable
     , hashtables
     , massiv
@@ -214,7 +218,9 @@ test-suite test-app
     , directory-tree
     , docopt
     , doctest-parallel
+    , file-io
     , filepath
+    , filepath-bytestring
     , hashable
     , hashtables
     , massiv
@@ -313,7 +319,9 @@ test-suite test-doctests
     , directory-tree
     , docopt
     , doctest-parallel
+    , file-io
     , filepath
+    , filepath-bytestring
     , hashable
     , hashtables
     , massiv
@@ -392,7 +400,9 @@ test-suite test-lib
     , directory-tree
     , docopt
     , doctest-parallel
+    , file-io
     , filepath
+    , filepath-bytestring
     , hashable
     , hashtables
     , massiv
@@ -491,7 +501,9 @@ benchmark test-bench
     , directory-tree
     , docopt
     , doctest-parallel
+    , file-io
     , filepath
+    , filepath-bytestring
     , hashable
     , hashtables
     , massiv

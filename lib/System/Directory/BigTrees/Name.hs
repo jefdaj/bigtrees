@@ -34,7 +34,8 @@ module System.Directory.BigTrees.Name
   -- tests
   -- TODO document tests as a group
   , myShrinkText
-  , isValidName
+  -- , isValidName TODO rewrite for PosixPath
+  , isValid
   , roundtripNameToFileName
   , prop_roundtrip_Name_to_String
   , prop_roundtrip_Name_to_FileName
@@ -55,7 +56,6 @@ import Prelude hiding (log)
 import System.Directory (canonicalizePath, getHomeDirectory)
 import qualified System.Directory.Tree as DT
 import qualified System.FilePath as SF
-import System.FilePath ((</>))
 import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
@@ -66,16 +66,21 @@ import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
 
--- | An element in a FilePath.
--- My `Name` type is defined as `Text` for efficiency, but what it really
--- means is "Text without slashes or null chars".
--- Based on the one in `System.Directory.Tree`.
--- The newtype is needed to prevent overlapping with the standard Arbitrary
--- Text instance in the tests.
+-- attempt at proper new string types:
+-- import System.FilePath ((</>))
+import qualified System.File.OsPath as SFO
+import qualified System.OsPath.Posix as SOP
+
+-- | An element in a FilePath. My `Name` type is defined as `PosixPath` for
+-- efficiency, but what it really means is "PosixPath without slashes" (or NUL
+-- bytes, but PosixPath handles that). Based on the one in
+-- `System.Directory.Tree`. The newtype is needed to prevent overlapping with
+-- the standard Arbitrary Text instance in the tests. There's no point using
+-- OsPath here because Windows is already unsupported.
 -- TODO why doesn't the tree link work right
 newtype Name
-  = Name T.Text
-  deriving (Eq, Generic, Ord, Read, Show)
+  = Name SOP.PosixPath
+  deriving (Eq, Generic, Ord, Show)
 
 deriving instance NFData Name
 
@@ -85,28 +90,30 @@ deriving instance NFData Name
 -- >>> filter isValidName $ myShrinkText "\US"
 -- ["abcABC123 \n"]
 --
-myShrinkText :: T.Text -> [T.Text]
-myShrinkText t
-  | T.length t == 1 = map T.pack $ (\[c] -> [shrink c]) $ T.unpack t
-  | T.length t < 4 = map (\c -> T.pack [c]) $ nub $ T.unpack t
-  | otherwise = shrink t
+-- TODO rewrite for PosixPath
+-- myShrinkText :: T.Text -> [T.Text]
+-- myShrinkText t
+--   | T.length t == 1 = map T.pack $ (\[c] -> [shrink c]) $ T.unpack t
+--   | T.length t < 4 = map (\c -> T.pack [c]) $ nub $ T.unpack t
+--   | otherwise = shrink t
 
 instance Arbitrary Name where
   arbitrary :: Gen Name
-  arbitrary = Name <$> (arbitrary :: Gen T.Text) `suchThat` isValidName
+  arbitrary = Name <$> (arbitrary :: Gen SOP.PosixPath) `suchThat` SOP.isValid
   -- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
   -- TODO should this use https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
   shrink :: Name -> [Name]
-  shrink (Name t) = Name <$> filter isValidName (myShrinkText t)
+  shrink (Name t) = Name <$> filter SOP.isValid (shrink t)
 
 -- TODO is there ever another separator, except on windows?
 -- TODO use this in the arbitrary filepath instance too?
 -- TODO is GHC rejecting some of these??
-isValidName :: T.Text -> Bool
-isValidName t
-  = notElem t ["", ".", ".."]
-  && (not . T.any (== '\x2f')) t -- no '/'
-  && (OS.valid . OS.fromText) t
+-- TODO rewrite for PosixPath
+-- isValidName :: T.Text -> Bool
+-- isValidName t
+--   = notElem t ["", ".", ".."]
+--   && (not . T.any (== '\x2f')) t -- no '/'
+--   && (OS.valid . OS.fromText) t
 
 -- * Convert paths to/from names
 --
@@ -116,24 +123,20 @@ isValidName t
 -- They should work on Linux and MacOS.
 
 -- | Convert a `Name` to a `FilePath`
-n2fp :: Name -> FilePath
-n2fp (Name t) = (if os == "darwin"
-                      then B.unpack . TE.encodeUtf8
-                      else T.unpack) t
+n2fp :: Name -> SOP.PosixPath -- TODO shit, do i need to use PosixPath in directory-tree too?
+n2fp (Name t) = t
 
 -- TODO this should actually convert to a list of names, right?
 -- TODO and does that make it more like components?
 -- | Convert a `FilePath` to a `Name`
-fp2n :: FilePath -> Name
-fp2n = Name . (if os == "darwin"
-                    then TE.decodeUtf8 . B.pack
-                    else T.pack)
+fp2n :: SOP.PosixPath -> Name
+fp2n = Name
 
 -- Breadcrumbs are a list of names leading to the current node, like an anchor
 -- path but sorted in reverse order because we want `cons` to be fast.
 -- TODO custom type for this?
-breadcrumbs2fp :: [Name] -> FilePath
-breadcrumbs2fp = foldl1 (flip (</>)) . map n2fp
+breadcrumbs2fp :: [Name] -> SOP.PosixPath
+breadcrumbs2fp = SOP.joinPath . map n2fp
 
 -- | I plan to make a PR to the directory-tree package adding TreeName
 -- TODO should probably unify FilePath and Name again and make this non-orphan
@@ -159,9 +162,10 @@ prop_roundtrip_Name_to_filepath n = fp2n (n2fp n) == n
 roundtripNameToFileName :: Name -> IO ()
 roundtripNameToFileName n =
   withSystemTempDirectory "bigtrees" $ \d -> do
-    let f = d </> n2fp n
-    B.writeFile f "this is a test"
-    _ <- B.readFile f
+    d' <- SOP.encodeFS d
+    let f = d' SOP.</> n2fp n
+    SFO.writeFile f "this is a test"
+    _ <- SFO.readFile f
     return ()
 
 prop_roundtrip_Name_to_FileName :: Property
