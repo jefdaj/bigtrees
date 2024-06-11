@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- Test reading a file backwards by lines, in case that drastically improves tree reading
+-- Test reading a file backwards by lines, in case that drastically improves
+-- tree reading It almost works, but has some lines mysteriously different from
+-- the main implementation. Going to iron out unicode bugs and write tests to
+-- ensure it works well before merging.  It does dramatically improve RAM usage
+-- and keep the process from being killed on large .bigtree files though.
 
 module Main where
 
