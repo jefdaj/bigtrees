@@ -47,11 +47,11 @@ import Control.DeepSeq (NFData (..), force)
 import Control.Monad (void)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
-                                         endOfLine, isEndOfLine, manyTill, parseOnly, take)
+                                         endOfLine, isEndOfLine, manyTill, parseOnly, take, takeTill)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead, sepBy')
 import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Short as BS
+import qualified Data.ByteString.Short as SBS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Either (fromRight)
 import Data.Functor ((<&>))
@@ -65,6 +65,8 @@ import TH.Derive ()
 import qualified System.OsPath as OSP
 -- import Data.List (intercalate)
 import System.IO (utf8)
+import System.OsString.Internal       -- TODO specifics
+import System.OsString.Internal.Types -- TODO specifics
 
 -----------
 -- types --
@@ -302,7 +304,7 @@ hashP :: Parser Hash
 hashP = do
   h <- take digestLength -- TODO any need to sanitize these?
   _ <- sepP
-  return $ Hash $ BS.toShort h
+  return $ Hash $ SBS.toShort h
 
 {- Like endOfLine, but make sure D/E/F comes next followed by a valid hash digest
  - instead of the rest of a filename. This catches the rare case where a
@@ -314,12 +316,14 @@ hashP = do
 breakP :: Parser ()
 breakP = endOfLine >> choice [void (char '#'), typeP >> numStrP >> return (), endOfInput]
 
--- TODO should anyChar be anything except forward slash and the null char?
+-- TODO is Attoparsec.ByteString suitable for this, or do I need to parse them some other way?
 nameP :: Parser Name
-nameP = fmap fp2n $ do
-  c  <- anyChar
-  cs <- manyTill anyChar $ lookAhead breakP
-  return (c:cs)
+nameP = do
+  -- c  <- anyChar
+  -- cs <- manyTill anyChar $ lookAhead breakP
+  -- return $ _ (c:cs)
+  bs <- takeTill (== '\n') -- TODO use tab here instead! make sure it's the right byte
+  return $ Name $ fromBytes bs -- TODO how to handle monadthrow here?
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
