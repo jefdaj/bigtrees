@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE QuasiQuotes                #-}
 
 module System.Directory.BigTrees.HashLine
 
@@ -22,7 +23,7 @@ module System.Directory.BigTrees.HashLine
   , parseHashLine
   , sepChar
   , hashLineFields
-  , join
+  , ospTabJoin
   , hashP
   , nfilesP
   , sizeP
@@ -51,6 +52,7 @@ import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead, sepBy')
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
+import qualified Data.ByteString.Lazy as LBS
 import Data.Either (fromRight)
 import Data.Functor ((<&>))
 import Data.Maybe (catMaybes)
@@ -60,6 +62,9 @@ import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
 import TH.Derive ()
+import qualified System.OsPath as OSP
+-- import Data.List (intercalate)
+import System.IO (utf8)
 
 -----------
 -- types --
@@ -119,7 +124,7 @@ newtype NNodes = NNodes Int
 data HashLine
   = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
   | ErrLine  (Depth, ErrMsg, Name)
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 instance NFData HashLine
 
@@ -175,71 +180,90 @@ instance Arbitrary HashLine where
 -- print --
 -----------
 
--- join ByteStrings with the separator char (currently tab)
-join :: [B8.ByteString] -> B8.ByteString
-join = B8.intercalate $ B8.singleton sepChar
+ospTab :: OSP.OsString
+ospTab = OSP.pack [OSP.unsafeFromChar '\t']
+
+-- TODO is there an OsString intercalate somewhere? should there be?
+-- ospTabJoin :: [OSP.OsPath] -> OSP.OsPath
+-- ospTabJoin = mconcat $ LBS.intercalate ospTab
 
 -- TODO use this more directly?
 -- For now it's only imported by HeadFoot to use in the Header
 hashLineFields :: [String]
 hashLineFields = ["type", "depth", "hash", "modtime", "nbytes", "nfiles", "name"]
 
+-- high level, how should this work? maybe the encoding of the entire thing
+-- should depend on the OsPath type being used? as in, it's all an OsString?
+-- unsafeEncodeUtf should work fine here! use it for everything except the names
+
+-- TODO replace with the official one once there's a compatible stack LTS
+myUnsafeEncodeUtf p = case OSP.encodeWith utf8 utf8 p of
+  Left msg -> error $ show msg
+  Right osp -> osp
+
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
 -- TODO rename/move this? it's used in printing lines and also find paths
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
-prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
+prettyLine :: Maybe [Name] -> HashLine -> OSP.OsString
 
 prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
-  in join
-       [ B8.pack $ show E
-       , B8.pack $ show d
-       , B8.pack $ show m -- unlike other hashline components, this should be quoted
-       , B8.pack node
-       ]
+      nonNameFields = 
+        [ myUnsafeEncodeUtf $ show E
+        , myUnsafeEncodeUtf $ show d
+        , myUnsafeEncodeUtf $ show m -- unlike other hashline components, this should be quoted
+        ]
+      nonNamePart = mconcat $ map (\(a,b) -> a <> b) $ zip nonNameFields $ repeat ospTab
+  in nonNamePart <> node
+  -- in ospTabJoin
+  --      [ myUnsafeEncodeUtf $ show E
+  --      , myUnsafeEncodeUtf $ show d
+  --      , myUnsafeEncodeUtf $ show m -- unlike other hashline components, this should be quoted
+  --      -- , node
+  --      ]
 
 prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
   let node = case breadcrumbs of
                Nothing -> n2fp name
                Just ns -> breadcrumbs2fp $ name:ns
-  in join
-       -- TODO make the metadata configurable here?
-       [ B8.pack $ show t
-       , B8.pack $ show n
-       , prettyHash h
-       , B8.pack $ show mt
-       , B8.pack $ show s
-       , B8.pack $ show f
-       , B8.pack node -- TODO n2b?
-       ]
+      nonNameFields =
+        [ myUnsafeEncodeUtf $ show t
+        , myUnsafeEncodeUtf $ show n
+        , prettyHash h
+        , myUnsafeEncodeUtf $ show mt
+        , myUnsafeEncodeUtf $ show s
+        , myUnsafeEncodeUtf $ show f
+        ]
+      nonNamePart = mconcat $ map (\(a,b) -> a <> b) $ zip nonNameFields $ repeat ospTab
+  in nonNamePart <> node
 
 -- TODO do this without IO?
-genHashLinesBS :: Int -> IO B8.ByteString
-genHashLinesBS n = do
-  -- TODO is this resizing the lines themselves in addition to the list?
-  (ls :: [HashLine]) <- generate $ resize n arbitrary
-  let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
-  return bs
-
--- This returns the length of the list, which can either be throw out or used
--- to double-check that all the HashLines parsed correctly.
-parseHashLinesBS :: B8.ByteString -> Either String Int
-parseHashLinesBS bs = 
-  (length . force . catMaybes) <$>
-  parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
-
--- Note that these random lines can't be parsed into a valid tree;
--- the only test the HashLine parser
-bench_roundtrip_HashLines_to_ByteString :: Int -> IO Bool
-bench_roundtrip_HashLines_to_ByteString n = do
-  bs <- genHashLinesBS n
-  case parseHashLinesBS bs of
-    Left msg -> error msg
-    Right n' -> return $ n' == n
+-- genHashLinesBS :: Int -> IO B8.ByteString
+-- genHashLinesBS n = do
+--   -- TODO is this resizing the lines themselves in addition to the list?
+--   (ls :: [HashLine]) <- generate $ resize n arbitrary
+--   let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
+--   return bs
+-- 
+-- -- This returns the length of the list, which can either be throw out or used
+-- -- to double-check that all the HashLines parsed correctly.
+-- parseHashLinesBS :: B8.ByteString -> Either String Int
+-- parseHashLinesBS bs = 
+--   (length . force . catMaybes) <$>
+--   parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
+-- 
+-- -- Note that these random lines can't be parsed into a valid tree;
+-- -- the only test the HashLine parser
+-- bench_roundtrip_HashLines_to_ByteString :: Int -> IO Bool
+-- bench_roundtrip_HashLines_to_ByteString n = do
+--   bs <- genHashLinesBS n
+--   case parseHashLinesBS bs of
+--     Left msg -> error msg
+--     Right n' -> return $ n' == n
 
 -- prop_roundtrip_ProdTree_to_hashes :: Property
 -- prop_roundtrip_ProdTree_to_hashes = monadicIO $ do

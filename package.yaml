@@ -29,6 +29,7 @@ dependencies:
 - massiv
 - MissingH
 - monad-parallel
+  # - os-string
 - pretty-simple
 - process
 - QuickCheck

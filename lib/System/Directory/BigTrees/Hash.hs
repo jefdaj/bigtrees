@@ -64,6 +64,8 @@ import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, s
 import Test.QuickCheck.Instances.ByteString ()
 import Text.Regex.TDFA ((=~))
 import TH.Derive (Deriving, derive)
+import qualified System.OsPath as OSP
+import System.OsString.Internal.Types -- TODO specifics
 
 
 {- Checksum (sha256sum?) of a file or folder.
@@ -94,11 +96,12 @@ instance Arbitrary Hash where
 digestLength :: Int
 digestLength = 20
 
+-- TODO remove? looks like it might already be in the proper OsString format with unHash
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
-prettyHash :: Hash -> B.ByteString
-prettyHash = BS.fromShort . unHash
+prettyHash :: Hash -> OSP.OsString
+prettyHash = OsString . PosixString . unHash
 
 compress :: B.ByteString -> BS.ShortByteString
 compress = BS.toShort . B.take digestLength . B64.encode
