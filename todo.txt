@@ -1,2 +1,3 @@
 use Data.Byteable instead of this "prettyHashLine" business?
 test whether you can round-trip ShortByteStrings <--> actual filenames, then bother with the rest!
+Arbitrary OsPath is probably defined by itself recursively and will fail :(
