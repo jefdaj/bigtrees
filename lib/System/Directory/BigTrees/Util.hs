@@ -2,6 +2,7 @@
 {-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes         #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 -- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
@@ -11,17 +12,17 @@ module System.Directory.BigTrees.Util
 
   -- $canonicalpaths
   -- TODO document these individually
-  ( absolutePath
-  , pathComponents -- TODO replace with builtin split path or similar?
+  -- ( absolutePath
+  ( pathComponents -- TODO replace with builtin split path or similar?
   -- , stripExtraDotdot
 
   -- TODO cleaner explanation of all the tests as a group here
-  , prop_absolutePaths_is_idempotent
-  , prop_absolutePaths_strips_redundant_dot
+  -- , prop_absolutePaths_is_idempotent
+  -- , prop_absolutePaths_strips_redundant_dot
   -- , prop_absolutePaths_strips_redundant_dotdot
-  , unit_absolutePath_expands_tildes
-  , unit_absolutePath_fixes_invalid_dotdot
-  , unit_absolutePath_rejects_null_path
+  -- , unit_absolutePath_expands_tildes
+  -- , unit_absolutePath_fixes_invalid_dotdot
+  -- , unit_absolutePath_rejects_null_path
 
   -- TODO pathComponents tests
   -- TODO symlink handling tests
@@ -39,18 +40,18 @@ import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import qualified Filesystem.Path.CurrentOS as OS
+-- import qualified Filesystem.Path.CurrentOS as OS
 import GHC.Generics (Generic)
 import Prelude hiding (log)
-import System.Directory (canonicalizePath, getHomeDirectory)
+import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Tree as DT
 import qualified System.OsPath as SF
-import System.OsPath ((</>))
+import System.OsPath ((</>), osp, OsPath)
 import System.Info (os)
 import System.IO (Handle, SeekMode (..), hGetChar, hSeek)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
-import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
+-- import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
@@ -82,10 +83,13 @@ import TH.Derive (Deriving, derive)
 -- TODO fp2ns?
 -- TODO does this go in Name.hs instead?
 -- | Split a `FilePath` into a list of `Name`s
-pathComponents :: FilePath -> [FilePath]
-pathComponents f = filter (not . null)
-                 $ map (filter (/= SF.pathSeparator))
-                 $ SF.splitPath f
+-- pathComponents :: OsPath -> [OsPath]
+-- pathComponents f = filter (not . null)
+--                  $ map (filter (/= SF.pathSeparator))
+--                  $ SF.splitPath f
+
+-- TODO why did I need my own version again?
+pathComponents = SF.splitPath
 
 -- n2bs :: Name -> BU.ByteString
 -- n2bs = BU.fromString . n2fp
@@ -94,36 +98,36 @@ pathComponents f = filter (not . null)
 -- bs2n :: BU.ByteString -> Name
 -- bs2n = fp2n . BU.toString
 
-newtype Path
-  = Path FilePath
-  deriving (Eq, Ord, Read, Show)
-
-instance Arbitrary Path where
-  arbitrary :: Gen Path
-  arbitrary =
-
-    -- make sure the whole thing isn't empty at the end
-    flip suchThat (\(Path p) -> p /= "") $ do
-
-      -- generate the main path body
-      -- (a single path would work here too, but i want more complex test trees)
-      -- TODO would bytestring for this more closely match the actual OS?
-      (body :: [FilePath]) <- listOf (arbitrary `suchThat` (notElem '\NUL'))
-
-      -- make sure we can handle various prefix styles
-      -- note that "" here generates "/" below
-      -- TODO also ones with variables?
-      (prefix :: String) <- oneof $ map pure ["", ".", "..", "~"]
-
-      -- ... or none at all
-      (usePrefix :: Bool) <- arbitrary
-
-      let path = SF.joinPath $ if usePrefix then prefix:body else body
-      return $ Path path
-
-  -- TODO the individual strings will shrink automatically, right?
-  shrink :: Path -> [Path]
-  shrink (Path p) = map (Path . SF.joinPath) $ shrink $ pathComponents p
+-- newtype Path
+--   = Path OsPath
+--   deriving (Eq, Ord, Show) -- TODO is read not possible?
+-- 
+-- instance Arbitrary Path where
+--   arbitrary :: Gen Path
+--   arbitrary =
+-- 
+--     -- make sure the whole thing isn't empty at the end
+--     flip suchThat (\(Path p) -> p /= "") $ do
+-- 
+--       -- generate the main path body
+--       -- (a single path would work here too, but i want more complex test trees)
+--       -- TODO would bytestring for this more closely match the actual OS?
+--       (body :: [OsPath]) <- listOf (arbitrary `suchThat` (\x -> notElem '\NUL' x && notElem '/' x))
+-- 
+--       -- make sure we can handle various prefix styles
+--       -- note that "" here generates "/" below
+--       -- TODO also ones with variables?
+--       (prefix :: OsPath) <- oneof $ map pure [mempty, [osp|.|], [osp|..|], [osp|~|]]
+-- 
+--       -- ... or none at all
+--       (usePrefix :: Bool) <- arbitrary
+-- 
+--       let path = SF.joinPath $ if usePrefix then prefix:body else body
+--       return $ Path path
+-- 
+--   -- TODO the individual strings will shrink automatically, right?
+--   shrink :: Path -> [Path]
+--   shrink (Path p) = map (Path . SF.joinPath) $ shrink $ pathComponents p
 
 -- newtype PathWithParent
 --   = PathWithParent FilePath
@@ -145,57 +149,57 @@ instance Arbitrary Path where
 -- TODO rename it cleanPath?
 -- TODO is there a potential for infinite recursion bugs here?
 -- | Do some IO and return the canonical absolute path.
-absolutePath :: FilePath -> IO (Maybe FilePath)
-absolutePath path = do
-  path' <- absolutePath' path
-  case path' of
-    Nothing -> return Nothing
-    Just p' -> if p' == path -- fixpoint
-                 then Just <$> canonicalizePath p'
-                 else absolutePath p'
-
--- based on: schoolofhaskell.com/user/dshevchenko/cookbook
-absolutePath' :: FilePath -> IO (Maybe FilePath)
-absolutePath' aPath
-    | null aPath = return Nothing
-    | "~" `isPrefixOf` aPath = do
-        homePath <- getHomeDirectory
-        return $ Just $ SF.normalise $ SF.addTrailingPathSeparator homePath
-                             ++ tail aPath
-    | otherwise = do
-        -- let aPath' = guess_dotdot aPath
-        aPath' <- absolute_path aPath
-        case guess_dotdot aPath' of
-          Nothing -> return $ Just aPath
-          Just p  -> return $ Just p
-        -- return $ guess_dotdot pathMaybeWithDots -- TODO this is totally wrong sometimes!
+-- absolutePath :: OsPath -> IO (Maybe OsPath)
+-- absolutePath path = do
+--   path' <- absolutePath' path
+--   case path' of
+--     Nothing -> return Nothing
+--     Just p' -> if p' == path -- fixpoint
+--                  then Just <$> SDO.canonicalizePath p'
+--                  else absolutePath p'
+-- 
+-- -- based on: schoolofhaskell.com/user/dshevchenko/cookbook
+-- absolutePath' :: OsPath -> IO (Maybe OsPath)
+-- absolutePath' aPath
+--     | null aPath = return Nothing
+--     | "~" `isPrefixOf` aPath = do
+--         homePath <- SDO.getHomeDirectory
+--         return $ Just $ SF.normalise $ SF.addTrailingPathSeparator homePath
+--                              ++ tail aPath
+--     | otherwise = do
+--         -- let aPath' = guess_dotdot aPath
+--         aPath' <- absolute_path aPath
+--         case guess_dotdot aPath' of
+--           Nothing -> return $ Just aPath
+--           Just p  -> return $ Just p
+--         -- return $ guess_dotdot pathMaybeWithDots -- TODO this is totally wrong sometimes!
 
 -- >>> let x = 23
 -- >>> x + 42
 -- 65
-unit_absolutePath_expands_tildes :: Assertion
-unit_absolutePath_expands_tildes = do
-  home <- getHomeDirectory
-  let explicit = home </> "xyz"
-  (Just implicit) <- absolutePath "~/xyz"
-  implicit @=? explicit
-
--- TODO is the empty string a valid relative path?
-unit_absolutePath_rejects_null_path :: Assertion
-unit_absolutePath_rejects_null_path = do
-  reject <- absolutePath ""
-  reject @=? Nothing
-
-unit_absolutePath_fixes_invalid_dotdot :: Assertion
-unit_absolutePath_fixes_invalid_dotdot = do
-  fixed <- absolutePath "/.."
-  fixed @=? Just "/"
-
-prop_absolutePaths_is_idempotent :: Path -> Property
-prop_absolutePaths_is_idempotent (Path path) = monadicIO $ do
-  (Just path' ) <- liftIO $ absolutePath path
-  (Just path'') <- liftIO $ absolutePath path'
-  assert $ path' == path''
+-- unit_absolutePath_expands_tildes :: Assertion
+-- unit_absolutePath_expands_tildes = do
+--   home <- SDO.getHomeDirectory
+--   let explicit = home </> "xyz"
+--   (Just implicit) <- absolutePath "~/xyz"
+--   implicit @=? explicit
+-- 
+-- -- TODO is the empty string a valid relative path?
+-- unit_absolutePath_rejects_null_path :: Assertion
+-- unit_absolutePath_rejects_null_path = do
+--   reject <- absolutePath ""
+--   reject @=? Nothing
+-- 
+-- unit_absolutePath_fixes_invalid_dotdot :: Assertion
+-- unit_absolutePath_fixes_invalid_dotdot = do
+--   fixed <- absolutePath "/.."
+--   fixed @=? Just "/"
+-- 
+-- prop_absolutePaths_is_idempotent :: Path -> Property
+-- prop_absolutePaths_is_idempotent (Path path) = monadicIO $ do
+--   (Just path' ) <- liftIO $ absolutePath path
+--   (Just path'') <- liftIO $ absolutePath path'
+--   assert $ path' == path''
 
 -- TODO is this technically correct, or can "<something>/.." be different from "" with symlinks?
 -- TODO is this technically correct in the absence of symlinks?
@@ -205,11 +209,11 @@ prop_absolutePaths_is_idempotent (Path path) = monadicIO $ do
 --   (Just a') <- liftIO $ absolutePath $ path </> ".."
 --   assert $ a == a'
 
-prop_absolutePaths_strips_redundant_dot :: Path -> Property
-prop_absolutePaths_strips_redundant_dot (Path path) = monadicIO $ do
-  (Just a ) <- liftIO $ absolutePath path
-  (Just a') <- liftIO $ absolutePath $ path </> "."
-  assert $ a == a'
+-- prop_absolutePaths_strips_redundant_dot :: Path -> Property
+-- prop_absolutePaths_strips_redundant_dot (Path path) = monadicIO $ do
+--   (Just a ) <- liftIO $ absolutePath path
+--   (Just a') <- liftIO $ absolutePath $ path </> "."
+--   assert $ a == a'
 
 -- * git-annex paths
 --
@@ -221,20 +225,22 @@ prop_absolutePaths_strips_redundant_dot (Path path) = monadicIO $ do
 -- We reuse the existing SHA256SUM from the link
 -- TODO also check that the link points *inside* the current tree!
 -- TODO separate function for this vs for checking whether a link points in the tree?
-isAnnexSymlink :: FilePath -> IO Bool
+isAnnexSymlink :: OsPath -> IO Bool
 isAnnexSymlink path = do
-  status <- getSymbolicLinkStatus path
-  if not (isSymbolicLink status)
+  isLink <- SDO.pathIsSymbolicLink path
+  if not isLink
     then return False
     else do
-      l <- readSymbolicLink path
-      return $ ".git/annex/objects/" `isInfixOf` l
-             && "SHA256E-" `isPrefixOf` (SF.takeBaseName l)
+      l  <- SDO.getSymbolicLinkTarget path
+      l' <- SF.decodeFS l
+      b  <- SF.decodeFS $ SF.takeBaseName l
+      return $ ".git/annex/objects/" `isInfixOf` l'
+             && "SHA256E-" `isPrefixOf` b
 
-isNonAnnexSymlink :: FilePath -> IO Bool
+isNonAnnexSymlink :: OsPath -> IO Bool
 isNonAnnexSymlink path = do
-  status <- getSymbolicLinkStatus path
-  if not (isSymbolicLink status)
+  isLink <- SDO.pathIsSymbolicLink path
+  if not isLink
     then return False
     else not <$> isAnnexSymlink path
 

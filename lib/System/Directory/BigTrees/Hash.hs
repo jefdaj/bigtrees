@@ -54,18 +54,20 @@ import GHC.Generics (Generic)
 import Streaming (Of, Stream)
 import qualified Streaming.ByteString.Char8 as Q
 import qualified Streaming.Prelude as S
-import qualified System.Directory as SD
-import System.Directory (pathIsSymbolicLink)
-import System.OsPath (takeBaseName, takeDirectory, takeFileName, (</>))
+import qualified System.Directory.OsPath as SDO
+import System.FilePath (takeFileName)
+import System.OsPath (takeBaseName, takeDirectory, (</>), encodeFS, decodeFS)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
-import System.Posix.Files (readSymbolicLink)
+-- import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
 import Text.Regex.TDFA ((=~))
 import TH.Derive (Deriving, derive)
 import qualified System.OsPath as OSP
+import System.OsPath (OsPath)
 import System.OsString.Internal.Types -- TODO specifics
+import qualified System.File.OsPath as SFO
 
 
 {- Checksum (sha256sum?) of a file or folder.
@@ -126,8 +128,12 @@ hashString = hashBytes . B.pack
 
 -- Hashes the target path itself as a string, because contents are either
 -- missing or outside the tree being scanned.
+-- TODO wouldn't it be more correct to hash literal bytes rather than decoding?
 hashSymlinkLiteral :: OsPath -> IO Hash
-hashSymlinkLiteral path = readSymbolicLink path <&> hashString
+hashSymlinkLiteral path = do
+  op <- SDO.getSymbolicLinkTarget path
+  op' <- decodeFS op
+  return $ hashString op'
 
 -- Hashes target file contents.
 -- TODO will it work recursively?
@@ -136,13 +142,13 @@ hashSymlinkLiteral path = readSymbolicLink path <&> hashString
 -- TODO fails on dirs?
 hashSymlinkTarget :: OsPath -> IO Hash
 hashSymlinkTarget path = do
-  target <- readSymbolicLink path
+  target <- SDO.getSymbolicLinkTarget path
   let p' = takeDirectory path </> target
   hashFileContentsStreaming p'
 
 -- TODO Was the .git/annex/objects prefix important?
 --      If not, don't want to make matching the actual content files any harder by adding it
-looksLikeAnnexPath :: OsPath -> Bool
+looksLikeAnnexPath :: FilePath -> Bool
 looksLikeAnnexPath p = (takeFileName p) =~ regex
   where
     -- TODO check that this isn't missing any variations
@@ -151,8 +157,10 @@ looksLikeAnnexPath p = (takeFileName p) =~ regex
 -- Tests that this looks like an annex path, then returns the implied sha256sum.
 -- TODO proper fmap idiom here
 -- TODO extract a match from the regex rather than separately here
-hashFromAnnexPath :: OsPath -> Maybe Hash
-hashFromAnnexPath p = if looksLikeAnnexPath p then Just $ pHash p else Nothing
+hashFromAnnexPath :: OsPath -> IO (Maybe Hash)
+hashFromAnnexPath p = do
+  p' <- decodeFS p
+  return $ if looksLikeAnnexPath p' then Just $ pHash p' else Nothing
   where
     pHash = Hash . compress . B.pack . last . splitOn "--" . head . splitOn "." . takeFileName
 
@@ -166,7 +174,7 @@ hashFromAnnexPath p = if looksLikeAnnexPath p then Just $ pHash p else Nothing
 -- based on https://gist.github.com/michaelt/6c6843e6dd8030e95d58
 -- TODO show when verbose?
 hashFileContentsStreaming :: OsPath -> IO Hash
-hashFileContentsStreaming path = BL.readFile path >>= hashBytesStreaming
+hashFileContentsStreaming path = SFO.readFile path >>= hashBytesStreaming
 
 -- Hashes if necessary, but tries to read it from a link first
 -- Note that this can only print file hashes, not the whole streaming trees format
@@ -189,8 +197,9 @@ unit_hash_ByteString = unHash (hashBytes "a bytestring") @=? "YTI3MDBmODFhZWE2Zj
 unit_hash_empty_file :: Assertion
 unit_hash_empty_file = do
   f <- emptySystemTempFile "empty"
-  h <- hashFile False f
-  SD.removePathForcibly f
+  f' <- encodeFS f
+  h <- hashFile False f'
+  SDO.removePathForcibly f'
   unHash h @=? "ZTNiMGM0NDI5OGZjMWMx"
 
 -- TODO clean up tmpfile handling here
@@ -199,14 +208,15 @@ unit_hash_file_contents = do
   -- filename changes each time, proving only the contents are hashed
   -- (and also that the hash algo is still working properly)
   f <- writeSystemTempFile "bigtrees" "file contents should be hashed"
-  h <- hashFile False f
-  SD.removePathForcibly f
+  f' <- encodeFS f
+  h <- hashFile False f'
+  SDO.removePathForcibly f'
   unHash h @=? "MTVjMzcwNmJjODQzYTg0"
 
 -- TODO should the source code really be used this way?
 unit_hash_image :: Assertion
 unit_hash_image = do
-  h <- hashFile False "bigtrees.png"
+  h <- hashFile False [OSP.osp|bigtrees.png|]
   unHash h @=? "NzdkN2M0OGYxZGViOTY5"
 
 -- TODO unit_hash_dir
