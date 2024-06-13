@@ -100,8 +100,8 @@ digestLength = 20
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
-prettyHash :: Hash -> OSP.OsString
-prettyHash = OsString . PosixString . unHash
+prettyHash :: Hash -> B.ByteString
+prettyHash = BS.fromShort . unHash
 
 compress :: B.ByteString -> BS.ShortByteString
 compress = BS.toShort . B.take digestLength . B64.encode

@@ -29,9 +29,9 @@ module System.Directory.BigTrees.Name
   -- TODO document these individually
   ( Name(..)
   -- , fp2n
-  -- , n2fp
+  , n2bs
   , n2op
-  , breadcrumbs2op -- TODO rename ns2op?
+  , breadcrumbs2bs
 
   -- tests
   -- TODO document tests as a group
@@ -76,6 +76,7 @@ import qualified System.OsPath as OSP
 import Test.QuickCheck.Instances.ByteString
 import qualified Data.ByteString.Short as SBS
 import qualified System.OsPath.Internal as OSPI
+import qualified Data.ByteString.Char8 as B8
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
 -- efficiency, but what it really means is "OsPath without slashes". Based on
@@ -141,14 +142,19 @@ isValidName b
 n2op :: Name -> IO OSP.OsPath
 n2op = OSPI.fromBytes . SBS.fromShort . unName
 
+n2bs :: Name -> B8.ByteString
+n2bs = SBS.fromShort . unName
+
+-- TODO double-check that this will be the right byte for posix paths (47)
+joinNames :: [Name] -> B8.ByteString
+joinNames = B8.intercalate (B8.singleton '/') . map n2bs
+
 -- Breadcrumbs are a list of names leading to the current node, like an anchor
 -- path but sorted in reverse order because we want `cons` to be fast.
 -- TODO custom type for this?
 -- TODO does this really need IO?
-breadcrumbs2op :: [Name] -> IO OSP.OsPath
-breadcrumbs2op ns = do
-  names <- mapM n2op ns
-  return $ OSP.joinPath names
+breadcrumbs2bs :: [Name] -> B8.ByteString
+breadcrumbs2bs = joinNames . reverse
 
 -- | I plan to make a PR to the directory-tree package adding TreeName
 -- TODO should probably unify FilePath and Name again and make this non-orphan

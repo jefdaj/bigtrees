@@ -23,7 +23,7 @@ module System.Directory.BigTrees.HashLine
   , parseHashLine
   , sepChar
   , hashLineFields
-  , ospTabJoin
+  -- , ospTabJoin
   , hashP
   , nfilesP
   , sizeP
@@ -59,7 +59,7 @@ import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), breadcrumbs2op, n2op)
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, n2bs)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
 import TH.Derive ()
 import qualified System.OsPath as OSP
@@ -183,8 +183,11 @@ instance Arbitrary HashLine where
 -- print --
 -----------
 
-ospTab :: OSP.OsString
-ospTab = OSP.pack [OSP.unsafeFromChar '\t']
+joinCols :: [B8.ByteString] -> B8.ByteString
+joinCols = B8.intercalate (B8.singleton sepChar)
+
+-- ospTab :: OSP.OsString
+-- ospTab = OSP.pack [OSP.unsafeFromChar '\t']
 
 -- TODO is there an OsString intercalate somewhere? should there be?
 -- ospTabJoin :: [OSP.OsPath] -> OSP.OsPath
@@ -200,73 +203,65 @@ hashLineFields = ["type", "depth", "hash", "modtime", "nbytes", "nfiles", "name"
 -- unsafeEncodeUtf should work fine here! use it for everything except the names
 
 -- TODO replace with the official one once there's a compatible stack LTS
-myUnsafeEncodeUtf p = case OSP.encodeWith utf8 utf8 p of
-  Left msg -> error $ show msg
-  Right osp -> osp
+-- myUnsafeEncodeUtf p = case OSP.encodeWith utf8 utf8 p of
+  -- Left msg -> error $ show msg
+  -- Right osp -> osp
 
 -- TODO actual Pretty instance
 -- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
 -- TODO rename/move this? it's used in printing lines and also find paths
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
-prettyLine :: Maybe [Name] -> HashLine -> IO OSP.OsString
+prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
 
-prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) = do
-  node <- case breadcrumbs of
-                 Nothing -> n2op name
-                 Just ns -> breadcrumbs2op $ name:ns
-  let nonNameFields = 
-        [ myUnsafeEncodeUtf $ show E
-        , myUnsafeEncodeUtf $ show d
-        , myUnsafeEncodeUtf $ show m -- unlike other hashline components, this should be quoted
-        ]
-      nonNamePart = mconcat $ map (<> ospTab) nonNameFields
-  return $ nonNamePart <> node
-  -- in ospTabJoin
-  --      [ myUnsafeEncodeUtf $ show E
-  --      , myUnsafeEncodeUtf $ show d
-  --      , myUnsafeEncodeUtf $ show m -- unlike other hashline components, this should be quoted
-  --      -- , node
-  --      ]
+prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
+  let node = case breadcrumbs of
+               Nothing -> n2bs name
+               Just ns -> breadcrumbs2bs $ name:ns
+  in joinCols
+       [ B8.pack $ show E
+       , B8.pack $ show d
+       , B8.pack $ show m -- unlike other hashline components, this should be quoted
+       , node
+       ]
 
-prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) = do
-  node <- case breadcrumbs of
-                 Nothing -> n2op name
-                 Just ns -> breadcrumbs2op $ name:ns
-  let nonNameFields =
-        [ myUnsafeEncodeUtf $ show t
-        , myUnsafeEncodeUtf $ show n
+prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
+  let node = case breadcrumbs of
+               Nothing -> n2bs name
+               Just ns -> breadcrumbs2bs $ name:ns
+  in joinCols
+        [ B8.pack $ show t
+        , B8.pack $ show n
         , prettyHash h
-        , myUnsafeEncodeUtf $ show mt
-        , myUnsafeEncodeUtf $ show s
-        , myUnsafeEncodeUtf $ show f
+        , B8.pack $ show mt
+        , B8.pack $ show s
+        , B8.pack $ show f
+        , node
         ]
-      nonNamePart = mconcat $ map (<> ospTab) nonNameFields
-  return $ nonNamePart <> node
 
 -- TODO do this without IO?
--- genHashLinesBS :: Int -> IO B8.ByteString
--- genHashLinesBS n = do
---   -- TODO is this resizing the lines themselves in addition to the list?
---   (ls :: [HashLine]) <- generate $ resize n arbitrary
---   let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
---   return bs
--- 
--- -- This returns the length of the list, which can either be throw out or used
--- -- to double-check that all the HashLines parsed correctly.
--- parseHashLinesBS :: B8.ByteString -> Either String Int
--- parseHashLinesBS bs = 
---   (length . force . catMaybes) <$>
---   parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
--- 
--- -- Note that these random lines can't be parsed into a valid tree;
--- -- the only test the HashLine parser
--- bench_roundtrip_HashLines_to_ByteString :: Int -> IO Bool
--- bench_roundtrip_HashLines_to_ByteString n = do
---   bs <- genHashLinesBS n
---   case parseHashLinesBS bs of
---     Left msg -> error msg
---     Right n' -> return $ n' == n
+genHashLinesBS :: Int -> IO B8.ByteString
+genHashLinesBS n = do
+  -- TODO is this resizing the lines themselves in addition to the list?
+  (ls :: [HashLine]) <- generate $ resize n arbitrary
+  let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
+  return bs
+
+-- This returns the length of the list, which can either be throw out or used
+-- to double-check that all the HashLines parsed correctly.
+parseHashLinesBS :: B8.ByteString -> Either String Int
+parseHashLinesBS bs = 
+  (length . force . catMaybes) <$>
+  parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
+
+-- Note that these random lines can't be parsed into a valid tree;
+-- the only test the HashLine parser
+bench_roundtrip_HashLines_to_ByteString :: Int -> IO Bool
+bench_roundtrip_HashLines_to_ByteString n = do
+  bs <- genHashLinesBS n
+  case parseHashLinesBS bs of
+    Left msg -> error msg
+    Right n' -> return $ n' == n
 
 -- prop_roundtrip_ProdTree_to_hashes :: Property
 -- prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
