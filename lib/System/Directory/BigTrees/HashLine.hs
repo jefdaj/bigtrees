@@ -59,7 +59,7 @@ import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp)
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2op, n2op)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
 import TH.Derive ()
 import qualified System.OsPath as OSP
@@ -209,19 +209,19 @@ myUnsafeEncodeUtf p = case OSP.encodeWith utf8 utf8 p of
 -- TODO rename/move this? it's used in printing lines and also find paths
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
 -- note: p can have weird characters, so it should be handled only as ByteString
-prettyLine :: Maybe [Name] -> HashLine -> OSP.OsString
+prettyLine :: Maybe [Name] -> HashLine -> IO OSP.OsString
 
-prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
-  let node = case breadcrumbs of
-               Nothing -> unName name
-               Just ns -> breadcrumbs2fp $ name:ns
-      nonNameFields = 
+prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) = do
+  node <- case breadcrumbs of
+                 Nothing -> n2op name
+                 Just ns -> breadcrumbs2op $ name:ns
+  let nonNameFields = 
         [ myUnsafeEncodeUtf $ show E
         , myUnsafeEncodeUtf $ show d
         , myUnsafeEncodeUtf $ show m -- unlike other hashline components, this should be quoted
         ]
       nonNamePart = mconcat $ map (<> ospTab) nonNameFields
-  in nonNamePart <> node
+  return $ nonNamePart <> node
   -- in ospTabJoin
   --      [ myUnsafeEncodeUtf $ show E
   --      , myUnsafeEncodeUtf $ show d
@@ -229,11 +229,11 @@ prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
   --      -- , node
   --      ]
 
-prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
-  let node = case breadcrumbs of
-               Nothing -> unName name
-               Just ns -> breadcrumbs2fp $ name:ns
-      nonNameFields =
+prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) = do
+  node <- case breadcrumbs of
+                 Nothing -> n2op name
+                 Just ns -> breadcrumbs2op $ name:ns
+  let nonNameFields =
         [ myUnsafeEncodeUtf $ show t
         , myUnsafeEncodeUtf $ show n
         , prettyHash h
@@ -242,7 +242,7 @@ prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f,
         , myUnsafeEncodeUtf $ show f
         ]
       nonNamePart = mconcat $ map (<> ospTab) nonNameFields
-  in nonNamePart <> node
+  return $ nonNamePart <> node
 
 -- TODO do this without IO?
 -- genHashLinesBS :: Int -> IO B8.ByteString
@@ -324,8 +324,7 @@ nameP = do
   -- cs <- manyTill anyChar $ lookAhead breakP
   -- return $ _ (c:cs)
   bs <- takeTill (== '\NUL')
-  op <- OSPI.fromBytes bs -- TODO nope that would be too easy :(
-  return $ Name op
+  return $ Name $ SBS.toShort bs
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String

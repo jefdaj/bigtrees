@@ -2,9 +2,9 @@ module System.Directory.BigTrees
 
   -- name
   ( Name(..)
-  , n2fp
-  , fp2n
-  , breadcrumbs2fp
+  -- , n2fp
+  -- , fp2n
+  , breadcrumbs2op
   , roundtripNameToFileName
 
   -- hash

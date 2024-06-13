@@ -30,7 +30,8 @@ module System.Directory.BigTrees.Name
   ( Name(..)
   -- , fp2n
   -- , n2fp
-  , breadcrumbs2fp
+  , n2op
+  , breadcrumbs2op -- TODO rename ns2op?
 
   -- tests
   -- TODO document tests as a group
@@ -73,6 +74,8 @@ import TH.Derive (Deriving, derive)
 import qualified System.File.OsPath as SFO
 import qualified System.OsPath as OSP
 import Test.QuickCheck.Instances.ByteString
+import qualified Data.ByteString.Short as SBS
+import qualified System.OsPath.Internal as OSPI
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
 -- efficiency, but what it really means is "OsPath without slashes". Based on
@@ -81,7 +84,7 @@ import Test.QuickCheck.Instances.ByteString
 -- no point using OsPath here because Windows is already unsupported.
 -- TODO why doesn't the tree link work right
 newtype Name
-  = Name { unName :: OSP.OsPath }
+  = Name { unName :: SBS.ShortByteString }
   deriving (Eq, Generic, Ord, Show)
 
 deriving instance NFData Name
@@ -99,11 +102,8 @@ deriving instance NFData Name
 --   | T.length t < 4 = map (\c -> T.pack [c]) $ nub $ T.unpack t
 --   | otherwise = shrink t
 
-instance Arbitrary OSP.OsPath where
-  arbitrary = arbitrary `suchThat` OSP.isValid
-
 instance Arbitrary Name where
-  arbitrary = Name <$> (arbitrary `suchThat` isValidName)
+  arbitrary = Name <$> ((arbitrary :: Gen SBS.ShortByteString) `suchThat` isValidName)
 
   -- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
   -- TODO should this use https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
@@ -113,11 +113,11 @@ instance Arbitrary Name where
 -- TODO is there ever another separator, except on windows?
 -- TODO use this in the arbitrary filepath instance too?
 -- TODO is GHC rejecting some of these??
-isValidName :: OSP.OsPath -> Bool
-isValidName p
-  = OSP.isValid p -- I think this checks that it doesn't contain '\NUL'
-  && notElem p [mempty, [OSP.osp|.|], [OSP.osp|..|]]
-  && (not . any (== OSP.unsafeFromChar '/')) (OSP.unpack p) -- the byte should be \x2f or 47
+isValidName :: SBS.ShortByteString -> Bool
+isValidName b
+  =  notElem b ["", ".", ".."]
+  && (not $ "/" `SBS.isInfixOf` b) -- the byte should be \x2f or 47
+  && (not $ "\NUL" `SBS.isInfixOf` b)
 
 -- * Convert paths to/from names
 --
@@ -136,11 +136,19 @@ isValidName p
 -- fp2n :: OSP.OsPath -> Name
 -- fp2n = Name
 
+-- TODO better name
+-- TODO does this really need IO? I thought it was just MonadFail
+n2op :: Name -> IO OSP.OsPath
+n2op = OSPI.fromBytes . SBS.fromShort . unName
+
 -- Breadcrumbs are a list of names leading to the current node, like an anchor
 -- path but sorted in reverse order because we want `cons` to be fast.
 -- TODO custom type for this?
-breadcrumbs2fp :: [Name] -> OSP.OsPath
-breadcrumbs2fp = OSP.joinPath . map unName
+-- TODO does this really need IO?
+breadcrumbs2op :: [Name] -> IO OSP.OsPath
+breadcrumbs2op ns = do
+  names <- mapM n2op ns
+  return $ OSP.joinPath names
 
 -- | I plan to make a PR to the directory-tree package adding TreeName
 -- TODO should probably unify FilePath and Name again and make this non-orphan
@@ -168,7 +176,8 @@ roundtripNameToFileName :: Name -> IO ()
 roundtripNameToFileName n =
   withSystemTempDirectory "bigtrees" $ \d -> do
     d' <- OSP.encodeFS d
-    let f = d' OSP.</> unName n
+    n' <- n2op n -- TODO why is fromShort needed? seems redundant
+    let f = d' OSP.</> n'
     SFO.writeFile f "this is a test"
     _ <- SFO.readFile f
     return ()
