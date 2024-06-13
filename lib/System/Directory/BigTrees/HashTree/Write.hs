@@ -3,14 +3,15 @@ module System.Directory.BigTrees.HashTree.Write where
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import Data.Maybe (isNothing)
-import qualified System.Directory as SD
+import qualified System.Directory.OsPath as SD
 import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
-import System.Directory.BigTrees.Name (n2fp)
-import System.OsPath (splitPath, (</>))
-import System.IO (Handle, IOMode (..), hFlush, stdout, withFile)
+import System.Directory.BigTrees.Name (n2op)
+import System.OsPath (splitPath, (</>), OsPath, decodeFS)
+import System.IO (Handle, IOMode (..), hFlush, stdout)
+import qualified System.File.OsPath as SFO
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
@@ -29,8 +30,8 @@ printTree = mapM_ printLine . flattenTree
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
 -- TODO how much of the config should live in the library vs the app, if we're writing it?
-writeTree :: [String] -> FilePath -> HashTree a -> IO ()
-writeTree es path tree = withFile path WriteMode $ \h -> hWriteTree es h tree
+writeTree :: [String] -> OsPath -> HashTree a -> IO ()
+writeTree es path tree = SFO.withFile path WriteMode $ \h -> hWriteTree es h tree
 
 -- TODO excludes type alias?
 hWriteTree :: [String] -> Handle -> HashTree a -> IO ()
@@ -46,31 +47,33 @@ hWriteTreeBody h tree = mapM_ (B8.hPutStrLn h) (serializeTree tree)
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its
 -- dirContents to reconstruct the tree structure.
 flattenTree :: HashTree a -> [HashLine]
-flattenTree = flattenTree' ""
+flattenTree = flattenTree' (Depth 0)
 
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
-flattenTree' :: FilePath -> HashTree a -> [HashLine]
-flattenTree' dir (Err {errName=n, errMsg=m})
-  = [ErrLine (Depth $ length (splitPath dir), m, n)]
-flattenTree' dir (File {nodeData=nd})
-  = [HashLine (F, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, 1, name nd)]
-flattenTree' dir (Link {linkData=ld, nodeData=nd}) =
+flattenTree' :: Depth -> HashTree a -> [HashLine]
+flattenTree' (Depth d) _ | d < 0 = error "tried to call flattenTree' with negative depth"
+flattenTree' d (Err {errName=n, errMsg=m}) = [ErrLine (d, m, n)]
+flattenTree' d (File {nodeData=nd})
+  = [HashLine (F, d, hash nd, modTime nd, nBytes nd, 1, name nd)]
+flattenTree' d (Link {linkData=ld, nodeData=nd}) =
   let tt = if isNothing ld then B else L
-  in [HashLine (tt, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, 1, name nd)]
-flattenTree' dir (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
+  in [HashLine (tt, d, hash nd, modTime nd, nBytes nd, 1, name nd)]
+flattenTree' (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
     n = name nd
-    subtrees = concatMap (flattenTree' $ dir </> n2fp n) cs -- TODO nappend?
-    wholeDir = HashLine (D, Depth $ length (splitPath dir), hash nd, modTime nd, nBytes nd, f, n)
+    subtrees = concatMap (flattenTree' $ Depth $ d+1) cs
+    wholeDir = HashLine (D, Depth d, hash nd, modTime nd, nBytes nd, f, n)
 
 -- this is to catch the case where it tries to write the same file twice
 -- (happened once because of macos filename case-insensitivity)
-assertNoFile :: FilePath -> IO ()
+assertNoFile :: OsPath -> IO ()
 assertNoFile path = do
   exists <- SD.doesPathExist path
-  when exists $ error $ "duplicate write to: '" ++ path ++ "'"
+  when exists $ do
+    path' <- decodeFS path
+    error $ "duplicate write to: '" ++ path' ++ "'"
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
  - Note that this calls itself recursively.
@@ -81,15 +84,17 @@ assertNoFile path = do
  - TODO take an anchored tree rather than this separate root,
  -      because it's ambiguous what to do with the root name otherwise
  -}
-writeTestTreeDir :: FilePath -> TestTree -> IO ()
+writeTestTreeDir :: OsPath -> TestTree -> IO ()
 writeTestTreeDir root (File {nodeData=nd, fileData = bs}) = do
   -- SD.createDirectoryIfMissing True root -- TODO remove
-  let path = root </> n2fp (name nd) -- TODO use IsName here!
-  -- assertNoFile path
-  B8.writeFile path bs
+  name' <- n2op $ name nd
+  let path = root </> name'
+  assertNoFile path
+  SFO.writeFile' path bs
 writeTestTreeDir root (Dir {nodeData=nd, dirContents = cs}) = do
-  let root' = root </> n2fp (name nd) -- TODO use IsName here!
-  -- assertNoFile root'
+  name' <- n2op $ name nd
+  let root' = root </> name'
+  assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'
   SD.createDirectoryIfMissing False root' -- TODO true?
   mapM_ (writeTestTreeDir root') cs
