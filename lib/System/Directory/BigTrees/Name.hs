@@ -27,8 +27,8 @@ module System.Directory.BigTrees.Name
 
   -- TODO document these individually
   ( Name(..)
-  , fp2n
-  , n2fp
+  -- , fp2n
+  -- , n2fp
   , breadcrumbs2fp
 
   -- tests
@@ -39,7 +39,7 @@ module System.Directory.BigTrees.Name
   , roundtripNameToFileName
   -- , prop_roundtrip_Name_to_String
   , prop_roundtrip_Name_to_FileName
-  , prop_roundtrip_Name_to_filepath
+  -- , prop_roundtrip_Name_to_filepath
 
   )
   where
@@ -80,7 +80,7 @@ import Test.QuickCheck.Instances.ByteString
 -- no point using OsPath here because Windows is already unsupported.
 -- TODO why doesn't the tree link work right
 newtype Name
-  = Name OSP.OsPath
+  = Name { unName :: OSP.OsPath }
   deriving (Eq, Generic, Ord, Show)
 
 deriving instance NFData Name
@@ -114,7 +114,7 @@ instance Arbitrary Name where
 -- TODO is GHC rejecting some of these??
 isValidName :: OSP.OsPath -> Bool
 isValidName p
-  = OSP.isValid p
+  = OSP.isValid p -- I think this checks that it doesn't contain '\NUL'
   && notElem p [mempty, [OSP.osp|.|], [OSP.osp|..|]]
   && (not . any (== OSP.unsafeFromChar '/')) (OSP.unpack p) -- the byte should be \x2f or 47
 
@@ -126,20 +126,20 @@ isValidName p
 -- They should work on Linux and MacOS.
 
 -- | Convert a `Name` to a `FilePath`
-n2fp :: Name -> OSP.OsPath -- TODO shit, do i need to use OsPath in directory-tree too?
-n2fp (Name t) = t
+-- n2fp :: Name -> OSP.OsPath -- TODO shit, do i need to use OsPath in directory-tree too?
+-- n2fp = unName
 
 -- TODO this should actually convert to a list of names, right?
 -- TODO and does that make it more like components?
 -- | Convert a `FilePath` to a `Name`
-fp2n :: OSP.OsPath -> Name
-fp2n = Name
+-- fp2n :: OSP.OsPath -> Name
+-- fp2n = Name
 
 -- Breadcrumbs are a list of names leading to the current node, like an anchor
 -- path but sorted in reverse order because we want `cons` to be fast.
 -- TODO custom type for this?
 breadcrumbs2fp :: [Name] -> OSP.OsPath
-breadcrumbs2fp = OSP.joinPath . map n2fp
+breadcrumbs2fp = OSP.joinPath . map unName
 
 -- | I plan to make a PR to the directory-tree package adding TreeName
 -- TODO should probably unify FilePath and Name again and make this non-orphan
@@ -158,8 +158,8 @@ breadcrumbs2fp = OSP.joinPath . map n2fp
 -- prop_roundtrip_Name_to_String :: Name -> Bool
 -- prop_roundtrip_Name_to_String n = read (show n) == n
 
-prop_roundtrip_Name_to_filepath :: Name -> Bool
-prop_roundtrip_Name_to_filepath n = fp2n (n2fp n) == n
+-- prop_roundtrip_Name_to_filepath :: Name -> Bool
+-- prop_roundtrip_Name_to_filepath n = fp2n (n2fp n) == n
 
 -- fails if there's an error writing the file,
 -- or if after writing it doesn't exist
@@ -167,7 +167,7 @@ roundtripNameToFileName :: Name -> IO ()
 roundtripNameToFileName n =
   withSystemTempDirectory "bigtrees" $ \d -> do
     d' <- OSP.encodeFS d
-    let f = d' OSP.</> n2fp n
+    let f = d' OSP.</> unName n
     SFO.writeFile f "this is a test"
     _ <- SFO.readFile f
     return ()

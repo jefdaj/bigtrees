@@ -59,7 +59,7 @@ import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp)
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
 import TH.Derive ()
 import qualified System.OsPath as OSP
@@ -212,7 +212,7 @@ prettyLine :: Maybe [Name] -> HashLine -> OSP.OsString
 
 prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
   let node = case breadcrumbs of
-               Nothing -> n2fp name
+               Nothing -> unName name
                Just ns -> breadcrumbs2fp $ name:ns
       nonNameFields = 
         [ myUnsafeEncodeUtf $ show E
@@ -230,7 +230,7 @@ prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
 
 prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
   let node = case breadcrumbs of
-               Nothing -> n2fp name
+               Nothing -> unName name
                Just ns -> breadcrumbs2fp $ name:ns
       nonNameFields =
         [ myUnsafeEncodeUtf $ show t
