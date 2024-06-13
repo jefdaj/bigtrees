@@ -11,6 +11,7 @@ import Test.QuickCheck.Instances.ByteString
 import qualified Data.ByteString.Short as SBS
 import qualified System.File.OsPath as SFO
 import qualified System.OsPath as OSP
+import qualified System.OsPath.Internal as OSPI
 -- import qualified System.OsString as OSS
 
 -- instance Arbitrary OSP.OsPath where
@@ -27,6 +28,18 @@ isValidName b
 
 main :: IO ()
 main = do
-  name <- generate ((arbitrary :: Gen SBS.ShortByteString) `suchThat` isValidName)
-  putStrLn $ show name
+
+  -- generating them isn't hard
+  bs <- generate ((arbitrary :: Gen SBS.ShortByteString) `suchThat` isValidName)
+  putStrLn $ show bs
+
+  -- converting to ospath isn't hard, as long as you're ok doing it outside parser monad?
+  op1 <- OSPI.fromBytes $ SBS.fromShort bs
+  putStrLn $ show op1
+
+  -- TODO but instead can you just "cast" it directly with a hidden constructor?
+  op2 = ...
+
+  -- TODO ok, do need to convert -> OsPath in order to write a file I guess?
+  -- maybe it's a good time to do the hidden import black magic thing?
   return ()
