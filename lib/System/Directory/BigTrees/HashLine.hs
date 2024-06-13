@@ -37,6 +37,7 @@ module System.Directory.BigTrees.HashLine
   -- , bench_roundtrip_HashLines_to_ByteString
   , genHashLinesBS
   , parseHashLinesBS
+  , joinCols
 
   )
   where

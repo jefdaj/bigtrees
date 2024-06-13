@@ -28,7 +28,7 @@ module System.Directory.BigTrees.Name
 
   -- TODO document these individually
   ( Name(..)
-  -- , fp2n
+  , fp2n
   , n2bs
   , n2op
   , breadcrumbs2bs
@@ -134,8 +134,8 @@ isValidName b
 -- TODO this should actually convert to a list of names, right?
 -- TODO and does that make it more like components?
 -- | Convert a `FilePath` to a `Name`
--- fp2n :: OSP.OsPath -> Name
--- fp2n = Name
+fp2n :: FilePath -> Name
+fp2n = Name . SBS.toShort . B8.pack
 
 -- TODO better name
 -- TODO does this really need IO? I thought it was just MonadFail

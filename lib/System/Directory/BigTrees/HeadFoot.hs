@@ -6,7 +6,7 @@ module System.Directory.BigTrees.HeadFoot where
 import Control.DeepSeq (NFData)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
-import System.Directory.BigTrees.HashLine (hashLineFields, join)
+import System.Directory.BigTrees.HashLine (hashLineFields, joinCols)
 import System.Environment (getEnv, getProgName)
 import System.Info (arch, compilerName, fullCompilerVersion, os)
 -- import System.FilePath.Glob (Pattern)
@@ -95,7 +95,7 @@ renderHeader :: Header -> B8.ByteString
 renderHeader h = B8.unlines $ commentLines $ (B8.lines header) ++ [fields]
   where
     header = B8.toStrict $ AP.encodePretty' apConf h
-    fields = join $ map B8.pack hashLineFields
+    fields = joinCols $ map B8.pack hashLineFields
 
 hWriteHeader :: Handle -> [String] -> IO ()
 hWriteHeader hdl es = do

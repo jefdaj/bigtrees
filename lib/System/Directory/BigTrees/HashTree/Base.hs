@@ -37,7 +37,7 @@ renameRoot newName tree = tree { nodeData = nd' }
 duplicateNames :: HashTree a -> HashTree a -> Bool
 duplicateNames = if os == "darwin" then macDupes else unixDupes
   where
-    macDupes  a b = map toLower (n2fp $ treeName a)
+    macDupes  a b = map toLower (n2fp $ treeName a) -- TODO rewrite these using SBS fns
                  == map toLower (n2fp $ treeName b)
     unixDupes a b = n2fp (treeName a)
                  == n2fp (treeName b)
