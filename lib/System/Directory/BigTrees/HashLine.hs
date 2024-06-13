@@ -219,7 +219,7 @@ prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
         , myUnsafeEncodeUtf $ show d
         , myUnsafeEncodeUtf $ show m -- unlike other hashline components, this should be quoted
         ]
-      nonNamePart = mconcat $ map (\(a,b) -> a <> b) $ zip nonNameFields $ repeat ospTab
+      nonNamePart = mconcat $ map (<> ospTab) nonNameFields
   in nonNamePart <> node
   -- in ospTabJoin
   --      [ myUnsafeEncodeUtf $ show E
@@ -240,7 +240,7 @@ prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f,
         , myUnsafeEncodeUtf $ show s
         , myUnsafeEncodeUtf $ show f
         ]
-      nonNamePart = mconcat $ map (\(a,b) -> a <> b) $ zip nonNameFields $ repeat ospTab
+      nonNamePart = mconcat $ map (<> ospTab) nonNameFields
   in nonNamePart <> node
 
 -- TODO do this without IO?
@@ -318,12 +318,12 @@ breakP = endOfLine >> choice [void (char '#'), typeP >> numStrP >> return (), en
 
 -- TODO is Attoparsec.ByteString suitable for this, or do I need to parse them some other way?
 nameP :: Parser Name
-nameP = do
+nameP = fmap (Name . OSP.PosixPath . SBS.toShort) $ do
   -- c  <- anyChar
   -- cs <- manyTill anyChar $ lookAhead breakP
   -- return $ _ (c:cs)
-  bs <- takeTill (== '\n') -- TODO use tab here instead! make sure it's the right byte
-  return $ Name $ fromBytes bs -- TODO how to handle monadthrow here?
+  bs <- takeTill (== '\NUL') -- TODO is NUL best here? it would keep working when allowing slashes in paths
+  return bs -- TODO how to handle monadthrow here?
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String

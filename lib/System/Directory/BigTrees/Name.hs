@@ -74,11 +74,10 @@ import qualified System.OsPath as OSP
 import Test.QuickCheck.Instances.ByteString
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
--- efficiency, but what it really means is "OsPath without slashes" (or NUL
--- bytes, but OsPath handles that). Based on the one in
--- `System.Directory.Tree`. The newtype is needed to prevent overlapping with
--- the standard Arbitrary Text instance in the tests. There's no point using
--- OsPath here because Windows is already unsupported.
+-- efficiency, but what it really means is "OsPath without slashes". Based on
+-- the one in `System.Directory.Tree`. The newtype is needed to prevent
+-- overlapping with the standard Arbitrary Text instance in the tests. There's
+-- no point using OsPath here because Windows is already unsupported.
 -- TODO why doesn't the tree link work right
 newtype Name
   = Name OSP.OsPath
