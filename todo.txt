@@ -1,5 +1,7 @@
 use Data.Byteable instead of this "prettyHashLine" business?
 did i just rediscover the need for an existing thing? binary instances
   but they don't exist for ospath yet (hasufell has an issue about where they should go)
-test whether you can round-trip ShortByteStrings <--> actual filenames, then bother with the rest!
+x test whether you can round-trip ShortByteStrings <--> actual filenames, then bother with the rest
 Arbitrary OsPath is probably defined by itself recursively and will fail :(
+should i drop using directory-tree at all in favor of something with higher code quality?
+immediate solution is obvious: use ShortByteString internally, convert to OsPath only when doing IO!
