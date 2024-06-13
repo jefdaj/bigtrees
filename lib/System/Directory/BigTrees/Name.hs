@@ -102,22 +102,21 @@ instance Arbitrary OSP.OsPath where
   arbitrary = arbitrary `suchThat` OSP.isValid
 
 instance Arbitrary Name where
-  arbitrary = Name <$> arbitrary
+  arbitrary = Name <$> (arbitrary `suchThat` isValidName)
 
   -- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
   -- TODO should this use https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
   shrink :: Name -> [Name]
-  shrink (Name t) = Name <$> filter OSP.isValid (shrink t)
+  shrink (Name t) = Name <$> filter isValidName (shrink t)
 
 -- TODO is there ever another separator, except on windows?
 -- TODO use this in the arbitrary filepath instance too?
 -- TODO is GHC rejecting some of these??
--- TODO rewrite for OsPath
--- isValidName :: T.Text -> Bool
--- isValidName t
---   = notElem t ["", ".", ".."]
---   && (not . T.any (== '\x2f')) t -- no '/'
---   && (OS.valid . OS.fromText) t
+isValidName :: OSP.OsPath -> Bool
+isValidName p
+  = OSP.isValid p
+  && notElem p [mempty, [OSP.osp|.|], [OSP.osp|..|]]
+  && (not . any (== OSP.unsafeFromChar '/')) (OSP.unpack p) -- the byte should be \x2f or 47
 
 -- * Convert paths to/from names
 --
