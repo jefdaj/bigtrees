@@ -1,3 +1,5 @@
 use Data.Byteable instead of this "prettyHashLine" business?
+did i just rediscover the need for an existing thing? binary instances
+  but they don't exist for ospath yet (hasufell has an issue about where they should go)
 test whether you can round-trip ShortByteStrings <--> actual filenames, then bother with the rest!
 Arbitrary OsPath is probably defined by itself recursively and will fail :(
