@@ -162,13 +162,6 @@ breadcrumbs2bs = joinNames . reverse
 --   n2p = n2fp
 --   p2n = fp2n
 
--- n2bs :: Name -> BU.ByteString
--- n2bs = BU.fromString . n2fp
-
--- TODO should this have the option for a decoding error?
--- bs2n :: BU.ByteString -> Name
--- bs2n = fp2n . BU.toString
-
 -- TODO this is impossible, right? get rid of it
 -- prop_roundtrip_Name_to_String :: Name -> Bool
 -- prop_roundtrip_Name_to_String n = read (show n) == n

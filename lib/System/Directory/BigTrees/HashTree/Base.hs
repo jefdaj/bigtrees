@@ -8,6 +8,7 @@
 module System.Directory.BigTrees.HashTree.Base where
 
 import Control.DeepSeq (NFData)
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import Data.Char (toLower)
@@ -17,10 +18,11 @@ import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), ModTime (..),
                                            NBytes (..), NNodes (..), TreeType (..), bsBytes)
-import System.Directory.BigTrees.Name (Name (..), fp2n, n2fp)
+import System.Directory.BigTrees.Name (Name (..), fp2n, n2bs)
 import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive (Deriving, derive)
+import qualified Data.CaseInsensitive as CI
 
 -- import Debug.Trace
 
@@ -34,13 +36,13 @@ renameRoot newName tree = tree { nodeData = nd' }
 
 -- for removing duplicate filenames using nubBy, taking into account
 -- case-insensitivity on apple filesystem
+-- TODO does CI.mk roughly match HFS+ case insensitivity?
 duplicateNames :: HashTree a -> HashTree a -> Bool
 duplicateNames = if os == "darwin" then macDupes else unixDupes
   where
-    macDupes  a b = map toLower (n2fp $ treeName a) -- TODO rewrite these using SBS fns
-                 == map toLower (n2fp $ treeName b)
-    unixDupes a b = n2fp (treeName a)
-                 == n2fp (treeName b)
+    unixDupes a b = treeName a == treeName b
+    macDupes a b = (CI.mk $ n2bs $ treeName a)
+                == (CI.mk $ n2bs $ treeName b)
 
 -- TODO Integer? not sure how big it could get
 sumNodes :: HashTree a -> NNodes
@@ -77,7 +79,7 @@ data NodeData = NodeData
   , modTime :: ModTime
   , nBytes  :: NBytes
   }
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 instance NFData NodeData
 
@@ -108,7 +110,7 @@ data HashTree a
       , nNodes      :: NNodes -- TODO Integer? include in tree files
       , dirContents :: [HashTree a] -- TODO rename dirContents?
       }
-  deriving (Generic, Ord, Read, Show)
+  deriving (Generic, Ord, Show)
 
 isErr :: forall a. HashTree a -> Bool
 isErr (Err {}) = True

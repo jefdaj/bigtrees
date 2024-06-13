@@ -13,6 +13,7 @@ dependencies:
 - base
 - base64-bytestring
 - bytestring
+- case-insensitive
 - crypton
 - deepseq
 - directory
