@@ -9,7 +9,7 @@ import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes 
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Name (n2fp)
-import System.FilePath (splitPath, (</>))
+import System.OsPath (splitPath, (</>))
 import System.IO (Handle, IOMode (..), hFlush, stdout, withFile)
 
 -- TODO can Foldable or Traversable simplify these?

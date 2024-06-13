@@ -56,7 +56,7 @@ import qualified Streaming.ByteString.Char8 as Q
 import qualified Streaming.Prelude as S
 import qualified System.Directory as SD
 import System.Directory (pathIsSymbolicLink)
-import System.FilePath (takeBaseName, takeDirectory, takeFileName, (</>))
+import System.OsPath (takeBaseName, takeDirectory, takeFileName, (</>))
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Posix.Files (readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
@@ -126,7 +126,7 @@ hashString = hashBytes . B.pack
 
 -- Hashes the target path itself as a string, because contents are either
 -- missing or outside the tree being scanned.
-hashSymlinkLiteral :: FilePath -> IO Hash
+hashSymlinkLiteral :: OsPath -> IO Hash
 hashSymlinkLiteral path = readSymbolicLink path <&> hashString
 
 -- Hashes target file contents.
@@ -134,7 +134,7 @@ hashSymlinkLiteral path = readSymbolicLink path <&> hashString
 -- TODO guard against this pointing outside the tree being scanned;
 --      we want to treat that as a broken link instead
 -- TODO fails on dirs?
-hashSymlinkTarget :: FilePath -> IO Hash
+hashSymlinkTarget :: OsPath -> IO Hash
 hashSymlinkTarget path = do
   target <- readSymbolicLink path
   let p' = takeDirectory path </> target
@@ -142,7 +142,7 @@ hashSymlinkTarget path = do
 
 -- TODO Was the .git/annex/objects prefix important?
 --      If not, don't want to make matching the actual content files any harder by adding it
-looksLikeAnnexPath :: FilePath -> Bool
+looksLikeAnnexPath :: OsPath -> Bool
 looksLikeAnnexPath p = (takeFileName p) =~ regex
   where
     -- TODO check that this isn't missing any variations
@@ -151,13 +151,13 @@ looksLikeAnnexPath p = (takeFileName p) =~ regex
 -- Tests that this looks like an annex path, then returns the implied sha256sum.
 -- TODO proper fmap idiom here
 -- TODO extract a match from the regex rather than separately here
-hashFromAnnexPath :: FilePath -> Maybe Hash
+hashFromAnnexPath :: OsPath -> Maybe Hash
 hashFromAnnexPath p = if looksLikeAnnexPath p then Just $ pHash p else Nothing
   where
     pHash = Hash . compress . B.pack . last . splitOn "--" . head . splitOn "." . takeFileName
 
 -- see: https://stackoverflow.com/a/30537010
--- hashFileContents :: FilePath -> IO Hash
+-- hashFileContents :: OsPath -> IO Hash
 -- hashFileContents path = do -- TODO hashFileContents
 --   !sha256sum <- fmap hashBytes $ B.readFile path
 --   -- when verbose (putStrLn $ sha256sum ++ " " ++ path)
@@ -165,14 +165,14 @@ hashFromAnnexPath p = if looksLikeAnnexPath p then Just $ pHash p else Nothing
 
 -- based on https://gist.github.com/michaelt/6c6843e6dd8030e95d58
 -- TODO show when verbose?
-hashFileContentsStreaming :: FilePath -> IO Hash
+hashFileContentsStreaming :: OsPath -> IO Hash
 hashFileContentsStreaming path = BL.readFile path >>= hashBytesStreaming
 
 -- Hashes if necessary, but tries to read it from a link first
 -- Note that this can only print file hashes, not the whole streaming trees format
 -- TODO remove the unused verbose flag?
 -- TODO handle case where the file is itself a git-annex content file!
-hashFile :: Bool -> FilePath -> IO Hash
+hashFile :: Bool -> OsPath -> IO Hash
 hashFile _ path = hashFileContentsStreaming path
 
 -- note: no need to explicitly match against sha256sum because the manual examples cover that

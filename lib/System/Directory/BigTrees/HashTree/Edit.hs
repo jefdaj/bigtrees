@@ -16,7 +16,7 @@ import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Name (fp2n)
 import System.Directory.BigTrees.Util (pathComponents)
-import System.FilePath (joinPath, splitPath)
+import System.OsPath (joinPath, splitPath)
 
 
 -------------------
@@ -25,7 +25,7 @@ import System.FilePath (joinPath, splitPath)
 
 -- TODO use this to implement hashing multiple trees at once?
 -- TODO is the mod time right?
-wrapInEmptyDir :: FilePath -> HashTree a -> HashTree a
+wrapInEmptyDir :: OsPath -> HashTree a -> HashTree a
 wrapInEmptyDir n t = Dir
   { dirContents = cs
   , nNodes  = sumNodes t + 1
@@ -40,14 +40,14 @@ wrapInEmptyDir n t = Dir
     cs = [t]
     h = hashContents cs
 
-wrapInEmptyDirs :: FilePath -> HashTree a -> HashTree a
+wrapInEmptyDirs :: OsPath -> HashTree a -> HashTree a
 wrapInEmptyDirs p t = case pathComponents p of
   []     -> error "wrapInEmptyDirs needs at least one dir"
   [n]    -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
-addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
+addSubTree :: HashTree a -> HashTree a -> OsPath -> HashTree a
 addSubTree (Err  {}) sub path | null (pathComponents path) = sub -- TODO is this right?
 addSubTree (File {}) _ _ = error "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
@@ -84,7 +84,7 @@ addSubTree main sub path = main { nodeData = nd', dirContents = cs', nNodes = n'
  - Buuuut for now can just ignore nNodes as it's not needed for the rm itself.
  - TODO does this actually solve nNodes too?
  -}
-rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
+rmSubTree :: HashTree a -> OsPath -> Either String (HashTree a)
 rmSubTree (Err  {}) p = Left $ "no such subtree: '" ++ p ++ "'" -- TODO is this right?
 rmSubTree (File {}) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir {dirContents=cs, nNodes=n}) p = case dropTo d p of

@@ -44,8 +44,8 @@ import GHC.Generics (Generic)
 import Prelude hiding (log)
 import System.Directory (canonicalizePath, getHomeDirectory)
 import qualified System.Directory.Tree as DT
-import qualified System.FilePath as SF
-import System.FilePath ((</>))
+import qualified System.OsPath as SF
+import System.OsPath ((</>))
 import System.Info (os)
 import System.IO (Handle, SeekMode (..), hGetChar, hSeek)
 import System.IO.Temp (withSystemTempDirectory)

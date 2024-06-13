@@ -36,7 +36,7 @@ import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
 import System.Directory.BigTrees.Name (n2fp)
-import System.FilePath (splitDirectories, (</>))
+import System.OsPath (splitDirectories, (</>))
 
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup

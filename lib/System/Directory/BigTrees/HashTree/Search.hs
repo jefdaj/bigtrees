@@ -6,14 +6,14 @@ import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..))
 import System.Directory.BigTrees.Name (fp2n, n2fp)
 import System.Directory.BigTrees.Util (pathComponents)
-import System.FilePath (joinPath)
+import System.OsPath (joinPath)
 
 
 -------------------
 -- search a tree --
 -------------------
 
--- treeContainsPath :: HashTree -> FilePath -> Bool
+-- treeContainsPath :: HashTree -> OsPath -> Bool
 -- treeContainsPath (File f1 _     ) f2 = f1 == f2
 -- treeContainsPath (Dir  f1 _ cs _) f2
 --   | f1 == f2 = True
@@ -24,10 +24,10 @@ import System.FilePath (joinPath)
 --                   then False
 --                   else any (\c -> treeContainsPath c f2') cs
 
-treeContainsPath :: HashTree a -> FilePath -> Bool
+treeContainsPath :: HashTree a -> OsPath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
-dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
+dropTo :: HashTree a -> OsPath -> Maybe (HashTree a)
 dropTo t@(Err {errName=n}) f2 = if n2fp n == f2 then Just t else Nothing
 dropTo t@(File {nodeData=nd1}) f2 = if n2fp (name nd1) == f2 then Just t else Nothing
 dropTo t@(Dir  {nodeData=nd1, dirContents=cs}) f2

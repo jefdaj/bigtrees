@@ -58,7 +58,7 @@ import GHC.Generics (Generic)
 import Prelude hiding (log)
 import System.Directory (canonicalizePath, getHomeDirectory)
 import qualified System.Directory.Tree as DT
-import qualified System.FilePath as SF
+-- import qualified System.FilePath as SF
 import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
