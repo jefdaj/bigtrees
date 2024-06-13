@@ -6,6 +6,7 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE QuasiQuotes                #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-|

@@ -13,6 +13,7 @@ import qualified System.File.OsPath as SFO
 import qualified System.OsPath as OSP
 import qualified System.OsPath.Internal as OSPI
 -- import qualified System.OsString as OSS
+import System.IO.Temp (withSystemTempDirectory)
 
 -- instance Arbitrary OSP.OsPath where
   -- arbitrary = <$> ((arbitrary :: Gen SBS.ShortByteString) `suchThat` isValidName)
@@ -38,7 +39,20 @@ main = do
   putStrLn $ show op1
 
   -- TODO but instead can you just "cast" it directly with a hidden constructor?
-  op2 = ...
+  -- op2 = ...
+
+  -- round-trip to filename
+  withSystemTempDirectory "roundtripnames" $ \tmpDir -> do
+    tmpDir' <- OSP.encodeUtf tmpDir 
+    let tmpPath = tmpDir' OSP.</> op1
+    putStrLn $ show tmpPath
+    let txt = "this is a test"
+    SFO.writeFile tmpPath txt
+    txt' <- SFO.readFile tmpPath
+    putStrLn $ "txt == txt'? " ++ show (txt == txt')
+    return ()
+
+  -- round-trip reading the filename back using directory fn
 
   -- TODO ok, do need to convert -> OsPath in order to write a file I guess?
   -- maybe it's a good time to do the hidden import black magic thing?

@@ -67,6 +67,7 @@ import qualified System.OsPath as OSP
 import System.IO (utf8)
 import System.OsString.Internal       -- TODO specifics
 import System.OsString.Internal.Types -- TODO specifics
+import qualified System.OsPath.Internal as OSPI
 
 -----------
 -- types --
@@ -318,12 +319,13 @@ breakP = endOfLine >> choice [void (char '#'), typeP >> numStrP >> return (), en
 
 -- TODO is Attoparsec.ByteString suitable for this, or do I need to parse them some other way?
 nameP :: Parser Name
-nameP = fmap (Name . OSP.PosixPath . SBS.toShort) $ do
+nameP = do
   -- c  <- anyChar
   -- cs <- manyTill anyChar $ lookAhead breakP
   -- return $ _ (c:cs)
-  bs <- takeTill (== '\NUL') -- TODO is NUL best here? it would keep working when allowing slashes in paths
-  return bs -- TODO how to handle monadthrow here?
+  bs <- takeTill (== '\NUL')
+  op <- OSPI.fromBytes bs -- TODO nope that would be too easy :(
+  return $ Name op
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
