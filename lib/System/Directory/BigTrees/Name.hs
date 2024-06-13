@@ -31,6 +31,7 @@ module System.Directory.BigTrees.Name
   , fp2n
   , n2bs
   , n2op
+  , op2ns
   , breadcrumbs2bs
 
   -- tests
@@ -141,6 +142,9 @@ fp2n = Name . SBS.toShort . B8.pack
 -- TODO does this really need IO? I thought it was just MonadFail
 n2op :: Name -> IO OSP.OsPath
 n2op = OSPI.fromBytes . SBS.fromShort . unName
+
+op2ns :: OSP.OsPath -> IO [Name]
+op2ns op = fmap (map fp2n) $ mapM OSP.decodeFS $ OSP.splitDirectories op
 
 n2bs :: Name -> B8.ByteString
 n2bs = SBS.fromShort . unName

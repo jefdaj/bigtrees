@@ -4,7 +4,7 @@ import Control.Monad (msum)
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..))
-import System.Directory.BigTrees.Name (fp2n, n2fp)
+import System.Directory.BigTrees.Name (op2ns)
 import System.Directory.BigTrees.Util (pathComponents)
 import System.OsPath (joinPath)
 
@@ -24,20 +24,19 @@ import System.OsPath (joinPath)
 --                   then False
 --                   else any (\c -> treeContainsPath c f2') cs
 
-treeContainsPath :: HashTree a -> OsPath -> Bool
-treeContainsPath tree path = isJust $ dropTo tree path
+-- TODO is IO here reasonable?
+treeContainsPath :: HashTree a -> OsPath -> IO Bool
+treeContainsPath tree path = do
+  ns <- op2ns path
+  isJust $ dropTo tree ns
 
-dropTo :: HashTree a -> OsPath -> Maybe (HashTree a)
-dropTo t@(Err {errName=n}) f2 = if n2fp n == f2 then Just t else Nothing
-dropTo t@(File {nodeData=nd1}) f2 = if n2fp (name nd1) == f2 then Just t else Nothing
-dropTo t@(Dir  {nodeData=nd1, dirContents=cs}) f2
-  | n2fp (name nd1) == f2 = Just t
-  | length (pathComponents f2) < 2 = Nothing
-  | otherwise = let n   = fp2n $ head $ pathComponents f2
-                    f2' = joinPath $ tail $ pathComponents f2
-                in if (name nd1) /= n
-                  then Nothing
-                  else msum $ map (`dropTo` f2') cs
+dropTo :: HashTree a -> [Name] -> Maybe (HashTree a)
+dropTo t [] = Just t -- TODO is that right?
+dropTo t@(Err {errName=n}) (n2:_) = if n == n2 then Just t else Nothing
+dropTo t@(File {nodeData=nd1}) (n2:_) = if name nd1 == n2 then Just t else Nothing
+dropTo t@(Dir  {nodeData=nd1, dirContents=cs}) (n:ns)
+  | name nd1 /= n = Nothing
+  | otherwise = msum $ map (`dropTo` ns) cs
 
 treeContainsHash :: HashTree a -> Hash -> Bool
 treeContainsHash (Err {}) _ = False
