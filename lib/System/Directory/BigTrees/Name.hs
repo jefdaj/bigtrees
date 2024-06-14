@@ -28,12 +28,16 @@ module System.Directory.BigTrees.Name
 
   -- TODO document these individually
   ( Name(..)
+
+  , n2sbs
+  , sbs2n
   , fp2n
+  , fp2ns
   , n2bs
-  , n2op
-  , op2n
-  , op2ns
+  , bs2n
   , breadcrumbs2bs
+  , joinNames
+  , names2bs
 
   -- tests
   -- TODO document tests as a group
@@ -112,11 +116,14 @@ deriving instance NFData Name
 instance Arbitrary Name where
   arbitrary = Name <$> (oss `suchThat` isValidName)
     where
-      oss = (SOS.OsString . SOS.PosixString) <$> sbs
       sbs = arbitrary :: Gen SBS.ShortByteString
+      oss = (SOS.OsString . SOS.PosixString) <$> sbs
 
   shrink :: Name -> [Name]
-  shrink (Name t) = Name <$> filter isValidName (shrink t)
+  shrink = oss . n2sbs
+    where
+      (sbs :: SBS.ShortByteString -> [SBS.ShortByteString]) = shrink
+      (oss :: SBS.ShortByteString -> [Name]) = map sbs2n <$> sbs
 
 -- TODO use this in the arbitrary filepath instance too?
 isValidName :: SOS.OsString -> Bool
@@ -132,14 +139,21 @@ isValidName s
 -- Functions for converting between `Name`s and (regular Haskell) `FilePath`s.
 -- They should work on Linux and MacOS.
 
+n2sbs :: Name -> SBS.ShortByteString
+n2sbs = SOS.getPosixString . SOS.getOsString . unName
+
+-- | Note this does NOT check whether it's a valid Name.
+sbs2n :: SBS.ShortByteString -> Name
+sbs2n = Name . SOS.OsString . SOS.PosixString
+
 -- | Convert a `FilePath` to a `Name` using the current filesystem's encoding,
 -- or explain why the conversion failed.
 fp2n :: FilePath -> IO (Either String Name)
 fp2n fp = do
   ns <- fp2ns fp -- TODO catch error here and wrap it in Left too
-  case ns of
+  return $ case ns of
     []  -> Left "fp2n with null path"
-    [n] -> if isValidName n then Right n else Left $ "invalid name: " ++ show n
+    [Name n] -> if isValidName n then Right (Name n) else Left $ "invalid name: " ++ show n
     ns  -> Left "fp2n with slash in path"
 
 -- | Convert a `FilePath` to a list of `Name`s using the current filesystem's encoding.
@@ -153,12 +167,12 @@ fp2ns fp = do
 -- | Direct conversion from a Name to a ByteString for serializing.
 -- TODO make it an instance of Bytable, Binary, similar?
 n2bs :: Name -> B8.ByteString
-n2bs = SBS.fromShort . SOS.getOsString . unName
+n2bs = SBS.fromShort . n2sbs
 
 -- | Direct conversion from a ByteString to a Name for deserializing.
 -- TODO make it an instance of Bytable, Binary, similar?
 bs2n :: B8.ByteString -> Name
-bs2n = Name . SOS.OsString . SBS.toShort
+bs2n = sbs2n . SBS.toShort
 
 -- | Extra type alias to distinguish lists of Names representing a path in
 -- forward vs reverse order. Both can be converted to/from OsPaths.
@@ -179,7 +193,7 @@ joinNames :: [Name] -> B8.ByteString
 joinNames = B8.intercalate (B8.singleton '/') . map n2bs
 
 names2bs :: NamesFwd -> B8.ByteString
-names2bs = SBS.fromShort . SOS.getOsString . SOP.joinPath
+names2bs = SBS.fromShort . SOS.getPosixString . SOS.getOsString . SOP.joinPath . map unName
 
 -- fails if there's an error writing the file,
 -- or if after writing it doesn't exist
@@ -187,8 +201,7 @@ roundtripNameToFileName :: Name -> IO ()
 roundtripNameToFileName n =
   withSystemTempDirectory "bigtrees" $ \d -> do
     d' <- SOP.encodeFS d
-    n' <- n2op n -- TODO why is fromShort needed? seems redundant
-    let f = d' SOP.</> n'
+    let f = d' SOP.</> unName n
     SFO.writeFile f "this is a test"
     _ <- SFO.readFile f
     return ()
