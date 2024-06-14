@@ -127,10 +127,13 @@ instance Arbitrary Name where
       (oss :: SBS.ShortByteString -> [Name]) = map sbs2n <$> sbs
 
 -- TODO use this in the arbitrary filepath instance too?
+-- Checking for '/' explicitly turns out to be necessary because
+-- SOP.splitDirectories will still return a length-1 list if there's a slash at
+-- the end of the name. Then writeFile et al will throw "inappropriate type".
 isValidName :: SOS.OsString -> Bool
 isValidName s
   = SOP.isValid s
-  && length (SOP.splitDirectories s) == 1
+  && (not $ "/" `SBS.isInfixOf` (SOS.getPosixString $ SOS.getOsString s))
   && notElem s [[SOS.osstr|.|], [SOS.osstr|..|]]
 
 -- * Convert paths to/from names
