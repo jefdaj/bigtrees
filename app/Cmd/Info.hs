@@ -12,16 +12,18 @@ import System.Directory.BigTrees.HashLine (ErrMsg (..), HashLine (..), ModTime (
 import System.Directory.BigTrees.HashTree (HashTree (..), readHeader, readLastHashLineAndFooter)
 import System.Directory.BigTrees.HeadFoot (Footer, Header (..), scanSeconds)
 -- import qualified Data.ByteString.Short as BS
+import System.OsPath (encodeFS, OsPath)
 
 cmdInfo :: Config -> FilePath -> IO ()
 cmdInfo cfg path = do
-  mH  <- readHeader path
-  mLF <- readLastHashLineAndFooter path
+  path' <- encodeFS path
+  mH  <- readHeader path'
+  mLF <- readLastHashLineAndFooter path'
   case (mH, mLF) of
-    (Just h, Just (l, f)) -> printInfo path h f l
-    _                     -> error $ "failed to read info from '" ++ path ++ "'"
+    (Just h, Just (l, f)) -> printInfo path' h f l
+    _                     -> error $ "failed to read info from " ++ show path
 
-printInfo :: FilePath -> Header -> Footer -> HashLine -> IO ()
+printInfo :: OsPath -> Header -> Footer -> HashLine -> IO ()
 printInfo path header footer lastLine = do
   let seconds = scanSeconds (header, footer)
       lineInfo = case lastLine of
@@ -31,7 +33,7 @@ printInfo path header footer lastLine = do
           , "overall hash is " ++ B8.unpack (prettyHash h)
           -- TODO is this accurate/useful? "modified " ++ show m
           ]
-  mapM_ putStrLn $ (path ++ ":") : map ("  " ++) ([ "bigtree " ++ show (treeFormat header) ++ " format"
+  mapM_ putStrLn $ (show path ++ ":") : map ("  " ++) ([ "bigtree " ++ show (treeFormat header) ++ " format"
     , "took " ++ show seconds ++ " seconds to create" -- TODO min, hours, days
     ]
     ++ lineInfo)
