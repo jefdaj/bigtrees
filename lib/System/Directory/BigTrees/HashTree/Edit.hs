@@ -46,32 +46,34 @@ wrapInEmptyDirs [n]    t = wrapInEmptyDir n t
 wrapInEmptyDirs (n:ns) t = wrapInEmptyDir n $ wrapInEmptyDirs ns t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
-addSubTree :: HashTree a -> HashTree a -> OsPath -> HashTree a
-addSubTree (Err  {}) sub path | null (pathComponents path) = sub -- TODO is this right?
+addSubTree :: HashTree a -> HashTree a -> [Name] -> HashTree a
+addSubTree (Err  {}) sub [] = sub -- TODO is this right?
 addSubTree (File {}) _ _ = error "attempt to insert tree into a file"
-addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
-addSubTree main sub path = main { nodeData = nd', dirContents = cs', nNodes = n' }
+addSubTree _ _ [] = error "can't insert tree at null path"
+addSubTree main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNodes = n' }
   where
-    comps  = pathComponents path
-    p1     = head comps
-    path'  = joinPath $ tail comps
+    -- comps  = pathComponents path
+    comps  = ns
+    -- p1     = n
+    -- path'  = joinPath comps
     h'     = hashContents cs'
     nd'    = (nodeData main) { hash = h', modTime = mt', nBytes = s' }
     cs'    = sortBy
                (compare `on` treeName) $
                filter
-                 (\c -> treeName c /= fp2n p1)
+                 (\c -> treeName c /= n)
                  ((dirContents main) ++ [newSub])
     n'     = sumNodes main + sumNodes newSub - maybe 0 sumNodes oldSub
     s'     = treeNBytes main + treeNBytes newSub - (maybe 0 treeNBytes oldSub)
     mt'    = maximum $ map treeModTime [main, newSub]
-    sub'   = sub { nodeData=(nodeData sub) {name = fp2n $ last comps }}
-    oldSub = find (\c -> treeName c == fp2n p1) (dirContents main)
-    newSub = if length comps == 1
+    sub'   = sub { nodeData=(nodeData sub) {name = n}}
+    oldSub = find (\c -> treeName c == n) (dirContents main)
+    -- TODO is this at all right anymore?
+    newSub = if null ns
                then sub'
                else case oldSub of
-                 Nothing -> wrapInEmptyDirs path sub'
-                 Just d  -> addSubTree d sub' path'
+                 Nothing -> wrapInEmptyDirs ns sub'
+                 Just d  -> addSubTree d sub' ns
 
 ----------------------
 -- remove a subtree --
@@ -83,13 +85,13 @@ addSubTree main sub path = main { nodeData = nd', dirContents = cs', nNodes = n'
  - Buuuut for now can just ignore nNodes as it's not needed for the rm itself.
  - TODO does this actually solve nNodes too?
  -}
-rmSubTree :: HashTree a -> OsPath -> Either String (HashTree a)
-rmSubTree (Err  {}) p = Left $ "no such subtree: '" ++ p ++ "'" -- TODO is this right?
-rmSubTree (File {}) p = Left $ "no such subtree: '" ++ p ++ "'"
-rmSubTree d@(Dir {dirContents=cs, nNodes=n}) p = case dropTo d p of
-  Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
+rmSubTree :: HashTree a -> [Name] -> Either String (HashTree a)
+rmSubTree (Err  {}) ns = Left $ "no such subtree: " ++ show ns -- TODO is this right?
+rmSubTree (File {}) ns = Left $ "no such subtree: " ++ show ns
+rmSubTree d@(Dir {dirContents=cs, nNodes=nn}) (n:ns) = case dropTo d ns of
+  Nothing -> Left $ "no such subtree: " ++ show (n:ns)
   Just t -> Right $ if t `elem` cs
-    then d { dirContents = delete t cs, nNodes = n - sumNodes t }
-    else d { dirContents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
-           , nNodes = n - sumNodes t
+    then d { dirContents = delete t cs, nNodes = nn - sumNodes t }
+    else d { dirContents = map (\c -> fromRight c $ rmSubTree c ns) cs
+           , nNodes = nn - sumNodes t
            }
