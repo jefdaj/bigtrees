@@ -75,7 +75,6 @@ import TH.Derive (Deriving, derive)
 -- import System.FilePath ((</>))
 import qualified System.File.OsPath as SFO
 import qualified System.OsPath as SOP
-import System.OsString (OsString, osstr)
 import qualified System.OsString as SOS
 import qualified System.OsString.Internal.Types as SOS
 import Test.QuickCheck.Instances.ByteString
@@ -90,7 +89,7 @@ import qualified Data.ByteString.Char8 as B8
 -- no point using OsPath here because Windows is already unsupported.
 -- TODO why doesn't the tree link work right
 newtype Name
-  = Name { unName :: OsString } -- TODO OsPath? It's an alias without an exposed constructor
+  = Name { unName :: SOS.OsString } -- TODO OsPath? It's an alias without an exposed constructor
   deriving (Eq, Generic, Ord, Show)
 
 deriving instance NFData Name
@@ -108,21 +107,23 @@ deriving instance NFData Name
 --   | T.length t < 4 = map (\c -> T.pack [c]) $ nub $ T.unpack t
 --   | otherwise = shrink t
 
--- TODO clean this up a bit
 -- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
--- TODO should this use https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
+-- TODO try https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
 instance Arbitrary Name where
-  arbitrary = Name <$> ((fmap OsString (arbitrary :: Gen SBS.ShortByteString)) `suchThat` isValidName)
+  arbitrary = Name <$> (oss `suchThat` isValidName)
+    where
+      oss = (SOS.OsString . SOS.PosixString) <$> sbs
+      sbs = arbitrary :: Gen SBS.ShortByteString
 
   shrink :: Name -> [Name]
   shrink (Name t) = Name <$> filter isValidName (shrink t)
 
 -- TODO use this in the arbitrary filepath instance too?
-isValidName :: OsString -> Bool
+isValidName :: SOS.OsString -> Bool
 isValidName s
   = SOP.isValid s
   && length (SOP.splitDirectories s) == 1
-  && notElem s [[osstr|.|], [osstr|..|]]
+  && notElem s [[SOS.osstr|.|], [SOS.osstr|..|]]
 
 -- * Convert paths to/from names
 --
