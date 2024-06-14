@@ -66,7 +66,7 @@ import Data.Attoparsec.Combinator (lookAhead, many', manyTill)
 import qualified Data.ByteString.Char8 as B8
 import Data.Either
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, join,
+import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, joinCols,
                                            nfilesP, sizeP)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, TestTree (..),
                                            sumNodes, treeHash, treeNBytes, treeName)
@@ -74,12 +74,14 @@ import System.Directory.BigTrees.Name (Name (..))
 import System.IO (Handle, IOMode (..), withFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import qualified Data.ByteString.Short as SBS
 
 
 --- types ---
 
 -- TODO which string type would be best for use in the sets?
-newtype Note = Note T.Text
+-- A: for this version, whatever can be done easily! String maybe via show?
+newtype Note = Note String
   deriving (Eq, Ord, Read, Show, Generic)
 
 instance NFData Note
@@ -140,7 +142,7 @@ setDataFromNode :: Maybe Note -> HashTree () -> SetData
 setDataFromNode mn tree =
   let (Name n) = treeName tree
   in SetData
-       { sdNote  = fromMaybe (Note n) mn
+       { sdNote  = fromMaybe (Note $ show n) mn
        , sdBytes = treeNBytes tree
        , sdNodes = sumNodes tree
        }
@@ -159,7 +161,7 @@ hashSetDataFromLine :: Maybe Note -> HashLine -> Maybe (Hash, SetData)
 hashSetDataFromLine mn (ErrLine {}) = Nothing
 hashSetDataFromLine mn (HashLine (_,_,h,_,nb,nn,Name n)) = Just (h, sd)
   where sd = SetData
-               { sdNote  = fromMaybe (Note n) mn
+               { sdNote  = fromMaybe (Note $ show n) mn
                , sdBytes = nb
                , sdNodes = nn
                }
@@ -203,11 +205,11 @@ listToLines = map elemToLine
     elemToLine (h, sd) = HashSetLine (h, sdNodes sd, sdBytes sd, sdNote sd)
 
 prettySetLine :: HashSetLine -> B8.ByteString
-prettySetLine (HashSetLine (h, NNodes nn, NBytes nb, Note n)) = join
+prettySetLine (HashSetLine (h, NNodes nn, NBytes nb, Note n)) = joinCols
   [ prettyHash h
   , B8.pack $ show nn
   , B8.pack $ show nb
-  , B8.pack $ T.unpack n -- TODO that can't be the best way, can it?
+  , B8.pack n
   ]
 
 serializeHashList :: HashList -> B8.ByteString
@@ -238,7 +240,7 @@ noteP :: Parser Note
 noteP = do
   c  <- anyChar
   cs <- manyTill anyChar $ lookAhead endOfLine
-  return $ Note $ T.pack $ c:cs
+  return $ Note $ c:cs
 
 -- TODO document valid note chars
 setLineP :: Parser HashSetLine
