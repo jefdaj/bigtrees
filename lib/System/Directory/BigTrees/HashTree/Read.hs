@@ -28,7 +28,9 @@ import Data.Either (fromRight)
 import Data.Maybe (catMaybes)
 import Data.String.Utils (replace)
 import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..))
-import System.IO (Handle, IOMode (..), hGetLine, withFile)
+import System.IO (Handle, IOMode (..), hGetLine)
+import qualified System.File.OsPath as SFO
+import System.OsPath (OsPath)
 
 
 --- read header info from the beginning of the file ---
@@ -45,9 +47,10 @@ headerP = do
 
 -- TODO close file bug here :/
 -- TODO document 100 line limit
-readHeader :: FilePath -> IO (Maybe Header)
+-- TODO SFO.withBinaryFile?
+readHeader :: OsPath -> IO (Maybe Header)
 readHeader path =
-  withFile path ReadMode $ \h -> do
+  SFO.withBinaryFile path ReadMode $ \h -> do
     commentLines <- fmap (takeWhile isCommentLine) $ replicateM 100 (hGetLine h)
     return $ parseHeader commentLines
 
@@ -68,9 +71,9 @@ isCommentLine _       = False
 
 -- TODO move to HeadFoot? HashTree.Read?
 -- TODO factor out/document the max char thing
-readLastHashLineAndFooter :: FilePath -> IO (Maybe (HashLine, Footer))
+readLastHashLineAndFooter :: OsPath -> IO (Maybe (HashLine, Footer))
 readLastHashLineAndFooter path = do
-  mTxt <- withFile path ReadMode $ hTakePrevUntil isDepthZeroLine 10000
+  mTxt <- SFO.withBinaryFile path ReadMode $ hTakePrevUntil isDepthZeroLine 10000
   case mTxt of
     Nothing -> return Nothing
     Just txt -> case filter (not . null) $ lines txt of
@@ -91,7 +94,7 @@ isDepthZeroLine _                        = False
 
 --- read info for set-add ---
 
-getTreeSize :: FilePath -> IO (Maybe Int)
+getTreeSize :: OsPath -> IO (Maybe Int)
 getTreeSize path = readLastHashLineAndFooter path <&> getN
   where
     getN (Just (HashLine (_,_,_,_,_, NNodes n, _), _)) = Just n
@@ -99,19 +102,19 @@ getTreeSize path = readLastHashLineAndFooter path <&> getN
 
 -- TODO does this stream, or does it read all the lines at once?
 -- TODO pass on the Left rather than throwing IO error here?
-readTreeLines :: FilePath -> IO [HashLine]
+readTreeLines :: OsPath -> IO [HashLine]
 readTreeLines path = do
-  bs <- B8.readFile path
+  bs <- SFO.readFile' path
   let eSL = parseOnly (headerP *> linesP Nothing) bs
   case eSL of
-    Left msg -> error $ "failed to parse '" ++ path ++ "': " ++ show msg
+    Left msg -> error $ "failed to parse " ++ show path ++ ": " ++ show msg
     Right ls -> return ls
 
 
 --- read the main tree ---
 
-readTree :: Maybe Int -> FilePath -> IO ProdTree
-readTree md path = deserializeTree md <$> B8.readFile path
+readTree :: Maybe Int -> OsPath -> IO ProdTree
+readTree md path = deserializeTree md <$> SFO.readFile' path
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
@@ -197,8 +200,8 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
 
 partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
 
-readTestTree :: Maybe Int -> Bool -> [String] -> FilePath -> IO TestTree
-readTestTree md = buildTree B8.readFile
+readTestTree :: Maybe Int -> Bool -> [String] -> OsPath -> IO TestTree
+readTestTree md = buildTree SFO.readFile'
 
 --- attoparsec parsers ---
 
