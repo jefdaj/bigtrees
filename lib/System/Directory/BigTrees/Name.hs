@@ -31,6 +31,7 @@ module System.Directory.BigTrees.Name
   , fp2n
   , n2bs
   , n2op
+  , op2n
   , op2ns
   , breadcrumbs2bs
 
@@ -142,6 +143,10 @@ fp2n = Name . SBS.toShort . B8.pack
 -- TODO does this really need IO? I thought it was just MonadFail
 n2op :: Name -> IO OSP.OsPath
 n2op = OSPI.fromBytes . SBS.fromShort . unName
+
+-- TODO is this at all valid? might have to rethink it :/
+op2n :: OSP.OsPath -> IO Name
+op2n op = fmap fp2n $ OSP.decodeFS op
 
 op2ns :: OSP.OsPath -> IO [Name]
 op2ns op = fmap (map fp2n) $ mapM OSP.decodeFS $ OSP.splitDirectories op

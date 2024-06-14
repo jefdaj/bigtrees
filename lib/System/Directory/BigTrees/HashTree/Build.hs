@@ -12,7 +12,8 @@ import Data.List (sortBy)
 import Data.Maybe (isJust)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Foreign.C.Types (CTime (..))
-import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
+-- import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
+import qualified System.Directory.OsPath as SDO
 import System.Directory.BigTrees.Hash (hashFile, hashSymlinkLiteral, hashSymlinkTarget, hashFromAnnexPath)
 import System.Directory.BigTrees.HashLine (ErrMsg (..), ModTime (..), NBytes (..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
@@ -73,16 +74,17 @@ buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
   -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
-  tree <- DT.readDirectoryWithL False readFileFn path -- TODO need to rename root here?
+  tree <- DT.readDirectoryWithL readFileFn path -- TODO need to rename root here?
   -- putStrLn $ show tree
   buildTree' readFileFn beVerbose 0 excludes tree
 
 -- This is mainly meant as an error handler, but also works for the trivial
 -- case of re-wrapping directory-tree error nodes.
-mkErrTree :: (Monad m, Exception e) => Name -> e -> m (HashTree a)
-mkErrTree n e =
+mkErrTree :: (Exception e) => DT.FileName -> e -> IO (HashTree a)
+mkErrTree n e = do
+  fp <- decodeFS n
   return $ Err
-    { errName = n
+    { errName = fp2n fp
     , errMsg = ErrMsg $ show e -- TODO clean it up a bit more?
     }
 
@@ -98,15 +100,16 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
 -- We handle them all here.
 -- Note that readFileFn and hashFile both read the file, but in practice that
 -- isn't a problem because readFileFn is a no-op in production.
-buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n) $ do
-  let fPath = a </> n
-  isLink <- pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
+buildTree' readFileFn v depth es (a DT.:/ (DT.File op _)) = handleAny (mkErrTree op) $ do
+  n <- op2n op
+  let fPath = a </> op
+  isLink <- SDO.pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
   if isLink
     then do
-      notBroken <- doesPathExist fPath
+      notBroken <- SDO.doesPathExist fPath
       -- TODO why is the if/else needed? shouldn't it short-circuit below anyway?
       notDir <- if not notBroken then return False
-                else not . isDirectory <$> getFileStatus fPath
+                else not <$> SDO.doesDirectoryExist fPath
       if notBroken && notDir -- we treat links to dirs as broken for now
 
         then do
@@ -153,7 +156,8 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
       !s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
 
       -- try to get hash from annex path, or hash if needed
-      !h <- case hashFromAnnexPath fPath of
+      tmp <- hashFromAnnexPath fPath
+      !h <- case tmp of
               Just h  -> return h
               Nothing -> unsafeInterleaveIO $ hashFile v fPath
 
@@ -171,11 +175,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
         , fileData = fd
         }
 
-buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n _)) = handleAny (mkErrTree n) $ do
-  let root = a </> n
+buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir op _)) = handleAny (mkErrTree op) $ do
+  n <- op2n op
+  (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
+  let root = a </> op
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
-      (DT.Dir _ cs') = excludeRegexes es d -- TODO was the idea to only operate on cs?
 
   -- this works, but doesn't affect memory usage:
   -- subTrees <- (if depth > 10 then M.forM else P.forM) cs' hashSubtree
@@ -210,14 +215,15 @@ buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n _)) = handleAny (mkErrTree
 -- Mod time of a symlink itself (not the target)
 getSymlinkLiteralModTime :: OsPath -> IO ModTime
 getSymlinkLiteralModTime p = do
-  (CTime s) <- modificationTime <$> getSymbolicLinkStatus p
-  return $ ModTime $ toInteger s
+  -- (CTime s) <- modificationTime <$> getSymbolicLinkStatus p
+  s <- SDO.getModificationTime p
+  return $ ModTime $ round $ utcTimeToPOSIXSeconds s
 
 -- Mod time of a symlink target, if it exists
 -- TODO fix this so it works recursively in case of more than one link!
 getSymlinkTargetModTime :: OsPath -> IO ModTime
 getSymlinkTargetModTime p = do
-  target <- readSymbolicLink p
+  target <- SDO.getSymbolicLinkTarget p
   let p' = takeDirectory p </> target
   getFileDirModTime p'
 
@@ -229,25 +235,27 @@ getSymlinkTargetModTime p = do
 -- TODO going to have to update dirs recursively based on newest content change
 getFileDirModTime :: OsPath -> IO ModTime
 getFileDirModTime f = do
-  s <- getModificationTime f
-  return $ ModTime $ toInteger $ round $ utcTimeToPOSIXSeconds s
+  s <- SDO.getModificationTime f
+  return $ ModTime $ round $ utcTimeToPOSIXSeconds s
 
 getSymlinkLiteralNBytes :: OsPath -> IO NBytes
 getSymlinkLiteralNBytes p = do
-  status <- getSymbolicLinkStatus p
-  return $ NBytes $ toInteger $ fileSize status
+  -- status <- getSymbolicLinkStatus p
+  -- return $ NBytes $ toInteger $ fileSize status
+  fsint <- SDO.getFileSize p
+  return $ NBytes fsint
 
 -- TODO does this work recursively?
 -- TODO is it ever needed?
 getSymlinkTargetNBytes :: OsPath -> IO NBytes
 getSymlinkTargetNBytes p = do
-  target <- readSymbolicLink p
+  target <- SDO.getSymbolicLinkTarget p
   let p' = takeDirectory p </> target
   getFileDirNBytes p'
 
 -- Size of a regular file or directory (not including directory contents, of course)
 getFileDirNBytes :: OsPath -> IO NBytes
-getFileDirNBytes p = getFileSize p <&> NBytes
+getFileDirNBytes p = SDO.getFileSize p <&> NBytes
   -- isLink <- pathIsSymbolicLink f
   -- n <- if isLink
   --        then getSymbolicLinkStatus f >>= return . toInteger . fileSize
