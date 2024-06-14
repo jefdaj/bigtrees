@@ -3,6 +3,11 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{- Other than for printing and writing output to files, this module shouldn't
+ - need any IO. That also means it shouldn't deal with encoding or decoding
+ - `OsPath`s. Hopefully that can be kept in the app.
+ -}
+
 module System.Directory.BigTrees.DupeMap
   ( DupeSet
   , DupeMap
@@ -35,8 +40,11 @@ import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
-import System.Directory.BigTrees.Name (n2fp)
-import System.OsPath (splitDirectories, (</>))
+-- import System.Directory.BigTrees.Name (n2fp)
+-- import System.OsPath (splitDirectories, (</>))
+
+import System.OsPath -- TODO specifics
+import System.File.OsPath -- TODO specifics
 
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup
@@ -45,8 +53,8 @@ import System.OsPath (splitDirectories, (</>))
 
 -- note that most of the functions use (Hash, DupeSet) instead of plain DupeSet
 -- TODO is DupeSet a Monoid?
-type DupeSet  = (Int, TreeType, S.HashSet B.ByteString)
-type DupeList = (Int, TreeType, [B.ByteString]) -- TODO move to OldCmd/Dupes.hs?
+type DupeSet  = (Int, TreeType, S.HashSet OsPath)
+type DupeList = (Int, TreeType, [OsPath])
 
 -- TODO remove DupeMap type?
 type DupeMap     = M.HashMap Hash DupeSet
@@ -59,7 +67,7 @@ type DupeTable s = C.HashTable s Hash DupeSet
 -- TODO is this a good idea? it would require losing the nfiles per dir thing
 
 -- TODO is this the right type signature for an stToIO action?
--- dupesFromHashes :: FilePath -> DupeTable RealWorld
+-- dupesFromHashes :: OsPath -> DupeTable RealWorld
 -- dupesFromHashes = undefined
 
 -----------------------------
@@ -70,7 +78,7 @@ type DupeTable s = C.HashTable s Hash DupeSet
 -- TODO what about if we make it from the serialized hashes instead of a tree?
 pathsByHash :: HashTree () -> ST s (DupeTable s)
 pathsByHash t = do
-  ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
+  ht <- H.newSized 1 -- TODO size from tree
   addToDupeMap ht t
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
@@ -81,11 +89,11 @@ addToDupeMap :: DupeTable s -> ProdTree -> ST s ()
 addToDupeMap ht = addToDupeMap' ht ""
 
 -- same, but start from a given root path
-addToDupeMap' :: DupeTable s -> FilePath -> ProdTree -> ST s ()
-addToDupeMap' ht dir (File {nodeData=(NodeData{name=n, hash=h})}) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2fp n)))
+addToDupeMap' :: DupeTable s -> OsPath -> ProdTree -> ST s ()
+addToDupeMap' ht dir (File {nodeData=(NodeData{name=n, hash=h})}) = insertDupeSet ht h (1, F, S.singleton $ dir </> n)
 addToDupeMap' ht dir (Dir {nodeData=(NodeData{name=n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
-  insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n2fp n)))
-  mapM_ (addToDupeMap' ht (dir </> n2fp n)) cs
+  insertDupeSet ht h (fs, D, S.singleton $ dir </> n)
+  mapM_ (addToDupeMap' ht (dir </> n)) cs
 
 -- inserts one node into an existing dupemap in ST s
 insertDupeSet :: DupeTable s -> Hash -> DupeSet -> ST s ()
@@ -171,7 +179,7 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
 printDupes :: Maybe Int -> [DupeList] -> IO ()
 printDupes md groups = B.putStrLn $ explainDupes md groups
 
-writeDupes :: Maybe Int -> FilePath -> [DupeList] -> IO ()
+writeDupes :: Maybe Int -> OsPath -> [DupeList] -> IO ()
 writeDupes md path groups = B.writeFile path $ explainDupes md groups
 
 explainDupes :: Maybe Int -> [DupeList] -> B.ByteString
@@ -198,9 +206,9 @@ explainDupes md = B.unlines . map explainGroup
 -----------------------------
 
 -- TODO is this actually helpful?
-listAllFiles :: FilePath -> ProdTree -> [(Hash, FilePath)]
-listAllFiles anchor (File {nodeData=(NodeData{name=n, hash=h})}) = [(h, anchor </> n2fp n)]
-listAllFiles anchor (Dir {nodeData=(NodeData{name=n}), dirContents=cs}) = concatMap (listAllFiles $ anchor </> n2fp n) cs
+listAllFiles :: OsPath -> ProdTree -> [(Hash, OsPath)]
+listAllFiles anchor (File {nodeData=(NodeData{name=n, hash=h})}) = [(h, anchor </> n)]
+listAllFiles anchor (Dir {nodeData=(NodeData{name=n}), dirContents=cs}) = concatMap (listAllFiles $ anchor </> n) cs
 
 
 -- TODO rewrite allDupes by removing the subtree first then testing membership
@@ -227,7 +235,7 @@ allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
 -- TODO also warn about directories, because sometimes they might care (Garageband files for example)
 -- TODO make more efficient by restricting to hashes found in the removed subtree!
 --      (only used for Rm right?)
-listLostFiles :: HashTree () -> HashTree () -> [FilePath]
+listLostFiles :: HashTree () -> HashTree () -> [OsPath]
 listLostFiles before after = filesLost
   where
     hashesBefore = pathsByHash before
