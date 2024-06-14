@@ -54,6 +54,7 @@ module System.Directory.BigTrees.Name
 
 import Control.DeepSeq (NFData)
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Short as BS
 import Data.List (isInfixOf, isPrefixOf, nub)
@@ -195,19 +196,30 @@ joinNames = B8.intercalate (B8.singleton '/') . map n2bs
 names2bs :: NamesFwd -> B8.ByteString
 names2bs = SBS.fromShort . SOS.getPosixString . SOS.getOsString . SOP.joinPath . map unName
 
--- fails if there's an error writing the file,
--- or if after writing it doesn't exist
-roundtripNameToFileName :: Name -> IO ()
-roundtripNameToFileName n =
+-- Fails if there's an error writing the file, or if after writing it doesn't
+-- exist. Example manual usage:
+--
+-- >>> ns <- generate (resize 99 $ arbitrary :: Gen [Name])
+-- >>> fmap (all id) $ mapM_ (roundtripNameToFileName False) ns
+-- >>> True
+--
+-- Set verbose=True to show the paths, but beware! They might mess up your terminal.
+-- 
+-- TODO is there a standard variant of `all` that works like this?
+--
+roundtripNameToFileName :: Bool -> Name -> IO Bool
+roundtripNameToFileName verbose n =
   withSystemTempDirectory "bigtrees" $ \d -> do
     d' <- SOP.encodeFS d
     let f = d' SOP.</> unName n
-    SFO.writeFile f "this is a test"
-    _ <- SFO.readFile f
-    return ()
+    let txt = "this is a test"
+    SFO.writeFile f txt
+    when verbose $ putStrLn $ show f
+    txt' <- SFO.readFile f
+    return $ txt == txt'
 
 prop_roundtrip_Name_to_FileName :: Property
 prop_roundtrip_Name_to_FileName = monadicIO $ do
   n <- pick arbitrary
-  run $ roundtripNameToFileName n
-  assert True
+  ok <- run $ roundtripNameToFileName False n
+  assert ok
