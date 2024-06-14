@@ -39,7 +39,7 @@ module System.Directory.BigTrees.Name
   -- TODO document tests as a group
   -- , myShrinkText
   -- , isValidName TODO rewrite for OsPath
-  , OSP.isValid
+  , SOP.isValid
   , roundtripNameToFileName
   -- , prop_roundtrip_Name_to_String
   , prop_roundtrip_Name_to_FileName
@@ -74,10 +74,13 @@ import TH.Derive (Deriving, derive)
 -- attempt at proper new string types:
 -- import System.FilePath ((</>))
 import qualified System.File.OsPath as SFO
-import qualified System.OsPath as OSP
+import qualified System.OsPath as SOP
+import System.OsString (OsString, osstr)
+import qualified System.OsString as SOS
+import qualified System.OsString.Internal.Types as SOS
 import Test.QuickCheck.Instances.ByteString
 import qualified Data.ByteString.Short as SBS
-import qualified System.OsPath.Internal as OSPI
+import qualified System.OsPath.Internal as SOPI
 import qualified Data.ByteString.Char8 as B8
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
@@ -87,7 +90,7 @@ import qualified Data.ByteString.Char8 as B8
 -- no point using OsPath here because Windows is already unsupported.
 -- TODO why doesn't the tree link work right
 newtype Name
-  = Name { unName :: SBS.ShortByteString }
+  = Name { unName :: OsString } -- TODO OsPath? It's an alias without an exposed constructor
   deriving (Eq, Generic, Ord, Show)
 
 deriving instance NFData Name
@@ -105,22 +108,21 @@ deriving instance NFData Name
 --   | T.length t < 4 = map (\c -> T.pack [c]) $ nub $ T.unpack t
 --   | otherwise = shrink t
 
+-- TODO clean this up a bit
+-- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
+-- TODO should this use https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
 instance Arbitrary Name where
-  arbitrary = Name <$> ((arbitrary :: Gen SBS.ShortByteString) `suchThat` isValidName)
+  arbitrary = Name <$> ((fmap OsString (arbitrary :: Gen SBS.ShortByteString)) `suchThat` isValidName)
 
-  -- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
-  -- TODO should this use https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
   shrink :: Name -> [Name]
   shrink (Name t) = Name <$> filter isValidName (shrink t)
 
--- TODO is there ever another separator, except on windows?
 -- TODO use this in the arbitrary filepath instance too?
--- TODO is GHC rejecting some of these??
-isValidName :: SBS.ShortByteString -> Bool
-isValidName b
-  =  notElem b ["", ".", ".."]
-  && (not $ "/" `SBS.isInfixOf` b) -- the byte should be \x2f or 47
-  && (not $ "\NUL" `SBS.isInfixOf` b)
+isValidName :: OsString -> Bool
+isValidName s
+  = SOP.isValid s
+  && length (SOP.splitDirectories s) == 1
+  && notElem s [[osstr|.|], [osstr|..|]]
 
 -- * Convert paths to/from names
 --
@@ -129,63 +131,63 @@ isValidName b
 -- Functions for converting between `Name`s and (regular Haskell) `FilePath`s.
 -- They should work on Linux and MacOS.
 
--- | Convert a `Name` to a `FilePath`
--- n2fp :: Name -> OSP.OsPath -- TODO shit, do i need to use OsPath in directory-tree too?
--- n2fp = unName
+-- | Convert a `FilePath` to a `Name` using the current filesystem's encoding,
+-- or explain why the conversion failed.
+fp2n :: FilePath -> IO (Either String Name)
+fp2n fp = do
+  ns <- fp2ns fp -- TODO catch error here and wrap it in Left too
+  case ns of
+    []  -> Left "fp2n with null path"
+    [n] -> if isValidName n then Right n else Left $ "invalid name: " ++ show n
+    ns  -> Left "fp2n with slash in path"
 
--- TODO this should actually convert to a list of names, right?
--- TODO and does that make it more like components?
--- | Convert a `FilePath` to a `Name`
-fp2n :: FilePath -> Name
-fp2n = Name . SBS.toShort . B8.pack
+-- | Convert a `FilePath` to a list of `Name`s using the current filesystem's encoding.
+-- TODO or explain why the conversion failed?
+fp2ns :: FilePath -> IO [Name]
+fp2ns fp = do
+  osstr <- SOS.encodeFS fp -- TODO catch error here and wrap in Left?
+  let osstrs = SOP.splitDirectories osstr
+  return $ map Name osstrs
 
--- TODO better name
--- TODO does this really need IO? I thought it was just MonadFail
-n2op :: Name -> IO OSP.OsPath
-n2op = OSPI.fromBytes . SBS.fromShort . unName
-
--- TODO is this at all valid? might have to rethink it :/
-op2n :: OSP.OsPath -> IO Name
-op2n op = fmap fp2n $ OSP.decodeFS op
-
-op2ns :: OSP.OsPath -> IO [Name]
-op2ns op = fmap (map fp2n) $ mapM OSP.decodeFS $ OSP.splitDirectories op
-
+-- | Direct conversion from a Name to a ByteString for serializing.
+-- TODO make it an instance of Bytable, Binary, similar?
 n2bs :: Name -> B8.ByteString
-n2bs = SBS.fromShort . unName
+n2bs = SBS.fromShort . SOS.getOsString . unName
 
--- TODO double-check that this will be the right byte for posix paths (47)
+-- | Direct conversion from a ByteString to a Name for deserializing.
+-- TODO make it an instance of Bytable, Binary, similar?
+bs2n :: B8.ByteString -> Name
+bs2n = Name . SOS.OsString . SBS.toShort
+
+-- | Extra type alias to distinguish lists of Names representing a path in
+-- forward vs reverse order. Both can be converted to/from OsPaths.
+type NamesFwd = [Name]
+
+-- | NamesRev are a list of names leading to the current node, like an anchor
+-- path but sorted in reverse order because we want `cons` to be fast.
+-- Sometimes called "breadcrumbs", although I'll try to be more consistent.
+type NamesRev = [Name]
+
+-- TODO rename?
+breadcrumbs2bs :: NamesRev -> B8.ByteString
+breadcrumbs2bs = joinNames . reverse
+
+-- TODO was this needed for anything else?
+-- TODO can it be done better via SOP.joinPath?
 joinNames :: [Name] -> B8.ByteString
 joinNames = B8.intercalate (B8.singleton '/') . map n2bs
 
--- Breadcrumbs are a list of names leading to the current node, like an anchor
--- path but sorted in reverse order because we want `cons` to be fast.
--- TODO custom type for this?
--- TODO does this really need IO?
-breadcrumbs2bs :: [Name] -> B8.ByteString
-breadcrumbs2bs = joinNames . reverse
-
--- | I plan to make a PR to the directory-tree package adding TreeName
--- TODO should probably unify FilePath and Name again and make this non-orphan
--- instance DT.IsName Name where
---   n2p = n2fp
---   p2n = fp2n
-
--- TODO this is impossible, right? get rid of it
--- prop_roundtrip_Name_to_String :: Name -> Bool
--- prop_roundtrip_Name_to_String n = read (show n) == n
-
--- prop_roundtrip_Name_to_filepath :: Name -> Bool
--- prop_roundtrip_Name_to_filepath n = fp2n (n2fp n) == n
+names2bs :: NamesFwd -> B8.ByteString
+names2bs = SBS.fromShort . SOS.getOsString . SOP.joinPath
 
 -- fails if there's an error writing the file,
 -- or if after writing it doesn't exist
 roundtripNameToFileName :: Name -> IO ()
 roundtripNameToFileName n =
   withSystemTempDirectory "bigtrees" $ \d -> do
-    d' <- OSP.encodeFS d
+    d' <- SOP.encodeFS d
     n' <- n2op n -- TODO why is fromShort needed? seems redundant
-    let f = d' OSP.</> n'
+    let f = d' SOP.</> n'
     SFO.writeFile f "this is a test"
     _ <- SFO.readFile f
     return ()
