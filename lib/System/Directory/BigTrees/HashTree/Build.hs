@@ -20,12 +20,15 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 treeName)
 import System.Directory.BigTrees.Name
 import qualified System.Directory.Tree as DT
-import System.OsPath (takeDirectory, (</>))
-import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
-                             matchWith)
+import System.OsPath (OsPath, takeDirectory, (</>), decodeFS)
+-- import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
+--                              matchWith)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Posix.Files (getFileStatus, isDirectory, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
+import Text.Regex.TDFA -- TODO specifics
+import Text.Regex.TDFA.ByteString -- TODO specifics
+-- import qualified System.File.OsPath as SFO
 
 -- keepPath :: [String] -> OsPath -> Bool
 -- keepPath excludes path = not $ any ((\ptn -> matchWith mOpts ptn path) . compileWith cOpts) excludes
@@ -43,21 +46,20 @@ import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTi
 --              }
 
 -- TODO double check the breadcrumbs aren't backward
-keepPath :: [String] -> [Name] -> Bool
-keepPath excludes ns = not $ any (path =~) excludes
-  where
-    path = breadcrumbs2bs ns
+keepPath :: [String] -> OsPath -> IO Bool
+keepPath excludes p = do
+  path <- decodeFS p
+  return $ not $ any (path =~) excludes
 
 -- TODO hey is this not that hard to swap out for my new version?
 -- TODO have this apply to the whole paths, not just one name/component?
-excludeGlobs :: [String]
-             -> (DT.DirTree a -> DT.DirTree a)
-excludeGlobs excludes tree = DT.filterDir keep tree
+excludeRegexes :: [String] -> DT.DirTree a -> IO (DT.DirTree a)
+excludeRegexes excludes tree = DT.filterDirIO keep tree
   where
     keep (DT.Failed n _) = keepPath excludes n
     keep (DT.Dir  n _)   = keepPath excludes n
     keep (DT.File n _)   = keepPath excludes n
-    keep b               = True
+    keep b               = return True
 
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
@@ -173,8 +175,7 @@ buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n _)) = handleAny (mkErrTree
   let root = a </> n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
-
-  (DT.Dir _ cs') <- excludeGlobs es d -- TODO was the idea to only operate on cs?
+      (DT.Dir _ cs') = excludeRegexes es d -- TODO was the idea to only operate on cs?
 
   -- this works, but doesn't affect memory usage:
   -- subTrees <- (if depth > 10 then M.forM else P.forM) cs' hashSubtree
