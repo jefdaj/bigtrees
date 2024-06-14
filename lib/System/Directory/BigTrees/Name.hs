@@ -41,13 +41,11 @@ module System.Directory.BigTrees.Name
 
   -- tests
   -- TODO document tests as a group
-  -- , myShrinkText
-  -- , isValidName TODO rewrite for OsPath
-  , SOP.isValid
+  , isValidName
   , roundtripNameToFileName
-  -- , prop_roundtrip_Name_to_String
-  , prop_roundtrip_Name_to_FileName
-  -- , prop_roundtrip_Name_to_filepath
+  , roundtripNameToDirName
+  , prop_roundtrip_Name_to_file_name
+  , prop_roundtrip_Name_to_dir_name
 
   )
   where
@@ -63,7 +61,6 @@ import qualified Data.Text.Encoding as TE
 import qualified Filesystem.Path.CurrentOS as OS
 import GHC.Generics (Generic)
 import Prelude hiding (log)
-import System.Directory (canonicalizePath, getHomeDirectory)
 import qualified System.Directory.Tree as DT
 -- import qualified System.FilePath as SF
 import System.Info (os)
@@ -86,6 +83,7 @@ import Test.QuickCheck.Instances.ByteString
 import qualified Data.ByteString.Short as SBS
 import qualified System.OsPath.Internal as SOPI
 import qualified Data.ByteString.Char8 as B8
+import qualified System.Directory.OsPath as SDO
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
 -- efficiency, but what it really means is "OsPath without slashes". Based on
@@ -221,8 +219,24 @@ roundtripNameToFileName verbose n =
     txt' <- SFO.readFile f
     return $ txt == txt'
 
-prop_roundtrip_Name_to_FileName :: Property
-prop_roundtrip_Name_to_FileName = monadicIO $ do
+prop_roundtrip_Name_to_file_name :: Property
+prop_roundtrip_Name_to_file_name = monadicIO $ do
   n <- pick arbitrary
   ok <- run $ roundtripNameToFileName False n
+  assert ok
+
+roundtripNameToDirName :: Bool -> Name -> IO Bool
+roundtripNameToDirName verbose n =
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+    tmpDir' <- SOP.encodeFS tmpDir
+    let testDir = tmpDir' SOP.</> unName n
+    SDO.createDirectory testDir
+    when verbose $ putStrLn $ show testDir
+    cs <- SDO.getDirectoryContents tmpDir'
+    return $ (unName n) `elem` cs
+
+prop_roundtrip_Name_to_dir_name :: Property
+prop_roundtrip_Name_to_dir_name = monadicIO $ do
+  n <- pick arbitrary
+  ok <- run $ roundtripNameToDirName False n
   assert ok
