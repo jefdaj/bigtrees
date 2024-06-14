@@ -121,10 +121,10 @@ instance Arbitrary Name where
       oss = (SOS.OsString . SOS.PosixString) <$> sbs
 
   shrink :: Name -> [Name]
-  shrink = oss . n2sbs
+  shrink = (map Name . filter isValidName) <$> (oss . n2sbs)
     where
-      (sbs :: SBS.ShortByteString -> [SBS.ShortByteString]) = shrink
-      (oss :: SBS.ShortByteString -> [Name]) = map sbs2n <$> sbs
+      sbs = shrink :: SBS.ShortByteString -> [SBS.ShortByteString]
+      oss = map (SOS.OsString . SOS.PosixString) <$> sbs
 
 -- TODO use this in the arbitrary filepath instance too?
 -- Checking for '/' explicitly turns out to be necessary because
