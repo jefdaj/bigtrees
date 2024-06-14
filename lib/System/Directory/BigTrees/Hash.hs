@@ -3,6 +3,7 @@
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE QuasiQuotes                #-}
 
 
 {-|
