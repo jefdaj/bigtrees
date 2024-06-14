@@ -4,9 +4,9 @@ import Control.Monad (msum)
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..))
-import System.Directory.BigTrees.Name (op2ns)
+import System.Directory.BigTrees.Name (op2ns, Name)
 import System.Directory.BigTrees.Util (pathComponents)
-import System.OsPath (joinPath)
+import System.OsPath (joinPath, OsPath)
 
 
 -------------------
@@ -28,7 +28,7 @@ import System.OsPath (joinPath)
 treeContainsPath :: HashTree a -> OsPath -> IO Bool
 treeContainsPath tree path = do
   ns <- op2ns path
-  isJust $ dropTo tree ns
+  return $ isJust $ dropTo tree ns
 
 dropTo :: HashTree a -> [Name] -> Maybe (HashTree a)
 dropTo t [] = Just t -- TODO is that right?

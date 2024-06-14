@@ -14,9 +14,9 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ha
                                                 sumNodes, treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
-import System.Directory.BigTrees.Name (fp2n)
+import System.Directory.BigTrees.Name (Name, fp2n)
 import System.Directory.BigTrees.Util (pathComponents)
-import System.OsPath (joinPath, splitPath)
+import System.OsPath (OsPath, joinPath, splitPath)
 
 
 -------------------
@@ -25,12 +25,12 @@ import System.OsPath (joinPath, splitPath)
 
 -- TODO use this to implement hashing multiple trees at once?
 -- TODO is the mod time right?
-wrapInEmptyDir :: OsPath -> HashTree a -> HashTree a
+wrapInEmptyDir :: Name -> HashTree a -> HashTree a
 wrapInEmptyDir n t = Dir
   { dirContents = cs
   , nNodes  = sumNodes t + 1
   , nodeData = NodeData
-    { name     = fp2n n
+    { name     = n
     , hash     = h
     , modTime  = treeModTime t
     , nBytes   = treeNBytes t + NBytes 4096 -- TODO how to determine this??
@@ -40,11 +40,10 @@ wrapInEmptyDir n t = Dir
     cs = [t]
     h = hashContents cs
 
-wrapInEmptyDirs :: OsPath -> HashTree a -> HashTree a
-wrapInEmptyDirs p t = case pathComponents p of
-  []     -> error "wrapInEmptyDirs needs at least one dir"
-  [n]    -> wrapInEmptyDir n t
-  (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
+wrapInEmptyDirs :: [Name] -> HashTree a -> HashTree a
+wrapInEmptyDirs []     _ = error "wrapInEmptyDirs needs at least one dir"
+wrapInEmptyDirs [n]    t = wrapInEmptyDir n t
+wrapInEmptyDirs (n:ns) t = wrapInEmptyDir n $ wrapInEmptyDirs ns t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: HashTree a -> HashTree a -> OsPath -> HashTree a

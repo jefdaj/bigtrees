@@ -37,7 +37,7 @@ defaultConfig = Config
   , verbose  = True
   -- , force    = False
   , check    = True
-  , exclude  = ["**/.*.sw*", "**/.DS_Store", "**/*.plist", "**/.snakemake*"]
+  , exclude  = ["\\.sw.*", "^\\.DS_Store$", "\\.plist$", "^\\.snakemake.*"]
   , metafmt  = Nothing
   , regex    = Nothing
   }

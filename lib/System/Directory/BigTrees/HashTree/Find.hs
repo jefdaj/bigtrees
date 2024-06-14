@@ -16,7 +16,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
                                            sepChar)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeName,
                                                 treeType)
-import System.Directory.BigTrees.Name (Name, breadcrumbs2fp)
+import System.Directory.BigTrees.Name (Name, breadcrumbs2bs)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
@@ -58,7 +58,7 @@ pathLine :: FmtFn -> Depth -> [Name] -> HashTree a -> B8.ByteString
 pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
   where
     meta = fmtFn i t
-    path = B8.pack $ breadcrumbs2fp $ treeName t:ns -- TODO ns already includes name t?
+    path = breadcrumbs2bs $ treeName t:ns -- TODO ns already includes name t?
 
 ---------------------
 -- format metadata --
@@ -118,4 +118,4 @@ data Filter
 
 pathMatches :: Filter -> [Name] -> Bool
 pathMatches Anything _          = True
-pathMatches (FilterRegex re) ns = (breadcrumbs2fp ns) =~ re
+pathMatches (FilterRegex re) ns = (breadcrumbs2bs ns) =~ re

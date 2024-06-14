@@ -27,30 +27,37 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Posix.Files (getFileStatus, isDirectory, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
 
-keepPath :: [String] -> OsPath -> Bool
-keepPath excludes path = not $ any ((\ptn -> matchWith mOpts ptn path) . compileWith cOpts) excludes
+-- keepPath :: [String] -> OsPath -> Bool
+-- keepPath excludes path = not $ any ((\ptn -> matchWith mOpts ptn path) . compileWith cOpts) excludes
+--   where
+--     cOpts = compDefault
+--               { recursiveWildcards  = True -- allow ** style globs
+--               -- these two together should make it match '/' literally:
+--               , pathSepInRanges     = False
+--               , errorRecovery       = True
+--               }
+--     mOpts = MatchOptions
+--              { matchDotsImplicitly = True
+--              , ignoreCase          = False
+--              , ignoreDotSlash      = True
+--              }
+
+-- TODO double check the breadcrumbs aren't backward
+keepPath :: [String] -> [Name] -> Bool
+keepPath excludes ns = not $ any (path =~) excludes
   where
-    cOpts = compDefault
-              { recursiveWildcards  = True -- allow ** style globs
-              -- these two together should make it match '/' literally:
-              , pathSepInRanges     = False
-              , errorRecovery       = True
-              }
-    mOpts = MatchOptions
-             { matchDotsImplicitly = True
-             , ignoreCase          = False
-             , ignoreDotSlash      = True
-             }
+    path = breadcrumbs2bs ns
 
 -- TODO hey is this not that hard to swap out for my new version?
+-- TODO have this apply to the whole paths, not just one name/component?
 excludeGlobs :: [String]
-             -> (DT.AnchoredDirTree a -> DT.AnchoredDirTree a)
-excludeGlobs excludes (a DT.:/ tree) = a DT.:/ DT.filterDir (keep a) tree
+             -> (DT.DirTree a -> DT.DirTree a)
+excludeGlobs excludes tree = DT.filterDir keep tree
   where
-    keep a (DT.Failed n _) = keepPath excludes $ a </> n
-    keep a (DT.Dir  n _)   = keepPath excludes $ a </> n
-    keep a (DT.File n _)   = keepPath excludes $ a </> n
-    keep a b               = True
+    keep (DT.Failed n _) = keepPath excludes n
+    keep (DT.Dir  n _)   = keepPath excludes n
+    keep (DT.File n _)   = keepPath excludes n
+    keep b               = True
 
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
@@ -162,11 +169,12 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
         , fileData = fd
         }
 
-buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = handleAny (mkErrTree n) $ do
+buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n _)) = handleAny (mkErrTree n) $ do
   let root = a </> n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
-      (_ DT.:/ (DT.Dir _ cs')) = excludeGlobs es d -- TODO operate on only the cs part
+
+  (DT.Dir _ cs') <- excludeGlobs es d -- TODO was the idea to only operate on cs?
 
   -- this works, but doesn't affect memory usage:
   -- subTrees <- (if depth > 10 then M.forM else P.forM) cs' hashSubtree
