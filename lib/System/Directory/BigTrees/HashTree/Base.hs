@@ -27,12 +27,11 @@ import qualified Data.CaseInsensitive as CI
 -- import Debug.Trace
 
 -- for comparing two trees without getting hung up on different overall names
--- TODO when was this needed?
-renameRoot :: FilePath -> ProdTree -> ProdTree
-renameRoot newName e@(Err {}) = e { errName = fp2n newName }
+renameRoot :: Name -> ProdTree -> ProdTree
+renameRoot newName e@(Err {}) = e { errName = newName }
 renameRoot newName tree = tree { nodeData = nd' }
   where
-    nd' = (nodeData tree) { name = fp2n newName }
+    nd' = (nodeData tree) { name = newName }
 
 -- for removing duplicate filenames using nubBy, taking into account
 -- case-insensitivity on apple filesystem
