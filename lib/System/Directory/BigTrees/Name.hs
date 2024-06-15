@@ -40,6 +40,8 @@ module System.Directory.BigTrees.Name
   , breadcrumbs2bs
   , joinNames
   , names2bs
+  , os2ns
+  , op2ns
 
   , nameP
 
@@ -185,6 +187,12 @@ n2bs = SBS.fromShort . n2sbs
 -- TODO make it an instance of Bytable, Binary, similar?
 bs2n :: B8.ByteString -> Name
 bs2n = sbs2n . SBS.toShort
+
+os2ns :: SOS.OsString -> [Name]
+os2ns = map Name . SOP.splitDirectories
+
+op2ns :: SOP.OsPath -> [Name]
+op2ns = os2ns
 
 -- | Extra type alias to distinguish lists of Names representing a path in
 -- forward vs reverse order. Both can be converted to/from OsPaths.

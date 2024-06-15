@@ -4,7 +4,7 @@ import Control.Monad (msum)
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..))
-import System.Directory.BigTrees.Name (op2ns, Name)
+import System.Directory.BigTrees.Name (os2ns, Name)
 import System.Directory.BigTrees.Util (pathComponents)
 import System.OsPath (joinPath, OsPath)
 
@@ -25,10 +25,8 @@ import System.OsPath (joinPath, OsPath)
 --                   else any (\c -> treeContainsPath c f2') cs
 
 -- TODO is IO here reasonable?
-treeContainsPath :: HashTree a -> OsPath -> IO Bool
-treeContainsPath tree path = do
-  ns <- op2ns path
-  return $ isJust $ dropTo tree ns
+treeContainsPath :: HashTree a -> OsPath -> Bool
+treeContainsPath tree path = isJust $ dropTo tree $ os2ns path
 
 dropTo :: HashTree a -> [Name] -> Maybe (HashTree a)
 dropTo t [] = Just t -- TODO is that right?
