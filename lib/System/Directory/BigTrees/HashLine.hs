@@ -31,6 +31,7 @@ module System.Directory.BigTrees.HashLine
   , nameP
   , numStrP
   , typeP
+  , simplifyErrMsg
 
   -- for testing (TODO remove?)
   -- , nameP
@@ -71,6 +72,9 @@ import System.IO (utf8)
 import System.OsString.Internal       -- TODO specifics
 import System.OsString.Internal.Types -- TODO specifics
 import qualified System.OsPath.Internal as OSPI
+import Data.List (sortBy, elem, intercalate)
+import Data.List.Split (splitOn)
+import Data.Char
 
 -----------
 -- types --
@@ -115,9 +119,34 @@ bsBytes :: B8.ByteString -> NBytes
 bsBytes = NBytes . toInteger . B8.length
 
 newtype ErrMsg = ErrMsg String
-  deriving (Eq, Ord, Read, Show, Generic, Arbitrary)
+  deriving (Eq, Ord, Read, Show, Generic)
 
 instance NFData ErrMsg
+
+-- | Hacky alternative to parsing real error messages from ErrLines for now,
+-- because quoted strings turn out to be harder than expected in Attoparsec.
+sanitizeErrMsg :: String -> String
+sanitizeErrMsg = filter $ \c ->
+  isAlphaNum c
+  || isAsciiLower c
+  || isAsciiUpper c
+  || isSpace c
+  || c `elem` ("/:()[]._-" :: String)
+
+-- | Cut the (redundant) filepath off the beginning of most IO-related error messages.
+simplifyErrMsg :: String -> String
+simplifyErrMsg s = if null sSplit then s' else intercalate ": " $ tail $ sSplit
+  where
+    s' = sanitizeErrMsg s
+    sSplit = splitOn ": " s'
+
+instance Arbitrary ErrMsg where
+  arbitrary = ErrMsg . simplifyErrMsg <$> (arbitrary :: Gen String)
+  -- TODO shrink should already be OK, right?
+
+-- instance Arbitrary ErrMsg where
+  -- arbitrary = ErrMsg <$> (arbitrary :: Gen String)
+  -- shrink (ErrMsg m) = map ErrMsg <$> shrink
 
 -- TODO does this NFData instance work? if not, use separate clause like the others
 -- TODO call it NNodes for accuracy? ppl will understand NNodes better
@@ -150,6 +179,7 @@ instance Arbitrary Depth where
 instance Arbitrary TreeType where
 
   --  TODO oneof
+  -- TODO L, B
   arbitrary :: Gen TreeType
   arbitrary = do
     n <- choose (0,2 :: Int) -- TODO make errors less common?
@@ -174,12 +204,16 @@ instance Arbitrary HashLine where
             D -> NNodes <$> choose (0, 10000) -- TODO does it matter?
             E -> return 0 -- TODO 1? but it could be a dir with any number really
             F -> return 1
+    e  <- arbitrary :: Gen ErrMsg
     n  <- arbitrary :: Gen Name
-    return $ HashLine (tt, il, h, mt, s, f, n)
+    return $ case tt of
+      E -> ErrLine  (il, e, n)
+      _ -> HashLine (tt, il, h, mt, s, f, n)
 
   -- only shrinks the filename
   -- TODO also change the treetype?
   shrink :: HashLine -> [HashLine]
+  shrink (ErrLine  (il, e, n))               = map (\n' -> ErrLine  (il, e, n'))               (shrink n)
   shrink (HashLine (tt, il, h, mt, s, f, n)) = map (\n' -> HashLine (tt, il, h, mt, s, f, n')) (shrink n)
 
 -----------
@@ -253,7 +287,7 @@ nullBreakP = char '\NUL' *> endOfLine
 --
 parseHashLinesBS :: B8.ByteString -> Either String [HashLine]
 parseHashLinesBS bs = 
-  (force . catMaybes) <$>
+  catMaybes <$>
   parseOnly (sepBy' (hashLineP Nothing) nullBreakP) bs
 
 -- Note that these random lines can't be parsed into a valid tree;
@@ -357,12 +391,24 @@ quoteChar = '"'
 quoteP :: Parser Char
 quoteP = char quoteChar
 
+-- https://stackoverflow.com/a/40078103
+-- quotedString = do
+--   -- string <- between (char '"') (char '"') (many quotedStringChar)
+--   string <- char '"' *> manyTill quotedStringChar (char '"')
+--   _ <- sepP
+--   return string
+--   where
+--     thingsToQuote = ['\\', '"']
+--     quotedStringChar = choice [escapedChar, normalChar]
+--     escapedChar = (char '\\') *> (choice $ map char thingsToQuote)
+--     normalChar x = x `notElem` thingsToQuote
+
 errP :: Parser ErrMsg
 errP = do
-  !_ <- quoteP
-  !msg <- manyTill anyChar quoteP
-  -- _ <- quoteP -- TODO does msg already parse this?
-  return $ ErrMsg msg
+  !msg <- quoteP *> manyTill anyChar quoteP
+  _ <- sepP
+  let msg' = "\"" ++ msg ++ "\"" -- TODO must be a better way, right?
+  return $ ErrMsg $ read msg'
 
 parseTheRest :: TreeType -> Depth -> Parser HashLine
 

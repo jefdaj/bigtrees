@@ -8,14 +8,15 @@ import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (sortBy)
+import Data.List (sortBy, elem, intercalate)
+import Data.List.Split (splitOn)
 import Data.Maybe (isJust)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Foreign.C.Types (CTime (..))
 -- import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
 import qualified System.Directory.OsPath as SDO
 import System.Directory.BigTrees.Hash (hashFile, hashSymlinkLiteral, hashSymlinkTarget, hashFromAnnexPath)
-import System.Directory.BigTrees.HashLine (ErrMsg (..), ModTime (..), NBytes (..))
+import System.Directory.BigTrees.HashLine (ErrMsg (..), ModTime (..), NBytes (..), simplifyErrMsg)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
                                                 hashContents, sumNodes, treeModTime, treeNBytes,
                                                 treeName)
@@ -29,6 +30,7 @@ import System.Posix.Files (getFileStatus, isDirectory, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
 import Text.Regex.TDFA -- TODO specifics
 import Text.Regex.TDFA.ByteString -- TODO specifics
+import Data.Char
 -- import qualified System.File.OsPath as SFO
 
 -- keepPath :: [String] -> OsPath -> Bool
@@ -84,7 +86,7 @@ mkErrTree :: (Exception e) => DT.FileName -> e -> IO (HashTree a)
 mkErrTree n e = do
   return $ Err
     { errName = Name n
-    , errMsg = ErrMsg $ show e -- TODO clean it up a bit more?
+    , errMsg = ErrMsg $ simplifyErrMsg $ show e
     }
 
 -- Note that all the IO operations done on a node itself (everything except dir

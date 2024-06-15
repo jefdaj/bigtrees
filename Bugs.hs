@@ -1,9 +1,12 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 import System.Directory.BigTrees
 import System.Directory.BigTrees.Delta
 import System.Directory.BigTrees.HashTree
+import System.Directory.BigTrees.HashLine
 import Text.Pretty.Simple
+import System.OsPath
 
 -- how to run tests:
 -- TASTY_PATTERN='/roundtrip TestTree to dir/' stack test
@@ -25,79 +28,79 @@ import Text.Pretty.Simple
 
 -- TODO wait, it is a real issue uncovered with my read/write function(s)!
 -- TODO see if you can manually shrink it: to just one dir without any contents? just one file?
-issue01example1 :: TestTree
-issue01example1 =
-  Dir
-    { name = Name "\xf58e6\x1057cc"
-    , hash = Hash
-        { unHash = "NjAxYWM0OTY1M2RkOGNm" }
-    , modTime = ModTime 0
-    , contents =
-        [ Dir
-            { name = Name "𧊯"
-            , hash = Hash
-                { unHash = "NWQxZTY4ZGRlNmFmNTRj" }
-            , modTime = ModTime 0
-            , contents =
-                [ File
-                    { name = Name "Ԉ"
-                    , hash = Hash
-                        { unHash = "ZTNiMGM0NDI5OGZjMWMx" }
-                    , modTime = ModTime 0
-                    , fileData = ""
-                    }
-                , File
-                    { name = Name "쿏]"
-                    , hash = Hash
-                        { unHash = "YjdkMjUyOTZlN2JjNmE2" }
-                    , modTime = ModTime 0
-                    , fileData = "Û"
-                    }
-                ]
-            , nINodes = 2
-            }
-        ]
-    , nINodes = 2
-    }
+-- issue01example1 :: TestTree
+-- issue01example1 =
+--   Dir
+--     { name = Name "\xf58e6\x1057cc"
+--     , hash = Hash
+--         { unHash = "NjAxYWM0OTY1M2RkOGNm" }
+--     , modTime = ModTime 0
+--     , contents =
+--         [ Dir
+--             { name = Name "𧊯"
+--             , hash = Hash
+--                 { unHash = "NWQxZTY4ZGRlNmFmNTRj" }
+--             , modTime = ModTime 0
+--             , contents =
+--                 [ File
+--                     { name = Name "Ԉ"
+--                     , hash = Hash
+--                         { unHash = "ZTNiMGM0NDI5OGZjMWMx" }
+--                     , modTime = ModTime 0
+--                     , fileData = ""
+--                     }
+--                 , File
+--                     { name = Name "쿏]"
+--                     , hash = Hash
+--                         { unHash = "YjdkMjUyOTZlN2JjNmE2" }
+--                     , modTime = ModTime 0
+--                     , fileData = "Û"
+--                     }
+--                 ]
+--             , nINodes = 2
+--             }
+--         ]
+--     , nINodes = 2
+--     }
 
-issue01example2 :: TestTree
-issue01example2 =
-  Dir
-    { name = Name "\xf6847"
-    , hash = Hash
-        { unHash = "ODkzNTQzYjU1MjljNWFh" }
-    , modTime = ModTime 0
-    , contents =
-        [ Dir
-            { name = Name "*\xfc5a1-"
-            , hash = Hash
-                { unHash = "OTkxNjI4OWVhNjUyYmE0" }
-            , modTime = ModTime 0
-            , contents =
-                [ File
-                    { name = Name "🮡"
-                    , hash = Hash
-                        { unHash = "ZTNiMGM0NDI5OGZjMWMx" }
-                    , modTime = ModTime 0
-                    , fileData = ""
-                    }
-                , File
-                    { name = Name "\xfec76_"
-                    , hash = Hash
-                        { unHash = "ZDA3NTJiNjBhZGIxNDhj" }
-                    , modTime = ModTime 0
-                    , fileData = "ç"
-                    }
-                ]
-            , nINodes = 2
-            }
-        ]
-    , nINodes = 2
-    }
+-- issue01example2 :: TestTree
+-- issue01example2 =
+--   Dir
+--     { name = Name "\xf6847"
+--     , hash = Hash
+--         { unHash = "ODkzNTQzYjU1MjljNWFh" }
+--     , modTime = ModTime 0
+--     , contents =
+--         [ Dir
+--             { name = Name "*\xfc5a1-"
+--             , hash = Hash
+--                 { unHash = "OTkxNjI4OWVhNjUyYmE0" }
+--             , modTime = ModTime 0
+--             , contents =
+--                 [ File
+--                     { name = Name "🮡"
+--                     , hash = Hash
+--                         { unHash = "ZTNiMGM0NDI5OGZjMWMx" }
+--                     , modTime = ModTime 0
+--                     , fileData = ""
+--                     }
+--                 , File
+--                     { name = Name "\xfec76_"
+--                     , hash = Hash
+--                         { unHash = "ZDA3NTJiNjBhZGIxNDhj" }
+--                     , modTime = ModTime 0
+--                     , fileData = "ç"
+--                     }
+--                 ]
+--             , nINodes = 2
+--             }
+--         ]
+--     , nINodes = 2
+--     }
 
-issue02example1 :: TestTree
-issue02example1 =
-  File {name = Name "\1082166", hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 0, fileData = ""}
+-- issue02example1 :: TestTree
+-- issue02example1 =
+--   File {name = Name "\1082166", hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 0, fileData = ""}
 
 -------------------------------
 -- issue #3: cyclic symlinks --
@@ -117,3 +120,9 @@ issue02example1 =
 -- bigtrees find /etc/
 -- ...
 -- bigtrees: recoverEncode: invalid argument (cannot encode character '\65533')
+
+-- new issues 240615 --
+
+-- fail01 = [ErrLine (Depth 0,ErrMsg "",Name {unName = [osp|\SOH|]})]
+-- fail02 = [ErrLine (Depth 7,ErrMsg "\38865\1060390#l\30790",Name {unName = [osp|\SOH|]})]
+fail03 = [ErrLine (Depth 8,ErrMsg "km\1090272\&1A\992463^\1066636:\STX\EMfO\DC4\1111026m\1050386sj\"\"\FSi",Name {unName = [osp|\SOH|]})]

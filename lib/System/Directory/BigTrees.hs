@@ -35,6 +35,7 @@ module System.Directory.BigTrees
   , TestTree
   , TreeType(..)
   , ModTime(..)
+  , Depth(..)
   , NBytes(..)
   , NNodes(..)
   , addSubTree
@@ -119,7 +120,7 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNNo
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (HashLine (..), ModTime (..), NBytes (..), NNodes (..),
-                                           TreeType (..))
+                                           TreeType (..), Depth(..))
 import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData (..),
                                           addNodeToHashSet, addTreeToHashSet, emptyHashSet,
                                           hashSetDataFromLine, hashSetFromList, hashSetFromTree,
