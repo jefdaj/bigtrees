@@ -8,7 +8,6 @@ import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (isPrefixOf, sort)
 import System.Directory.BigTrees (buildProdTree, hWriteTree, printTree)
-import System.Directory.BigTrees.Util (absolutePath)
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.Info (os)
 import System.IO (Handle, IOMode (..), hClose, openBinaryFile, stderr, stdout)
@@ -17,13 +16,15 @@ import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
+import System.OsPath (OsPath, encodeFS)
+import qualified System.File.OsPath as SFO
 
-cmdHash :: Config -> FilePath -> IO ()
+cmdHash :: Config -> OsPath -> IO ()
 cmdHash cfg path = bracket open close write
   where
     open = case txt cfg of
              Nothing -> return stdout
-             Just p  -> openBinaryFile p WriteMode
+             Just p  -> SFO.openBinaryFile p WriteMode
 
     write hdl = do
       tree <- buildProdTree (verbose cfg) (exclude cfg) path
@@ -44,12 +45,12 @@ stripComments = unlines . filter (\l -> not ("#" `isPrefixOf` l)) . lines
 
 hashTarXzAction :: Config -> FilePath -> IO BLU.ByteString
 hashTarXzAction cfg xzPath = do
-  (Just xzPath') <- absolutePath xzPath
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
-    let dPath = tmpDir </> dropExtension (takeBaseName xzPath') -- assumes .tar.something
+    let dPath = tmpDir </> dropExtension (takeBaseName xzPath) -- assumes .tar.something
+    dPath' <- encodeFS dPath
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
-    _ <- readCreateProcess ((proc "tar" ["-xf", xzPath']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdHash cfg dPath
+    _ <- readCreateProcess ((proc "tar" ["-xf", xzPath]) {cwd = Just tmpDir}) ""
+    (out, ()) <- hCapture [stdout, stderr] $ cmdHash cfg dPath'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString $ stripComments out
 
