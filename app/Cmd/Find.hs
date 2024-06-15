@@ -20,8 +20,9 @@ import Test.QuickCheck (Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 -- import Control.Monad.IO.Class (liftIO)
 import Data.Maybe (fromMaybe)
+import System.OsPath (OsPath, encodeFS)
 
-cmdFind :: Config -> FilePath -> IO ()
+cmdFind :: Config -> OsPath -> IO ()
 cmdFind cfg path = do
   tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
   printTreePaths (regex cfg) (fromMaybe "" $ metafmt cfg) tree
@@ -32,13 +33,14 @@ cmdFind cfg path = do
 cmdFindUnixFind :: TestTree -> IO (String, String)
 cmdFindUnixFind t =
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+    tmpDir' <- encodeFS tmpDir
 
     -- tmpDir will be the *parent* of the root tree dir
-    writeTestTreeDir tmpDir t
+    writeTestTreeDir tmpDir' t
     -- wait 0.1 second before + after each cmd so we don't capture output from tasty
     delay 100000
 
-    (out1, ()) <- hCapture [stdout, stderr] $ cmdFind defaultConfig tmpDir
+    (out1, ()) <- hCapture [stdout, stderr] $ cmdFind defaultConfig tmpDir'
     -- TODO why is this necessary? what's different vs `sortOn name`?
     let out1' = (unlines . sort . lines) out1
     delay 100000
