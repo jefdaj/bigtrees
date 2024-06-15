@@ -60,7 +60,7 @@ import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, n2bs)
+import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, n2bs, bs2n)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
 import TH.Derive ()
 import qualified System.OsPath as OSP
@@ -187,33 +187,20 @@ instance Arbitrary HashLine where
 joinCols :: [B8.ByteString] -> B8.ByteString
 joinCols = B8.intercalate (B8.singleton sepChar)
 
--- ospTab :: OSP.OsString
--- ospTab = OSP.pack [OSP.unsafeFromChar '\t']
-
--- TODO is there an OsString intercalate somewhere? should there be?
--- ospTabJoin :: [OSP.OsPath] -> OSP.OsPath
--- ospTabJoin = mconcat $ LBS.intercalate ospTab
-
 -- TODO use this more directly?
 -- For now it's only imported by HeadFoot to use in the Header
 hashLineFields :: [String]
 hashLineFields = ["type", "depth", "hash", "modtime", "nbytes", "nfiles", "name"]
 
--- high level, how should this work? maybe the encoding of the entire thing
--- should depend on the OsPath type being used? as in, it's all an OsString?
--- unsafeEncodeUtf should work fine here! use it for everything except the names
-
--- TODO replace with the official one once there's a compatible stack LTS
--- myUnsafeEncodeUtf p = case OSP.encodeWith utf8 utf8 p of
-  -- Left msg -> error $ show msg
-  -- Right osp -> osp
-
--- TODO actual Pretty instance
--- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
--- TODO rename/move this? it's used in printing lines and also find paths
+-- TODO rename to something less weird
+-- TODO unify this with the equivalent for bigsets? and path lists?
+-- TODO Binary/Bytable instance here instead?
+-- TODO avoid encoding as UTF-8; use actual bytestring directly
+-- TODO treat empty NamesRev as Nothing?
 -- TODO make this a helper and export 2 fns: prettyHashLine, prettyPathLine?
+-- TODO should it not be possible to have an ErrLine for bigsets and/or find path lists?
 -- note: p can have weird characters, so it should be handled only as ByteString
-prettyLine :: Maybe [Name] -> HashLine -> B8.ByteString
+prettyLine :: Maybe NamesRev -> HashLine -> B8.ByteString
 
 prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
   let node = case breadcrumbs of
@@ -250,9 +237,9 @@ genHashLinesBS n = do
 
 -- This returns the length of the list, which can either be throw out or used
 -- to double-check that all the HashLines parsed correctly.
-parseHashLinesBS :: B8.ByteString -> Either String Int
+parseHashLinesBS :: B8.ByteString -> Either String [HashLine]
 parseHashLinesBS bs = 
-  (length . force . catMaybes) <$>
+  (force . catMaybes) <$>
   parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
 
 -- Note that these random lines can't be parsed into a valid tree;
@@ -262,7 +249,7 @@ bench_roundtrip_HashLines_to_ByteString n = do
   bs <- genHashLinesBS n
   case parseHashLinesBS bs of
     Left msg -> error msg
-    Right n' -> return $ n' == n
+    Right ls -> return $ length ls == n
 
 -- prop_roundtrip_ProdTree_to_hashes :: Property
 -- prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
@@ -320,7 +307,7 @@ nameP = do
   -- cs <- manyTill anyChar $ lookAhead breakP
   -- return $ _ (c:cs)
   bs <- takeTill (== '\NUL')
-  return $ Name $ SBS.toShort bs
+  return $ bs2n bs
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
@@ -397,3 +384,4 @@ parseHashLine bs = case A8.parseOnly (hashLineP Nothing) (B8.append bs "\n") of
   Left _         -> Nothing
   Right Nothing  -> Nothing
   Right (Just x) -> Just x
+
