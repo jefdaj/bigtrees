@@ -38,13 +38,14 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
+import System.Directory.BigTrees.Name (Name(..))
 import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
--- import System.Directory.BigTrees.Name (n2fp)
+import System.Directory.BigTrees.Name (n2bs)
 -- import System.OsPath (splitDirectories, (</>))
 
 import System.OsPath -- TODO specifics
-import System.File.OsPath -- TODO specifics
+import qualified System.File.OsPath as SFO
 
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup
@@ -85,13 +86,14 @@ pathsByHash t = do
   return ht
 
 -- inserts all nodes from a tree into an existing dupemap in ST s
+-- TODO The empty string (mempty) behaves right, right? (disappears)
 addToDupeMap :: DupeTable s -> ProdTree -> ST s ()
-addToDupeMap ht = addToDupeMap' ht ""
+addToDupeMap ht = addToDupeMap' ht mempty
 
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> OsPath -> ProdTree -> ST s ()
-addToDupeMap' ht dir (File {nodeData=(NodeData{name=n, hash=h})}) = insertDupeSet ht h (1, F, S.singleton $ dir </> n)
-addToDupeMap' ht dir (Dir {nodeData=(NodeData{name=n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
+addToDupeMap' ht dir (File {nodeData=(NodeData{name=Name n, hash=h})}) = insertDupeSet ht h (1, F, S.singleton $ dir </> n)
+addToDupeMap' ht dir (Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
   insertDupeSet ht h (fs, D, S.singleton $ dir </> n)
   mapM_ (addToDupeMap' ht (dir </> n)) cs
 
@@ -152,7 +154,7 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
                        `isPrefixOf`
-                       splitDirectories (B.unpack e') | e <- map B.unpack fs]
+                       splitDirectories e' | e <- fs]
 
 -- sorts paths by shallowest (fewest dirs down), then length of filename,
 -- then finally alphabetical
@@ -177,20 +179,27 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
 -- TODO subtract one group when saying how many dupes in a dir,
 --      and 1 when saying how many in a file. because it's about how much you would save
 printDupes :: Maybe Int -> [DupeList] -> IO ()
-printDupes md groups = B.putStrLn $ explainDupes md groups
+printDupes md groups = do
+  msg <- explainDupes md groups
+  B.putStrLn msg
 
 writeDupes :: Maybe Int -> OsPath -> [DupeList] -> IO ()
-writeDupes md path groups = B.writeFile path $ explainDupes md groups
+writeDupes md path groups = do
+  msg <- explainDupes md groups
+  SFO.writeFile' path msg
 
-explainDupes :: Maybe Int -> [DupeList] -> B.ByteString
-explainDupes md = B.unlines . map explainGroup
+explainDupes :: Maybe Int -> [DupeList] -> IO B.ByteString
+explainDupes md ls = mapM explainGroup ls >>= return . B.unlines
   where
     disclaimer Nothing  = ""
     disclaimer (Just d) = " (up to " `B.append` B.pack (show d) `B.append` " levels deep)"
 
-    explainGroup :: DupeList -> B.ByteString
-    explainGroup (n, t, paths) = B.unlines
-      $ (header t n (length paths) `B.append` ":") : sort paths
+    explainGroup :: DupeList -> IO B.ByteString
+    explainGroup (n, t, paths) = do
+      paths' <- mapM decodeFS paths
+      return $ B.unlines
+             $ (header t n (length paths) `B.append` ":")
+             : (sort $ map B.pack paths')
 
     header :: TreeType -> Int -> Int -> B.ByteString
     header F n fs = B.intercalate " " [ "# deduping these"  , B.pack (show fs)
@@ -207,8 +216,9 @@ explainDupes md = B.unlines . map explainGroup
 
 -- TODO is this actually helpful?
 listAllFiles :: OsPath -> ProdTree -> [(Hash, OsPath)]
-listAllFiles anchor (File {nodeData=(NodeData{name=n, hash=h})}) = [(h, anchor </> n)]
-listAllFiles anchor (Dir {nodeData=(NodeData{name=n}), dirContents=cs}) = concatMap (listAllFiles $ anchor </> n) cs
+listAllFiles anchor (File {nodeData=(NodeData{name=Name n, hash=h})}) = [(h, anchor </> n)]
+listAllFiles anchor (Dir {nodeData=(NodeData{name=Name n}), dirContents=cs}) =
+  concatMap (listAllFiles $ anchor </> n) cs
 
 
 -- TODO rewrite allDupes by removing the subtree first then testing membership
