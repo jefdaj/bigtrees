@@ -28,6 +28,8 @@ module System.Directory.BigTrees.Name
 
   -- TODO document these individually
   ( Name(..)
+  , NamesFwd
+  , NamesRev
 
   , n2sbs
   , sbs2n
