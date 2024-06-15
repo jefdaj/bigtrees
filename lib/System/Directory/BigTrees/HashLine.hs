@@ -60,7 +60,7 @@ import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, n2bs, bs2n)
+import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, n2bs, bs2n, nameP)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
 import TH.Derive ()
 import qualified System.OsPath as OSP
@@ -299,15 +299,6 @@ hashP = do
  -}
 breakP :: Parser ()
 breakP = endOfLine >> choice [void (char '#'), typeP >> numStrP >> return (), endOfInput]
-
--- TODO is Attoparsec.ByteString suitable for this, or do I need to parse them some other way?
-nameP :: Parser Name
-nameP = do
-  -- c  <- anyChar
-  -- cs <- manyTill anyChar $ lookAhead breakP
-  -- return $ _ (c:cs)
-  bs <- takeTill (== '\NUL')
-  return $ bs2n bs
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String

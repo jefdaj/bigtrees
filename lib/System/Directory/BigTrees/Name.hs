@@ -41,6 +41,8 @@ module System.Directory.BigTrees.Name
   , joinNames
   , names2bs
 
+  , nameP
+
   -- tests
   -- TODO document tests as a group
   , isValidName
@@ -86,6 +88,12 @@ import qualified Data.ByteString.Short as SBS
 import qualified System.OsPath.Internal as SOPI
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory.OsPath as SDO
+
+import Data.Attoparsec.ByteString (skipWhile)
+import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
+                                         endOfLine, isEndOfLine, manyTill, parseOnly, take, takeTill)
+import qualified Data.Attoparsec.ByteString.Char8 as A8
+import Data.Attoparsec.Combinator (lookAhead, sepBy')
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
 -- efficiency, but what it really means is "OsPath without slashes". Based on
@@ -198,6 +206,15 @@ joinNames = B8.intercalate (B8.singleton '/') . map n2bs
 
 names2bs :: NamesFwd -> B8.ByteString
 names2bs = SBS.fromShort . SOS.getPosixString . SOS.getOsString . SOP.joinPath . map unName
+
+-- TODO is Attoparsec.ByteString suitable for this, or do I need to parse them some other way?
+nameP :: Parser Name
+nameP = do
+  -- c  <- anyChar
+  -- cs <- manyTill anyChar $ lookAhead breakP
+  -- return $ _ (c:cs)
+  bs <- takeTill (== '\NUL')
+  return $ bs2n bs
 
 -- Fails if there's an error writing the file, or if after writing it doesn't
 -- exist. Example manual usage:
