@@ -15,11 +15,12 @@ module System.Directory.BigTrees.HashLine
   , NBytes(..)
   , NNodes(..)
   , ErrMsg(..)
-  , bsBytes
   -- , Hash(..) TODO re-export here? And Name too?
+
+  , bsBytes
   , prettyLine
   , hashLineP
-  , breakP -- TODO should this be internal?
+  , breakP
   , parseHashLine
   , sepChar
   , hashLineFields
@@ -206,26 +207,26 @@ prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
   let node = case breadcrumbs of
                Nothing -> n2bs name
                Just ns -> breadcrumbs2bs $ name:ns
-  in (joinCols
+  in joinCols
        [ B8.pack $ show E
        , B8.pack $ show d
        , B8.pack $ show m -- unlike other hashline components, this should be quoted
-       , node
-       ]) <> (B8.singleton '\NUL')
+       , node <> B8.singleton '\NUL'
+       ]
 
 prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
   let node = case breadcrumbs of
                Nothing -> n2bs name
                Just ns -> breadcrumbs2bs $ name:ns
-  in (joinCols
-        [ B8.pack $ show t
-        , B8.pack $ show n
-        , prettyHash h
-        , B8.pack $ show mt
-        , B8.pack $ show s
-        , B8.pack $ show f
-        , node
-        ]) <> (B8.singleton '\NUL')
+  in joinCols
+       [ B8.pack $ show t
+       , B8.pack $ show n
+       , prettyHash h
+       , B8.pack $ show mt
+       , B8.pack $ show s
+       , B8.pack $ show f
+       , node <> B8.singleton '\NUL'
+       ]
 
 -- TODO do this without IO?
 genHashLinesBS :: Int -> IO B8.ByteString
@@ -235,8 +236,9 @@ genHashLinesBS n = do
   let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
   return bs
 
-nullBreak :: Parser ()
-nullBreak = char '\NUL' *> endOfLine
+-- TODO rename? confusingly sounds "bigger" than breakP
+nullBreakP :: Parser ()
+nullBreakP = char '\NUL' *> endOfLine
 
 -- This returns the length of the list, which can either be throw out or used
 -- to double-check that all the HashLines parsed correctly.
@@ -251,7 +253,7 @@ nullBreak = char '\NUL' *> endOfLine
 parseHashLinesBS :: B8.ByteString -> Either String [HashLine]
 parseHashLinesBS bs = 
   (force . catMaybes) <$>
-  parseOnly (sepBy' (hashLineP Nothing) nullBreak) bs
+  parseOnly (sepBy' (hashLineP Nothing) nullBreakP) bs
 
 -- Note that these random lines can't be parsed into a valid tree;
 -- the only test the HashLine parser
@@ -310,7 +312,7 @@ hashP = do
  -}
 breakP :: Parser ()
 breakP =
-  nullBreak >>
+  nullBreakP >>
   choice
     [ void (char '#'), typeP >> numStrP >> return ()
     , endOfInput
