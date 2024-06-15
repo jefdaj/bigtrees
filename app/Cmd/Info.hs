@@ -14,13 +14,12 @@ import System.Directory.BigTrees.HeadFoot (Footer, Header (..), scanSeconds)
 -- import qualified Data.ByteString.Short as BS
 import System.OsPath (encodeFS, OsPath)
 
-cmdInfo :: Config -> FilePath -> IO ()
+cmdInfo :: Config -> OsPath -> IO ()
 cmdInfo cfg path = do
-  path' <- encodeFS path
-  mH  <- readHeader path'
-  mLF <- readLastHashLineAndFooter path'
+  mH  <- readHeader path
+  mLF <- readLastHashLineAndFooter path
   case (mH, mLF) of
-    (Just h, Just (l, f)) -> printInfo path' h f l
+    (Just h, Just (l, f)) -> printInfo path h f l
     _                     -> error $ "failed to read info from " ++ show path
 
 printInfo :: OsPath -> Header -> Footer -> HashLine -> IO ()
