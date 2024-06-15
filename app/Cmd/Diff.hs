@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Cmd.Diff where
 
 -- TODO guess and check hashes
@@ -5,8 +7,7 @@ module Cmd.Diff where
 import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
-import System.Directory.BigTrees (diff, printDeltas, readOrBuildTree, renameRoot)
-import System.Directory.BigTrees.Util (absolutePath)
+import System.Directory.BigTrees (diff, printDeltas, readOrBuildTree, renameRoot, Name(..))
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -14,11 +15,12 @@ import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
+import System.OsPath (OsPath, osp, encodeFS)
 
-cmdDiff :: Config -> FilePath -> FilePath -> IO ()
+cmdDiff :: Config -> OsPath -> OsPath -> IO ()
 cmdDiff cfg old new = do
-  tree1 <- renameRoot "old" <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) old
-  tree2 <- renameRoot "new" <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) new
+  tree1 <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) old
+  tree2 <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) new
   printDeltas $ diff tree1 tree2
 
 -----------
@@ -27,15 +29,15 @@ cmdDiff cfg old new = do
 
 diffTarXz :: FilePath -> FilePath -> IO BLU.ByteString
 diffTarXz xz1 xz2 = do
-  (Just xz1') <- absolutePath xz1
-  (Just xz2') <- absolutePath xz2
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
-    let d1 = tmpDir </> dropExtension (takeBaseName xz1')
-    let d2 = tmpDir </> dropExtension (takeBaseName xz2')
+    let d1 = tmpDir </> dropExtension (takeBaseName xz1)
+    let d2 = tmpDir </> dropExtension (takeBaseName xz2)
+    d1' <- encodeFS d1
+    d2' <- encodeFS d2
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
-    _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
-    _ <- readCreateProcess ((proc "tar" ["-xf", xz2']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultConfig d1 d2
+    _ <- readCreateProcess ((proc "tar" ["-xf", xz1]) {cwd = Just tmpDir}) ""
+    _ <- readCreateProcess ((proc "tar" ["-xf", xz2]) {cwd = Just tmpDir}) ""
+    (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultConfig d1' d2'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 
