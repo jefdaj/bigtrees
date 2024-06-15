@@ -120,9 +120,3 @@ import System.OsPath
 -- bigtrees find /etc/
 -- ...
 -- bigtrees: recoverEncode: invalid argument (cannot encode character '\65533')
-
--- new issues 240615 --
-
--- fail01 = [ErrLine (Depth 0,ErrMsg "",Name {unName = [osp|\SOH|]})]
--- fail02 = [ErrLine (Depth 7,ErrMsg "\38865\1060390#l\30790",Name {unName = [osp|\SOH|]})]
-fail03 = [ErrLine (Depth 8,ErrMsg "km\1090272\&1A\992463^\1066636:\STX\EMfO\DC4\1111026m\1050386sj\"\"\FSi",Name {unName = [osp|\SOH|]})]
