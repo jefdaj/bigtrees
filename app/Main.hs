@@ -23,6 +23,7 @@ import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 -- import Text.Pretty.Simple (pPrint)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
+import System.OsPath (OsPath, encodeFS)
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -45,8 +46,12 @@ main = do
   eList <- if flag 'e'
              then short 'e' >>= readFile <&> lines
              else return $ exclude defaultConfig
+  tPath <- case shortO 't' of
+             Nothing -> return Nothing
+             Just t  -> encodeFS t >>= return . Just
+
   let cfg = Config
-        { txt      = shortO 't'
+        { txt      = tPath
         , maxdepth = (read :: String -> Int) <$> shortO 'd'
         , verbose  = flag 'v'
         -- , force    = flag 'f'
@@ -60,34 +65,34 @@ main = do
   -- pPrint args
 
   if cmd "diff" then do
-    old <- arg "old"
-    new <- arg "new"
+    old <- encodeFS =<< arg "old"
+    new <- encodeFS =<< arg "new"
     cmdDiff cfg old new
 
   else if cmd "dupes" then do
-    hashes <- arg "hashes"
+    hashes <- encodeFS =<< arg "hashes"
     cmdDupes cfg hashes
 
   else if cmd "set-add" then do
-    set <- short 's'
+    set <- encodeFS =<< short 's'
     let note  = shortO 'n'
-        paths = lst "path"
+    paths <- mapM encodeFS $ lst "path"
     cmdSetAdd cfg set note paths
 
   else if cmd "find" then do
-    path <- arg "path"
+    path <- encodeFS =<< arg "path"
     cmdFind cfg path
 
   else if cmd "hash" then do
-     path <- arg "path"
+     path <- encodeFS =<< arg "path"
      cmdHash cfg path
 
   else if cmd "info" then do
-    path <- arg "path"
+    path <- encodeFS =<< arg "path"
     cmdInfo cfg path
 
   else if cmd "oldcat" then do
-     path <- arg "path"
+     path <- encodeFS =<< arg "path"
      oldCmdCat cfg path
 
   -- else if cmd "oldtest"  then do
@@ -95,9 +100,9 @@ main = do
   --   oldCmdTest cfg paths
 
   else if cmd "oldupdate" then do
-    mainTree <- arg "main"
-    subTree  <- arg "sub"
-    subPath  <- arg "path"
+    mainTree <- encodeFS =<< arg "main"
+    subTree  <- encodeFS =<< arg "sub"
+    subPath  <- encodeFS =<< arg "path"
     oldCmdUpdate cfg mainTree subTree subPath
 
   else if cmd "version" then
