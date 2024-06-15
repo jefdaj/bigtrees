@@ -6,8 +6,8 @@ import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory.BigTrees as BT
-import System.Directory.BigTrees.Util (absolutePath)
 import System.FilePath (dropExtension, takeBaseName, (</>))
+import System.OsPath (OsPath, encodeFS)
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
@@ -15,7 +15,7 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
 
-cmdDupes :: Config -> FilePath -> IO ()
+cmdDupes :: Config -> OsPath -> IO ()
 cmdDupes cfg path = do
   tree <- BT.readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
   -- TODO rewrite sorting with lower memory usage
@@ -33,12 +33,12 @@ cmdDupes cfg path = do
 -- TODO make a bigger test with grafted trees to replace the two-demo one that was here
 dupesTarXz :: FilePath -> IO BLU.ByteString
 dupesTarXz xz1 = do
-  (Just xz1') <- absolutePath xz1
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
-    let d1 = tmpDir </> dropExtension (takeBaseName xz1')
+    let d1 = tmpDir </> dropExtension (takeBaseName xz1)
+    d1' <- encodeFS d1
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
-    _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultConfig d1
+    _ <- readCreateProcess ((proc "tar" ["-xf", xz1]) {cwd = Just tmpDir}) ""
+    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultConfig d1'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 
