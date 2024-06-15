@@ -46,7 +46,7 @@ import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL
-import qualified Data.ByteString.Short as BS
+import qualified Data.ByteString.Short as SBS
 import Data.Functor ((<&>))
 import Data.Hashable (Hashable (..))
 import Data.List (isInfixOf, isPrefixOf)
@@ -78,7 +78,7 @@ import qualified System.File.OsPath as SFO
  - note: regular bytestrings here cause memory fragmentation/space leaks
  -}
 newtype Hash
-  = Hash { unHash :: BS.ShortByteString }
+  = Hash { unHash :: SBS.ShortByteString }
   deriving (Eq, Generic, NFData, Ord, Read, Show)
 
 -- This is unrelated to BigTrees's hashing. It's required to use Data.HashMap
@@ -104,10 +104,10 @@ digestLength = 20
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
 prettyHash :: Hash -> B.ByteString
-prettyHash = BS.fromShort . unHash
+prettyHash = SBS.fromShort . unHash
 
-compress :: B.ByteString -> BS.ShortByteString
-compress = BS.toShort . B.take digestLength . B64.encode
+compress :: B.ByteString -> SBS.ShortByteString
+compress = SBS.toShort . B.take digestLength . B64.encode
 
 -- TODO no need to B.copy here?
 hashBytes :: B.ByteString -> Hash
