@@ -2,10 +2,22 @@ module System.Directory.BigTrees
 
   -- name
   ( Name(..)
-  -- , n2fp
-  -- , fp2n
-  , breadcrumbs2op
-  , roundtripNameToFileName
+  , NamesFwd
+  , NamesRev
+
+  , n2sbs
+  , sbs2n
+  , fp2n
+  , fp2ns
+  , n2bs
+  , bs2n
+  , breadcrumbs2bs
+  , joinNames
+  , names2bs
+  , os2ns
+  , op2ns
+
+  , nameP
 
   -- hash
   , Hash(..)
@@ -124,5 +136,5 @@ import System.Directory.BigTrees.HashTree.Read (getTreeSize, readHeader, readLas
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)
-import System.Directory.BigTrees.Name (Name (..), breadcrumbs2fp, fp2n, n2fp,
-                                       roundtripNameToFileName)
+import System.Directory.BigTrees.Name ( Name(..), NamesFwd, NamesRev, n2sbs, sbs2n, fp2n, fp2ns, n2bs, bs2n, breadcrumbs2bs, joinNames, names2bs, os2ns, op2ns, nameP)
+ 
