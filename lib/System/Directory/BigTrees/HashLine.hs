@@ -35,7 +35,8 @@ module System.Directory.BigTrees.HashLine
   -- for testing (TODO remove?)
   -- , nameP
   -- , linesP
-  -- , bench_roundtrip_HashLines_to_ByteString
+  , bench_roundtrip_HashLines_to_ByteString
+  , prop_roundtrip_HashLines_to_ByteString
   , genHashLinesBS
   , parseHashLinesBS
   , joinCols
@@ -264,20 +265,14 @@ bench_roundtrip_HashLines_to_ByteString n = do
     Left msg -> error msg
     Right ls -> return $ length ls == n
 
--- prop_roundtrip_ProdTree_to_hashes :: Property
--- prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
-  -- t1 <- pick arbitrary
-  -- t2 <- run $ roundtripProdTreeToHashes t1
-  -- assert $ t2 == t1
-
--- linesP :: Maybe Int -> Parser [HashLine]
--- linesP md = do
-  -- hls <- many (hashLineP md <* endOfLine) -- commentLineP <* endOfLine
-  -- return $ catMaybes hls -- TODO count skipped lines here?
--- prop_roundtrip_ProdTree_to_ByteString t = t' == t
-  -- where
-    -- bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
-    -- t' = deserializeTree Nothing bs
+-- Note that these lines won't form a valid tree.
+prop_roundtrip_HashLines_to_ByteString :: [HashLine] -> Bool
+prop_roundtrip_HashLines_to_ByteString hls =
+  let bs  = B8.unlines $ map (prettyLine Nothing) hls
+      res = parseOnly (sepBy' (hashLineP Nothing) nullBreakP) bs
+  in case fmap catMaybes res of
+       Left _ -> False
+       Right hls' -> hls' == hls
 
 
 ------------
