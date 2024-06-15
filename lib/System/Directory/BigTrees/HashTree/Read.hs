@@ -10,7 +10,7 @@ import Data.Functor ((<&>))
 import Data.List (partition, sortBy)
 import Data.Function (on)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..),
-                                           TreeType (..), hashLineP, parseHashLine)
+                                           TreeType (..), hashLineP, nullBreakP, parseHashLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
@@ -217,7 +217,7 @@ parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
-  hls <- many (hashLineP md <* endOfLine)
+  hls <- many (hashLineP md <* nullBreakP)
   return $ catMaybes hls
 
 -- bodyP :: Maybe Int -> Parser [HashLine]

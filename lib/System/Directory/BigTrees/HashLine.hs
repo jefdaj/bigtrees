@@ -21,6 +21,7 @@ module System.Directory.BigTrees.HashLine
   , prettyLine
   , hashLineP
   , breakP
+  , nullBreakP
   , parseHashLine
   , sepChar
   , hashLineFields
