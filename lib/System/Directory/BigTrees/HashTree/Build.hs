@@ -82,9 +82,8 @@ buildTree readFileFn beVerbose excludes path = do
 -- case of re-wrapping directory-tree error nodes.
 mkErrTree :: (Exception e) => DT.FileName -> e -> IO (HashTree a)
 mkErrTree n e = do
-  fp <- decodeFS n
   return $ Err
-    { errName = fp2n fp
+    { errName = Name n
     , errMsg = ErrMsg $ show e -- TODO clean it up a bit more?
     }
 
@@ -100,9 +99,8 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
 -- We handle them all here.
 -- Note that readFileFn and hashFile both read the file, but in practice that
 -- isn't a problem because readFileFn is a no-op in production.
-buildTree' readFileFn v depth es (a DT.:/ (DT.File op _)) = handleAny (mkErrTree op) $ do
-  n <- op2n op
-  let fPath = a </> op
+buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n) $ do
+  let fPath = a </> n
   isLink <- SDO.pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
   if isLink
     then do
@@ -126,7 +124,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File op _)) = handleAny (mkErrTree
           !fd <- unsafeInterleaveIO $ readFileFn fPath
           return $ Link
             { nodeData = NodeData
-              { name = n
+              { name = Name n
               , hash = h
               , modTime = mt
               , nBytes = s
@@ -142,7 +140,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File op _)) = handleAny (mkErrTree
           !h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
           return $ Link
             { nodeData = NodeData
-              { name = n
+              { name = Name n
               , hash = h
               , modTime = mt
               , nBytes = s
@@ -167,7 +165,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File op _)) = handleAny (mkErrTree
       -- return File { name = n, hash = h }
       return $ File
         { nodeData = NodeData
-          { name = n
+          { name = Name n
           , hash = h
           , modTime = mt
           , nBytes = s
@@ -175,10 +173,9 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File op _)) = handleAny (mkErrTree
         , fileData = fd
         }
 
-buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir op _)) = handleAny (mkErrTree op) $ do
-  n <- op2n op
+buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n _)) = handleAny (mkErrTree n) $ do
   (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
-  let root = a </> op
+  let root = a </> n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
 
@@ -203,7 +200,7 @@ buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir op _)) = handleAny (mkErrTre
             { dirContents = cs''
             , nNodes  = sum $ 1 : map sumNodes cs''
             , nodeData = NodeData
-              { name     = n
+              { name     = Name n
               , modTime  = maximum $ mt : map treeModTime cs''
               , nBytes   = sum $ s : map treeNBytes cs''
               , hash     = hashContents cs''
