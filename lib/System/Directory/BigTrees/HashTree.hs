@@ -59,7 +59,7 @@ module System.Directory.BigTrees.HashTree
 import qualified Data.ByteString.Char8 as B8
 import qualified System.Directory.OsPath as SDO
 import System.Directory.BigTrees.HashLine (ErrMsg (..))
-import System.Directory.BigTrees.Name (Name (..), n2op)
+import System.Directory.BigTrees.Name (Name (..))
 import System.OsPath ((</>), OsPath, osp, encodeFS)
 -- import System.FilePath.Glob (Pattern)
 import qualified System.FilePath as SF
@@ -169,8 +169,7 @@ roundtripTestTreeToDir t =
 
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
-    op <- n2op $ treeName t
-    let treeRootDir = tmpDir' </> op
+    let treeRootDir = tmpDir' </> (unName $ treeName t)
     readTestTree Nothing False [] treeRootDir
 
 -- TODO is the forcing unnecessary?
@@ -196,7 +195,7 @@ unit_roundtrip_Err_to_hashes = do
     t1 <- buildProdTree False [] badPath
     t2 <- roundtripProdTreeToHashes t1
     -- TODO is there a good way to communicate the name to the parser?
-    let t2' = renameRoot "doesnotexist" t2
+    let t2' = renameRoot (Name [osp|doesnotexist|]) t2
     HU.assert $ t2' == t1
 
 -- TODO rename to be more general? i imagine it should apply to any IO error
