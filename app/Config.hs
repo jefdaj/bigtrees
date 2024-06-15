@@ -7,6 +7,7 @@ module Config
   )
   where
 
+import System.OsPath (OsPath)
 import Control.Monad (when)
 import Prelude hiding (log)
 
@@ -19,7 +20,7 @@ import Prelude hiding (log)
 -- TODO remove from non-Cmd modules
 data Config
   = Config
-      { txt      :: Maybe FilePath
+      { txt      :: Maybe OsPath
       , maxdepth :: Maybe Int
       , verbose  :: Bool
       -- , force    :: Bool
@@ -28,7 +29,7 @@ data Config
       , metafmt  :: Maybe String
       , regex    :: Maybe String
       }
-  deriving (Read, Show)
+  deriving (Show)
 
 defaultConfig :: Config
 defaultConfig = Config
