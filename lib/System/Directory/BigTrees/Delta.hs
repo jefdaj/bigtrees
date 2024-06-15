@@ -27,58 +27,62 @@ import Data.List (find)
 import Data.Maybe (fromJust)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, addSubTree,
                                            dropTo, rmSubTree, treeName)
-import System.Directory.BigTrees.Name (n2fp)
-import System.FilePath ((</>))
+import System.Directory.BigTrees.Name (Name(..), op2ns)
+import System.OsPath ((</>), OsPath, decodeFS)
+import qualified System.OsPath as SOP
 
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
 --      maybe only some of them are needed: add and edit. and edit only needs one.
 data Delta a
-  = Add FilePath (HashTree a)
-  | Rm FilePath
-  | Mv FilePath FilePath
-  | Edit FilePath (HashTree a) (HashTree a) -- TODO remove in favor of subtle use of Add?
-  deriving (Eq, Read, Show)
+  = Add OsPath (HashTree a)
+  | Rm OsPath
+  | Mv OsPath OsPath
+  | Edit OsPath (HashTree a) (HashTree a) -- TODO remove in favor of subtle use of Add?
+  deriving (Eq, Show)
 
 ------------------------
 -- diff two hashtrees --
 ------------------------
 
 -- TODO put the hashes back here?
-prettyDelta :: Show a => Delta a -> B.ByteString
-prettyDelta (Add  f _  ) = B.pack $ "added '"   ++ f  ++ "'"
-prettyDelta (Rm   f    ) = B.pack $ "removed '" ++ f  ++ "'"
-prettyDelta (Edit f _ _) = B.pack $ "edited '"  ++ f  ++ "'"
-prettyDelta (Mv   f1 f2) = B.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
+prettyDelta :: Show a => Delta a -> IO B.ByteString
+prettyDelta (Add  f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "added '"   ++ f' ++ "'"
+prettyDelta (Rm   f    ) = decodeFS f >>= \f' -> return $ B.pack $ "removed '" ++ f' ++ "'"
+prettyDelta (Edit f _ _) = decodeFS f >>= \f' -> return $ B.pack $ "edited '"  ++ f' ++ "'"
+prettyDelta (Mv   f1 f2) = do
+  f1' <- decodeFS f1
+  f2' <- decodeFS f2
+  return $ B.pack $ "moved '"   ++ f1' ++ "' -> '" ++ f2' ++ "'"
 
 printDeltas :: Show a => [Delta a] -> IO ()
-printDeltas = mapM_ (putStrLn . B.unpack . prettyDelta)
+printDeltas ds = mapM prettyDelta ds >>= mapM_ B.putStrLn
 
 diff :: Show a => HashTree a -> HashTree a -> [Delta a]
 diff = diff' ""
 
-diff' :: Show a => FilePath -> HashTree a -> HashTree a -> [Delta a]
-diff' a t1@(File {nodeData=(NodeData {name=f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=f2, hash=h2})})
+diff' :: Show a => OsPath -> HashTree a -> HashTree a -> [Delta a]
+diff' a t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
-  | f1 /= f2 && h1 == h2 = [Mv (a </> n2fp f1) (a </> n2fp f2)]
-  | f1 == f2 && h1 /= h2 = [Edit (if a == n2fp f1 then n2fp f1 else a </> n2fp f1) t1 t2]
+  | f1 /= f2 && h1 == h2 = [Mv (a </> f1) (a </> f2)]
+  | f1 == f2 && h1 /= h2 = [Edit (if a == f1 then f1 else a </> f1) t1 t2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
-diff' a (File {}) t2@(Dir {nodeData=(NodeData {name=d})}) = [Rm a, Add (a </> n2fp d) t2]
+diff' a (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm a, Add (a </> d) t2]
 -- TODO wait is this a Mv?
-diff' a (Dir {nodeData=(NodeData {name=d})}) t2@(File {}) = [Rm (a </> n2fp d), Add (a </> n2fp d) t2]
+diff' a (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (a </> d), Add (a </> d) t2]
 diff' a t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where
-    adds  = [Add (a </> n2fp (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
-    rms   = [Rm  (a </> n2fp (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
-    edits = concat [diff' (a </> n2fp (treeName o)) o n | o <- os, n <- ns,
+    adds  = [Add (a </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
+    rms   = [Rm  (a </> unName (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
+    edits = concat [diff' (a </> unName (treeName o)) o n | o <- os, n <- ns,
                                                o /= n, treeName o == treeName n]
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
 -- TODO need an initial tree too to check if the hashes match
 findMv :: Show a => HashTree a -> Delta a -> Delta a -> Bool
-findMv t (Rm p) (Add _ t2) = case dropTo t p of
+findMv t (Rm p) (Add _ t2) = case dropTo t (op2ns p) of
                                Nothing -> False
                                Just t3 -> t2 == t3
 findMv _ _ _ = False
@@ -133,7 +137,7 @@ simDeltas = foldM simDelta
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
 
 -- TODO be clearer on before/after and or expected/actual here
--- assertSameTrees :: FilePath -> HashTree -> HashTree -> IO ()
+-- assertSameTrees :: OsPath -> HashTree -> HashTree -> IO ()
 assertSameTrees :: (String, ProdTree) -> (String, ProdTree) -> IO ()
 assertSameTrees (msg1, tree1) (msg2, tree2) = do
   let wrong = diff tree1 tree2
@@ -156,10 +160,10 @@ assertSameTrees (msg1, tree1) (msg2, tree2) = do
 -- TODO also rename it to HashTreeAction?
 
 -- data Delta
---   = Add  FilePath HashTree
---   | Rm   FilePath
---   | Mv   FilePath FilePath
---   | Edit FilePath HashTree -- TODO remove in favor of subtle use of Add?
+--   = Add  OsPath HashTree
+--   | Rm   OsPath
+--   | Mv   OsPath OsPath
+--   | Edit OsPath HashTree -- TODO remove in favor of subtle use of Add?
 --   deriving (Read, Show, Eq)
 
 -- TODO hm, is this not the best way because of how the actions need existing trees?
