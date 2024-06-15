@@ -8,7 +8,7 @@ import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes 
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
-import System.Directory.BigTrees.Name (n2op)
+import System.Directory.BigTrees.Name (unName)
 import System.OsPath (splitPath, (</>), OsPath, decodeFS)
 import System.IO (Handle, IOMode (..), hFlush, stdout)
 import qualified System.File.OsPath as SFO
@@ -87,13 +87,11 @@ assertNoFile path = do
 writeTestTreeDir :: OsPath -> TestTree -> IO ()
 writeTestTreeDir root (File {nodeData=nd, fileData = bs}) = do
   -- SD.createDirectoryIfMissing True root -- TODO remove
-  name' <- n2op $ name nd
-  let path = root </> name'
+  let path = root </> (unName $ name nd)
   assertNoFile path
   SFO.writeFile' path bs
 writeTestTreeDir root (Dir {nodeData=nd, dirContents = cs}) = do
-  name' <- n2op $ name nd
-  let root' = root </> name'
+  let root' = root </> (unName $ name nd)
   assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'
   SD.createDirectoryIfMissing False root' -- TODO true?
