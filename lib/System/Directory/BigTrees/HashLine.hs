@@ -54,7 +54,7 @@ import Data.Attoparsec.Combinator (lookAhead, sepBy')
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as SBS
 import qualified Data.ByteString.Lazy as LBS
-import Data.Either (fromRight)
+import Data.Either (fromRight, either) -- TODO ok to import only for doctest?
 import Data.Functor ((<&>))
 import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
@@ -240,6 +240,14 @@ nullBreak = char '\NUL' *> endOfLine
 
 -- This returns the length of the list, which can either be throw out or used
 -- to double-check that all the HashLines parsed correctly.
+--
+-- Manual usage:
+--
+-- >>> ls <- genHashLinesBS 20
+-- >>> hls = parseHashLinesBS ls
+-- >>> either show (const "test passed") hls
+-- >>> "test passed"
+--
 parseHashLinesBS :: B8.ByteString -> Either String [HashLine]
 parseHashLinesBS bs = 
   (force . catMaybes) <$>
