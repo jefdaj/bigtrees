@@ -71,10 +71,12 @@ import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (.
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, TestTree (..),
                                            sumNodes, treeHash, treeNBytes, treeName)
 import System.Directory.BigTrees.Name (Name (..))
-import System.IO (Handle, IOMode (..), withFile)
+import System.IO (Handle, IOMode (..))
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import qualified Data.ByteString.Short as SBS
+import qualified System.File.OsPath as SFO
+import System.OsPath (OsPath)
 
 
 --- types ---
@@ -218,8 +220,8 @@ serializeHashList = B8.unlines . map prettySetLine . listToLines
 hWriteHashListBody :: Handle -> HashList -> IO ()
 hWriteHashListBody h l = B8.hPutStr h $ serializeHashList l
 
-writeHashList :: FilePath -> HashList -> IO ()
-writeHashList path l = withFile path WriteMode $ \h -> hWriteHashListBody h l
+writeHashList :: OsPath -> HashList -> IO ()
+writeHashList path l = SFO.withFile path WriteMode $ \h -> hWriteHashListBody h l
 
 -- hWriteTree :: [String] -> Handle -> HashTree a -> IO ()
 -- hWriteTree es h tree = do
@@ -264,8 +266,8 @@ parseHashList bs = parseHashSetLines bs <&> map f
     f (HashSetLine (h, nn, nb, n)) = (h, SetData nn nb n)
 
 -- TODO throw IO error rather than Left here?
-readHashList :: FilePath -> IO (Either String HashList)
-readHashList path = B8.readFile path <&> parseHashList
+readHashList :: OsPath -> IO (Either String HashList)
+readHashList path = SFO.readFile' path <&> parseHashList
 
 
 --- round-trip tests ---
