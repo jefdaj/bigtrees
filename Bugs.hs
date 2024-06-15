@@ -120,3 +120,5 @@ import System.OsPath
 -- bigtrees find /etc/
 -- ...
 -- bigtrees: recoverEncode: invalid argument (cannot encode character '\65533')
+
+-- fail05 = File {nodeData = NodeData {name = Name {unName = [osp|\SOH|]}, hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 1224912839, nBytes = NBytes 0}, fileData = ()}

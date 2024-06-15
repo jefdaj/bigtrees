@@ -118,6 +118,11 @@ readTreeLines path = do
 readTree :: Maybe Int -> OsPath -> IO ProdTree
 readTree md path = deserializeTree md <$> SFO.readFile' path
 
+hReadTree :: Maybe Int -> Handle -> IO ProdTree
+hReadTree md hdl = do
+  bs <- B8.hGetContents hdl
+  return $ deserializeTree Nothing bs
+
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it

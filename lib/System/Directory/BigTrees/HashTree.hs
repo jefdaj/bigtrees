@@ -19,6 +19,7 @@ module System.Directory.BigTrees.HashTree
   , printTree
   , readOrBuildTree
   , readTree
+  , hReadTree
   , rmSubTree
   , treeContainsHash
   , treeContainsPath
@@ -63,7 +64,7 @@ import System.Directory.BigTrees.Name (Name (..))
 import System.OsPath ((</>), OsPath, osp, encodeFS)
 -- import System.FilePath.Glob (Pattern)
 import qualified System.FilePath as SF
-import System.IO (hClose)
+import System.IO (hClose, IOMode(..))
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
@@ -77,13 +78,14 @@ import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
 import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, headerP, linesP,
                                                 readHeader, readLastHashLineAndFooter, readTestTree,
-                                                readTree)
+                                                readTree, hReadTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import qualified Test.HUnit as HU
+import qualified Data.Knob as K
 
 -- import System.Directory.BigTrees.Util (absolutePath)
 
@@ -122,11 +124,13 @@ readOrBuildTree verbose mmaxdepth excludes path = do
 -- TODO prop_confirm_dir_hashes too?
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
-prop_roundtrip_ProdTree_to_ByteString :: ProdTree -> Bool
-prop_roundtrip_ProdTree_to_ByteString t = t' == t
-  where
-    bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
-    t' = deserializeTree Nothing bs
+prop_roundtrip_ProdTree_to_ByteString :: Property
+prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
+  knob <- K.newKnob mempty
+  (t1 :: ProdTree) <- pick arbitrary
+  K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree [] h t1 -- TODO hClose?
+  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree Nothing
+  assert $ t2 == t1
 
 bench_roundtrip_ProdTree_to_ByteString :: Int -> IO ()
 bench_roundtrip_ProdTree_to_ByteString n = do
@@ -135,7 +139,7 @@ bench_roundtrip_ProdTree_to_ByteString n = do
   -- assert $ t2 == t1
   return ()
 
--- TODO put in the main tmpdir
+-- TODO unify with the knob version above
 roundtripProdTreeToHashes :: ProdTree -> IO ProdTree
 roundtripProdTreeToHashes t =
   withSystemTempFile "bigtrees" $ \path hdl -> do

@@ -23,6 +23,7 @@ dependencies:
 - file-io
 - filepath
 - filepath-bytestring
+- knob
 - Glob
 - hashable
 - hashtables

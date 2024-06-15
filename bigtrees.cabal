@@ -61,6 +61,7 @@ library
     , filepath-bytestring
     , hashable
     , hashtables
+    , knob
     , massiv
     , monad-parallel
     , pretty-simple
@@ -142,6 +143,7 @@ executable bigtrees
     , filepath-bytestring
     , hashable
     , hashtables
+    , knob
     , massiv
     , monad-parallel
     , pretty-simple
@@ -226,6 +228,7 @@ test-suite test-app
     , filepath-bytestring
     , hashable
     , hashtables
+    , knob
     , massiv
     , monad-parallel
     , pretty-simple
@@ -328,6 +331,7 @@ test-suite test-doctests
     , filepath-bytestring
     , hashable
     , hashtables
+    , knob
     , massiv
     , monad-parallel
     , pretty-simple
@@ -410,6 +414,7 @@ test-suite test-lib
     , filepath-bytestring
     , hashable
     , hashtables
+    , knob
     , massiv
     , monad-parallel
     , pretty-simple
@@ -512,6 +517,7 @@ benchmark test-bench
     , filepath-bytestring
     , hashable
     , hashtables
+    , knob
     , massiv
     , monad-parallel
     , pretty-simple
