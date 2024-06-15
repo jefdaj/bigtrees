@@ -206,18 +206,18 @@ prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
   let node = case breadcrumbs of
                Nothing -> n2bs name
                Just ns -> breadcrumbs2bs $ name:ns
-  in joinCols
+  in (joinCols
        [ B8.pack $ show E
        , B8.pack $ show d
        , B8.pack $ show m -- unlike other hashline components, this should be quoted
        , node
-       ]
+       ]) <> (B8.singleton '\NUL')
 
 prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
   let node = case breadcrumbs of
                Nothing -> n2bs name
                Just ns -> breadcrumbs2bs $ name:ns
-  in joinCols
+  in (joinCols
         [ B8.pack $ show t
         , B8.pack $ show n
         , prettyHash h
@@ -225,7 +225,7 @@ prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f,
         , B8.pack $ show s
         , B8.pack $ show f
         , node
-        ]
+        ]) <> (B8.singleton '\NUL')
 
 -- TODO do this without IO?
 genHashLinesBS :: Int -> IO B8.ByteString
@@ -235,12 +235,15 @@ genHashLinesBS n = do
   let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
   return bs
 
+nullBreak :: Parser ()
+nullBreak = char '\NUL' *> endOfLine
+
 -- This returns the length of the list, which can either be throw out or used
 -- to double-check that all the HashLines parsed correctly.
 parseHashLinesBS :: B8.ByteString -> Either String [HashLine]
 parseHashLinesBS bs = 
   (force . catMaybes) <$>
-  parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
+  parseOnly (sepBy' (hashLineP Nothing) nullBreak) bs
 
 -- Note that these random lines can't be parsed into a valid tree;
 -- the only test the HashLine parser
@@ -298,7 +301,12 @@ hashP = do
  - TODO can it use null-separated lines instead like -print0?
  -}
 breakP :: Parser ()
-breakP = endOfLine >> choice [void (char '#'), typeP >> numStrP >> return (), endOfInput]
+breakP =
+  nullBreak >>
+  choice
+    [ void (char '#'), typeP >> numStrP >> return ()
+    , endOfInput
+    ]
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
@@ -356,6 +364,8 @@ parseTheRest :: TreeType -> Depth -> Parser HashLine
 parseTheRest E i = do
   !m <- errP
   !n <- nameP
+  -- TODO does this have to be done here when the next line is a comment?
+  -- _ <- char '\NUL'
   return $ ErrLine (i, m, n)
 
 -- this works on F or D; only E is different so far
@@ -365,6 +375,8 @@ parseTheRest t i = do
   !s <- sizeP
   !f <- nfilesP
   !p <- nameP
+  -- TODO does this have to be done here when the next line is a comment?
+  -- _ <- char '\NUL'
   -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
   return $ HashLine (t, i, h, mt, s, f, p)
 
