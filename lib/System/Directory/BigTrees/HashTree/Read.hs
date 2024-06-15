@@ -31,6 +31,7 @@ import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..))
 import System.IO (Handle, IOMode (..), hGetLine)
 import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath)
+import System.OsString (osstr)
 
 
 --- read header info from the beginning of the file ---
@@ -125,9 +126,9 @@ readTree md path = deserializeTree md <$> SFO.readFile' path
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 -- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
 deserializeTree md bs = case parseTreeFile md bs of
-  Left msg -> Err { errName = Name "deserializeTree", errMsg = ErrMsg msg }
+  Left msg -> Err { errName = Name [osstr|deserializeTree|], errMsg = ErrMsg msg }
   Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of -- TODO leak here?
-    []            -> Err { errName = Name "deserializeTree", errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
+    []            -> Err { errName = Name [osstr|deserializeTree|], errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
     ((_, tree):_) -> tree
 
 {- This one is confusing! It accumulates a list of trees and their depth,
