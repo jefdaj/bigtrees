@@ -16,12 +16,13 @@ import Foreign.C.Types (CTime (..))
 -- import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
 import qualified System.Directory.OsPath as SDO
 import System.Directory.BigTrees.Hash (hashFile, hashSymlinkLiteral, hashSymlinkTarget, hashFromAnnexPath)
-import System.Directory.BigTrees.HashLine (ErrMsg (..), ModTime (..), NBytes (..), simplifyErrMsg)
+import System.Directory.BigTrees.HashLine (ErrMsg (..), ModTime (..), NBytes (..), simplifyErrMsg, Depth(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
                                                 hashContents, sumNodes, treeModTime, treeNBytes,
                                                 treeName)
 import System.Directory.BigTrees.Name
 import qualified System.Directory.Tree as DT
+import qualified System.OsPath as SOP
 import System.OsPath (OsPath, takeDirectory, (</>), decodeFS)
 -- import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
 --                              matchWith)
@@ -78,7 +79,7 @@ buildTree readFileFn beVerbose excludes path = do
   -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
   tree <- DT.readDirectoryWithL readFileFn path -- TODO need to rename root here?
   -- putStrLn $ show tree
-  buildTree' readFileFn beVerbose 0 excludes tree
+  buildTree' readFileFn beVerbose (Depth 0) excludes tree
 
 -- This is mainly meant as an error handler, but also works for the trivial
 -- case of re-wrapping directory-tree error nodes.
@@ -89,11 +90,32 @@ mkErrTree n e = do
     , errMsg = ErrMsg $ simplifyErrMsg $ show e
     }
 
+-- | Absolute paths are NOT "in the tree", even if they currently happen to be,
+-- since that could change upon relocating the tree or the .bigtree file.
+-- This is really more like "path is reliably in the tree".
+-- Relative paths might be in the tree, if they don't have more .. levels than
+-- the current depth.
+-- TODO Is it possible to make this technically correct in presence of more symlinks?
+--      Probably not. See Niel's blog post to double check though.
+pathIsInTree :: Depth -> OsPath -> Bool
+pathIsInTree (Depth d) path = notAbsolute && foldHeight comps < d
+  where
+    notAbsolute = not $ SOP.isAbsolute path
+    comps       = SOP.splitDirectories path
+    dot         = [SOP.osp|.|]
+    dotdot      = [SOP.osp|..|]
+    foldHeight [] = 0
+    foldHeight (p:ps) = case p of
+                         dot    -> foldHeight ps
+                         dotdot -> foldHeight ps + 1
+                         _      -> foldHeight ps - 1
+
+
 -- Note that all the IO operations done on a node itself (everything except dir
 -- contents) should be strict, because we want to be able to immediately wrap
 -- any IO errors in an Err tree constructor.
 -- TODO is there a safer way to do that with lazy evaluation?
-buildTree' :: (OsPath -> IO a) -> Bool -> Int -> [String] -> DT.AnchoredDirTree a -> IO (HashTree a)
+buildTree' :: (OsPath -> IO a) -> Bool -> Depth -> [String] -> DT.AnchoredDirTree a -> IO (HashTree a)
 
 buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
 
@@ -103,21 +125,22 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
 -- isn't a problem because readFileFn is a no-op in production.
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n) $ do
   let fPath = a </> n
-  isLink <- SDO.pathIsSymbolicLink fPath -- TODO error if doesn't exist here?
+  notBroken <- SDO.doesPathExist      fPath
+  isLink    <- SDO.pathIsSymbolicLink fPath
+  -- TODO why is the if/else needed here?
+  notDir    <- if not notBroken then return False
+               else not <$> SDO.doesDirectoryExist fPath
   if isLink
     then do
-      notBroken <- SDO.doesPathExist fPath
-      -- TODO why is the if/else needed? shouldn't it short-circuit below anyway?
-      notDir <- if not notBroken then return False
-                else not <$> SDO.doesDirectoryExist fPath
-      if notBroken && notDir -- we treat links to dirs as broken for now
 
+      !target <- SDO.getSymbolicLinkTarget fPath
+      let hashContents = notBroken && notDir && pathIsInTree depth target
+
+      if hashContents
         then do
-          -- non-broken symlink, so
           -- the symlink target is the relevant file for most data,
           -- except the mod time which should be the more recent of the two
           -- (in case the link target changed to a different valid file)
-          -- TODO handle the extra case here where it exists but is outside the tree!
           !mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
           !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
           let mt = max mt1 mt2
@@ -132,11 +155,13 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
               , nBytes = s
               }
             , linkData = Just fd
+            , linkInTree = True
+            , linkTarget = target
             }
 
         else do
-          -- broken symlink, so
-          -- the symlink itself is the relevant file to pull info from
+          -- "broken" symlink, including the case where it points outside the tree.
+          -- either way the symlink itself is the relevant file to pull info from.
           !mt <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
           !s  <- unsafeInterleaveIO $ getSymlinkLiteralNBytes  fPath
           !h  <- unsafeInterleaveIO $ hashSymlinkLiteral fPath
@@ -148,6 +173,8 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
               , nBytes = s
               }
             , linkData = Nothing
+            , linkInTree = False
+            , linkTarget = target
             }
 
     else do

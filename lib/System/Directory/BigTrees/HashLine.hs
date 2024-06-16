@@ -93,7 +93,7 @@ instance NFData TreeType
 
 newtype Depth
   = Depth Int
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Num, Read, Show, Generic)
 
 instance NFData Depth
 
