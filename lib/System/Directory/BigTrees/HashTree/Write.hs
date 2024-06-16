@@ -55,16 +55,16 @@ flattenTree' :: Depth -> HashTree a -> [HashLine]
 flattenTree' (Depth d) _ | d < 0 = error "tried to call flattenTree' with negative depth"
 flattenTree' d (Err {errName=n, errMsg=m}) = [ErrLine (d, m, n)]
 flattenTree' d (File {nodeData=nd})
-  = [HashLine (F, d, hash nd, modTime nd, nBytes nd, 1, name nd)]
-flattenTree' d (Link {linkData=ld, nodeData=nd}) =
+  = [HashLine (F, d, hash nd, modTime nd, nBytes nd, 1, name nd, Nothing)]
+flattenTree' d (Link {linkData=ld, nodeData=nd, linkTarget=lt}) =
   let tt = if isNothing ld then B else L
-  in [HashLine (tt, d, hash nd, modTime nd, nBytes nd, 1, name nd)]
+  in [HashLine (tt, d, hash nd, modTime nd, nBytes nd, 1, name nd, Just lt)]
 flattenTree' (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
     n = name nd
     subtrees = concatMap (flattenTree' $ Depth $ d+1) cs
-    wholeDir = HashLine (D, Depth d, hash nd, modTime nd, nBytes nd, f, n)
+    wholeDir = HashLine (D, Depth d, hash nd, modTime nd, nBytes nd, f, n, Nothing)
 
 -- this is to catch the case where it tries to write the same file twice
 -- (happened once because of macos filename case-insensitivity)
