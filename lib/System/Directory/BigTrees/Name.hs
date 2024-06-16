@@ -33,6 +33,7 @@ module System.Directory.BigTrees.Name
 
   , n2sbs
   , sbs2n
+  , sbs2op
   , fp2n
   , fp2ns
   , n2bs
@@ -42,6 +43,8 @@ module System.Directory.BigTrees.Name
   , names2bs
   , os2ns
   , op2ns
+  , op2bs
+  , bs2op
 
   , nameP
 
@@ -96,6 +99,7 @@ import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, e
                                          endOfLine, isEndOfLine, manyTill, parseOnly, take, takeTill)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead, sepBy')
+import System.OsPath (OsPath)
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
 -- efficiency, but what it really means is "OsPath without slashes". Based on
@@ -158,7 +162,10 @@ n2sbs = SOS.getPosixString . SOS.getOsString . unName
 
 -- | Note this does NOT check whether it's a valid Name.
 sbs2n :: SBS.ShortByteString -> Name
-sbs2n = Name . SOS.OsString . SOS.PosixString
+sbs2n = Name . sbs2op
+
+sbs2op :: SBS.ShortByteString -> OsPath
+sbs2op = SOS.OsString . SOS.PosixString
 
 -- | Convert a `FilePath` to a `Name` using the current filesystem's encoding,
 -- or explain why the conversion failed.
@@ -215,6 +222,14 @@ joinNames = B8.intercalate (B8.singleton '/') . map n2bs
 names2bs :: NamesFwd -> B8.ByteString
 names2bs = SBS.fromShort . SOS.getPosixString . SOS.getOsString . SOP.joinPath . map unName
 
+-- TODO is this valid?
+op2bs :: OsPath -> B8.ByteString
+op2bs = SBS.fromShort . SOS.getPosixString . SOS.getOsString
+
+-- TODO is this valid?
+bs2op :: B8.ByteString -> OsPath
+bs2op = SOS.OsString . SOS.PosixString . SBS.toShort
+
 -- TODO is Attoparsec.ByteString suitable for this, or do I need to parse them some other way?
 nameP :: Parser Name
 nameP = do
@@ -222,6 +237,7 @@ nameP = do
   -- cs <- manyTill anyChar $ lookAhead breakP
   -- return $ _ (c:cs)
   bs <- takeTill (== '\NUL')
+  _  <- char '\NUL'
   return $ bs2n bs
 
 -- Fails if there's an error writing the file, or if after writing it doesn't

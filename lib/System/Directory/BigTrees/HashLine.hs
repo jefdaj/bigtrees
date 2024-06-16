@@ -15,6 +15,7 @@ module System.Directory.BigTrees.HashLine
   , NBytes(..)
   , NNodes(..)
   , ErrMsg(..)
+  , LinkTarget
   -- , Hash(..) TODO re-export here? And Name too?
 
   , bsBytes
@@ -64,7 +65,7 @@ import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, n2bs, bs2n, nameP)
+import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, n2bs, bs2n, nameP, op2bs, bs2op, sbs2op)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
 import TH.Derive ()
 import qualified System.OsPath as OSP
@@ -76,6 +77,7 @@ import qualified System.OsPath.Internal as OSPI
 import Data.List (sortBy, elem, intercalate)
 import Data.List.Split (splitOn)
 import Data.Char
+import System.OsPath (OsPath)
 
 -----------
 -- types --
@@ -155,10 +157,13 @@ instance Arbitrary ErrMsg where
 newtype NNodes = NNodes Int
   deriving (Eq, Ord, Num, Read, Show, Generic, NFData)
 
+-- Destination of a symlink. May or may not actually exist, be in the tree etc.
+type LinkTarget = OsPath
+
 -- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 data HashLine
-  = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name)
+  = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name, Maybe LinkTarget)
   | ErrLine  (Depth, ErrMsg, Name)
   deriving (Eq, Ord, Show, Generic)
 
@@ -207,15 +212,21 @@ instance Arbitrary HashLine where
             F -> return 1
     e  <- arbitrary :: Gen ErrMsg
     n  <- arbitrary :: Gen Name
+    mlt <- case tt of
+             L -> (Just . sbs2op) <$> (arbitrary :: Gen SBS.ShortByteString) -- TODO valid constraints!
+             B -> (Just . sbs2op) <$> (arbitrary :: Gen SBS.ShortByteString) -- TODO valid constraints!
+             _ -> return Nothing
     return $ case tt of
       E -> ErrLine  (il, e, n)
-      _ -> HashLine (tt, il, h, mt, s, f, n)
+      _ -> HashLine (tt, il, h, mt, s, f, n, mlt)
 
   -- only shrinks the filename
   -- TODO also change the treetype?
+  -- TODO also change the link target if any
   shrink :: HashLine -> [HashLine]
-  shrink (ErrLine  (il, e, n))               = map (\n' -> ErrLine  (il, e, n'))               (shrink n)
-  shrink (HashLine (tt, il, h, mt, s, f, n)) = map (\n' -> HashLine (tt, il, h, mt, s, f, n')) (shrink n)
+  shrink (ErrLine  (il, e, n)) = map (\n' -> ErrLine  (il, e, n')) (shrink n)
+  shrink (HashLine (tt, il, h, mt, s, f, n, t)) =
+    map (\n' -> HashLine (tt, il, h, mt, s, f, n', t)) (shrink n)
 
 -----------
 -- print --
@@ -250,11 +261,11 @@ prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
        , node <> B8.singleton '\NUL'
        ]
 
-prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name)) =
+prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f, name, mlt)) =
   let node = case breadcrumbs of
                Nothing -> n2bs name
                Just ns -> breadcrumbs2bs $ name:ns
-  in joinCols
+  in joinCols $
        [ B8.pack $ show t
        , B8.pack $ show n
        , prettyHash h
@@ -262,7 +273,9 @@ prettyLine breadcrumbs (HashLine (t, Depth n, h, ModTime mt, NBytes s, NNodes f,
        , B8.pack $ show s
        , B8.pack $ show f
        , node <> B8.singleton '\NUL'
-       ]
+       ] ++ case mlt of
+              Nothing -> []
+              Just lt -> [op2bs lt <> B8.singleton '\NUL']
 
 -- TODO do this without IO?
 genHashLinesBS :: Int -> IO B8.ByteString
@@ -272,9 +285,13 @@ genHashLinesBS n = do
   let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
   return bs
 
+-- TODO move to Name? Util?
+nullP :: Parser ()
+nullP = void $ char '\NUL'
+
 -- TODO rename? confusingly sounds "bigger" than breakP
 nullBreakP :: Parser ()
-nullBreakP = char '\NUL' *> endOfLine
+nullBreakP = nullP *> endOfLine
 
 -- This returns the length of the list, which can either be throw out or used
 -- to double-check that all the HashLines parsed correctly.
@@ -411,13 +428,23 @@ errP = do
   let msg' = "\"" ++ msg ++ "\"" -- TODO must be a better way, right?
   return $ ErrMsg $ read msg'
 
+-- TODO will return an empty OsString on failure?
+linkTargetP :: Parser (Maybe LinkTarget)
+linkTargetP = do
+  -- cs <- manyTill anyChar nullP -- TODO consumes \NUL?
+  -- return $ if null cs then Nothing else Just cs
+  bs <- takeTill (== '\NUL')
+  _  <- char '\NUL'
+  let op = bs2op bs
+  return $ if B8.null bs then Nothing else Just op
+
 parseTheRest :: TreeType -> Depth -> Parser HashLine
 
 parseTheRest E i = do
   !m <- errP
   !n <- nameP
   -- TODO does this have to be done here when the next line is a comment?
-  -- _ <- char '\NUL'
+  _ <- nullP
   return $ ErrLine (i, m, n)
 
 -- this works on F or D; only E is different so far
@@ -427,10 +454,8 @@ parseTheRest t i = do
   !s <- sizeP
   !f <- nfilesP
   !p <- nameP
-  -- TODO does this have to be done here when the next line is a comment?
-  -- _ <- char '\NUL'
-  -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
-  return $ HashLine (t, i, h, mt, s, f, p)
+  !mlt <- linkTargetP -- TODO this also consumes \NUL?
+  return $ HashLine (t, i, h, mt, s, f, p, mlt)
 
 -- TODO proper eitherToMaybe or similar idiom
 -- TODO use String here?

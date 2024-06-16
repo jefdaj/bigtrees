@@ -17,7 +17,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), ModTime (..),
-                                           NBytes (..), NNodes (..), TreeType (..), bsBytes)
+                                           NBytes (..), NNodes (..), TreeType (..), bsBytes, LinkTarget)
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2bs)
 import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
@@ -83,9 +83,6 @@ data NodeData = NodeData
 
 instance NFData NodeData
 
--- Destination of a symlink. May or may not actually exist.
-type LinkTargetPath = OsPath
-
 -- Whether or not a link points within the tree AND the content exists. If
 -- it's "in the tree" in both senses, we use the target contents for the node
 -- data; otherwise we assume they might change without us noticing and fall back
@@ -110,7 +107,7 @@ data HashTree a
       { nodeData   :: !NodeData
       , linkData   :: !(Maybe a)
       , linkInTree :: !LinkInTree
-      , linkTarget :: !LinkTargetPath
+      , linkTarget :: !LinkTarget
       }
   | Dir
       { nodeData    :: NodeData

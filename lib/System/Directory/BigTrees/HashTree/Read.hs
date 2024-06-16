@@ -156,6 +156,8 @@ accTrees :: HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 
 accTrees (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} (d, Err { errMsg = m, errName = n }):cs
 
+-- TODO LinkLine too now? Damn gettin' complicated
+
 accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
 
   F -> let f = File
@@ -182,6 +184,8 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
 
   L -> let l = Link
                  { linkData = Just ()
+                 , linkTarget = 
+                 , linkInTree = 
                  , nodeData = {-# SCC "LNodeData" #-} NodeData
                    { name = p
                    , hash = h
