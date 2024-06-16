@@ -159,9 +159,10 @@ addNodeToHashSet s h sd = H.insert s h sd
 
 --- hash set from .bigtree file (streaming) ---
 
+-- TODO should link targets be used for anything here?
 hashSetDataFromLine :: Maybe Note -> HashLine -> Maybe (Hash, SetData)
 hashSetDataFromLine mn (ErrLine {}) = Nothing
-hashSetDataFromLine mn (HashLine (_,_,h,_,nb,nn,Name n)) = Just (h, sd)
+hashSetDataFromLine mn (HashLine (_,_,h,_,nb,nn,Name n,_)) = Just (h, sd)
   where sd = SetData
                { sdNote  = fromMaybe (Note $ show n) mn
                , sdBytes = nb
