@@ -23,6 +23,7 @@ import System.Info (os)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive (Deriving, derive)
 import qualified Data.CaseInsensitive as CI
+import System.OsPath (OsPath)
 
 -- import Debug.Trace
 
@@ -82,15 +83,20 @@ data NodeData = NodeData
 
 instance NFData NodeData
 
+-- Destination of a symlink. May or may not actually exist.
+type LinkTargetPath = OsPath
+
+-- Whether or not a link points within the tree AND the content exists. If
+-- it's "in the tree" in both senses, we use the target contents for the node
+-- data; otherwise we assume they might change without us noticing and fall back
+-- to treating the link itself as the data.
+type LinkInTree = Bool
+
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
- - TODO read and write files
- - TODO would also storing the number of files in each dir help, or timestamps?
+ - TODO make safe access fns and don't export the partial constructors
+ - TODO store link dest even when broken in order to write to a dir
  -}
--- data HashTree = DT.AnchoredDirTree Hash
---   deriving (Eq, Read, Show)
---   TODO rename name -> path?
---   TODO make safe access fns and don't export the partial constructors
 data HashTree a
   = Err
       { errName :: !Name   -- TODO NodeData?
@@ -101,8 +107,10 @@ data HashTree a
       , fileData :: !a
       }
   | Link
-      { nodeData :: !NodeData
-      , linkData :: !(Maybe a) -- Nothing if the link is broken/points outside tree
+      { nodeData   :: !NodeData
+      , linkData   :: !(Maybe a)
+      , linkInTree :: !LinkInTree
+      , linkTarget :: !LinkTargetPath
       }
   | Dir
       { nodeData    :: NodeData
