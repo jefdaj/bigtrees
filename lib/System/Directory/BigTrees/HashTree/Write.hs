@@ -3,7 +3,7 @@ module System.Directory.BigTrees.HashTree.Write where
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import Data.Maybe (isNothing)
-import qualified System.Directory.OsPath as SD
+import qualified System.Directory.OsPath as SDO
 import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
@@ -70,7 +70,7 @@ flattenTree' (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
 -- (happened once because of macos filename case-insensitivity)
 assertNoFile :: OsPath -> IO ()
 assertNoFile path = do
-  exists <- SD.doesPathExist path
+  exists <- SDO.doesPathExist path
   when exists $ do
     path' <- decodeFS path
     error $ "duplicate write to: '" ++ path' ++ "'"
@@ -80,20 +80,29 @@ assertNoFile path = do
  - Note also that when you call this at the top level,
  - `root` should refer to the parent dir of your tree!
  - (Yes this is confusing, and should be changed if it will be user facing)
- -
- - TODO take an anchored tree rather than this separate root,
- -      because it's ambiguous what to do with the root name otherwise
  -}
 writeTestTreeDir :: OsPath -> TestTree -> IO ()
+
+writeTestTreeDir root (Err {}) = return () -- TODO print a warning?
+
+writeTestTreeDir root l@(Link {nodeData=nd}) = do
+  let path = root </> (unName $ name nd)
+  assertNoFile path
+  -- Target comes first, then the file we're writing (like `ln -s`)
+  SDO.createFileLink (linkTarget l) path
+  -- TODO assert path exists now
+
 writeTestTreeDir root (File {nodeData=nd, fileData = bs}) = do
-  -- SD.createDirectoryIfMissing True root -- TODO remove
+  -- SDO.createDirectoryIfMissing True root -- TODO remove
   let path = root </> (unName $ name nd)
   assertNoFile path
   SFO.writeFile' path bs
+  -- TODO assert file does now exist
+
 writeTestTreeDir root (Dir {nodeData=nd, dirContents = cs}) = do
   let root' = root </> (unName $ name nd)
   assertNoFile root'
   -- putStrLn $ "write test dir: " ++ root'
-  SD.createDirectoryIfMissing False root' -- TODO true?
+  SDO.createDirectoryIfMissing False root' -- TODO true?
+  -- TODO assert root does now exist
   mapM_ (writeTestTreeDir root') cs
--- TODO finish Link branch here!
