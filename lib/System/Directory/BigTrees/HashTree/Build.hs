@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module System.Directory.BigTrees.HashTree.Build where
 
@@ -95,10 +96,12 @@ mkErrTree n e = do
 -- This is really more like "path is reliably in the tree".
 -- Relative paths might be in the tree, if they don't have more .. levels than
 -- the current depth.
+-- TODO move to Util? Tree Base?
 -- TODO Is it possible to make this technically correct in presence of more symlinks?
 --      Probably not. See Niel's blog post to double check though.
-pathIsInTree :: Depth -> OsPath -> Bool
-pathIsInTree (Depth d) path = notAbsolute && foldHeight comps < d
+pathIsInTree :: Depth -> Maybe OsPath -> Bool
+pathIsInTree _ Nothing = False
+pathIsInTree (Depth d) (Just path) = notAbsolute && foldHeight comps < d
   where
     notAbsolute = not $ SOP.isAbsolute path
     comps       = SOP.splitDirectories path
@@ -134,7 +137,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
     then do
 
       !target <- SDO.getSymbolicLinkTarget fPath
-      let hashContents = notBroken && notDir && pathIsInTree depth target
+      let hashContents = notBroken && notDir && pathIsInTree depth (Just target)
 
       if hashContents
         then do

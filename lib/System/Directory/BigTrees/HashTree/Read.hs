@@ -26,7 +26,7 @@ import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, e
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead)
 import Data.Either (fromRight)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromJust)
 import Data.String.Utils (replace)
 import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..))
 import System.IO (Handle, IOMode (..), hGetLine)
@@ -99,8 +99,8 @@ isDepthZeroLine _                        = False
 getTreeSize :: OsPath -> IO (Maybe Int)
 getTreeSize path = readLastHashLineAndFooter path <&> getN
   where
-    getN (Just (HashLine (_,_,_,_,_, NNodes n, _), _)) = Just n
-    getN Nothing                                       = Nothing
+    getN (Just (HashLine (_,_,_,_,_, NNodes n, _, _), _)) = Just n
+    getN Nothing                                          = Nothing
 
 -- TODO does this stream, or does it read all the lines at once?
 -- TODO pass on the Left rather than throwing IO error here?
@@ -158,7 +158,7 @@ accTrees (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} (d, Err { errMsg = m, er
 
 -- TODO LinkLine too now? Damn gettin' complicated
 
-accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
+accTrees (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
 
   F -> let f = File
                  { fileData = ()
@@ -173,6 +173,8 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
 
   B -> let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
+                 , linkTarget = fromJust mlt
+                 , linkInTree = False
                  , nodeData = {-# SCC "BNodeData" #-} NodeData
                    { name = p
                    , hash = h
@@ -184,8 +186,8 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p)) cs = case t of
 
   L -> let l = Link
                  { linkData = Just ()
-                 , linkTarget = 
-                 , linkInTree = 
+                 , linkTarget = fromJust mlt
+                 , linkInTree = True
                  , nodeData = {-# SCC "LNodeData" #-} NodeData
                    { name = p
                    , hash = h
