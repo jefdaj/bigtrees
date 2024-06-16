@@ -175,6 +175,8 @@ roundtripTestTreeToDir t =
     -- root tree dir name.
     let treeRootDir = tmpDir' </> (unName $ treeName t)
     readTestTree Nothing False [] treeRootDir
+    -- parent <- readTestTree Nothing False [] tmpDir'
+    -- return $ head $ dirContents parent
 
 -- TODO is the forcing unnecessary?
 prop_roundtrip_TestTree_to_dir :: Property

@@ -178,7 +178,7 @@ instance NFData a => NFData (HashTree a)
 -- memory for round-trip tests. The ByteStrings need to be regular strict or lazy
 -- ones in order to be supported here:
 -- https://hackage.haskell.org/package/file-io-0.1.1/docs/System-File-OsPath.html
-type TestTree = HashTree B.ByteString
+type TestTree = HashTree B8.ByteString
 
 -- Given a size "budget", generate test directory dirContents
 -- TODO write this using a fold with accumulator? wait, maybe no need

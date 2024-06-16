@@ -224,7 +224,7 @@ readTestTree md = buildTree SFO.readFile'
 -- TODO parse rather than parseOnly?
 -- TODO count skipped lines here?
 parseTreeFile :: Maybe Int -> B8.ByteString -> Either String (Header, [HashLine], Footer)
-parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
+parseTreeFile md = parseOnly (fileP md)
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do

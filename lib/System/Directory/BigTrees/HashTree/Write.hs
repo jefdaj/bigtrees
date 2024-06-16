@@ -73,7 +73,16 @@ assertNoFile path = do
   exists <- SDO.doesPathExist path
   when exists $ do
     path' <- decodeFS path
-    error $ "duplicate write to: '" ++ path' ++ "'"
+    -- putStrLn $ "duplicate write: " ++ show path'
+    error $ "duplicate write: " ++ show path'
+
+assertFile :: OsPath -> IO ()
+assertFile path = do
+  exists <- SDO.doesPathExist path
+  when (not exists) $ do
+    path' <- decodeFS path
+    -- putStrLn $ "failed to write: " ++ show path'
+    error $ "failed to write: " ++ show path'
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
  - Note that this calls itself recursively.
@@ -90,19 +99,19 @@ writeTestTreeDir root l@(Link {nodeData=nd}) = do
   assertNoFile path
   -- Target comes first, then the file we're writing (like `ln -s`)
   SDO.createFileLink (linkTarget l) path
-  -- TODO assert path exists now
+  assertFile path
 
 writeTestTreeDir root (File {nodeData=nd, fileData = bs}) = do
   -- SDO.createDirectoryIfMissing True root -- TODO remove
   let path = root </> (unName $ name nd)
   assertNoFile path
   SFO.writeFile' path bs
-  -- TODO assert file does now exist
+  assertFile path
 
 writeTestTreeDir root (Dir {nodeData=nd, dirContents = cs}) = do
   let root' = root </> (unName $ name nd)
   assertNoFile root'
-  -- putStrLn $ "write test dir: " ++ root'
-  SDO.createDirectoryIfMissing False root' -- TODO true?
-  -- TODO assert root does now exist
+  -- putStrLn $ "write test dir: " ++ show root'
+  SDO.createDirectoryIfMissing True root' -- TODO true?
+  assertFile root'
   mapM_ (writeTestTreeDir root') cs
