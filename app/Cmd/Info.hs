@@ -27,7 +27,7 @@ printInfo path header footer lastLine = do
   let seconds = scanSeconds (header, footer)
       lineInfo = case lastLine of
         (ErrLine (_, ErrMsg m,_)) -> ["ERROR: " ++ m]
-        (HashLine (_, _, h, ModTime m, NBytes b, NNodes n, _)) ->
+        (HashLine (_, _, h, ModTime m, NBytes b, NNodes n, _, _)) ->
           [ "contains info on " ++ show n ++ " files totaling " ++ show b ++ " bytes"
           , "overall hash is " ++ B8.unpack (prettyHash h)
           -- TODO is this accurate/useful? "modified " ++ show m
