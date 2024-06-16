@@ -228,7 +228,7 @@ parseTreeFile md = parseOnly (fileP md) -- TODO fix this!
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
-  hls <- many (hashLineP md <* nullBreakP)
+  hls <- many (hashLineP md <* endOfLine)
   return $ catMaybes hls
 
 -- bodyP :: Maybe Int -> Parser [HashLine]
