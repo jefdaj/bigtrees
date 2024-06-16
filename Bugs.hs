@@ -134,3 +134,11 @@ fail08 :: [HashLine]
 fail08 = [HashLine (D,Depth 0,Hash {unHash = "MDc1MTk4YmZlNjE3NjVk"},ModTime 1204008124,NBytes 8500,NNodes 4151,Name {unName = [osp|\SOH|]},Nothing)]
 
 fail09 = [HashLine (D,Depth 6,Hash {unHash = "N2E1MjNkYTRiNzg4Nzcz"},ModTime 1009817894,NBytes 654,NNodes 5647,Name {unName = [osp|\SOH|]},Nothing),HashLine (F,Depth 5,Hash {unHash = "OThjZjNmM2U3M2MwOTFm"},ModTime 1668486477,NBytes 9717,NNodes 1,Name {unName = [osp|\SOH|]},Nothing)]
+
+fail10 = File {nodeData = NodeData {name = Name {unName = [osp|\SOH|]}, hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 1471508216, nBytes = NBytes 0}, fileData = ()}
+
+fail11 :: TestTree
+fail11 = Dir {nodeData = NodeData {name = Name {unName = [osp|\STX|]}, hash = Hash {unHash = "MDVhZGY3YzA3M2RmZjcw"}, modTime = ModTime 1537245810, nBytes = NBytes 4097}, nNodes = NNodes 2, dirContents = [File {nodeData = NodeData {name = Name {unName = [osp|\SOH\STX|]}, hash = Hash {unHash = "NjdjODcyZDQ5MTJjNzFm"}, modTime = ModTime 1054765421, nBytes = NBytes 1}, fileData = "\148"}]}
+
+fail12 :: TestTree
+fail12 = File {nodeData = NodeData {name = Name {unName = [osp|\SOH|]}, hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 1555224467, nBytes = NBytes 0}, fileData = ""}
