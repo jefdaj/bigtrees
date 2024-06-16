@@ -129,3 +129,8 @@ fail06 = Dir {nodeData = NodeData {name = Name {unName = [osp|\SOH|]}, hash = Ha
 
 fail07 :: TestTree
 fail07 = Dir {nodeData = NodeData {name = Name {unName = [osp|\EOT\SOH\ETX|]}, hash = Hash {unHash = "MjYzNzdjNTVkZWI0NzRh"}, modTime = ModTime 1320735778, nBytes = NBytes 4096}, nNodes = NNodes 2, dirContents = [File {nodeData = NodeData {name = Name {unName = [osp|\STX|]}, hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 1007930439, nBytes = NBytes 0}, fileData = ""}]}
+
+fail08 :: [HashLine]
+fail08 = [HashLine (D,Depth 0,Hash {unHash = "MDc1MTk4YmZlNjE3NjVk"},ModTime 1204008124,NBytes 8500,NNodes 4151,Name {unName = [osp|\SOH|]},Nothing)]
+
+fail09 = [HashLine (D,Depth 6,Hash {unHash = "N2E1MjNkYTRiNzg4Nzcz"},ModTime 1009817894,NBytes 654,NNodes 5647,Name {unName = [osp|\SOH|]},Nothing),HashLine (F,Depth 5,Hash {unHash = "OThjZjNmM2U3M2MwOTFm"},ModTime 1668486477,NBytes 9717,NNodes 1,Name {unName = [osp|\SOH|]},Nothing)]

@@ -306,7 +306,7 @@ nullBreakP = nullP *> endOfLine
 parseHashLinesBS :: B8.ByteString -> Either String [HashLine]
 parseHashLinesBS bs = 
   catMaybes <$>
-  parseOnly (sepBy' (hashLineP Nothing) nullBreakP) bs
+  parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
 
 -- Note that these random lines can't be parsed into a valid tree;
 -- the only test the HashLine parser
@@ -321,7 +321,7 @@ bench_roundtrip_HashLines_to_ByteString n = do
 prop_roundtrip_HashLines_to_ByteString :: [HashLine] -> Bool
 prop_roundtrip_HashLines_to_ByteString hls =
   let bs  = B8.unlines $ map (prettyLine Nothing) hls
-      res = parseOnly (sepBy' (hashLineP Nothing) nullBreakP) bs
+      res = parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
   in case fmap catMaybes res of
        Left _ -> False
        Right hls' -> hls' == hls
@@ -429,14 +429,13 @@ errP = do
   return $ ErrMsg $ read msg'
 
 -- TODO will return an empty OsString on failure?
-linkTargetP :: Parser (Maybe LinkTarget)
+linkTargetP :: Parser LinkTarget
 linkTargetP = do
   -- cs <- manyTill anyChar nullP -- TODO consumes \NUL?
   -- return $ if null cs then Nothing else Just cs
   bs <- takeTill (== '\NUL')
   _  <- char '\NUL'
-  let op = bs2op bs
-  return $ if B8.null bs then Nothing else Just op
+  return $ bs2op bs
 
 parseTheRest :: TreeType -> Depth -> Parser HashLine
 
@@ -444,7 +443,6 @@ parseTheRest E i = do
   !m <- errP
   !n <- nameP
   -- TODO does this have to be done here when the next line is a comment?
-  _ <- nullP
   return $ ErrLine (i, m, n)
 
 -- this works on F or D; only E is different so far
@@ -454,7 +452,10 @@ parseTheRest t i = do
   !s <- sizeP
   !f <- nfilesP
   !p <- nameP
-  !mlt <- linkTargetP -- TODO this also consumes \NUL?
+  !mlt <- choice
+            [ lookAhead endOfLine >> return Nothing
+            , fmap Just linkTargetP
+            ]
   return $ HashLine (t, i, h, mt, s, f, p, mlt)
 
 -- TODO proper eitherToMaybe or similar idiom
