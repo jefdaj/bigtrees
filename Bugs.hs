@@ -122,3 +122,10 @@ import System.OsPath
 -- bigtrees: recoverEncode: invalid argument (cannot encode character '\65533')
 
 -- fail05 = File {nodeData = NodeData {name = Name {unName = [osp|\SOH|]}, hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 1224912839, nBytes = NBytes 0}, fileData = ()}
+
+-- this round-trips fine to a .bigtree file, but not to a dir
+fail06 :: TestTree
+fail06 = Dir {nodeData = NodeData {name = Name {unName = [osp|\SOH|]}, hash = Hash {unHash = "MjQ0MWI1ODE3NGNiZDU5"}, modTime = ModTime 1515282806, nBytes = NBytes 4097}, nNodes = NNodes 2, dirContents = [File {nodeData = NodeData {name = Name {unName = [osp|\SOH|]}, hash = Hash {unHash = "MWRkODMxMjYzNmY2YTBi"}, modTime = ModTime 1333427991, nBytes = NBytes 1}, fileData = "\204"}]}
+
+fail07 :: TestTree
+fail07 = Dir {nodeData = NodeData {name = Name {unName = [osp|\EOT\SOH\ETX|]}, hash = Hash {unHash = "MjYzNzdjNTVkZWI0NzRh"}, modTime = ModTime 1320735778, nBytes = NBytes 4096}, nNodes = NNodes 2, dirContents = [File {nodeData = NodeData {name = Name {unName = [osp|\STX|]}, hash = Hash {unHash = "ZTNiMGM0NDI5OGZjMWMx"}, modTime = ModTime 1007930439, nBytes = NBytes 0}, fileData = ""}]}

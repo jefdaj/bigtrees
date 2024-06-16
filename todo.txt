@@ -1,3 +1,14 @@
+round-trip to dir bug(s):
+  could the all-whitespace dir name in fail07 be a problem?
+  try round-tripping just the "problem" file inside it to see
+  2 bugs? symlink test should have better errmsg, and writing should create file
+
+link info that turns out to be needed:
+  target path
+    will require a 2nd NUL-terminated path in the line before the name
+    or after?
+  whether target is in the tree (whether node info is about target or link)
+
 use Data.Byteable instead of this "prettyHashLine" business?
 did i just rediscover the need for an existing thing? binary instances
   but they don't exist for ospath yet (hasufell has an issue about where they should go)
