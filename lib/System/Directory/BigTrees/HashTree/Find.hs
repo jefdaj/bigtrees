@@ -13,7 +13,7 @@ import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), TreeType (..),
-                                           sepChar)
+                                           sepChar, NNodes(..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeName,
                                                 treeType)
 import System.Directory.BigTrees.Name (Name, breadcrumbs2bs)
@@ -84,8 +84,8 @@ allFmtFns =
   , ('h', \_ t -> prettyHash $ hash $ nodeData t)
   , ('d', \(Depth i) _ -> B8.pack $ show i)
   , ('m', \_ t -> B8.pack $ show $ (\(ModTime n) -> n) $ modTime $ nodeData t)
-  , ('b', \_ t -> B8.pack $ show $ (\(NBytes n) -> n) $ nBytes $ nodeData t)
-  , ('f', \_ t -> B8.pack $ show $ sumNodes t) -- we say "files" in anything user-facing for now
+  , ('b', \_ t -> B8.pack $ show $ (\(NBytes n ) -> n) $ nBytes $ nodeData t)
+  , ('f', \_ t -> B8.pack $ show $ (\(NNodes n ) -> n) $ sumNodes t) -- f for "files"
   ]
 
 validFmtChars :: String
