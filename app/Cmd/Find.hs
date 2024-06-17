@@ -12,7 +12,8 @@ module Cmd.Find
 import Config (Config (..), defaultConfig)
 import Control.Concurrent.Thread.Delay (delay)
 import Data.List (sort)
-import System.Directory.BigTrees (TestTree, listTreePaths, readOrBuildTree, writeTestTreeDir, treeName, unName)
+import System.Directory.BigTrees (TestTree, listTreePaths, readOrBuildTree, treeName, unName,
+                                  writeTestTreeDir)
 import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -21,11 +22,12 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.QuickCheck (Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 -- import Control.Monad.IO.Class (liftIO)
-import Data.Maybe (fromMaybe)
-import System.OsPath (OsPath, encodeFS, decodeFS, osp, (</>))
-import qualified System.File.OsPath as SFO
-import qualified System.Directory.OsPath as SDO
 import qualified Data.ByteString.Char8 as B8
+import Data.Maybe (fromMaybe)
+import qualified System.Directory.OsPath as SDO
+import qualified System.File.OsPath as SFO
+import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
+import Data.Functor ((<&>))
 
 cmdFind :: Config -> OsPath -> IO ()
 cmdFind cfg path = do
@@ -36,7 +38,7 @@ cmdFind cfg path = do
     Just p  -> SFO.writeFile p $ B8.fromStrict $ B8.unlines paths -- TODO does this write lazily? we want it to
 
 readAndSortLines :: OsPath -> IO B8.ByteString
-readAndSortLines path = SFO.readFile' path >>= return . B8.unlines . sort . B8.lines
+readAndSortLines path = SFO.readFile' path <&> (B8.unlines . sort . B8.lines)
 
 cmdFindUnixFind :: TestTree -> IO (B8.ByteString, B8.ByteString)
 cmdFindUnixFind t =

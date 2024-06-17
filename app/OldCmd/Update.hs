@@ -4,7 +4,7 @@ module OldCmd.Update where
 -- TODO make an operation to replace a subtree (insert despite it existing, then diff)
 
 import Config (Config (..))
-import System.Directory.BigTrees (addSubTree, printTree, readOrBuildTree, op2ns)
+import System.Directory.BigTrees (addSubTree, op2ns, printTree, readOrBuildTree)
 import System.OsPath (OsPath)
 
 oldCmdUpdate :: Config -> OsPath -> OsPath -> OsPath -> IO ()

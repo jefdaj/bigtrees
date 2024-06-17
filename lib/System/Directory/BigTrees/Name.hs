@@ -3,10 +3,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE QuasiQuotes                #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-|
@@ -60,8 +60,8 @@ module System.Directory.BigTrees.Name
   where
 
 import Control.DeepSeq (NFData)
-import Control.Monad.IO.Class (liftIO)
 import Control.Monad (when)
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Short as BS
 import Data.List (isInfixOf, isPrefixOf, nub)
@@ -84,21 +84,22 @@ import TH.Derive (Deriving, derive)
 
 -- attempt at proper new string types:
 -- import System.FilePath ((</>))
+import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Short as SBS
+import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import qualified System.OsPath as SOP
+import qualified System.OsPath.Internal as SOPI
 import qualified System.OsString as SOS
 import qualified System.OsString.Internal.Types as SOS
 import Test.QuickCheck.Instances.ByteString
-import qualified Data.ByteString.Short as SBS
-import qualified System.OsPath.Internal as SOPI
-import qualified Data.ByteString.Char8 as B8
-import qualified System.Directory.OsPath as SDO
 
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
-                                         endOfLine, isEndOfLine, manyTill, parseOnly, take, takeTill)
+                                         endOfLine, isEndOfLine, manyTill, parseOnly, take,
+                                         takeTill)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
-import Data.Attoparsec.Combinator (lookAhead, sepBy', option)
+import Data.Attoparsec.Combinator (lookAhead, option, sepBy')
 import System.OsPath (OsPath)
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
@@ -147,7 +148,7 @@ instance Arbitrary Name where
 isValidName :: SOS.OsString -> Bool
 isValidName s
   = SOP.isValid s
-  && (not $ "/" `SBS.isInfixOf` (SOS.getPosixString $ SOS.getOsString s))
+  && not ("/" `SBS.isInfixOf` (SOS.getPosixString $ SOS.getOsString s))
   && notElem s [[SOS.osstr|.|], [SOS.osstr|..|]]
 
 -- * Convert paths to/from names
@@ -173,9 +174,9 @@ fp2n :: FilePath -> IO (Either String Name)
 fp2n fp = do
   ns <- fp2ns fp -- TODO catch error here and wrap it in Left too
   return $ case ns of
-    []  -> Left "fp2n with null path"
+    []       -> Left "fp2n with null path"
     [Name n] -> if isValidName n then Right (Name n) else Left $ "invalid name: " ++ show n
-    ns  -> Left "fp2n with slash in path"
+    ns       -> Left "fp2n with slash in path"
 
 -- | Convert a `FilePath` to a list of `Name`s using the current filesystem's encoding.
 -- TODO or explain why the conversion failed?
@@ -247,7 +248,7 @@ nameP = do
 -- >>> True
 --
 -- Set verbose=True to show the paths, but beware! They might mess up your terminal.
--- 
+--
 -- TODO is there a standard variant of `all` that works like this?
 --
 roundtripNameToFileName :: Bool -> Name -> IO Bool
@@ -257,7 +258,7 @@ roundtripNameToFileName verbose n =
     let f = d' SOP.</> unName n
     let txt = "this is a test"
     SFO.writeFile f txt
-    when verbose $ putStrLn $ show f
+    when verbose $ print f
     txt' <- SFO.readFile f
     return $ txt == txt'
 
@@ -273,7 +274,7 @@ roundtripNameToDirName verbose n =
     tmpDir' <- SOP.encodeFS tmpDir
     let testDir = tmpDir' SOP.</> unName n
     SDO.createDirectory testDir
-    when verbose $ putStrLn $ show testDir
+    when verbose $ print testDir
     cs <- SDO.getDirectoryContents tmpDir'
     return $ (unName n) `elem` cs
 

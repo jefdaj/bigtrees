@@ -4,9 +4,9 @@ import Control.Monad (msum)
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..))
-import System.Directory.BigTrees.Name (os2ns, Name)
+import System.Directory.BigTrees.Name (Name, os2ns)
 import System.Directory.BigTrees.Util (pathComponents)
-import System.OsPath (joinPath, OsPath)
+import System.OsPath (OsPath, joinPath)
 
 
 -------------------

@@ -7,9 +7,9 @@ module Config
   )
   where
 
-import System.OsPath (OsPath)
 import Control.Monad (when)
 import Prelude hiding (log)
+import System.OsPath (OsPath)
 
 -- TODO derive To/FromJSON for the Config so it can go in Headers?
 --      or just the exclude and maxdepth values for now

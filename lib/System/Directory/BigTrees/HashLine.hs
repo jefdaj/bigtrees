@@ -1,10 +1,10 @@
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE QuasiQuotes                #-}
+
 
 module System.Directory.BigTrees.HashLine
 
@@ -53,31 +53,33 @@ import Control.DeepSeq (NFData (..), force)
 import Control.Monad (void)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
-                                         endOfLine, isEndOfLine, manyTill, parseOnly, take, takeTill)
+                                         endOfLine, isEndOfLine, manyTill, parseOnly, take,
+                                         takeTill)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead, sepBy')
 import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Short as SBS
 import qualified Data.ByteString.Lazy as LBS
-import Data.Either (fromRight, either) -- TODO ok to import only for doctest?
+import qualified Data.ByteString.Short as SBS
+import Data.Either (either, fromRight)
 import Data.Functor ((<&>))
 import Data.Maybe (catMaybes)
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, n2bs, bs2n, nameP, op2bs, bs2op, sbs2op)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, suchThat, Property, resize, generate)
-import TH.Derive ()
+import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, bs2n, bs2op, n2bs,
+                                       nameP, op2bs, sbs2op)
 import qualified System.OsPath as OSP
+import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, generate, resize, suchThat)
+import TH.Derive ()
 -- import Data.List (intercalate)
-import System.IO (utf8)
-import System.OsString.Internal       -- TODO specifics
-import System.OsString.Internal.Types -- TODO specifics
-import qualified System.OsPath.Internal as OSPI
-import Data.List (sortBy, elem, intercalate)
-import Data.List.Split (splitOn)
 import Data.Char
+import Data.List (elem, intercalate, sortBy)
+import Data.List.Split (splitOn)
+import System.IO (utf8)
 import System.OsPath (OsPath)
+import qualified System.OsPath.Internal as OSPI
+import System.OsString.Internal
+import System.OsString.Internal.Types
 
 -----------
 -- types --
@@ -138,7 +140,7 @@ sanitizeErrMsg = filter $ \c ->
 
 -- | Cut the (redundant) filepath off the beginning of most IO-related error messages.
 simplifyErrMsg :: String -> String
-simplifyErrMsg s = if null sSplit then s' else intercalate ": " $ tail $ sSplit
+simplifyErrMsg s = if null sSplit then s' else intercalate ": " $ tail sSplit
   where
     s' = sanitizeErrMsg s
     sSplit = splitOn ": " s'
@@ -304,7 +306,7 @@ nullBreakP = nullP *> endOfLine
 -- >>> "test passed"
 --
 parseHashLinesBS :: B8.ByteString -> Either String [HashLine]
-parseHashLinesBS bs = 
+parseHashLinesBS bs =
   catMaybes <$>
   parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
 
@@ -323,7 +325,7 @@ prop_roundtrip_HashLines_to_ByteString hls =
   let bs  = B8.unlines $ map (prettyLine Nothing) hls
       res = parseOnly (sepBy' (hashLineP Nothing) endOfLine) bs
   in case fmap catMaybes res of
-       Left _ -> False
+       Left _     -> False
        Right hls' -> hls' == hls
 
 
@@ -391,7 +393,7 @@ nfilesP = numStrP <&> (NNodes . read)
 hashLineP :: Maybe Int -> Parser (Maybe HashLine)
 hashLineP md = do
   !t <- typeP
-  !(Depth i) <- depthP
+  (Depth i) <- depthP
   case md of
     Nothing -> Just <$> parseTheRest t (Depth i)
     Just d -> do

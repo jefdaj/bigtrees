@@ -12,8 +12,8 @@ import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
-import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), TreeType (..),
-                                           sepChar, NNodes(..))
+import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
+                                           TreeType (..), sepChar)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeName,
                                                 treeType)
 import System.Directory.BigTrees.Name (Name, breadcrumbs2bs)
@@ -43,9 +43,7 @@ listTreePaths' fExpr fmtFn (Depth i) ns t =
         (Dir {}) -> concat $ (flip map) (dirContents t) $
                     listTreePaths' fExpr fmtFn (Depth $ i+1) ns'
         _        -> []
-      thisPath = if (pathMatches fExpr ns')
-        then [pathLine fmtFn (Depth i) ns t]
-        else []
+      thisPath = ([pathLine fmtFn (Depth i) ns t | pathMatches fExpr ns'])
   in recPaths ++ thisPath
 
 

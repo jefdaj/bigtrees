@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# HLINT ignore "Use camelCase" #-}
 
 module System.Directory.BigTrees.HashTree
@@ -58,36 +58,36 @@ module System.Directory.BigTrees.HashTree
 
 
 import qualified Data.ByteString.Char8 as B8
-import qualified System.Directory.OsPath as SDO
 import System.Directory.BigTrees.HashLine (ErrMsg (..))
 import System.Directory.BigTrees.Name (Name (..))
-import System.OsPath ((</>), OsPath, osp, encodeFS)
+import qualified System.Directory.OsPath as SDO
+import System.OsPath (OsPath, encodeFS, osp, (</>))
 -- import System.FilePath.Glob (Pattern)
+import Control.Monad (when)
 import qualified System.FilePath as SF
-import System.IO (hClose, IOMode(..))
+import System.IO (IOMode (..), hClose)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import Control.Monad (when)
 
+import qualified Control.Concurrent.Thread.Delay as D
+import qualified Data.Knob as K
 import Data.List (isInfixOf)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 dropFileData, isErr, renameRoot, sumNodes, treeHash,
                                                 treeModTime, treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, listTreePaths)
-import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, headerP, linesP,
-                                                readHeader, readLastHashLineAndFooter, readTestTree,
-                                                readTree, hReadTree)
+import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)
+import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, hReadTree, headerP,
+                                                linesP, readHeader, readLastHashLineAndFooter,
+                                                readTestTree, readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import qualified Test.HUnit as HU
-import qualified Data.Knob as K
-import qualified Control.Concurrent.Thread.Delay as D
 
 -- import System.Directory.BigTrees.Util (absolutePath)
 
@@ -177,7 +177,7 @@ roundtripTestTreeToDir t =
 
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
-    let treeRootDir = tmpDir' </> (unName $ treeName t)
+    let treeRootDir = tmpDir' </> unName (treeName t)
     readTestTree Nothing False [] treeRootDir
     -- parent <- readTestTree Nothing False [] tmpDir'
     -- return $ head $ dirContents parent
@@ -190,8 +190,8 @@ prop_roundtrip_TestTree_to_dir = monadicIO $ do
   t2 <- run $ roundtripTestTreeToDir t1
   run $ D.delay 100000
   when (t2 /= t1) $ do
-    run $ putStrLn $ show t1
-    run $ putStrLn $ show t2
+    run $ print t1
+    run $ print t2
   assert $ t2 == t1
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion

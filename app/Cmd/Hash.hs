@@ -7,18 +7,18 @@ import qualified Control.Concurrent.Thread.Delay as D
 import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (isPrefixOf, sort)
+import qualified System.Directory as SD
 import System.Directory.BigTrees (buildProdTree, hWriteTree, printTree)
+import qualified System.File.OsPath as SFO
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.Info (os)
 import System.IO (Handle, IOMode (..), hClose, openBinaryFile, stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
+import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
-import System.OsPath (OsPath, encodeFS)
-import qualified System.File.OsPath as SFO
-import qualified System.Directory as SD
 
 cmdHash :: Config -> OsPath -> IO ()
 cmdHash cfg path = bracket open close write

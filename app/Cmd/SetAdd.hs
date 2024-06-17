@@ -8,16 +8,16 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.HashTable.Class as H
 import Data.Maybe (catMaybes, mapMaybe)
 import Prelude hiding (log)
-import qualified System.Directory.OsPath as SDO
 import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToHashSet,
                                   addTreeToHashSet, getTreeSize, hashSetDataFromLine,
                                   hashSetFromList, headerP, linesP, readHashList,
                                   readLastHashLineAndFooter, readOrBuildTree, readTreeLines,
                                   sumNodes, toSortedList, writeHashList)
 import System.Directory.BigTrees.HashSet (emptyHashSet)
+import qualified System.Directory.OsPath as SDO
 import System.IO (IOMode (..), withFile)
-import Text.Pretty.Simple (pPrint)
 import System.OsPath (OsPath)
+import Text.Pretty.Simple (pPrint)
 
 readTreeHashList :: Config -> Maybe Note -> OsPath -> IO HashList
 readTreeHashList cfg mn path = do

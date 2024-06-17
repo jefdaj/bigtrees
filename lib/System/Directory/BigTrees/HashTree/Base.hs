@@ -11,19 +11,20 @@ import Control.DeepSeq (NFData)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
+import qualified Data.CaseInsensitive as CI
 import Data.Char (toLower)
 import Data.List (nubBy, sort)
 import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes)
-import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), ModTime (..),
-                                           NBytes (..), NNodes (..), TreeType (..), bsBytes, LinkTarget)
+import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), LinkTarget,
+                                           ModTime (..), NBytes (..), NNodes (..), TreeType (..),
+                                           bsBytes)
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2bs)
 import System.Info (os)
+import System.OsPath (OsPath)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive (Deriving, derive)
-import qualified Data.CaseInsensitive as CI
-import System.OsPath (OsPath)
 
 -- import Debug.Trace
 
@@ -41,8 +42,8 @@ duplicateNames :: HashTree a -> HashTree a -> Bool
 duplicateNames = if os == "darwin" then macDupes else unixDupes
   where
     unixDupes a b = treeName a == treeName b
-    macDupes a b = (CI.mk $ n2bs $ treeName a)
-                == (CI.mk $ n2bs $ treeName b)
+    macDupes a b = CI.mk (n2bs $ treeName a)
+                == CI.mk (n2bs $ treeName b)
 
 -- TODO Integer? not sure how big it could get
 sumNodes :: HashTree a -> NNodes

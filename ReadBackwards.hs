@@ -8,17 +8,17 @@
 
 module Main where
 
-import System.IO
+import Control.DeepSeq (deepseq)
+import Control.Monad (foldM, forM_)
+import Data.Attoparsec.ByteString.Char8
+import Data.Attoparsec.Combinator
 import qualified Data.ByteString.Char8 as B8
+import Data.Maybe (fromMaybe)
 import System.Directory.BigTrees
 import System.Directory.BigTrees.HashLine
 import System.Directory.BigTrees.HashTree.Read
-import Data.Attoparsec.ByteString.Char8
-import Data.Attoparsec.Combinator
-import Control.Monad (forM_, foldM)
-import Control.DeepSeq (deepseq)
+import System.IO
 import System.Posix.Files
-import Data.Maybe (fromMaybe)
 
 import Debug.Trace
 
@@ -59,7 +59,7 @@ parseHashLinesFromChunk = do
 
   -- if this is the first chunk in the file (last in iteration),
   -- there will be a header to skip before the lines start.
-  -- 
+  --
   -- this was working better before when it was just sepBy' commentLineP endOfLine,
   -- but i worry that might swallow any line that happens to start with '#'
   --
@@ -96,8 +96,8 @@ strictRevChunkParse (Right (_, eop)) prev =
   let prev' = B8.append prev $ B8.append eop "\n" -- TODO what about newline before eop here??
       res   = case parseOnly parseHashLinesFromChunk prev' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
-                Left msg -> trace ("Left " ++ show msg) (Left msg)
-                x -> x
+                Left msg                -> trace ("Left " ++ show msg) (Left msg)
+                x                       -> x
   in deepseq res res
 
 -- This returns a lazy list of chunk parse results, but each one will fully evaluate

@@ -6,16 +6,16 @@ module Main where
 
 import Data.Attoparsec.ByteString
 import Data.Attoparsec.Combinator
-import Test.QuickCheck
-import Test.QuickCheck.Instances.ByteString
 import qualified Data.ByteString.Short as SBS
 import qualified System.File.OsPath as SFO
 import qualified System.OsPath as OSP
 import qualified System.OsPath.Internal as OSPI
+import Test.QuickCheck
+import Test.QuickCheck.Instances.ByteString
 -- import qualified System.OsString as OSS
-import System.IO.Temp (withSystemTempDirectory)
-import qualified System.Directory.OsPath as SDO
 import Data.Maybe (fromJust)
+import qualified System.Directory.OsPath as SDO
+import System.IO.Temp (withSystemTempDirectory)
 
 -- instance Arbitrary OSP.OsPath where
   -- arbitrary = <$> ((arbitrary :: Gen SBS.ShortByteString) `suchThat` isValidName)

@@ -2,8 +2,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 
 {-|
@@ -57,18 +57,18 @@ import qualified Streaming.ByteString.Char8 as Q
 import qualified Streaming.Prelude as S
 import qualified System.Directory.OsPath as SDO
 import System.FilePath (takeFileName)
-import System.OsPath (takeBaseName, takeDirectory, (</>), encodeFS, decodeFS)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
+import System.OsPath (decodeFS, encodeFS, takeBaseName, takeDirectory, (</>))
 -- import System.Posix.Files (readSymbolicLink)
+import qualified System.File.OsPath as SFO
+import qualified System.OsPath as OSP
+import System.OsPath (OsPath)
+import System.OsString.Internal.Types
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, suchThat)
 import Test.QuickCheck.Instances.ByteString ()
 import Text.Regex.TDFA ((=~))
 import TH.Derive (Deriving, derive)
-import qualified System.OsPath as OSP
-import System.OsPath (OsPath)
-import System.OsString.Internal.Types -- TODO specifics
-import qualified System.File.OsPath as SFO
 
 
 {- Checksum (sha256sum?) of a file or folder.

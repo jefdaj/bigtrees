@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes  #-}
 
 module System.Directory.BigTrees.HashTree.Build where
 
@@ -9,30 +9,32 @@ import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (sortBy, elem, intercalate)
+import Data.List (elem, intercalate, sortBy)
 import Data.List.Split (splitOn)
 import Data.Maybe (isJust)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Foreign.C.Types (CTime (..))
 -- import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
-import qualified System.Directory.OsPath as SDO
-import System.Directory.BigTrees.Hash (hashFile, hashSymlinkLiteral, hashSymlinkTarget, hashFromAnnexPath)
-import System.Directory.BigTrees.HashLine (ErrMsg (..), ModTime (..), NBytes (..), simplifyErrMsg, Depth(..))
+import System.Directory.BigTrees.Hash (hashFile, hashFromAnnexPath, hashSymlinkLiteral,
+                                       hashSymlinkTarget)
+import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..), NBytes (..),
+                                           simplifyErrMsg)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
                                                 hashContents, sumNodes, treeModTime, treeNBytes,
                                                 treeName)
 import System.Directory.BigTrees.Name
+import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Tree as DT
 import qualified System.OsPath as SOP
-import System.OsPath (OsPath, takeDirectory, (</>), decodeFS)
+import System.OsPath (OsPath, decodeFS, takeDirectory, (</>))
 -- import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
 --                              matchWith)
+import Data.Char
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Posix.Files (getFileStatus, isDirectory, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
-import Text.Regex.TDFA -- TODO specifics
-import Text.Regex.TDFA.ByteString -- TODO specifics
-import Data.Char
+import Text.Regex.TDFA
+import Text.Regex.TDFA.ByteString
 -- import qualified System.File.OsPath as SFO
 
 -- keepPath :: [String] -> OsPath -> Bool

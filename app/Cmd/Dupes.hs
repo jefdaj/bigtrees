@@ -5,16 +5,16 @@ module Cmd.Dupes where
 import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
+import qualified System.Directory as SD
 import qualified System.Directory.BigTrees as BT
 import System.FilePath (dropExtension, takeBaseName, (</>))
-import System.OsPath (OsPath, encodeFS)
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
+import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
-import qualified System.Directory as SD
 
 cmdDupes :: Config -> OsPath -> IO ()
 cmdDupes cfg path = do

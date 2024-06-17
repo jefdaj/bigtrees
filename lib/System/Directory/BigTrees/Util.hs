@@ -1,8 +1,8 @@
 {-# HLINT ignore "Use camelCase" #-}
-{-# LANGUAGE InstanceSigs        #-}
+
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE QuasiQuotes         #-}
+
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 -- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
@@ -45,11 +45,11 @@ import GHC.Generics (Generic)
 import Prelude hiding (log)
 import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Tree as DT
-import qualified System.OsPath as SF
-import System.OsPath ((</>), osp, OsPath)
 import System.Info (os)
 import System.IO (Handle, SeekMode (..), hGetChar, hSeek)
 import System.IO.Temp (withSystemTempDirectory)
+import qualified System.OsPath as SF
+import System.OsPath (OsPath, osp, (</>))
 import System.Path.NameManip (absolute_path, guess_dotdot)
 -- import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 import Test.HUnit (Assertion, (@=?))
@@ -101,30 +101,30 @@ pathComponents = SF.splitPath
 -- newtype Path
 --   = Path OsPath
 --   deriving (Eq, Ord, Show) -- TODO is read not possible?
--- 
+--
 -- instance Arbitrary Path where
 --   arbitrary :: Gen Path
 --   arbitrary =
--- 
+--
 --     -- make sure the whole thing isn't empty at the end
 --     flip suchThat (\(Path p) -> p /= "") $ do
--- 
+--
 --       -- generate the main path body
 --       -- (a single path would work here too, but i want more complex test trees)
 --       -- TODO would bytestring for this more closely match the actual OS?
 --       (body :: [OsPath]) <- listOf (arbitrary `suchThat` (\x -> notElem '\NUL' x && notElem '/' x))
--- 
+--
 --       -- make sure we can handle various prefix styles
 --       -- note that "" here generates "/" below
 --       -- TODO also ones with variables?
 --       (prefix :: OsPath) <- oneof $ map pure [mempty, [osp|.|], [osp|..|], [osp|~|]]
--- 
+--
 --       -- ... or none at all
 --       (usePrefix :: Bool) <- arbitrary
--- 
+--
 --       let path = SF.joinPath $ if usePrefix then prefix:body else body
 --       return $ Path path
--- 
+--
 --   -- TODO the individual strings will shrink automatically, right?
 --   shrink :: Path -> [Path]
 --   shrink (Path p) = map (Path . SF.joinPath) $ shrink $ pathComponents p
@@ -157,7 +157,7 @@ pathComponents = SF.splitPath
 --     Just p' -> if p' == path -- fixpoint
 --                  then Just <$> SDO.canonicalizePath p'
 --                  else absolutePath p'
--- 
+--
 -- -- based on: schoolofhaskell.com/user/dshevchenko/cookbook
 -- absolutePath' :: OsPath -> IO (Maybe OsPath)
 -- absolutePath' aPath
@@ -183,18 +183,18 @@ pathComponents = SF.splitPath
 --   let explicit = home </> "xyz"
 --   (Just implicit) <- absolutePath "~/xyz"
 --   implicit @=? explicit
--- 
+--
 -- -- TODO is the empty string a valid relative path?
 -- unit_absolutePath_rejects_null_path :: Assertion
 -- unit_absolutePath_rejects_null_path = do
 --   reject <- absolutePath ""
 --   reject @=? Nothing
--- 
+--
 -- unit_absolutePath_fixes_invalid_dotdot :: Assertion
 -- unit_absolutePath_fixes_invalid_dotdot = do
 --   fixed <- absolutePath "/.."
 --   fixed @=? Just "/"
--- 
+--
 -- prop_absolutePaths_is_idempotent :: Path -> Property
 -- prop_absolutePaths_is_idempotent (Path path) = monadicIO $ do
 --   (Just path' ) <- liftIO $ absolutePath path

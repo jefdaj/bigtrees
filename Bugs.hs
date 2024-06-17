@@ -1,12 +1,12 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 import System.Directory.BigTrees
 import System.Directory.BigTrees.Delta
-import System.Directory.BigTrees.HashTree
 import System.Directory.BigTrees.HashLine
-import Text.Pretty.Simple
+import System.Directory.BigTrees.HashTree
 import System.OsPath
+import Text.Pretty.Simple
 
 -- how to run tests:
 -- TASTY_PATTERN='/roundtrip TestTree to dir/' stack test

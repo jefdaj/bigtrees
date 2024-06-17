@@ -12,7 +12,7 @@ import System.Directory.BigTrees.HashLine (ErrMsg (..), HashLine (..), ModTime (
 import System.Directory.BigTrees.HashTree (HashTree (..), readHeader, readLastHashLineAndFooter)
 import System.Directory.BigTrees.HeadFoot (Footer, Header (..), scanSeconds)
 -- import qualified Data.ByteString.Short as BS
-import System.OsPath (encodeFS, OsPath)
+import System.OsPath (OsPath, encodeFS)
 
 cmdInfo :: Config -> OsPath -> IO ()
 cmdInfo cfg path = do

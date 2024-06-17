@@ -1,14 +1,14 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 module System.Directory.BigTrees.HashTree.Read where
 
 import Control.DeepSeq (deepseq)
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
+import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.List (partition, sortBy)
-import Data.Function (on)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..),
                                            TreeType (..), hashLineP, nullBreakP, parseHashLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
@@ -29,8 +29,8 @@ import Data.Either (fromRight)
 import Data.Maybe (catMaybes, fromJust)
 import Data.String.Utils (replace)
 import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..))
-import System.IO (Handle, IOMode (..), hGetLine)
 import qualified System.File.OsPath as SFO
+import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
 
@@ -53,7 +53,7 @@ headerP = do
 readHeader :: OsPath -> IO (Maybe Header)
 readHeader path =
   SFO.withBinaryFile path ReadMode $ \h -> do
-    commentLines <- fmap (takeWhile isCommentLine) $ replicateM 100 (hGetLine h)
+    commentLines <- takeWhile isCommentLine <$> replicateM 100 (hGetLine h)
     return $ parseHeader commentLines
 
 -- Header is the same, except we have to lob off the final header line

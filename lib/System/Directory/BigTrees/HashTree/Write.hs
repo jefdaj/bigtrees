@@ -1,17 +1,17 @@
 module System.Directory.BigTrees.HashTree.Write where
 
-import Control.Monad (when)
+import Control.Monad (when, unless)
 import qualified Data.ByteString.Char8 as B8
 import Data.Maybe (isNothing)
-import qualified System.Directory.OsPath as SDO
 import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Name (unName)
-import System.OsPath (splitPath, (</>), OsPath, decodeFS)
-import System.IO (Handle, IOMode (..), hFlush, stdout)
+import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
+import System.IO (Handle, IOMode (..), hFlush, stdout)
+import System.OsPath (OsPath, decodeFS, splitPath, (</>))
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
@@ -79,7 +79,7 @@ assertNoFile path = do
 assertFile :: OsPath -> IO ()
 assertFile path = do
   exists <- SDO.doesPathExist path
-  when (not exists) $ do
+  unless exists $ do
     path' <- decodeFS path
     -- putStrLn $ "failed to write: " ++ show path'
     error $ "failed to write: " ++ show path'
@@ -95,7 +95,7 @@ writeTestTreeDir :: OsPath -> TestTree -> IO ()
 writeTestTreeDir root (Err {}) = return () -- TODO print a warning?
 
 writeTestTreeDir root l@(Link {nodeData=nd}) = do
-  let path = root </> (unName $ name nd)
+  let path = root </> unName (name nd)
   assertNoFile path
   -- Target comes first, then the file we're writing (like `ln -s`)
   SDO.createFileLink (linkTarget l) path
@@ -103,13 +103,13 @@ writeTestTreeDir root l@(Link {nodeData=nd}) = do
 
 writeTestTreeDir root (File {nodeData=nd, fileData = bs}) = do
   -- SDO.createDirectoryIfMissing True root -- TODO remove
-  let path = root </> (unName $ name nd)
+  let path = root </> unName (name nd)
   assertNoFile path
   SFO.writeFile' path bs
   assertFile path
 
 writeTestTreeDir root (Dir {nodeData=nd, dirContents = cs}) = do
-  let root' = root </> (unName $ name nd)
+  let root' = root </> unName (name nd)
   assertNoFile root'
   -- putStrLn $ "write test dir: " ++ show root'
   SDO.createDirectoryIfMissing True root' -- TODO true?

@@ -48,7 +48,7 @@ main = do
              else return $ exclude defaultConfig
   tPath <- case shortO 't' of
              Nothing -> return Nothing
-             Just t  -> encodeFS t >>= return . Just
+             Just t  -> encodeFS t <&> Just
 
   let cfg = Config
         { txt      = tPath

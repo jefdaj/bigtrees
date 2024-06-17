@@ -119,8 +119,8 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNNo
                                           listLostFiles, mergeDupeSets, pathsByHash, printDupes,
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
-import System.Directory.BigTrees.HashLine (HashLine (..), ModTime (..), NBytes (..), NNodes (..),
-                                           TreeType (..), Depth(..))
+import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),
+                                           NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData (..),
                                           addNodeToHashSet, addTreeToHashSet, emptyHashSet,
                                           hashSetDataFromLine, hashSetFromList, hashSetFromTree,
@@ -131,11 +131,13 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dr
                                                 treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, listTreePaths)
+import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readHeader, readLastHashLineAndFooter,
                                                 readTree, readTreeLines)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)
-import System.Directory.BigTrees.Name ( Name(..), NamesFwd, NamesRev, n2sbs, sbs2n, fp2n, fp2ns, n2bs, bs2n, breadcrumbs2bs, joinNames, names2bs, os2ns, op2ns, nameP)
- 
+import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumbs2bs, bs2n, fp2n,
+                                       fp2ns, joinNames, n2bs, n2sbs, nameP, names2bs, op2ns, os2ns,
+                                       sbs2n)
+

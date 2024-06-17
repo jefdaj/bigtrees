@@ -7,16 +7,16 @@ module Cmd.Diff where
 import Config (Config (..), defaultConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
-import System.Directory.BigTrees (diff, printDeltas, readOrBuildTree, renameRoot, Name(..))
+import qualified System.Directory as SD
+import System.Directory.BigTrees (Name (..), diff, printDeltas, readOrBuildTree, renameRoot)
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
+import System.OsPath (OsPath, encodeFS, osp)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
-import System.OsPath (OsPath, osp, encodeFS)
-import qualified System.Directory as SD
 
 cmdDiff :: Config -> OsPath -> OsPath -> IO ()
 cmdDiff cfg old new = do

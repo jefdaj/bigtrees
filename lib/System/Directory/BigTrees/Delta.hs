@@ -27,9 +27,9 @@ import Data.List (find)
 import Data.Maybe (fromJust)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, addSubTree,
                                            dropTo, rmSubTree, treeName)
-import System.Directory.BigTrees.Name (Name(..), op2ns)
-import System.OsPath ((</>), OsPath, decodeFS)
+import System.Directory.BigTrees.Name (Name (..), op2ns)
 import qualified System.OsPath as SOP
+import System.OsPath (OsPath, decodeFS, (</>))
 
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves

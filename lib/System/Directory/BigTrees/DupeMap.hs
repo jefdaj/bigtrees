@@ -38,14 +38,14 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.Name (Name(..))
 import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
-import System.Directory.BigTrees.Name (n2bs)
+import System.Directory.BigTrees.Name (Name (..), n2bs)
 -- import System.OsPath (splitDirectories, (</>))
 
-import System.OsPath -- TODO specifics
 import qualified System.File.OsPath as SFO
+import System.OsPath
+import Data.Functor ((<&>))
 
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup
@@ -189,7 +189,7 @@ writeDupes md path groups = do
   SFO.writeFile' path msg
 
 explainDupes :: Maybe Int -> [DupeList] -> IO B.ByteString
-explainDupes md ls = mapM explainGroup ls >>= return . B.unlines
+explainDupes md ls = mapM explainGroup ls <&> B.unlines
   where
     disclaimer Nothing  = ""
     disclaimer (Just d) = " (up to " `B.append` B.pack (show d) `B.append` " levels deep)"
@@ -199,7 +199,7 @@ explainDupes md ls = mapM explainGroup ls >>= return . B.unlines
       paths' <- mapM decodeFS paths
       return $ B.unlines
              $ (header t n (length paths) `B.append` ":")
-             : (sort $ map B.pack paths')
+             : sort (map B.pack paths')
 
     header :: TreeType -> Int -> Int -> B.ByteString
     header F n fs = B.intercalate " " [ "# deduping these"  , B.pack (show fs)

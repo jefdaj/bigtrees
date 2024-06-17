@@ -64,6 +64,7 @@ import GHC.Generics (Generic)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, endOfLine, parseOnly)
 import Data.Attoparsec.Combinator (lookAhead, many', manyTill)
 import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Short as SBS
 import Data.Either
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, joinCols,
@@ -71,12 +72,11 @@ import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (.
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, TestTree (..),
                                            sumNodes, treeHash, treeNBytes, treeName)
 import System.Directory.BigTrees.Name (Name (..))
+import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..))
+import System.OsPath (OsPath)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import qualified Data.ByteString.Short as SBS
-import qualified System.File.OsPath as SFO
-import System.OsPath (OsPath)
 
 
 --- types ---
