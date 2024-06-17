@@ -98,7 +98,7 @@ import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, take, takeTill)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
-import Data.Attoparsec.Combinator (lookAhead, sepBy')
+import Data.Attoparsec.Combinator (lookAhead, sepBy', option)
 import System.OsPath (OsPath)
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
@@ -233,11 +233,10 @@ bs2op = SOS.OsString . SOS.PosixString . SBS.toShort
 -- TODO is Attoparsec.ByteString suitable for this, or do I need to parse them some other way?
 nameP :: Parser Name
 nameP = do
-  -- c  <- anyChar
-  -- cs <- manyTill anyChar $ lookAhead breakP
-  -- return $ _ (c:cs)
+  -- TODO sepP here?
   bs <- takeTill (== '\NUL')
   _  <- char '\NUL'
+  _  <- option undefined $ char '\t' -- TODO if this works, move sepP from HashLine
   return $ bs2n bs
 
 -- Fails if there's an error writing the file, or if after writing it doesn't

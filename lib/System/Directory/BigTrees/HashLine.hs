@@ -367,7 +367,7 @@ breakP =
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
-numStrP = manyTill digit sepP
+numStrP = manyTill digit sepP -- TODO does this also consume the sep?
 
 -- TODO applicative version?
 depthP :: Parser Depth
@@ -431,8 +431,7 @@ errP = do
 -- TODO will return an empty OsString on failure?
 linkTargetP :: Parser LinkTarget
 linkTargetP = do
-  -- cs <- manyTill anyChar nullP -- TODO consumes \NUL?
-  -- return $ if null cs then Nothing else Just cs
+  -- _  <- sepP -- TODO is that right?
   bs <- takeTill (== '\NUL')
   _  <- char '\NUL'
   return $ bs2op bs
