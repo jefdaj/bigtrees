@@ -68,6 +68,7 @@ import System.IO (hClose, IOMode(..))
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import Control.Monad (when)
 
 import Data.List (isInfixOf)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
@@ -86,6 +87,7 @@ import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import qualified Test.HUnit as HU
 import qualified Data.Knob as K
+import qualified Control.Concurrent.Thread.Delay as D
 
 -- import System.Directory.BigTrees.Util (absolutePath)
 
@@ -163,6 +165,7 @@ roundtripTestTreeToDir t =
 
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
+    D.delay 100000
     -- let tmpRoot = tmpDir </> "round-trip-tests" -- TODO use root
     -- SD.createDirectoryIfMissing True tmpDir -- TODO False?
     -- SD.removePathForcibly tmpDir -- TODO remove
@@ -170,6 +173,7 @@ roundtripTestTreeToDir t =
     -- This is a little confusing, but the FilePath here should be the *parent*
     -- within which to write the root tree dir...
     writeTestTreeDir tmpDir' t
+    D.delay 100000
 
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
@@ -182,7 +186,12 @@ roundtripTestTreeToDir t =
 prop_roundtrip_TestTree_to_dir :: Property
 prop_roundtrip_TestTree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
+  run $ D.delay 100000
   t2 <- run $ roundtripTestTreeToDir t1
+  run $ D.delay 100000
+  when (t2 /= t1) $ do
+    run $ putStrLn $ show t1
+    run $ putStrLn $ show t2
   assert $ t2 == t1
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion
