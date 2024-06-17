@@ -16,6 +16,7 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
 import System.OsPath (OsPath, osp, encodeFS)
+import qualified System.Directory as SD
 
 cmdDiff :: Config -> OsPath -> OsPath -> IO ()
 cmdDiff cfg old new = do
@@ -29,14 +30,16 @@ cmdDiff cfg old new = do
 
 diffTarXz :: FilePath -> FilePath -> IO BLU.ByteString
 diffTarXz xz1 xz2 = do
+  xz1' <- SD.makeAbsolute xz1
+  xz2' <- SD.makeAbsolute xz2
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     let d1 = tmpDir </> dropExtension (takeBaseName xz1)
     let d2 = tmpDir </> dropExtension (takeBaseName xz2)
     d1' <- encodeFS d1
     d2' <- encodeFS d2
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
-    _ <- readCreateProcess ((proc "tar" ["-xf", xz1]) {cwd = Just tmpDir}) ""
-    _ <- readCreateProcess ((proc "tar" ["-xf", xz2]) {cwd = Just tmpDir}) ""
+    _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
+    _ <- readCreateProcess ((proc "tar" ["-xf", xz2']) {cwd = Just tmpDir}) ""
     (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultConfig d1' d2'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out

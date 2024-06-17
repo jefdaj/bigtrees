@@ -18,6 +18,7 @@ import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
 import System.OsPath (OsPath, encodeFS)
 import qualified System.File.OsPath as SFO
+import qualified System.Directory as SD
 
 cmdHash :: Config -> OsPath -> IO ()
 cmdHash cfg path = bracket open close write
@@ -67,7 +68,8 @@ mkHashTarXzTest cfg xzPath =
 test_hash_tarxz :: IO TestTree
 test_hash_tarxz = do
   xzPaths <- sort <$> findByExtension [".xz"] "test/app" -- TODO file bug about .tar.xz failing?
+  xzPaths' <- mapM SD.makeAbsolute xzPaths
   -- putStrLn $ show xzPaths
   return $ testGroup
     "hash files extracted from tarballs"
-    [mkHashTarXzTest defaultConfig p | p <- xzPaths]
+    [mkHashTarXzTest defaultConfig p | p <- xzPaths']
