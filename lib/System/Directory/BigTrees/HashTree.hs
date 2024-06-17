@@ -25,7 +25,7 @@ module System.Directory.BigTrees.HashTree
   , treeContainsPath
   , writeTree
   , hWriteTree
-  , printTreePaths
+  , listTreePaths
   , treeName
   , treeHash
   , treeNBytes
@@ -75,7 +75,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 treeModTime, treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
+import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, headerP, linesP,
                                                 readHeader, readLastHashLineAndFooter, readTestTree,
                                                 readTree, hReadTree)

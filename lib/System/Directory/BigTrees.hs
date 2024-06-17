@@ -59,7 +59,7 @@ module System.Directory.BigTrees
   -- , serializeTree
   , treeContainsHash
   , treeContainsPath
-  , printTreePaths
+  , listTreePaths
   , Filter(..)
   , pathMatches
   , treeName
@@ -131,7 +131,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dr
                                                 treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, printTreePaths)
+import System.Directory.BigTrees.HashTree.Find (Filter (..), pathMatches, listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readHeader, readLastHashLineAndFooter,
                                                 readTree, readTreeLines)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)

@@ -12,7 +12,7 @@ module Cmd.Find
 import Config (Config (..), defaultConfig)
 import Control.Concurrent.Thread.Delay (delay)
 import Data.List (sort)
-import System.Directory.BigTrees (TestTree, printTreePaths, readOrBuildTree, writeTestTreeDir, treeName, unName)
+import System.Directory.BigTrees (TestTree, listTreePaths, readOrBuildTree, writeTestTreeDir, treeName, unName)
 import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -30,7 +30,10 @@ import qualified Data.ByteString.Char8 as B8
 cmdFind :: Config -> OsPath -> IO ()
 cmdFind cfg path = do
   tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
-  printTreePaths (regex cfg) (fromMaybe "" $ metafmt cfg) tree
+  let paths = listTreePaths (regex cfg) (fromMaybe "" $ metafmt cfg) tree
+  case txt cfg of
+    Nothing -> undefined
+    Just p  -> undefined
 
 readAndSortLines :: OsPath -> IO B8.ByteString
 readAndSortLines path = SFO.readFile' path >>= return . B8.unlines . sort . B8.lines

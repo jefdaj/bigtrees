@@ -1,7 +1,7 @@
 {-# LANGUAGE ImpredicativeTypes #-}
 
 module System.Directory.BigTrees.HashTree.Find
-  ( printTreePaths
+  ( listTreePaths
   , Filter(..)  -- TODO remove from exports?
   , pathMatches -- TODO remove from exports?
   )
@@ -20,6 +20,34 @@ import System.Directory.BigTrees.Name (Name, breadcrumbs2bs)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
+
+
+-------------------------------------
+-- list paths, but don't print yet --
+-------------------------------------
+
+-- TODO should this be implemented in terms of a Foldable/Traversable instance?
+-- TODO don't try to make it efficient before doing the reverse read thing?
+
+listTreePaths :: Maybe String -> String -> HashTree a -> [B8.ByteString]
+listTreePaths mRegex fmt =
+  let fExpr = maybe Anything FilterRegex mRegex
+  in case mkLineMetaFormatter fmt of
+       (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
+       (Right fmtFn ) -> listTreePaths' fExpr fmtFn (Depth 0) []
+
+listTreePaths' :: Filter -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
+listTreePaths' fExpr fmtFn (Depth i) ns t =
+  let ns' = treeName t:ns
+      recPaths = case t of
+        (Dir {}) -> concat $ (flip map) (dirContents t) $
+                    listTreePaths' fExpr fmtFn (Depth $ i+1) ns'
+        _        -> []
+      thisPath = if (pathMatches fExpr ns')
+        then [pathLine fmtFn (Depth i) ns t]
+        else []
+  in recPaths ++ thisPath
+
 
 -----------------
 -- print paths --
