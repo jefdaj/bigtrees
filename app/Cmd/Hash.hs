@@ -12,7 +12,7 @@ import System.Directory.BigTrees (buildProdTree, hWriteTree, printTree)
 import qualified System.File.OsPath as SFO
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.Info (os)
-import System.IO (Handle, IOMode (..), hClose, openBinaryFile, stderr, stdout)
+import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
 import System.OsPath (OsPath, encodeFS)
@@ -33,7 +33,7 @@ cmdHash cfg path = bracket open close write
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?
-    close _ = return ()
+    close = hFlush
 
 -- The scan output includes current date + other metadata,
 -- which we have to ignore if the tests are going to be reproducible.
