@@ -587,9 +587,9 @@ lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkPa
     initial = Right ([], "")
 
 -- TODO is 4096 a good default to assume when there really isn't any?
-getBlockSize :: FilePath -> IO Integer
+getBlockSize :: OsPath -> IO Integer
 getBlockSize path = do
-  stat <- getFileStatus path
+  stat <- getFileStatus =<< decodeFS path
   return $ fromMaybe 4096 $ fmap toInteger $ fileBlockSize stat
 
 -- TODO any need to also get the header + footer here?
@@ -597,8 +597,8 @@ getBlockSize path = do
 -- TODO SFO.readFile instead
 -- TODO how to properly encapsulate parse errors? maybe MonadThrow/Catch?
 -- (for now, fatal error if parsing a chunk fails)
-parseTreeFileRev :: FilePath -> IO [HashLine]
-parseTreeFileRev f = withFile f ReadMode $ \h -> do
+parseTreeFileRev :: OsPath -> IO [HashLine]
+parseTreeFileRev f = SFO.withFile f ReadMode $ \h -> do
 
   -- Find a good block size (how many bytes to a chunk) and calculate where to
   -- start seeking (slightly back from the end at a multiple of the block size
