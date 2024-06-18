@@ -527,6 +527,14 @@ type Chunk          = B8.ByteString
 parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
 parseHashLinesFromChunk = do
 
+  -- if this is the first chunk in the file (last in iteration),
+  -- there will be a header to skip before the lines start.
+  --
+  -- this was working better before when it was just sepBy' commentLineP endOfLine,
+  -- but i worry that might swallow any line that happens to start with '#'
+  --
+  _ <- option undefined headerP -- TODO undefined should be safe here, no?
+
   -- If this is the second-to-last chunk and it happens to start in the middle of the header,
   -- the easiest thing to do is pass that to the very last chunk as part of eop.
 
@@ -536,14 +544,6 @@ parseHashLinesFromChunk = do
            [ lookAhead (hashLineP Nothing) >> return ""
            , endofprevP
            ]
-
-  -- if this is the first chunk in the file (last in iteration),
-  -- there will be a header to skip before the lines start.
-  --
-  -- this was working better before when it was just sepBy' commentLineP endOfLine,
-  -- but i worry that might swallow any line that happens to start with '#'
-  --
-  _ <- option undefined headerP -- TODO undefined should be safe here, no?
 
   hls <- reverse <$> linesP Nothing
   -- same with the footer, if this is the final chunk in the file (first read)
