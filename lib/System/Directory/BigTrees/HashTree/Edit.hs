@@ -85,7 +85,7 @@ addSubTree main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNodes = 
  - Buuuut for now can just ignore nNodes as it's not needed for the rm itself.
  - TODO does this actually solve nNodes too?
  -}
-rmSubTree :: HashTree a -> [Name] -> Either String (HashTree a)
+rmSubTree :: Eq a => HashTree a -> [Name] -> Either String (HashTree a)
 rmSubTree (Err  {}) ns = Left $ "no such subtree: " ++ show ns -- TODO is this right?
 rmSubTree (File {}) ns = Left $ "no such subtree: " ++ show ns
 rmSubTree d@(Dir {dirContents=cs, nNodes=nn}) (n:ns) = case dropTo d ns of

@@ -172,7 +172,7 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} (Depth i, dir):siblings
+       in {-# SCC "Dappend" #-} (Depth i, dir):siblings -- TODO sort issue here?
 
 partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
 

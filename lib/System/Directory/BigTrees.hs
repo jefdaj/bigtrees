@@ -69,6 +69,7 @@ module System.Directory.BigTrees
   , readLastHashLineAndFooter
   , readTreeLines
   , getTreeSize
+  , zeroModTime
 
   -- hashset
   , SetData(..)
@@ -127,7 +128,7 @@ import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData 
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
                                                 hashContents, renameRoot, sumNodes, treeHash,
-                                                treeModTime, treeNBytes, treeName)
+                                                treeModTime, treeNBytes, treeName, zeroModTime)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)

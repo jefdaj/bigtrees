@@ -58,10 +58,10 @@ prettyDelta (Mv   f1 f2) = do
 printDeltas :: Show a => [Delta a] -> IO ()
 printDeltas ds = mapM prettyDelta ds >>= mapM_ B.putStrLn
 
-diff :: Show a => HashTree a -> HashTree a -> [Delta a]
+diff :: (Eq a, Show a) => HashTree a -> HashTree a -> [Delta a]
 diff = diff' mempty
 
-diff' :: Show a => OsPath -> HashTree a -> HashTree a -> [Delta a]
+diff' :: (Eq a, Show a) => OsPath -> HashTree a -> HashTree a -> [Delta a]
 diff' a t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (a </> f1) (a </> f2)]
@@ -81,7 +81,7 @@ diff' a t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
 -- TODO need an initial tree too to check if the hashes match
-findMv :: Show a => HashTree a -> Delta a -> Delta a -> Bool
+findMv :: (Eq a, Show a) => HashTree a -> Delta a -> Delta a -> Bool
 findMv t (Rm p) (Add _ t2) = case dropTo t (op2ns p) of
                                Nothing -> False
                                Just t3 -> t2 == t3
@@ -91,7 +91,7 @@ findMv _ _ _ = False
 -- else, that should be displayed as a single move operation. This will never
 -- match 100% before and after actual operations, because the filesystem
 -- version might be a move followed by editing files.
-fixMoves :: Show a => HashTree a -> [Delta a] -> [Delta a]
+fixMoves :: (Eq a, Show a) => HashTree a -> [Delta a] -> [Delta a]
 fixMoves _ [] = []
 fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
   Just d2@(Add f2 _) -> Mv f1 f2 : let ds' = filter (/= d2) ds in fixMoves t ds'
@@ -123,7 +123,7 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -----------------------------
 
 -- TODO think through how to report results more!
-simDelta :: Show a => HashTree a -> Delta a -> Either String (HashTree a)
+simDelta :: (Eq a, Show a) => HashTree a -> Delta a -> Either String (HashTree a)
 simDelta t (Rm   p    ) = rmSubTree t $ op2ns p
 simDelta t (Add  p   t2) = Right $ addSubTree t t2 $ op2ns p
 simDelta t (Edit p _ t2) = Right $ addSubTree t t2 $ op2ns p -- TODO duplicate final name in path?

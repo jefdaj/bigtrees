@@ -21,7 +21,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..)
                                            simplifyErrMsg)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
                                                 hashContents, sumNodes, treeModTime, treeNBytes,
-                                                treeName)
+                                                treeName, sortContentsByName)
 import System.Directory.BigTrees.Name
 import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Tree as DT
@@ -221,7 +221,7 @@ buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n _)) = handleAny (mkErrTree
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
-  let cs'' = sortBy (compare `on` treeName) subTrees
+  let cs'' = sortContentsByName subTrees
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
   -- We want the overall mod time to be the most recent of the dir + all dirContents.

@@ -13,7 +13,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import qualified Data.CaseInsensitive as CI
 import Data.Char (toLower)
-import Data.List (nubBy, sort)
+import Data.List (nubBy, sort, sortBy)
 import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes)
@@ -25,6 +25,7 @@ import System.Info (os)
 import System.OsPath (OsPath)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive (Deriving, derive)
+import Data.Function (on)
 
 -- import Debug.Trace
 
@@ -46,6 +47,7 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
                 == CI.mk (n2bs $ treeName b)
 
 -- TODO Integer? not sure how big it could get
+-- TODO rename treeNNodes for consistency
 sumNodes :: HashTree a -> NNodes
 sumNodes (Err  {})        = NNodes 1 -- TODO is this right?
 sumNodes (File {})        = NNodes 1
@@ -115,7 +117,7 @@ data HashTree a
       , nNodes      :: NNodes -- TODO Integer? include in tree files
       , dirContents :: [HashTree a] -- TODO rename dirContents?
       }
-  deriving (Generic, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
 
 isErr :: forall a. HashTree a -> Bool
 isErr (Err {}) = True
@@ -153,15 +155,30 @@ treeHash t        = hash $ nodeData t
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
 
--- TODO derive a standard instance here and give this version another name?
--- TODO disable this while testing to ensure deep equality?
--- TODO should this include mod time, or do we want to ignore it?
-instance Eq (HashTree a) where
-  (==) :: HashTree a -> HashTree a -> Bool
-  t1@(Err {}) == t2@(Err {}) = errName t1 == errName t2 && errMsg t1 == errMsg t2
-  t1@(Err {}) == _           = False
-  _ == t2@(Err {})           = False
-  t1 == t2                   = treeHash t1 == treeHash t2
+-- TODO when should this be used instead of regular derived (==)?
+-- eqByHash :: HashTree a -> HashTree a -> Bool
+-- eqByHash t1@(Err {}) t2@(Err {}) = errName t1 == errName t2 && errMsg t1 == errMsg t2
+-- eqByHash t1@(Err {}) _           = False
+-- eqByHash _ t2@(Err {})           = False
+-- eqByHash t1 t2                   = treeHash t1 == treeHash t2 -- TODO finish writing this
+
+-- TODO write this? consider whether it's faster for any important use case
+treeEqByHash :: HashTree a -> HashTree a -> Bool
+treeEqByHash = undefined
+
+-- | For round-tripping to files, because that will change the mod times.
+-- We generally want to test that everything else survives unchanged.
+treeEqIgnoringModTime :: Eq a => HashTree a -> HashTree a -> Bool
+treeEqIgnoringModTime t1 t2 = zeroModTime t1 == zeroModTime t2
+
+-- TODO put this in terms of Foldable or Traversable
+zeroModTime :: HashTree a -> HashTree a
+zeroModTime e@(Err {}) = e
+zeroModTime d@(Dir {}) = d
+  { nodeData = (nodeData d) { modTime = ModTime 0 }
+  , dirContents = map zeroModTime $ dirContents d
+  }
+zeroModTime t = t { nodeData = (nodeData t) { modTime = ModTime 0 } }
 
 -- TODO once there's also a dirData, should this be BiFunctor instead?
 -- TODO should this also re-hash the file, or is that not part of the fileData idea?
@@ -200,7 +217,10 @@ arbitraryContentsHelper arbsize
       recNBytes <- choose (1,arbsize) -- TODO bias this to be smaller?
       let remNBytes = arbsize - recNBytes
       (recTree :: TestTree) <- resize recNBytes arbitrary
-      arbitraryContents remNBytes >>= \cs -> return $ recTree:cs -- TODO clean this up
+      arbitraryContents remNBytes >>= \cs -> return $ sortContentsByName $ recTree:cs -- TODO clean this up
+
+sortContentsByName :: [HashTree a] -> [HashTree a]
+sortContentsByName = sortBy (compare `on` treeName)
 
 -- TODO does forAll add anything here that I'm not already getting from sized?
 prop_arbitraryContents_length_matches_nNodes :: Gen Bool
