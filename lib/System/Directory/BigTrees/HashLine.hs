@@ -27,7 +27,6 @@ module System.Directory.BigTrees.HashLine
   , sepChar
   , hashLineFields
   -- , ospTabJoin
-  , linesP
   , hashP
   , nfilesP
   , sizeP
@@ -477,6 +476,7 @@ parseHashLine bs = case A8.parseOnly (hashLineP Nothing) (B8.append bs "\n") of
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
   hls <- many (hashLineP md <* endOfLine)
+  -- TODO error if any non-Justs here?
   return $ catMaybes hls
 
 ----------------------------------
@@ -499,7 +499,7 @@ breakPNC = do
 -- partial line, so it can be appended to the next chunk and properly parsed
 -- there.
 endofprevP :: Parser B8.ByteString
-endofprevP = fmap B8.pack $ (manyTill anyChar $ lookAhead breakPNC) <* endOfLine
+endofprevP = fmap B8.pack $ (manyTill anyChar $ lookAhead breakPNC) <* nullBreakP
 
 -- create list of data chunks, backwards in order through the file
 -- based on https://stackoverflow.com/a/33853796
@@ -523,6 +523,10 @@ type Chunk          = B8.ByteString
 parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
 parseHashLinesFromChunk = do
 
+  -- if this is the second-to-last chunk and it happens to start in the middle of the header,
+  -- the easiest thing to do is pass that to the very last chunk as part of eop
+  eop <- option "" endofprevP
+
   -- if this is the first chunk in the file (last in iteration),
   -- there will be a header to skip before the lines start.
   --
@@ -530,10 +534,6 @@ parseHashLinesFromChunk = do
   -- but i worry that might swallow any line that happens to start with '#'
   --
   _ <- option undefined headerP -- TODO undefined should be safe here, no?
-
-  -- if this is the second-to-last chunk and it happens to start in the middle of the header,
-  -- the easiest thing to do is pass that to the very last chunk as part of eop
-  eop <- endofprevP
 
   hls <- reverse <$> linesP Nothing
   -- same with the footer, if this is the final chunk in the file (first read)
@@ -548,7 +548,7 @@ parseHashLinesFromChunk = do
   remain <- manyTill anyChar endOfInput
   _ <- endOfInput
   let tfn x = if null remain then x else trace ("remain: '" ++ remain ++ "'") x
-  return $ tfn $ (hls, eop)
+  return $ tfn $ (trace ("hls:" ++ show (length hls)) hls, trace ("eop:" ++ show eop) eop)
 
   -- return (hls, eop)
 
@@ -602,6 +602,7 @@ parseTreeFileRev f = withFile f ReadMode $ \h -> do
   -- read file in block-sized chunks starting from the end
   -- (the first chunk will be shorter than the others; seems not to matter)
   chunks <- makeReverseChunks (fromIntegral blksize) h (fromInteger fileSizeBytesCeiling)
+  putStrLn $ "n chunks: " ++ show (length chunks)
 
   -- parse chunks lazily, starting from the end, so they can be streamed into a
   -- tree structure without readnig the entire file first
