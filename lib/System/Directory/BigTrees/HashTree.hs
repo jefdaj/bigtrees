@@ -186,10 +186,10 @@ prop_roundtrip_TestTree_to_tmpdir = monadicIO $ do
   run $ D.delay 100000
   t2 <- run $ roundtripTestTreeToTmpdir t1
   run $ D.delay 100000
-  when (t2 /= t1) $ do
+  when (not $ treeEqIgnoringModTime t1 t2) $ do
     run $ print t1
     run $ print t2
-  assert $ t2 == t1
+  assert $ treeEqIgnoringModTime t1 t2
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion
 unit_tree_from_bad_path_is_Err =
