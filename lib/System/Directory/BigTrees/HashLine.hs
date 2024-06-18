@@ -454,10 +454,12 @@ parseTheRest t i = do
   !mt <- modTimeP
   !s <- sizeP
   !f <- nfilesP
-  !p <- nameP
+  !p <- nameP -- consumes 1st \NUL
   !mlt <- choice
+            -- Unless there's a link target, the line should end after 1st NUL
             [ lookAhead endOfLine >> return Nothing
-            , fmap Just linkTargetP
+            -- If there's a link target it will have a tab before and a 2nd NUL
+            , fmap Just (sepP *> linkTargetP) -- consumes 2nd \NUL
             ]
   return $ HashLine (t, i, h, mt, s, f, p, mlt)
 
@@ -475,9 +477,11 @@ parseHashLine bs = case A8.parseOnly (hashLineP Nothing) (B8.append bs "\n") of
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
+  -- these both seem to work equally well:
+  -- Normally a line is followed by end of line, unless it's also the end of a chunk.
   hls <- many (hashLineP md <* endOfLine)
-  -- TODO error if any non-Justs here?
-  return $ catMaybes hls
+  -- hls <- sepBy' (hashLineP md) endOfLine
+  return $ catMaybes hls -- TODO error if any non-Justs here?
 
 ----------------------------------
 -- experimental: read backwards --
@@ -553,7 +557,7 @@ parseHashLinesFromChunk = do
   -- TODO comment out for production
   remain <- manyTill anyChar endOfInput
   _ <- endOfInput
-  let tfn x = if null remain then x else trace ("remain: '" ++ remain ++ "'") x
+  let tfn x = if null remain then x else trace ("remain: " ++ show remain) x
   return $ tfn $ (trace ("hls:" ++ show (length hls)) hls, trace ("eop:" ++ show eop) eop)
 
   -- return (hls, eop)
@@ -567,7 +571,7 @@ strictRevChunkParse
   -> Either String ([HashLine], EndOfPrevChunk)
 strictRevChunkParse (Left m) _ = Left m
 strictRevChunkParse (Right (_, eop)) prev =
-  let prev' = B8.append prev $ B8.append eop "\n" -- TODO what about newline before eop here??
+  let prev' = B8.append prev $ B8.append eop "\NUL\n" -- TODO why is this needed?
       res   = case parseOnly parseHashLinesFromChunk prev' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 Left msg                -> trace ("Left " ++ show msg) (Left msg)

@@ -237,7 +237,7 @@ nameP = do
   -- TODO sepP here?
   bs <- takeTill (== '\NUL')
   _  <- char '\NUL'
-  _  <- option undefined $ char '\t' -- TODO if this works, move sepP from HashLine
+  -- _  <- option undefined $ char '\t' -- TODO if this works, move sepP from HashLine
   return $ bs2n bs
 
 -- Fails if there's an error writing the file, or if after writing it doesn't
