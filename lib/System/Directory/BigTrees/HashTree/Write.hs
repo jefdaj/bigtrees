@@ -39,6 +39,7 @@ hWriteTree es h tree = do
   hWriteHeader   h es
   hWriteTreeBody h tree
   hWriteFooter   h
+  hFlush h
 
 hWriteTreeBody :: Handle -> HashTree a -> IO ()
 hWriteTreeBody h tree = mapM_ (B8.hPutStrLn h) (serializeTree tree)
