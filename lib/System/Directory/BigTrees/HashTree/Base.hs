@@ -153,6 +153,7 @@ treeHash t        = hash $ nodeData t
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
 
+-- TODO derive a standard instance here and give this version another name?
 -- TODO disable this while testing to ensure deep equality?
 -- TODO should this include mod time, or do we want to ignore it?
 instance Eq (HashTree a) where

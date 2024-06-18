@@ -35,17 +35,17 @@ module System.Directory.BigTrees.HashTree
   , sumNodes
 
   -- for testing
-  , roundtripTestTreeToDir
+  , roundtripTestTreeToTmpdir
   , dropFileData
   , writeTestTreeDir
   , isErr
   , prop_roundtrip_ProdTree_to_ByteString
-  , prop_roundtrip_ProdTree_to_hashes
-  , prop_roundtrip_TestTree_to_dir
+  , prop_roundtrip_ProdTree_to_bigtree_file
+  , prop_roundtrip_TestTree_to_tmpdir
   , unit_tree_from_bad_path_is_Err
-  , unit_roundtrip_Err_to_hashes
+  , unit_roundtrip_Err_to_bigtree_file
   , unit_buildProdTree_catches_permission_error
-  , bench_roundtrip_ProdTree_to_ByteString
+  , bench_roundtrip_ProdTree_to_bigtree_file
 
   )
   where
@@ -113,7 +113,7 @@ readOrBuildTree verbose mmaxdepth excludes path = do
 -- TODO print_tree
 -- TODO flatten_tree
 
--- prop_roundtrip_ProdTree_to_hashes ::
+-- prop_roundtrip_ProdTree_to_bigtree_file ::
 
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
@@ -130,34 +130,34 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree Nothing
   assert $ t2 == t1
 
-bench_roundtrip_ProdTree_to_ByteString :: Int -> IO ()
-bench_roundtrip_ProdTree_to_ByteString n = do
+bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()
+bench_roundtrip_ProdTree_to_bigtree_file n = do
   (t1 :: ProdTree) <- generate $ resize n arbitrary
-  t2 <- roundtripProdTreeToHashes t1
+  t2 <- roundtripProdTreeToBigtreeFile t1
   -- assert $ t2 == t1
   return ()
 
 -- TODO unify with the knob version above
-roundtripProdTreeToHashes :: ProdTree -> IO ProdTree
-roundtripProdTreeToHashes t =
+roundtripProdTreeToBigtreeFile :: ProdTree -> IO ProdTree
+roundtripProdTreeToBigtreeFile t =
   withSystemTempFile "bigtrees" $ \path hdl -> do
     path' <- encodeFS path
     hClose hdl
     writeTree [] path' t -- TODO exclude defaultConfig?
     readTree Nothing path'
 
-prop_roundtrip_ProdTree_to_hashes :: Property
-prop_roundtrip_ProdTree_to_hashes = monadicIO $ do
+prop_roundtrip_ProdTree_to_bigtree_file :: Property
+prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtripProdTreeToHashes t1
+  t2 <- run $ roundtripProdTreeToBigtreeFile t1
   assert $ t2 == t1
 
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk
 -- note that you have to drop the bytestrings from the original testtree to compare them
 -- TODO oh, have to test equality ignoring mod times, right? otherwise they'll always update
-roundtripTestTreeToDir :: TestTree -> IO TestTree
-roundtripTestTreeToDir t =
+roundtripTestTreeToTmpdir :: TestTree -> IO TestTree
+roundtripTestTreeToTmpdir t =
 
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
@@ -179,11 +179,11 @@ roundtripTestTreeToDir t =
     -- return $ head $ dirContents parent
 
 -- TODO is the forcing unnecessary?
-prop_roundtrip_TestTree_to_dir :: Property
-prop_roundtrip_TestTree_to_dir = monadicIO $ do
+prop_roundtrip_TestTree_to_tmpdir :: Property
+prop_roundtrip_TestTree_to_tmpdir = monadicIO $ do
   t1 <- pick arbitrary
   run $ D.delay 100000
-  t2 <- run $ roundtripTestTreeToDir t1
+  t2 <- run $ roundtripTestTreeToTmpdir t1
   run $ D.delay 100000
   when (t2 /= t1) $ do
     run $ print t1
@@ -198,13 +198,13 @@ unit_tree_from_bad_path_is_Err =
     tree <- buildProdTree False [] badPath
     HU.assertBool "tree built from non-existent path should be Err" $ isErr tree
 
-unit_roundtrip_Err_to_hashes :: HU.Assertion
-unit_roundtrip_Err_to_hashes = do
+unit_roundtrip_Err_to_bigtree_file :: HU.Assertion
+unit_roundtrip_Err_to_bigtree_file = do
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
     let badPath = tmpDir' </> [osp|doesnotexist|]
     t1 <- buildProdTree False [] badPath
-    t2 <- roundtripProdTreeToHashes t1
+    t2 <- roundtripProdTreeToBigtreeFile t1
     -- TODO is there a good way to communicate the name to the parser?
     let t2' = renameRoot (Name [osp|doesnotexist|]) t2
     HU.assert $ t2' == t1

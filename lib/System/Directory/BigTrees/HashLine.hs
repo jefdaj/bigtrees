@@ -85,7 +85,7 @@ import System.OsString.Internal
 import System.OsString.Internal.Types
 
 import Control.DeepSeq (deepseq)
-import Control.Monad (foldM, forM_)
+import Control.Monad (foldM, forM, forM_)
 -- import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.Combinator
 import qualified Data.ByteString.Char8 as B8
@@ -619,4 +619,4 @@ parseTreeFileRev f = withFile f ReadMode $ \h -> do
   let hls = lazyListOfStrictParsedChunks chunks
 
   -- for now, return parsed HashLines directly and error if any of the parses fail
-  fmap concat $ mapM (either (error . show) return) hls
+  fmap concat $ forM hls $ either (error . show) return
