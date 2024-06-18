@@ -13,6 +13,8 @@ import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hFlush, stdout)
 import System.OsPath (OsPath, decodeFS, splitPath, (</>))
 
+-- import Debug.Trace
+
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
 -- TODO does map evaluation influence memory usage?
@@ -34,15 +36,16 @@ writeTree :: [String] -> OsPath -> HashTree a -> IO ()
 writeTree es path tree = SFO.withFile path WriteMode $ \h -> hWriteTree es h tree
 
 -- TODO excludes type alias?
+-- TODO how often to actuall flush?
 hWriteTree :: [String] -> Handle -> HashTree a -> IO ()
 hWriteTree es h tree = do
   hWriteHeader   h es
   hWriteTreeBody h tree
   hWriteFooter   h
-  hFlush h
 
+-- TODO how often to actually flush?
 hWriteTreeBody :: Handle -> HashTree a -> IO ()
-hWriteTreeBody h tree = mapM_ (B8.hPutStrLn h) (serializeTree tree)
+hWriteTreeBody h tree = mapM_ (\l -> B8.hPutStrLn h l >> hFlush h) (serializeTree tree)
 
 -- This is the only official way to construct a `HashLine`, because they don't
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its

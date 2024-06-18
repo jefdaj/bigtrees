@@ -20,6 +20,8 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
 
+--import Debug.Trace
+
 cmdHash :: Config -> OsPath -> IO ()
 cmdHash cfg path = bracket open close write
   where

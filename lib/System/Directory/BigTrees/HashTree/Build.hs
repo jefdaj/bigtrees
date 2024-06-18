@@ -7,6 +7,7 @@ import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 -- import Control.Exception -- TODO specifics
 -- import GHC.IO.Exception -- TODO specifics
 import qualified Control.Monad.Parallel as P
+import Control.Monad (filterM)
 import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.List (elem, intercalate, sortBy)
@@ -26,7 +27,7 @@ import System.Directory.BigTrees.Name
 import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Tree as DT
 import qualified System.OsPath as SOP
-import System.OsPath (OsPath, decodeFS, takeDirectory, (</>))
+import System.OsPath (OsPath, encodeFS, decodeFS, takeDirectory, (</>))
 -- import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
 --                              matchWith)
 import Data.Char
@@ -35,6 +36,9 @@ import System.Posix.Files (getFileStatus, isDirectory, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
+
+-- import Debug.Trace
+
 -- import qualified System.File.OsPath as SFO
 
 -- keepPath :: [String] -> OsPath -> Bool
@@ -58,15 +62,20 @@ keepPath excludes p = do
   path <- decodeFS p
   return $ not $ any (path =~) excludes
 
+regexFilterTrees :: [String] -> OsPath -> [DT.DirTree a] -> IO [DT.DirTree a]
+regexFilterTrees excludes rootDir trees = filterM noExclude trees
+  where
+    noExclude t = keepPath excludes $ rootDir </> (DT.name t)
+
 -- TODO hey is this not that hard to swap out for my new version?
 -- TODO have this apply to the whole paths, not just one name/component?
-excludeRegexes :: [String] -> DT.DirTree a -> IO (DT.DirTree a)
-excludeRegexes excludes tree = DT.filterDirIO keep tree
-  where
-    keep (DT.Failed n _) = keepPath excludes n
-    keep (DT.Dir  n _)   = keepPath excludes n
-    keep (DT.File n _)   = keepPath excludes n
-    keep b               = return True
+-- excludeRegexes :: [String] -> DT.DirTree a -> IO (DT.DirTree a)
+-- excludeRegexes excludes tree = DT.filterDirIO keep tree
+--   where
+--     keep (DT.Failed n _) = keepPath excludes n
+--     keep (DT.Dir  n _)   = keepPath excludes n
+--     keep (DT.File n _)   = keepPath excludes n
+--     keep b               = return True
 
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
@@ -139,9 +148,9 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
     then do
 
       !target <- SDO.getSymbolicLinkTarget fPath
-      let hashContents = notBroken && notDir && pathIsInTree depth (Just target)
+      let doHashContents = notBroken && notDir && pathIsInTree depth (Just target)
 
-      if hashContents
+      if doHashContents
         then do
           -- the symlink target is the relevant file for most data,
           -- except the mod time which should be the more recent of the two
@@ -207,8 +216,14 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
         , fileData = fd
         }
 
-buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n _)) = handleAny (mkErrTree n) $ do
-  (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
+buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTree n) $ do
+
+  -- TODO of course, this is forcing the whole tree! have to be lazier about it
+  -- (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
+
+  -- let cs'' = sortBy (compare `on` DT.name) cs'
+  cs' <- regexFilterTrees es a cs
+  let cs'' = sortBy (compare `on` DT.name) cs'
   let root = a </> n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
@@ -216,28 +231,28 @@ buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n _)) = handleAny (mkErrTree
   -- this works, but doesn't affect memory usage:
   -- subTrees <- (if depth > 10 then M.forM else P.forM) cs' hashSubtree
 
-  subTrees <- P.forM cs' hashSubtree
+  subTrees <- P.forM cs'' hashSubtree
 
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
-  let cs'' = sortContentsByName subTrees
+  -- let cs'' = sortContentsByName subTrees
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
   -- We want the overall mod time to be the most recent of the dir + all dirContents.
   -- If there are any dirContents at all, by definition they're newer than the dir, right?
   -- So we only need this root mod time when the dir is empty.
-  !mt <- getFileDirModTime root
-  !s  <- getFileDirNBytes root
+  mt <- getFileDirModTime root
+  s  <- getFileDirNBytes root
 
   return $ Dir
-            { dirContents = cs''
-            , nNodes  = sum $ 1 : map sumNodes cs''
+            { dirContents = subTrees
+            , nNodes  = sum $ 1 : map sumNodes subTrees
             , nodeData = NodeData
               { name     = Name n
-              , modTime  = maximum $ mt : map treeModTime cs''
-              , nBytes   = sum $ s : map treeNBytes cs''
-              , hash     = hashContents cs''
+              , modTime  = maximum $ mt : map treeModTime subTrees
+              , nBytes   = sum $ s : map treeNBytes subTrees
+              , hash     = hashContents subTrees
               }
             }
 
