@@ -9,8 +9,8 @@ import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.Hash (Hash (..), prettyHash)
 import System.Directory.BigTrees.HashLine (ErrMsg (..), HashLine (..), ModTime (..), NBytes (..),
                                            NNodes (..), parseHashLine)
-import System.Directory.BigTrees.HashTree (HashTree (..), readHeader, readLastHashLineAndFooter)
-import System.Directory.BigTrees.HeadFoot (Footer, Header (..), scanSeconds)
+import System.Directory.BigTrees.HashTree (HashTree (..), readLastHashLineAndFooter)
+import System.Directory.BigTrees.HeadFoot (Footer, Header (..), scanSeconds, readHeader)
 -- import qualified Data.ByteString.Short as BS
 import System.OsPath (OsPath, encodeFS)
 

@@ -31,12 +31,8 @@ module System.Directory.BigTrees.HashTree
   , treeNBytes
   , treeModTime
   , treeType
-  , readHeader
   , readLastHashLineAndFooter
   , sumNodes
-
-  , headerP
-  , linesP
 
   -- for testing
   , roundtripTestTreeToDir
@@ -79,8 +75,8 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)
-import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, hReadTree, headerP,
-                                                linesP, readHeader, readLastHashLineAndFooter,
+import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, hReadTree, 
+                                                readLastHashLineAndFooter,
                                                 readTestTree, readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,

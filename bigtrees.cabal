@@ -27,6 +27,7 @@ library
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.Delta
   other-modules:
+      System.Directory.BigTrees.HashLine.Base
       System.Directory.BigTrees.HashTree.Base
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Edit
@@ -289,6 +290,7 @@ test-suite test-doctests
       System.Directory.BigTrees.DupeMap
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.HashLine.Base
       System.Directory.BigTrees.HashSet
       System.Directory.BigTrees.HashTree
       System.Directory.BigTrees.HashTree.Base
@@ -373,6 +375,7 @@ test-suite test-lib
       System.Directory.BigTrees.DupeMap
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.HashLine.Base
       System.Directory.BigTrees.HashSet
       System.Directory.BigTrees.HashTree
       System.Directory.BigTrees.HashTree.Base
@@ -456,6 +459,7 @@ benchmark test-bench
       System.Directory.BigTrees.DupeMap
       System.Directory.BigTrees.Hash
       System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.HashLine.Base
       System.Directory.BigTrees.HashSet
       System.Directory.BigTrees.HashTree
       System.Directory.BigTrees.HashTree.Base

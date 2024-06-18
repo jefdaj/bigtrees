@@ -27,6 +27,7 @@ module System.Directory.BigTrees.HashLine
   , sepChar
   , hashLineFields
   -- , ospTabJoin
+  , linesP
   , hashP
   , nfilesP
   , sizeP
@@ -34,10 +35,10 @@ module System.Directory.BigTrees.HashLine
   , numStrP
   , typeP
   , simplifyErrMsg
+  , linesP
 
   -- for testing (TODO remove?)
   -- , nameP
-  -- , linesP
   , bench_roundtrip_HashLines_to_ByteString
   , prop_roundtrip_HashLines_to_ByteString
   , genHashLinesBS
@@ -52,10 +53,13 @@ module System.Directory.BigTrees.HashLine
 import Control.DeepSeq (NFData (..), force)
 import Control.Monad (void)
 import Data.Attoparsec.ByteString (skipWhile)
+
+-- TODO are these valid? should everything come from (plain) ByteString instead?
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, take,
                                          takeTill)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
+
 import Data.Attoparsec.Combinator (lookAhead, sepBy')
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy as LBS
@@ -72,7 +76,7 @@ import qualified System.OsPath as OSP
 import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, generate, resize, suchThat)
 import TH.Derive ()
 -- import Data.List (intercalate)
-import Data.Char
+import Data.Char (isAlphaNum, isAsciiLower, isAsciiUpper, isSpace)
 import Data.List (elem, intercalate, sortBy)
 import Data.List.Split (splitOn)
 import System.IO (utf8)
@@ -80,6 +84,24 @@ import System.OsPath (OsPath)
 import qualified System.OsPath.Internal as OSPI
 import System.OsString.Internal
 import System.OsString.Internal.Types
+
+import Control.DeepSeq (deepseq)
+import Control.Monad (foldM, forM_)
+-- import Data.Attoparsec.ByteString.Char8
+import Data.Attoparsec.Combinator
+import qualified Data.ByteString.Char8 as B8
+import Data.Maybe (fromMaybe)
+-- import System.Directory.BigTrees
+-- import System.Directory.BigTrees.HashTree.Read
+import System.IO
+import System.Posix.Files
+
+import Debug.Trace
+import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..), headerP, footerP)
+import Control.Applicative (many)
+import System.Directory.BigTrees.HashLine.Base -- TODO specifics
+import qualified System.File.OsPath as SFO
+import Control.Monad (forM, replicateM)
 
 -----------
 -- types --
@@ -234,14 +256,6 @@ instance Arbitrary HashLine where
 -- print --
 -----------
 
-joinCols :: [B8.ByteString] -> B8.ByteString
-joinCols = B8.intercalate (B8.singleton sepChar)
-
--- TODO use this more directly?
--- For now it's only imported by HeadFoot to use in the Header
-hashLineFields :: [String]
-hashLineFields = ["type", "depth", "hash", "modtime", "nbytes", "nfiles", "name"]
-
 -- TODO rename to something less weird
 -- TODO unify this with the equivalent for bigsets? and path lists?
 -- TODO Binary/Bytable instance here instead?
@@ -287,14 +301,6 @@ genHashLinesBS n = do
   let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
   return bs
 
--- TODO move to Name? Util?
-nullP :: Parser ()
-nullP = void $ char '\NUL'
-
--- TODO rename? confusingly sounds "bigger" than breakP
-nullBreakP :: Parser ()
-nullBreakP = nullP *> endOfLine
-
 -- This returns the length of the list, which can either be throw out or used
 -- to double-check that all the HashLines parsed correctly.
 --
@@ -334,9 +340,6 @@ prop_roundtrip_HashLines_to_ByteString hls =
 ------------
 
 -- TODO rewrite a lot of this to deal flexibly with tables? or will order stay fixed?
-
-sepChar :: Char
-sepChar = '\t'
 
 sepP :: Parser Char
 sepP = char sepChar
@@ -467,3 +470,142 @@ parseHashLine bs = case A8.parseOnly (hashLineP Nothing) (B8.append bs "\n") of
   Right Nothing  -> Nothing
   Right (Just x) -> Just x
 
+----------------------------
+-- moved from other files --
+----------------------------
+
+linesP :: Maybe Int -> Parser [HashLine]
+linesP md = do
+  hls <- many (hashLineP md <* endOfLine)
+  return $ catMaybes hls
+
+----------------------------------
+-- experimental: read backwards --
+----------------------------------
+
+-- forward version in use so far:
+-- parseTreeFile :: Maybe Int -> B8.ByteString -> Either String (Header, [HashLine], Footer)
+-- parseTreeFile md = parseOnly (fileP md)
+
+-- like regular breakP, except "no comments": it doesn't recognize '#'
+breakPNC :: Parser ()
+breakPNC = do
+  _ <- option undefined nullP
+  _ <- endOfLine
+  _ <- choice [typeP >> numStrP >> return (), endOfInput]
+  return ()
+
+-- Return all the text before the next hashline break, which should be a
+-- partial line, so it can be appended to the next chunk and properly parsed
+-- there.
+endofprevP :: Parser B8.ByteString
+endofprevP = fmap B8.pack $ (manyTill anyChar $ lookAhead breakPNC) <* endOfLine
+
+-- create list of data chunks, backwards in order through the file
+-- based on https://stackoverflow.com/a/33853796
+-- but i fixed a couple bugs(?)
+makeReverseChunks :: Int -> Handle -> Int -> IO [Chunk]
+makeReverseChunks blksize h end
+  | end == 0 = return []
+  | end < 0  = error "negative file index"
+  | otherwise   = do
+        let start = max (end - fromIntegral blksize) 0
+        hSeek h AbsoluteSeek (fromIntegral start)
+        blk <- B8.hGet h blksize
+        rest <- makeReverseChunks blksize h start
+        -- return $ (trace ("blk " ++ show start ++ "-" ++ show end ++ ":" ++ show blk) blk) : rest
+        return $ blk : rest
+
+type EndOfPrevChunk = B8.ByteString
+type Chunk          = B8.ByteString
+
+-- TODO pass maybe max depth here
+parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
+parseHashLinesFromChunk = do
+
+  -- if this is the first chunk in the file (last in iteration),
+  -- there will be a header to skip before the lines start.
+  --
+  -- this was working better before when it was just sepBy' commentLineP endOfLine,
+  -- but i worry that might swallow any line that happens to start with '#'
+  --
+  _ <- option undefined headerP -- TODO undefined should be safe here, no?
+
+  -- if this is the second-to-last chunk and it happens to start in the middle of the header,
+  -- the easiest thing to do is pass that to the very last chunk as part of eop
+  eop <- endofprevP
+
+  hls <- reverse <$> linesP Nothing
+  -- same with the footer, if this is the final chunk in the file (first read)
+  -- _ <- option [] $ sepBy' commentLineP endOfLine
+  -- _ <- option [] $ many' endOfLine
+
+  _ <- option undefined footerP
+  _ <- option undefined (many endOfLine)
+  -- _ <- endOfInput
+
+  -- TODO comment out for production
+  remain <- manyTill anyChar endOfInput
+  _ <- endOfInput
+  let tfn x = if null remain then x else trace ("remain: '" ++ remain ++ "'") x
+  return $ tfn $ (hls, eop)
+
+  -- return (hls, eop)
+
+-- The list of lines here is only used by scanl, not inside this fn;
+-- the end of prev chunk is only used inside this fn and ignored by scanl.
+-- TODO come up with a better way of handling Left besides infinite recursion
+strictRevChunkParse
+  :: Either String ([HashLine], EndOfPrevChunk)
+  -> Chunk
+  -> Either String ([HashLine], EndOfPrevChunk)
+strictRevChunkParse (Left m) _ = Left m
+strictRevChunkParse (Right (_, eop)) prev =
+  let prev' = B8.append prev $ B8.append eop "\n" -- TODO what about newline before eop here??
+      res   = case parseOnly parseHashLinesFromChunk prev' of
+                Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
+                Left msg                -> trace ("Left " ++ show msg) (Left msg)
+                x                       -> x
+  in deepseq res res
+
+-- This returns a lazy list of chunk parse results, but each one will fully evaluate
+-- once accessed.
+-- WARNING once it hits an error (Left), it will keep repeating that error indefinitely
+lazyListOfStrictParsedChunks :: [Chunk] -> [Either String [HashLine]]
+lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkParse initial cs
+  where
+    initial = Right ([], "")
+
+-- TODO is 4096 a good default to assume when there really isn't any?
+getBlockSize :: FilePath -> IO Integer
+getBlockSize path = do
+  stat <- getFileStatus path
+  return $ fromMaybe 4096 $ fmap toInteger $ fileBlockSize stat
+
+-- TODO any need to also get the header + footer here?
+-- TODO put back the maybe depth after basic version works
+-- TODO SFO.readFile instead
+-- TODO how to properly encapsulate parse errors? maybe MonadThrow/Catch?
+-- (for now, fatal error if parsing a chunk fails)
+parseTreeFileRev :: FilePath -> IO [HashLine]
+parseTreeFileRev f = withFile f ReadMode $ \h -> do
+
+  -- Find a good block size (how many bytes to a chunk) and calculate where to
+  -- start seeking (slightly back from the end at a multiple of the block size
+  -- so they line up nicely)
+  blksize <- getBlockSize f
+  fileSizeBytes <- hFileSize h
+  -- size rounded up to the next block:
+  let fileSizeBytesCeiling =
+        ceiling (fromInteger fileSizeBytes / fromInteger blksize) * (fromInteger blksize)
+
+  -- read file in block-sized chunks starting from the end
+  -- (the first chunk will be shorter than the others; seems not to matter)
+  chunks <- makeReverseChunks (fromIntegral blksize) h (fromInteger fileSizeBytesCeiling)
+
+  -- parse chunks lazily, starting from the end, so they can be streamed into a
+  -- tree structure without readnig the entire file first
+  let hls = lazyListOfStrictParsedChunks chunks
+
+  -- for now, return parsed HashLines directly and error if any of the parses fail
+  fmap concat $ mapM (either (error . show) return) hls

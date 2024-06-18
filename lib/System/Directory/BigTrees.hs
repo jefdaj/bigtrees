@@ -66,10 +66,7 @@ module System.Directory.BigTrees
   , treeHash
   , treeNBytes
   , sumNodes -- TODO rename treeNNodes?
-  , readHeader
   , readLastHashLineAndFooter
-  , headerP
-  , linesP
   , readTreeLines
   , getTreeSize
 
@@ -87,6 +84,8 @@ module System.Directory.BigTrees
   , readHashList
   , writeHashList
   , hashSetDataFromLine
+  , linesP
+  , headerP
 
   -- delta
   , Delta(..)
@@ -120,19 +119,19 @@ import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNNo
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),
-                                           NNodes (..), TreeType (..))
+                                           NNodes (..), TreeType (..), linesP)
 import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData (..),
                                           addNodeToHashSet, addTreeToHashSet, emptyHashSet,
                                           hashSetDataFromLine, hashSetFromList, hashSetFromTree,
                                           readHashList, toSortedList, writeHashList)
-import System.Directory.BigTrees.HashTree (ProdTree, TestTree, headerP, linesP, readOrBuildTree)
+import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
                                                 hashContents, renameRoot, sumNodes, treeHash,
                                                 treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)
-import System.Directory.BigTrees.HashTree.Read (getTreeSize, readHeader, readLastHashLineAndFooter,
+import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter,
                                                 readTree, readTreeLines)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
@@ -141,3 +140,4 @@ import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumb
                                        fp2ns, joinNames, n2bs, n2sbs, nameP, names2bs, op2ns, os2ns,
                                        sbs2n)
 
+import System.Directory.BigTrees.HeadFoot (headerP)

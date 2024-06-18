@@ -10,63 +10,26 @@ import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.List (partition, sortBy)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..),
-                                           TreeType (..), hashLineP, nullBreakP, parseHashLine)
+                                           TreeType (..), hashLineP, nullBreakP, parseHashLine, linesP)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.Name (Name (..))
 import System.Directory.BigTrees.Util (hTakePrevUntil)
 -- import System.FilePath.Glob (Pattern)
-import Control.Applicative (many)
-import Control.Monad (forM, replicateM)
 import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
-import Data.Attoparsec.Combinator (lookAhead)
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes, fromJust)
-import Data.String.Utils (replace)
-import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..))
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
+import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, parseFooter, commentLineP)
 
-
---- read header info from the beginning of the file ---
-
-commentLineP = do
-  _ <- char '#'
-  manyTill anyChar $ lookAhead endOfLine
-
-headerP = do
-  headerLines <- sepBy' commentLineP endOfLine <* endOfLine
-  case parseHeader headerLines of
-    Nothing -> fail "failed to parse header"
-    Just h  -> return h
-
--- TODO close file bug here :/
--- TODO document 100 line limit
--- TODO SFO.withBinaryFile?
-readHeader :: OsPath -> IO (Maybe Header)
-readHeader path =
-  SFO.withBinaryFile path ReadMode $ \h -> do
-    commentLines <- takeWhile isCommentLine <$> replicateM 100 (hGetLine h)
-    return $ parseHeader commentLines
-
--- Header is the same, except we have to lob off the final header line
--- TODO also confirm it looks as expected? tree format should be enough tho
-parseHeader :: [String] -> Maybe Header
-parseHeader s = case s of
-  [ ] -> Nothing -- should never happen, right?
-  [l] -> Nothing -- should never happen, right?
-  ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ map (replace "# " "") $ init ls
-
-isCommentLine :: String -> Bool
-isCommentLine ('#':_) = True
-isCommentLine _       = False
 
 
 --- read summary info from the end of the file ---
@@ -226,11 +189,6 @@ readTestTree md = buildTree SFO.readFile'
 parseTreeFile :: Maybe Int -> B8.ByteString -> Either String (Header, [HashLine], Footer)
 parseTreeFile md = parseOnly (fileP md)
 
-linesP :: Maybe Int -> Parser [HashLine]
-linesP md = do
-  hls <- many (hashLineP md <* endOfLine)
-  return $ catMaybes hls
-
 -- bodyP :: Maybe Int -> Parser [HashLine]
 -- bodyP md = linesP md -- <* endOfLine -- <* (lookAhead $ char '#')
 
@@ -246,15 +204,3 @@ fileP md = do
   let res = (h, b, f)
   -- _ <- endOfInput -- TODO put back?
   return $ deepseq res res
-
-footerP = do
-  footerLines <- sepBy' commentLineP endOfLine -- <* endOfLine
-  case parseFooter footerLines of
-    Nothing -> fail "failed to parse footer"
-    Just h  -> return h
-
--- The main Attoparsec parser(s) can separate the commented section,
--- then the uncommented JSON is handled here.
--- TODO is it an Either?
-parseFooter :: [String] -> Maybe Footer
-parseFooter = decode . B8.fromStrict . B8.pack . unlines . map (replace "# " "")
