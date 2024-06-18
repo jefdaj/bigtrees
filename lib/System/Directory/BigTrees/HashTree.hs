@@ -76,7 +76,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)
-import System.Directory.BigTrees.HashTree.Read (accTrees, deserializeTree, hReadTree, 
+import System.Directory.BigTrees.HashTree.Read (accTrees, hReadTree, 
                                                 readLastHashLineAndFooter,
                                                 readTestTree, readTree)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath)
@@ -128,7 +128,7 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   knob <- K.newKnob mempty
   (t1 :: ProdTree) <- pick arbitrary
   K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree [] h t1 -- TODO hClose?
-  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree Nothing
+  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree Nothing 4096
   assert $ t2 == t1
 
 bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()

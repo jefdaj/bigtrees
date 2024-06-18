@@ -10,12 +10,12 @@ import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.List (partition, sortBy)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..),
-                                           TreeType (..), hashLineP, nullBreakP, parseHashLine, linesP)
+                                           TreeType (..), hashLineP, nullBreakP, parseHashLine, linesP, parseTreeFileRev, hParseTreeFileRev)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.Name (Name (..))
-import System.Directory.BigTrees.Util (hTakePrevUntil)
+import System.Directory.BigTrees.Util (hTakePrevUntil, getBlockSize)
 -- import System.FilePath.Glob (Pattern)
 import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.Attoparsec.ByteString (skipWhile)
@@ -78,13 +78,23 @@ readTreeLines path = do
 
 --- read the main tree ---
 
+-- TODO rewrite with streaming backwards
 readTree :: Maybe Int -> OsPath -> IO ProdTree
-readTree md path = deserializeTree md <$> SFO.readFile' path
+-- readTree md path = deserializeTree md <$> SFO.readFile' path
+readTree md f = SFO.withFile f ReadMode $ \h -> do
+  blksize <- getBlockSize f
+  hReadTree md blksize h
 
-hReadTree :: Maybe Int -> Handle -> IO ProdTree
-hReadTree md hdl = do
-  bs <- B8.hGetContents hdl
-  return $ deserializeTree Nothing bs
+hReadTree :: Maybe Int -> Integer -> Handle -> IO ProdTree
+hReadTree md blksize hdl = do
+  hls <- hParseTreeFileRev blksize hdl
+  return $ case foldr accTrees [] hls of
+    []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
+    ((_, tree):_) -> tree
+
+  -- TODO rewrite with streaming backwards
+  -- bs <- B8.hGetContents hdl
+  -- return $ deserializeTree Nothing bs
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
@@ -92,13 +102,12 @@ hReadTree md hdl = do
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
 -- TODO also return header + footer?
 -- TODO should this return a *list* of trees? or is only one possible now that forests are gone?
-deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
--- deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashLines md
-deserializeTree md bs = case parseTreeFile md bs of
-  Left msg -> Err { errName = Name [osstr|deserializeTree|], errMsg = ErrMsg msg }
-  Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of -- TODO leak here?
-    []            -> Err { errName = Name [osstr|deserializeTree|], errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
-    ((_, tree):_) -> tree
+-- deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
+-- deserializeTree md bs = case parseTreeFile md bs of
+--   Left msg -> Err { errName = Name [osstr|deserializeTree|], errMsg = ErrMsg msg }
+--   Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of -- TODO leak here?
+--     []            -> Err { errName = Name [osstr|deserializeTree|], errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
+--     ((_, tree):_) -> tree
 
 {- This one is confusing! It accumulates a list of trees and their depth,
  - and when it comes across a dir it uses the depths to determine
@@ -186,8 +195,8 @@ readTestTree md = buildTree SFO.readFile'
 -- TODO any more elegant way to make the parsing strict?
 -- TODO parse rather than parseOnly?
 -- TODO count skipped lines here?
-parseTreeFile :: Maybe Int -> B8.ByteString -> Either String (Header, [HashLine], Footer)
-parseTreeFile md = parseOnly (fileP md)
+-- parseTreeFile :: Maybe Int -> B8.ByteString -> Either String (Header, [HashLine], Footer)
+-- parseTreeFile md = parseOnly (fileP md)
 
 -- bodyP :: Maybe Int -> Parser [HashLine]
 -- bodyP md = linesP md -- <* endOfLine -- <* (lookAhead $ char '#')

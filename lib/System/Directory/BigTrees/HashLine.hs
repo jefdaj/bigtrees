@@ -35,6 +35,8 @@ module System.Directory.BigTrees.HashLine
   , typeP
   , simplifyErrMsg
   , linesP
+  , parseTreeFileRev
+  , hParseTreeFileRev
 
   -- for testing (TODO remove?)
   -- , nameP
@@ -71,6 +73,7 @@ import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, bs2n, bs2op, n2bs,
                                        nameP, op2bs, sbs2op)
+import System.Directory.BigTrees.Util (getBlockSize)
 import qualified System.OsPath as OSP
 import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, generate, resize, suchThat)
 import TH.Derive ()
@@ -89,13 +92,12 @@ import Control.Monad (foldM, forM, forM_)
 -- import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.Combinator
 import qualified Data.ByteString.Char8 as B8
-import Data.Maybe (fromMaybe)
 -- import System.Directory.BigTrees
 -- import System.Directory.BigTrees.HashTree.Read
-import System.IO
-import System.Posix.Files
+import System.IO -- TODO specifics
+import System.Posix.Files -- TODO specifics
 
-import Debug.Trace
+-- import Debug.Trace
 import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..), headerP, footerP)
 import Control.Applicative (many)
 import System.Directory.BigTrees.HashLine.Base -- TODO specifics
@@ -555,12 +557,12 @@ parseHashLinesFromChunk = do
   -- _ <- endOfInput
 
   -- TODO comment out for production
-  remain <- manyTill anyChar endOfInput
-  _ <- endOfInput
-  let tfn x = if null remain then x else trace ("remain: " ++ show remain) x
-  return $ tfn $ (trace ("hls:" ++ show (length hls)) hls, trace ("eop:" ++ show eop) eop)
+  -- remain <- manyTill anyChar endOfInput
+  -- _ <- endOfInput
+  -- let tfn x = if null remain then x else trace ("remain: " ++ show remain) x
+  -- return $ tfn $ (trace ("hls:" ++ show (length hls)) hls, trace ("eop:" ++ show eop) eop)
 
-  -- return (hls, eop)
+  return (hls, eop)
 
 -- The list of lines here is only used by scanl, not inside this fn;
 -- the end of prev chunk is only used inside this fn and ignored by scanl.
@@ -574,7 +576,7 @@ strictRevChunkParse (Right (_, eop)) prev =
   let prev' = B8.append prev $ B8.append eop "\NUL\n" -- TODO why is this needed?
       res   = case parseOnly parseHashLinesFromChunk prev' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
-                Left msg                -> trace ("Left " ++ show msg) (Left msg)
+                -- Left msg                -> trace ("Left " ++ show msg) (Left msg)
                 x                       -> x
   in deepseq res res
 
@@ -585,12 +587,6 @@ lazyListOfStrictParsedChunks :: [Chunk] -> [Either String [HashLine]]
 lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkParse initial cs
   where
     initial = Right ([], "")
-
--- TODO is 4096 a good default to assume when there really isn't any?
-getBlockSize :: OsPath -> IO Integer
-getBlockSize path = do
-  stat <- getFileStatus =<< decodeFS path
-  return $ fromMaybe 4096 $ fmap toInteger $ fileBlockSize stat
 
 -- TODO any need to also get the header + footer here?
 -- TODO put back the maybe depth after basic version works
@@ -604,6 +600,11 @@ parseTreeFileRev f = SFO.withFile f ReadMode $ \h -> do
   -- start seeking (slightly back from the end at a multiple of the block size
   -- so they line up nicely)
   blksize <- getBlockSize f
+
+  hParseTreeFileRev blksize h
+
+hParseTreeFileRev :: Integer -> Handle -> IO [HashLine]
+hParseTreeFileRev blksize h = do
   fileSizeBytes <- hFileSize h
   -- size rounded up to the next block:
   let fileSizeBytesCeiling =
@@ -612,7 +613,7 @@ parseTreeFileRev f = SFO.withFile f ReadMode $ \h -> do
   -- read file in block-sized chunks starting from the end
   -- (the first chunk will be shorter than the others; seems not to matter)
   chunks <- makeReverseChunks (fromIntegral blksize) h (fromInteger fileSizeBytesCeiling)
-  putStrLn $ "n chunks: " ++ show (length chunks)
+  -- putStrLn $ "n chunks: " ++ show (length chunks)
 
   -- parse chunks lazily, starting from the end, so they can be streamed into a
   -- tree structure without readnig the entire file first

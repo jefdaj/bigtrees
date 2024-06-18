@@ -31,6 +31,7 @@ module System.Directory.BigTrees.Util
   , isNonAnnexSymlink
 
   , hTakePrevUntil
+  , getBlockSize
   )
   where
 
@@ -57,6 +58,9 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
+import Data.Maybe (fromMaybe)
+import System.Posix.Files (getFileStatus, fileBlockSize)
+import System.OsPath (decodeFS)
 
 -- describe "Util" $ do
 --   describe "absolute" $ do
@@ -273,6 +277,12 @@ hTakePrevUntil' cond maxChars hdl cs = do
   if cond cs'
     then return $ Just cs'
     else hTakePrevUntil' cond (maxChars-1) hdl cs'
+
+-- TODO is 4096 a good default to assume when there really isn't any?
+getBlockSize :: OsPath -> IO Integer
+getBlockSize path = do
+  stat <- getFileStatus =<< decodeFS path
+  return $ fromMaybe 4096 $ fmap toInteger $ fileBlockSize stat
 
 --------------
 -- old code --
