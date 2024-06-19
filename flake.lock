@@ -8,16 +8,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1716917728,
-        "narHash": "sha256-dFYDRULressVzLHbU5hj4qvrIzrB0pkMLZdCCZ3I7Vk=",
+        "lastModified": 1718771177,
+        "narHash": "sha256-jeaID6GRFvZVlVFmtO8hC7NUdTtwDtrlOwj9++wOgDg=",
         "owner": "jefdaj",
         "repo": "directory-tree",
-        "rev": "c237b935484818bb0b8f929a0670316a5db969d4",
+        "rev": "48f3caa7b0672b022943d59dfc62f11985b51a7a",
         "type": "github"
       },
       "original": {
         "owner": "jefdaj",
-        "ref": "treat-symlinks-as-files",
+        "ref": "wip-for-bigtrees",
         "repo": "directory-tree",
         "type": "github"
       }
@@ -60,11 +60,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1716509168,
-        "narHash": "sha256-4zSIhSRRIoEBwjbPm3YiGtbd8HDWzFxJjw5DYSDy1n8=",
+        "lastModified": 1718530797,
+        "narHash": "sha256-pup6cYwtgvzDpvpSCFh1TEUjw2zkNpk8iolbKnyFmmU=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "bfb7a882678e518398ce9a31a881538679f6f092",
+        "rev": "b60ebf54c15553b393d144357375ea956f89e9a9",
         "type": "github"
       },
       "original": {

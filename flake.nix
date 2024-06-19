@@ -6,7 +6,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     # TODO consider removing the git submodule in favor of this
     directory-tree = {
-      url = github:jefdaj/directory-tree/treat-symlinks-as-files;
+      url = github:jefdaj/directory-tree/wip-for-bigtrees;
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -24,11 +24,30 @@
         #      https://github.com/NixOS/nixpkgs/issues/235960
         #      exposing it as haskellPackages does not help
         haskellOverlay = (final: prev: {
-          haskellPackages = prev.haskellPackages.override {
+
+          # Currently this is ghc948, but ok to follow the default when it updates.
+          # Just remember to update the package versions below too.
+          myHaskellPackages = prev.haskellPackages.override {
             overrides = hFinal: hPrev: {
+
               # TODO figure out how to include the DT flake output directly instead?
               directory-tree = hFinal.callCabal2nix "directory-tree" directory-tree {};
-              docopt = final.haskell.lib.markUnbroken hPrev.docopt;
+
+              # Most of these default to the versions in stackage.org/lts-21.25,
+              # (latest LTS using ghc948), except filepath which I upgraded.
+              #
+              # Broken: callHackageDirect
+              # Broken: doJailbreak on existing packages in the main set
+              # Working: doJailbreak + callHackage
+              #
+              Glob      = hPrev.callHackage "Glob"      "0.10.2"  {};
+              directory = hPrev.callHackage "directory" "1.3.8.5" {};
+              docopt    = hPrev.callHackage "docopt"    "0.7.0.8" {};
+              unix      = hPrev.callHackage "unix"      "2.8.5.1" {};
+              filepath  = final.haskell.lib.doJailbreak (hPrev.callHackage "filepath" "1.5.2.0" {});
+              cmdargs   = final.haskell.lib.doJailbreak (hPrev.callHackage "cmdargs" "0.10.22" {});
+              process   = final.haskell.lib.doJailbreak (hPrev.callHackage "process" "1.6.18.0" {});
+
             };
           };
         });
@@ -60,7 +79,7 @@
             '';
           });
 
-        in haskellPackages.developPackage {
+        in myHaskellPackages.developPackage {
           # root = lib.sourceFilesBySuffices ./. [ ".cabal" ".hs" ".txt" ];
           root = lib.cleanSource ./.;
           name = "bigtrees";
