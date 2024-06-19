@@ -536,6 +536,7 @@ parseHashLinesFromChunk = do
   -- but i worry that might swallow any line that happens to start with '#'
   --
   _ <- option undefined headerP -- TODO undefined should be safe here, no?
+  _ <- option undefined $ char '\n' -- TODO why is this needed? lexeme not being handled? :(
 
   -- If this is the second-to-last chunk and it happens to start in the middle of the header,
   -- the easiest thing to do is pass that to the very last chunk as part of eop.
