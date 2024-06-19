@@ -24,14 +24,13 @@ dependencies:
 - filepath
 - filepath-bytestring
 - knob
-- Glob
 - hashable
 - hashtables
 - HUnit
 - massiv
 - MissingH
 - monad-parallel
-  # - os-string
+- os-string
 - pretty-simple
 - process
 - QuickCheck
