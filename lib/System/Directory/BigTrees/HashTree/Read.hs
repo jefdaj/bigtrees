@@ -170,10 +170,10 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
        in {-# SCC "Lappend" #-} (Depth i, l):cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
-           childrenSorted = sortBy (compare `on` (treeName . snd)) children
+           -- childrenSorted = sortBy (compare `on` (treeName . snd)) children
            dir = Dir
-                   { dirContents = {-# SCC "DdirContents" #-} map snd childrenSorted
-                   , nNodes = {-# SCC "DnNodes" #-} (sum $ 1 : map (sumNodes . snd) childrenSorted)
+                   { dirContents = {-# SCC "DdirContents" #-} map snd children
+                   , nNodes = {-# SCC "DnNodes" #-} (sum $ 1 : map (sumNodes . snd) children)
                    , nodeData = {-# SCC "DNodeData" #-} NodeData
                      { name = p
                      , hash = h
@@ -181,9 +181,13 @@ accTrees (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} (Depth i, dir):siblings -- TODO sort issue here?
+       in {-# SCC "Dappend" #-} (Depth i, dir) : siblings
 
-partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
+-- partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
+partitionChildrenSiblings i cs = (children, others)
+  where
+    children = takeWhile (\(Depth i2, _) -> i2 > i) cs
+    others   = drop (length children) cs
 
 readTestTree :: Maybe Int -> Bool -> [String] -> OsPath -> IO TestTree
 readTestTree md = buildTree SFO.readFile'

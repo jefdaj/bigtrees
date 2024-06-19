@@ -222,8 +222,7 @@ buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTre
   -- (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
 
   -- let cs'' = sortBy (compare `on` DT.name) cs'
-  cs' <- regexFilterTrees es a cs
-  let cs'' = sortBy (compare `on` DT.name) cs'
+  cs'' <- regexFilterTrees es a cs
   let root = a </> n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
