@@ -43,8 +43,9 @@ listTreePaths' fExpr fmtFn (Depth i) ns t =
         (Dir {}) -> concat $ (flip map) (dirContents t) $
                     listTreePaths' fExpr fmtFn (Depth $ i+1) ns'
         _        -> []
-      thisPath = ([pathLine fmtFn (Depth i) ns t | pathMatches fExpr ns'])
-  in recPaths ++ thisPath
+  in if pathMatches fExpr ns'
+       then pathLine fmtFn (Depth i) ns t : recPaths
+       else recPaths
 
 
 -----------------
@@ -73,12 +74,12 @@ printTreePaths' :: Filter -> FmtFn -> Depth -> [Name] -> HashTree a -> IO ()
 printTreePaths' fExpr fmtFn (Depth i) ns t = do
   let ns' = treeName t:ns
       tt  = treeType t
+  when (pathMatches fExpr ns') $ do
+    B8.putStrLn $ pathLine fmtFn (Depth i) ns t
+    hFlush stdout -- TODO maybe not?
   case t of
     (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (Depth $ i+1) ns') (dirContents t)
     _        -> return ()
-  when (pathMatches fExpr ns') $
-    B8.putStrLn $ pathLine fmtFn (Depth i) ns t
-  hFlush stdout -- TODO maybe not?
 
 pathLine :: FmtFn -> Depth -> [Name] -> HashTree a -> B8.ByteString
 pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
