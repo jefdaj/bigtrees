@@ -84,7 +84,6 @@ import Data.List.Split (splitOn)
 import System.IO (utf8)
 import System.OsPath (OsPath)
 import qualified System.OsPath.Internal as OSPI
-import System.OsString.Internal
 import System.OsString.Internal.Types
 
 import Control.DeepSeq (deepseq)
