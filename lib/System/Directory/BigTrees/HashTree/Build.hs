@@ -221,7 +221,10 @@ buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTre
   -- TODO of course, this is forcing the whole tree! have to be lazier about it
   -- (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
 
-  -- let cs'' = sortBy (compare `on` DT.name) cs'
+  -- TODO does this break lazy evaluation? or is it ok?
+  -- (maybe it's handled by sorting in directory-tree anyway now?)
+  -- let cs' = sortBy (compare `on` DT.name) cs
+  -- TODO also do this while reading a tree, right? apply filters in a uniform way everywhere!
   cs'' <- regexFilterTrees es a cs
   let root = a </> n
       -- bang t has no effect on memory usage
