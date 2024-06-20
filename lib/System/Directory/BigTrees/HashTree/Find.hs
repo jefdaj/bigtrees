@@ -39,13 +39,14 @@ listTreePaths mRegex fmt =
 listTreePaths' :: Filter -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
 listTreePaths' fExpr fmtFn (Depth i) ns t =
   let ns' = treeName t:ns
-      recPaths = case t of
-        (Dir {}) -> concat $ (flip map) (dirContents t) $
-                    listTreePaths' fExpr fmtFn (Depth $ i+1) ns'
-        _        -> []
+  -- If the current path matches we DO NOT need to search inside it, because
+  -- we only want one unique top-level match.
   in if pathMatches fExpr ns'
-       then pathLine fmtFn (Depth i) ns t : recPaths
-       else recPaths
+       then pathLine fmtFn (Depth i) ns t : [] -- : recPaths
+       else case t of
+         (Dir {}) -> concat $ (flip map) (dirContents t) $
+                       listTreePaths' fExpr fmtFn (Depth $ i+1) ns'
+         _        -> []
 
 
 -----------------
@@ -67,17 +68,19 @@ printTreePaths mRegex fmt =
 {- Recursively print paths, passing a list of breadcrumbs.
  - A couple gotchas:
  - * breadcrumbs are in reverse order to make `cons`ing simple
- - * have to print subtree paths before the main dir to maintain streaming
- -   (otherwise the entire tree has to be held in memory)
+ - * have to print main path before subtrees if any.... except we won't print
+ -   subtrees in that case
+ - TODO implement this via Foldable or Traversable instead?
  -}
 printTreePaths' :: Filter -> FmtFn -> Depth -> [Name] -> HashTree a -> IO ()
 printTreePaths' fExpr fmtFn (Depth i) ns t = do
   let ns' = treeName t:ns
-      tt  = treeType t
-  when (pathMatches fExpr ns') $ do
+  if pathMatches fExpr ns' then do
     B8.putStrLn $ pathLine fmtFn (Depth i) ns t
     hFlush stdout -- TODO maybe not?
-  case t of
+  -- We actually want to skip this if the current path matches, because we just
+  -- want one unique line for the top level of each match.
+  else case t of
     (Dir {}) -> mapM_ (printTreePaths' fExpr fmtFn (Depth $ i+1) ns') (dirContents t)
     _        -> return ()
 
