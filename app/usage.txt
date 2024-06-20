@@ -3,11 +3,11 @@ Create and manipulate hash trees representing collections of files.
 Usage:
   bigtrees version
   bigtrees [-v] info PATH
-  bigtrees [-v] find [-m METAFMT] [-r REGEX] [-f FILTER] [-o OUT] PATH
   bigtrees [-v] hash [-e EXCLUDE] [-o OUT] PATH
   bigtrees [-v] diff OLD NEW
-  bigtrees [-v] dupes [-o OUT] [-d MAXDEPTH] HASHES
+  bigtrees [-v] dupes [-o OUT] [--max-depth N] HASHES
   bigtrees [-v] set-add -s SET [-n NOTE] PATH...
+  bigtrees [-v] find [-m METAFMT] [-r REGEX] [--min-depth N] [--max-depth N] [-o OUT] PATH
 
 Commands:
   info       Succinct summary of a tree file: stats, etc
@@ -16,22 +16,29 @@ Commands:
   hash       Reads files + folders and prints their hashes to stdout.
 
 Options:
-  -v --verbose            Explain each step as it runs.
-  -e --exclude EXCLUDE    Read a list of globs and exclude any files matching it.
-                          If none given, the list defaults to [".git*"]
-  -o --out OUT            Stream output to a file rather than stdout.
-  -d --maxdepth MAXDEPTH  Look for dupes only MAXDEPTH levels into the folder structure.
-                          Drastically reduces time and memory use when reading hashes
-                          from a file, without affecting accuracy up to the max depth.
-                          WARNING: only works on a saved hashes file. No effect
-                          when reading a tree of files and deduping them
-                          at the same time.
-  -m --meta-fmt METAFMT   Optional space-separated metadata fields to print at the
-                          beginning of each line. Options are: "h" (hash),
-                          "t" (type), "d" (depth) For example: "ht" -> hash, type
-  -r --regex REGEX        Regex filter filenames.
-  -s --set SET            Bigset to operate on.
-  -n --note NOTE          Replace all hashset notes with the given string.
+  -v --verbose             Explain each step as it runs.
+  -e --exclude EXCLUDE     Read a list of globs and exclude any files matching it.
+                           If none given, the list defaults to [".git*"]
+  -o --out OUT             Stream output to a file rather than stdout.
+  --min-depth N            Look only at nodes at least N deep in the folder structure.
+  --max-depth N            Look for dupes only N levels into the folder structure.
+                           Drastically reduces time and memory use when reading hashes
+                           from a file, without affecting accuracy up to the max depth.
+                           WARNING: only works on a saved hashes file. No effect
+                           when reading a tree of files and deduping them
+                           at the same time.
+  --min-files N            Find nodes containing at least N files.
+  --max-files N            Find nodes containing at most N files.
+  --min-size BYTES         Find nodes containing at least BYTES (human-readable format OK).
+  --max-size BYTES         Find nodes containing at most BYTES (human-readable format OK).
+  --min-modtime DATE       Find nodes modified on or after DATE.
+  --max-modtime DATE       Find nodes modified on or before DATE.
+  -m --meta-fmt METAFMT    Optional space-separated metadata fields to print at the
+                           beginning of each line. Options are: "h" (hash),
+                           "t" (type), "d" (depth) For example: "ht" -> hash, type
+  -r --regex REGEX         Regex filter filenames.
+  -s --set SET             Bigset to operate on.
+  -n --note NOTE           Replace all hashset notes with the given string.
 
 Conditions:
   type (file, dir, graft)
