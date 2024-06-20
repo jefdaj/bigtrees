@@ -19,7 +19,7 @@ dependencies:
 - directory
 - directory-tree
 - docopt
-- doctest-parallel
+  # - doctest-parallel
 - file-io
 - filepath
 - filepath-bytestring
@@ -118,14 +118,15 @@ tests:
     dependencies:
     - bigtrees
 
-  test-doctests:
-    main: "doctest.hs"
-    source-dirs:
-    - "app"
-    - "lib"
-    - "test/doc"
-    dependencies:
-    - bigtrees
+# TODO get doctest-parallel to compile and/or figure out why it wasn't working before
+# test-doctests:
+# main: "doctest.hs"
+# source-dirs:
+# - "app"
+# - "lib"
+# - "test/doc"
+# dependencies:
+# - bigtrees
 
 benchmarks:
 
