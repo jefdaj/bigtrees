@@ -2,43 +2,36 @@ Create and manipulate hash trees representing collections of files.
 
 Usage:
   bigtrees [-v] info PATH
-  bigtrees [-v] find [-m METAFMT] [-t TXT] [-r REGEX] [-f FILTER] PATH
-  bigtrees [-v] hash [-e EXCLUDE] [-t TXT] PATH
+  bigtrees [-v] find [-m METAFMT] [-r REGEX] [-f FILTER] [-o OUT] PATH
+  bigtrees [-v] hash [-e EXCLUDE] [-o OUT] PATH
   bigtrees [-v] diff OLD NEW
-  bigtrees [-v] dupes [-t TXT] [-d MAXDEPTH] HASHES
+  bigtrees [-v] dupes [-o OUT] [-d MAXDEPTH] HASHES
   bigtrees [-v] set-add -s SET [-n NOTE] PATH...
-  bigtrees [-v] oldcat    PATH
-  bigtrees [-v] oldupdate MAIN SUB PATH
-  bigtrees [-v] oldtest   PATH...
   bigtrees version
 
 Options:
-  -v --verbose   Explain each step as it runs.
-  -e EXCLUDE     Read a list of globs and exclude any files matching it.
-                 If none given, the list defaults to [".git*"]
-  -t TXT         Stream output to a text file rather than stdout.
-  -d MAXDEPTH    Look for dupes only MAXDEPTH levels into the folder structure.
-                 Drastically reduces time and memory use when reading hashes
-                 from a file, without affecting accuracy up to the max depth.
-                 WARNING: only works on a saved hashes file. No effect
-                 when reading a tree of files and deduping them
-                 at the same time.
-  -m METAFMT     Optional space-separated metadata fields to print at the
-                 beginning of each line. Options are: "h" (hash),
-                 "t" (type), "d" (depth) For example: "ht" -> hash, type
-  -r REGEX       Regex filter filenames.
-  -s SET         Bigset to operate on.
-  -n NOTE        Replace all hashset notes with the given string.
+  -v --verbose            Explain each step as it runs.
+  -e --exclude EXCLUDE    Read a list of globs and exclude any files matching it.
+                          If none given, the list defaults to [".git*"]
+  -o --out OUT            Stream output to a file rather than stdout.
+  -d --maxdepth MAXDEPTH  Look for dupes only MAXDEPTH levels into the folder structure.
+                          Drastically reduces time and memory use when reading hashes
+                          from a file, without affecting accuracy up to the max depth.
+                          WARNING: only works on a saved hashes file. No effect
+                          when reading a tree of files and deduping them
+                          at the same time.
+  -m --meta-fmt METAFMT   Optional space-separated metadata fields to print at the
+                          beginning of each line. Options are: "h" (hash),
+                          "t" (type), "d" (depth) For example: "ht" -> hash, type
+  -r --regex REGEX        Regex filter filenames.
+  -s --set SET            Bigset to operate on.
+  -n --note NOTE          Replace all hashset notes with the given string.
 
 Commands:
   info       Succinct summary of a tree file: stats, etc
   find       Print full paths from tree file(s), and optionally filter them
   diff       Print changes in NEW relative to OLD. TODO take hashes here too!
   hash       Reads files + folders and prints their hashes to stdout.
-  oldcat     Decodes and prints each PATH if hashes, and hashes + prints if not.
-  olddupes   List duplicate files + folders in HASHES.
-  oldupdate  Updates MAIN hashes with new ones from SUB, inserted at PATH.
-  oldtest    Run tests on the given directories.
 
 Conditions:
   type (file, dir, graft)

@@ -13,9 +13,6 @@ import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
 import Config (Config (..), defaultConfig)
 import Data.Functor ((<&>))
-import OldCmd.Cat (oldCmdCat)
--- import OldCmd.Test (oldCmdTest)
-import OldCmd.Update (oldCmdUpdate)
 import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
@@ -80,7 +77,7 @@ main = do
     cmdSetAdd cfg set note paths
 
   else if cmd "find" then do
-    path <- encodeFS =<< arg "PATH"
+    path <- encodeFS =<< arg "PATH" -- TODO multiple paths?
     cmdFind cfg path
 
   else if cmd "hash" then do
@@ -90,20 +87,6 @@ main = do
   else if cmd "info" then do
     path <- encodeFS =<< arg "PATH"
     cmdInfo cfg path
-
-  else if cmd "oldcat" then do
-     path <- encodeFS =<< arg "PATH"
-     oldCmdCat cfg path
-
-  -- else if cmd "oldtest"  then do
-  --   let paths = arg "PATH"
-  --   oldCmdTest cfg paths
-
-  else if cmd "oldupdate" then do
-    mainTree <- encodeFS =<< arg "MAIN"
-    subTree  <- encodeFS =<< arg "SUB"
-    subPath  <- encodeFS =<< arg "PATH"
-    oldCmdUpdate cfg mainTree subTree subPath
 
   else if cmd "version" then
     printVersion

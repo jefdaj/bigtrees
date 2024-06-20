@@ -105,15 +105,6 @@ executable bigtrees
       Cmd.Info
       Cmd.SetAdd
       Config
-      OldCmd
-      OldCmd.Add
-      OldCmd.Cat
-      OldCmd.Dedup
-      OldCmd.Init
-      OldCmd.Mv
-      OldCmd.Rm
-      OldCmd.Test
-      OldCmd.Update
       Run
       Paths_bigtrees
   hs-source-dirs:
@@ -188,15 +179,6 @@ test-suite test-app
       Cmd.SetAdd
       Config
       Main
-      OldCmd
-      OldCmd.Add
-      OldCmd.Cat
-      OldCmd.Dedup
-      OldCmd.Init
-      OldCmd.Mv
-      OldCmd.Rm
-      OldCmd.Test
-      OldCmd.Update
       Run
       Paths_bigtrees
   hs-source-dirs:
@@ -373,15 +355,6 @@ benchmark test-bench
       Cmd.SetAdd
       Config
       Main
-      OldCmd
-      OldCmd.Add
-      OldCmd.Cat
-      OldCmd.Dedup
-      OldCmd.Init
-      OldCmd.Mv
-      OldCmd.Rm
-      OldCmd.Test
-      OldCmd.Update
       Run
       Paths_bigtrees
   hs-source-dirs:
