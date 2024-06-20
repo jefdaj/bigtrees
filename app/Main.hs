@@ -11,7 +11,7 @@ import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
-import Config (Config (..), defaultConfig)
+import Config (AppConfig (..), SearchConfig(..), defaultAppConfig, defaultSearchConfig)
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)

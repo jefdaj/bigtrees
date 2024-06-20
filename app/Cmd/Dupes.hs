@@ -2,7 +2,7 @@ module Cmd.Dupes where
 
 -- TODO guess and check hashes
 
-import Config (Config (..), defaultConfig)
+import Config (AppConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
@@ -16,7 +16,7 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
 
-cmdDupes :: Config -> OsPath -> IO ()
+cmdDupes :: AppConfig -> OsPath -> IO ()
 cmdDupes cfg path = do
   tree <- BT.readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
   -- TODO rewrite sorting with lower memory usage
@@ -40,7 +40,7 @@ dupesTarXz xz1 = do
     d1' <- encodeFS d1
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultConfig d1'
+    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultAppConfig d1'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 
