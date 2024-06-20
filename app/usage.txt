@@ -1,13 +1,19 @@
 Create and manipulate hash trees representing collections of files.
 
 Usage:
+  bigtrees version
   bigtrees [-v] info PATH
   bigtrees [-v] find [-m METAFMT] [-r REGEX] [-f FILTER] [-o OUT] PATH
   bigtrees [-v] hash [-e EXCLUDE] [-o OUT] PATH
   bigtrees [-v] diff OLD NEW
   bigtrees [-v] dupes [-o OUT] [-d MAXDEPTH] HASHES
   bigtrees [-v] set-add -s SET [-n NOTE] PATH...
-  bigtrees version
+
+Commands:
+  info       Succinct summary of a tree file: stats, etc
+  find       Print full paths from tree file(s), and optionally filter them
+  diff       Print changes in NEW relative to OLD. TODO take hashes here too!
+  hash       Reads files + folders and prints their hashes to stdout.
 
 Options:
   -v --verbose            Explain each step as it runs.
@@ -27,12 +33,6 @@ Options:
   -s --set SET            Bigset to operate on.
   -n --note NOTE          Replace all hashset notes with the given string.
 
-Commands:
-  info       Succinct summary of a tree file: stats, etc
-  find       Print full paths from tree file(s), and optionally filter them
-  diff       Print changes in NEW relative to OLD. TODO take hashes here too!
-  hash       Reads files + folders and prints their hashes to stdout.
-
 Conditions:
   type (file, dir, graft)
   mindepth, maxdepth
@@ -40,8 +40,3 @@ Conditions:
   minfiles, maxfiles
   glob
   regex
-
-Examples:
-  bigtrees hash "/media/jeff/WD My Book"  > mybook-orig-hashes.txt
-  bigtrees hash  /media/jeff/dedup/mybook > mybook-dedup-hashes.txt
-  bigtrees diff mybook-{orig,dedup}-hashes.txt
