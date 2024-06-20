@@ -68,6 +68,7 @@ main = do
           , maxFiles   = optInt "max-files"
           , minModtime = optInt "min-modtime"
           , maxModtime = optInt "max-modtime"
+          , treeTypes      = optArg "types"
           , excludeRegexes = eList
           , searchRegexes  = sList
           }

@@ -31,12 +31,14 @@ import System.OsPath (OsPath)
 import System.OsString (osstr)
 import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, parseFooter, commentLineP)
 
+-- | When reading HashLines with accTrees, whether to accumulate this line or skip it.
+-- To keep the tree structure valid, should always be True when accRecurseChildren is True.
+accKeepLine :: SearchConfig -> HashLine -> Bool
+accKeepLine cfg = undefined
 
-readKeepNode :: SearchConfig -> HashTree a -> Bool
-readKeepNode cfg = undefined
-
-readRecurseIntoNode :: SearchConfig -> HashTree a -> Bool
-readRecurseIntoNode cfg = undefined
+-- | When reading a tree with accTrees, whether to recurse into this line's children.
+accRecurseChildren :: SearchConfig -> HashLine -> Bool
+accRecurseChildren cfg = undefined
 
 --- read summary info from the end of the file ---
 
@@ -104,9 +106,13 @@ hReadTree cfg blksize hdl = do
  -}
 accTrees :: SearchConfig -> HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 
-accTrees _ (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} (d, Err { errMsg = m, errName = n }):cs
+accTrees cfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
+  if accKeepLine cfg e
+    then (d, Err { errMsg = m, errName = n }):cs
+    else cs
 
-accTrees _ (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
+-- HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name, Maybe LinkTarget)
+accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
 
   F -> let f = File
                  { fileData = ()
@@ -117,7 +123,7 @@ accTrees _ (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Fappend" #-} (Depth i, f):cs
+       in {-# SCC "Fappend" #-} if accKeepLine cfg hl then (Depth i, f):cs else cs
 
   B -> let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
@@ -130,7 +136,7 @@ accTrees _ (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Bappend" #-} (Depth i, l):cs
+       in {-# SCC "Bappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
 
   L -> let l = Link
                  { linkData = Just ()
@@ -143,13 +149,14 @@ accTrees _ (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Lappend" #-} (Depth i, l):cs
+       in {-# SCC "Lappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            -- childrenSorted = sortBy (compare `on` (treeName . snd)) children
+           children' = if accRecurseChildren cfg hl then map snd children else []
            dir = Dir
-                   { dirContents = {-# SCC "DdirContents" #-} map snd children
-                   , nNodes = {-# SCC "DnNodes" #-} (sum $ 1 : map (sumNodes . snd) children)
+                   { dirContents = {-# SCC "DdirContents" #-} children'
+                   , nNodes = nn
                    , nodeData = {-# SCC "DNodeData" #-} NodeData
                      { name = p
                      , hash = h
@@ -157,7 +164,7 @@ accTrees _ (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} (Depth i, dir) : siblings
+       in {-# SCC "Dappend" #-} if accKeepLine cfg hl then (Depth i, dir) : siblings else siblings
 
 -- partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
 partitionChildrenSiblings i cs = (children, others)

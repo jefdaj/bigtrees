@@ -26,6 +26,7 @@ data SearchConfig = SearchConfig
   , maxFiles       :: Maybe Int -- ^ If >, skip. If <=, stop recursing.
   , minModtime     :: Maybe Int -- ^ If <, skip and stop recursing.
   , maxModtime     :: Maybe Int -- ^ If >, skip but keep recursing.
+  , treeTypes      :: Maybe [Char] -- ^ If any, limit to those (+ D when recursing).
   , excludeRegexes :: [String]  -- ^ If any match, skip and stop recursing.
   , searchRegexes  :: [String]  -- ^ If any match, keep but stop recursing.
   }
@@ -43,6 +44,7 @@ emptySearchConfig = SearchConfig
   , maxFiles       = Nothing
   , minModtime     = Nothing
   , maxModtime     = Nothing
+  , treeTypes      = Nothing
   , excludeRegexes = []
   , searchRegexes  = []
   }
