@@ -34,32 +34,43 @@ main = do
 
   let ptns = [D.docoptFile|app/usage.txt|]
   args <- D.parseArgsOrExit ptns =<< getArgs
-  let cmd   n = D.isPresent args $ D.command n
-      arg   n = D.getArgOrExitWith ptns args $ D.argument n
-      lst   n = D.getAllArgs args $ D.argument n
-      short n = D.getArgOrExitWith ptns args $ D.shortOption n
-      flag  n = D.isPresent args $ D.shortOption n
-      shortO n = D.getArg args $ D.shortOption n
-  eList <- if flag 'e' -- TODO update this
-             then short 'e' >>= readFile <&> lines
-             else return $ excludeRegexes defaultSearchConfig
-  oPath <- case arg "OUTFILE" of -- TODO is that right?
+  pPrint args
+
+  let cmd  n = D.isPresent  args $ D.command n
+      lst  n = D.getAllArgs args $ D.argument n
+      arg  n = D.getArgOrExitWith ptns args $ D.argument n
+      long n = D.getArgOrExitWith ptns args $ D.longOption n
+      mInt n = fmap (read :: String -> Int) $ D.getArg args $ D.longOption n
+      flag n = D.isPresent args $ D.longOption n
+
+  eList <- case D.getArg args $ D.longOption "excludes-from" of
+             Nothing -> return $ excludeRegexes defaultSearchConfig
+             Just f  -> readFile f <&> lines -- TODO more detailed parsing?
+  sList <- case D.getArg args $ D.longOption "searches-from" of
+             Nothing -> return $ searchRegexes defaultSearchConfig
+             Just f  -> readFile f <&> lines -- TODO more detailed parsing?
+  oPath <- case D.getArg args $ D.longOption "output" of
              Nothing -> return Nothing
              Just o  -> encodeFS o <&> Just
 
   let cfg = defaultAppConfig
         { outFile   = oPath
-        , outFormat = shortO 'f'
-        , verbose   = flag 'v'
+        , outFormat = D.getArg args $ D.longOption "out-fmt"
+        , verbose   = flag "verbose"
         , searchCfg = defaultSearchConfig
-          { maxDepth = (read :: String -> Int) <$> shortO 'd'
+          { minBytes   = mInt "min-size"
+          , maxBytes   = mInt "max-size"
+          , minDepth   = mInt "min-depth"
+          , maxDepth   = mInt "max-depth"
+          , minFiles   = mInt "min-files"
+          , maxFiles   = mInt "max-files"
+          , minModtime = mInt "min-modtime"
+          , maxModtime = mInt "max-modtime"
           , excludeRegexes = eList
-          , searchRegexes  = shortO 'r'
+          , searchRegexes  = sList
           }
         }
-
   pPrint cfg
-  pPrint args
 
   if cmd "diff" then do
     old <- encodeFS =<< arg "OLD"
@@ -71,8 +82,8 @@ main = do
     cmdDupes cfg hashes
 
   else if cmd "set-add" then do
-    set <- encodeFS =<< short 's'
-    let note  = shortO 'n'
+    set  <- encodeFS =<< arg "set"
+    let note = D.getArg args $ D.longOption "note"
     paths <- mapM encodeFS $ lst "PATH"
     cmdSetAdd cfg set note paths
 

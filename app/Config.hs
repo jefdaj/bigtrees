@@ -13,7 +13,7 @@ module Config
 import Control.Monad (when)
 import Prelude hiding (log)
 import System.OsPath (OsPath)
-import System.Directory.BigTrees.HashTree.Search (SearchConfig(..), defaultSearchConfig)
+import System.Directory.BigTrees (SearchConfig(..), defaultSearchConfig)
 
 -- TODO derive To/FromJSON for the AppConfig so it can go in Headers?
 --      or just the exclude and maxdepth values for now

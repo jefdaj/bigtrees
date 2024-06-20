@@ -60,6 +60,8 @@ module System.Directory.BigTrees
   , treeContainsHash
   , treeContainsPath
   , SearchConfig(..)
+  , emptySearchConfig
+  , defaultSearchConfig
   , listTreePaths
   , Filter(..)
   , pathMatches
@@ -135,7 +137,7 @@ import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter,
                                                 readTree, readTreeLines)
-import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..))
+import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..), emptySearchConfig, defaultSearchConfig)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumbs2bs, bs2n, fp2n,
