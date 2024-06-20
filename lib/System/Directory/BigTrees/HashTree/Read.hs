@@ -14,6 +14,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
+import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
 import System.Directory.BigTrees.Name (Name (..))
 import System.Directory.BigTrees.Util (hTakePrevUntil, getBlockSize)
 -- import System.FilePath.Glob (Pattern)
@@ -30,6 +31,12 @@ import System.OsPath (OsPath)
 import System.OsString (osstr)
 import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, parseFooter, commentLineP)
 
+
+readKeepNode :: SearchConfig -> HashTree a -> Bool
+readKeepNode cfg = undefined
+
+readRecurseIntoNode :: SearchConfig -> HashTree a -> Bool
+readRecurseIntoNode cfg = undefined
 
 --- read summary info from the end of the file ---
 

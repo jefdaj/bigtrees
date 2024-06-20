@@ -1,30 +1,43 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module System.Directory.BigTrees.HashTree.Search where
 
 import Control.Monad (msum)
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..))
 import System.Directory.BigTrees.Name (Name, os2ns)
 import System.Directory.BigTrees.Util (pathComponents)
 import System.OsPath (OsPath, joinPath)
+
+import GHC.Generics (Generic)
+import Control.DeepSeq (NFData)
+import System.Directory.BigTrees.HashTree.Base -- TODO specifics
+
+
+-- | All the info relevant to searching a tree. Used in different ways when
+-- building a tree, reading it from a .bigtree file, finding paths in it, and
+-- making a dupe map.
+data SearchConfig = SearchConfig
+  { minBytes       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
+  , maxBytes       :: Maybe Int -- ^ If >, skip. If >=, keep recursing.
+  , maxDepth       :: Maybe Int -- ^ If <=, keep. If =, stop recursing.
+  , minDepth       :: Maybe Int -- ^ If <, skip. Always keep recursing.
+  , minFiles       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
+  , maxFiles       :: Maybe Int -- ^ If >, skip. If <=, stop recursing.
+  , minModtime     :: Maybe Int -- ^ If <, skip and stop recursing.
+  , maxModtime     :: Maybe Int -- ^ If >, skip but keep recursing.
+  , excludeRegexes :: [String]  -- ^ If any match, skip and stop recursing.
+  , searchRegexes  :: [String]  -- ^ If any match, keep but stop recursing.
+  }
+  deriving (Read, Show, Eq, Ord, Generic)
+
+instance NFData SearchConfig
 
 
 -------------------
 -- search a tree --
 -------------------
 
--- treeContainsPath :: HashTree -> OsPath -> Bool
--- treeContainsPath (File f1 _     ) f2 = f1 == f2
--- treeContainsPath (Dir  f1 _ cs _) f2
---   | f1 == f2 = True
---   | length (pathComponents f2) < 2 = False
---   | otherwise = let n   = head $ pathComponents f2
---                     f2' = joinPath $ tail $ pathComponents f2
---                 in if f1 /= n
---                   then False
---                   else any (\c -> treeContainsPath c f2') cs
-
--- TODO is IO here reasonable?
 treeContainsPath :: HashTree a -> OsPath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree $ os2ns path
 
@@ -43,7 +56,3 @@ treeContainsHash (File {nodeData=nd1}) h2 = hash nd1 == h2
 treeContainsHash (Dir  {nodeData=nd1, dirContents=cs}) h2
   | hash nd1 == h2 = True
   | otherwise = any (`treeContainsHash` h2) cs
-
--- TODO if tree contains path, be able to extract it! need for rm
-
-
