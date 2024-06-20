@@ -20,7 +20,7 @@ import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
--- import Text.Pretty.Simple (pPrint)
+import Text.Pretty.Simple (pPrint)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.OsPath (OsPath, encodeFS)
@@ -61,48 +61,48 @@ main = do
         , regex    = shortO 'r'
         }
 
-  -- pPrint cfg
-  -- pPrint args
+  pPrint cfg
+  pPrint args
 
   if cmd "diff" then do
-    old <- encodeFS =<< arg "old"
-    new <- encodeFS =<< arg "new"
+    old <- encodeFS =<< arg "OLD"
+    new <- encodeFS =<< arg "NEW"
     cmdDiff cfg old new
 
   else if cmd "dupes" then do
-    hashes <- encodeFS =<< arg "hashes"
+    hashes <- encodeFS =<< arg "HASHES"
     cmdDupes cfg hashes
 
   else if cmd "set-add" then do
     set <- encodeFS =<< short 's'
     let note  = shortO 'n'
-    paths <- mapM encodeFS $ lst "path"
+    paths <- mapM encodeFS $ lst "PATH"
     cmdSetAdd cfg set note paths
 
   else if cmd "find" then do
-    path <- encodeFS =<< arg "path"
+    path <- encodeFS =<< arg "PATH"
     cmdFind cfg path
 
   else if cmd "hash" then do
-     path <- encodeFS =<< arg "path"
+     path <- encodeFS =<< arg "PATH"
      cmdHash cfg path
 
   else if cmd "info" then do
-    path <- encodeFS =<< arg "path"
+    path <- encodeFS =<< arg "PATH"
     cmdInfo cfg path
 
   else if cmd "oldcat" then do
-     path <- encodeFS =<< arg "path"
+     path <- encodeFS =<< arg "PATH"
      oldCmdCat cfg path
 
   -- else if cmd "oldtest"  then do
-  --   let paths = arg "path"
+  --   let paths = arg "PATH"
   --   oldCmdTest cfg paths
 
   else if cmd "oldupdate" then do
-    mainTree <- encodeFS =<< arg "main"
-    subTree  <- encodeFS =<< arg "sub"
-    subPath  <- encodeFS =<< arg "path"
+    mainTree <- encodeFS =<< arg "MAIN"
+    subTree  <- encodeFS =<< arg "SUB"
+    subPath  <- encodeFS =<< arg "PATH"
     oldCmdUpdate cfg mainTree subTree subPath
 
   else if cmd "version" then

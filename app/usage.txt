@@ -1,45 +1,43 @@
 Create and manipulate hash trees representing collections of files.
 
 Usage:
-  bigtrees [-v] info <path>
-  bigtrees [-v] find [-m <metafmt>] [-t <txt>] [-r <regex>] <path>
-  bigtrees [-v] hash [-e <exclude>] [-t <txt>] <path>
-  bigtrees [-v] diff <old> <new>
-  bigtrees [-v] dupes [-t <txt>] [-d <maxdepth>] <hashes>
-  bigtrees [-v] set-add -s <set> [-n <note>] <path>...
-  bigtrees [-v] oldcat    <path>
-  bigtrees [-v] oldupdate <main> <sub> <path>
-  bigtrees [-v] oldtest   <path>...
+  bigtrees [-v] info PATH
+  bigtrees [-v] find [-m METAFMT] [-t TXT] [-r REGEX] [-f FILTER] PATH
+  bigtrees [-v] hash [-e EXCLUDE] [-t TXT] PATH
+  bigtrees [-v] diff OLD NEW
+  bigtrees [-v] dupes [-t TXT] [-d MAXDEPTH] HASHES
+  bigtrees [-v] set-add -s SET [-n NOTE] PATH...
+  bigtrees [-v] oldcat    PATH
+  bigtrees [-v] oldupdate MAIN SUB PATH
+  bigtrees [-v] oldtest   PATH...
   bigtrees version
 
 Options:
-  -v, --verbose  Explain each step as it runs.
-  -e <exclude>   Read a list of globs and exclude any files matching it.
+  -v --verbose   Explain each step as it runs.
+  -e EXCLUDE     Read a list of globs and exclude any files matching it.
                  If none given, the list defaults to [".git*"]
-  -t <txt>       Stream output to a text file rather than stdout.
-  -d <maxdepth>  Look for dupes only <maxdepth> levels into the folder structure.
+  -t TXT         Stream output to a text file rather than stdout.
+  -d MAXDEPTH    Look for dupes only MAXDEPTH levels into the folder structure.
                  Drastically reduces time and memory use when reading hashes
                  from a file, without affecting accuracy up to the max depth.
                  WARNING: only works on a saved hashes file. No effect
                  when reading a tree of files and deduping them
                  at the same time.
-  -m <metafmt>   Optional space-separated metadata fields to print at the
+  -m METAFMT     Optional space-separated metadata fields to print at the
                  beginning of each line. Options are: "h" (hash),
                  "t" (type), "d" (depth) For example: "ht" -> hash, type
-  -r <regex>     Regex filter filenames.
-  -s <set>       Bigset to operate on.
-  -n <note>      Replace all hashset notes with the given string.
-
-bigtrees [-v] set-add -o <outfile> [-n <note>] <tree>...
+  -r REGEX       Regex filter filenames.
+  -s SET         Bigset to operate on.
+  -n NOTE        Replace all hashset notes with the given string.
 
 Commands:
   info       Succinct summary of a tree file: stats, etc
   find       Print full paths from tree file(s), and optionally filter them
-  diff       Print changes in <new> relative to <old>. TODO take hashes here too!
+  diff       Print changes in NEW relative to OLD. TODO take hashes here too!
   hash       Reads files + folders and prints their hashes to stdout.
-  oldcat     Decodes and prints each <path> if hashes, and hashes + prints if not.
-  olddupes   List duplicate files + folders in <hashes>.
-  oldupdate  Updates <main> hashes with new ones from <sub>, inserted at <path>.
+  oldcat     Decodes and prints each PATH if hashes, and hashes + prints if not.
+  olddupes   List duplicate files + folders in HASHES.
+  oldupdate  Updates MAIN hashes with new ones from SUB, inserted at PATH.
   oldtest    Run tests on the given directories.
 
 Conditions:
