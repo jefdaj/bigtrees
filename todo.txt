@@ -1,3 +1,5 @@
+actually, ghc964 should be able to do a static build. update to it!
+
 # TODO implement parsing a file that maps search labels -> regexes, then have the label be a column you can print in meta fmt. is that all the tooling you would need?
 # TODO oh and maybe at least one capture group for git annex and homedir etc cases
 # TODO --print0 option to add null delimiters? or is that overkill for now?
