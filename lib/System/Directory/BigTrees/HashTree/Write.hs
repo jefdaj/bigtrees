@@ -6,6 +6,7 @@ import Data.Maybe (isNothing)
 import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
+import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Name (unName)
 import qualified System.Directory.OsPath as SDO
@@ -32,14 +33,14 @@ printTree = mapM_ printLine . flattenTree
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
 -- TODO how much of the config should live in the library vs the app, if we're writing it?
-writeTree :: [String] -> OsPath -> HashTree a -> IO ()
-writeTree es path tree = SFO.withFile path WriteMode $ \h -> hWriteTree es h tree
+writeTree :: SearchConfig -> OsPath -> HashTree a -> IO ()
+writeTree cfg path tree = SFO.withFile path WriteMode $ \h -> hWriteTree cfg h tree
 
 -- TODO excludes type alias?
 -- TODO how often to actuall flush?
-hWriteTree :: [String] -> Handle -> HashTree a -> IO ()
-hWriteTree es h tree = do
-  hWriteHeader   h es
+hWriteTree :: SearchConfig -> Handle -> HashTree a -> IO ()
+hWriteTree cfg h tree = do
+  hWriteHeader   h $ excludeRegexes cfg
   hWriteTreeBody h tree
   hWriteFooter   h
 

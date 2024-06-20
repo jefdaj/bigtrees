@@ -18,14 +18,15 @@ import Test.Tasty.Golden (goldenVsString)
 
 cmdDupes :: AppConfig -> OsPath -> IO ()
 cmdDupes cfg path = do
-  tree <- BT.readOrBuildTree (verbose cfg) (searchCfg cfg) (exclude cfg) path
+  tree <- BT.readOrBuildTree (searchCfg cfg) (verbose cfg) path
   -- TODO rewrite sorting with lower memory usage
   -- let dupes = runST $ BT.dupesByNNodes =<< BT.pathsByHash tree
   -- printDupes $ map sortDupePaths $ simplifyDupes BT.dupes
   let ds = BT.dupesByNNodes $ BT.pathsByHash tree
-  case txt cfg of
-    Nothing -> BT.printDupes (maxdepth cfg) ds
-    Just p  -> BT.writeDupes (maxdepth cfg) p ds
+  -- TODO handle backet thing here instead?
+  case outFile cfg of
+    Nothing -> BT.printDupes (searchCfg cfg) ds
+    Just p  -> BT.writeDupes (searchCfg cfg) p ds
 
 -----------
 -- tests --

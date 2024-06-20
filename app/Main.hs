@@ -42,20 +42,20 @@ main = do
       shortO n = D.getArg args $ D.shortOption n
   eList <- if flag 'e' -- TODO update this
              then short 'e' >>= readFile <&> lines
-             else return $ exclude defaultConfig
-  tPath <- case shortO 't' of
+             else return $ excludeRegexes defaultSearchConfig
+  oPath <- case arg "OUTFILE" of -- TODO is that right?
              Nothing -> return Nothing
-             Just t  -> encodeFS t <&> Just
+             Just o  -> encodeFS o <&> Just
 
-  let cfg = Config
-        { txt      = tPath
-        , maxdepth = (read :: String -> Int) <$> shortO 'd'
-        , verbose  = flag 'v'
-        -- , force    = flag 'f'
-        , check    = flag 'c'
-        , exclude  = eList
-        , outfmt   = shortO 'f'
-        , regex    = shortO 'r'
+  let cfg = defaultAppConfig
+        { outFile   = oPath
+        , outFormat = shortO 'f'
+        , verbose   = flag 'v'
+        , searchCfg = defaultSearchConfig
+          { maxDepth = (read :: String -> Int) <$> shortO 'd'
+          , excludeRegexes = eList
+          , searchRegexes  = shortO 'r'
+          }
         }
 
   pPrint cfg

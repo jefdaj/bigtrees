@@ -25,13 +25,13 @@ import Test.Tasty.Golden (findByExtension, goldenVsString)
 cmdHash :: AppConfig -> OsPath -> IO ()
 cmdHash cfg path = bracket open close write
   where
-    open = case txt cfg of
+    open = case outFile cfg of
              Nothing -> return stdout
              Just p  -> SFO.openBinaryFile p WriteMode
 
     write hdl = do
-      tree <- buildProdTree (verbose cfg) (exclude cfg) path
-      hWriteTree (exclude cfg) hdl tree
+      tree <- buildProdTree (searchCfg cfg) (verbose cfg) path
+      hWriteTree (searchCfg cfg) hdl tree
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?

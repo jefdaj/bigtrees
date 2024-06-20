@@ -40,6 +40,7 @@ import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
+import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
 import System.Directory.BigTrees.Name (Name (..), n2bs)
 -- import System.OsPath (splitDirectories, (</>))
 
@@ -178,14 +179,14 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
 -- TODO use this as the basis for the dedup repl
 -- TODO subtract one group when saying how many dupes in a dir,
 --      and 1 when saying how many in a file. because it's about how much you would save
-printDupes :: Maybe Int -> [DupeList] -> IO ()
-printDupes md groups = do
-  msg <- explainDupes md groups
+printDupes :: SearchConfig -> [DupeList] -> IO ()
+printDupes cfg groups = do
+  msg <- explainDupes (maxDepth cfg) groups
   B.putStrLn msg
 
-writeDupes :: Maybe Int -> OsPath -> [DupeList] -> IO ()
-writeDupes md path groups = do
-  msg <- explainDupes md groups
+writeDupes :: SearchConfig -> OsPath -> [DupeList] -> IO ()
+writeDupes cfg path groups = do
+  msg <- explainDupes (maxDepth cfg) groups
   SFO.writeFile' path msg
 
 explainDupes :: Maybe Int -> [DupeList] -> IO B.ByteString

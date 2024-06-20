@@ -31,9 +31,10 @@ import Data.Functor ((<&>))
 
 cmdFind :: AppConfig -> OsPath -> IO ()
 cmdFind cfg path = do
-  tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
-  let paths = listTreePaths (regex cfg) (fromMaybe "" $ outfmt cfg) tree
-  case txt cfg of
+  tree <- readOrBuildTree (searchCfg cfg) (verbose cfg) path
+  let fmt   = fromMaybe "" $ outFormat cfg
+      paths = listTreePaths (searchCfg cfg) fmt tree
+  case outFile cfg of
     Nothing -> mapM_ B8.putStrLn paths
     Just p  -> SFO.writeFile p $ B8.fromStrict $ B8.unlines paths
 
@@ -56,7 +57,7 @@ cmdFindUnixFind t =
     SDO.createDirectoryIfMissing False treeDir'
     writeTestTreeDir treeDir' t
 
-    let cfg = defaultAppConfig { txt = Just myFindOut' }
+    let cfg = defaultAppConfig { outFile = Just myFindOut' }
     cmdFind cfg treeDir'
 
     -- Unix find will print whole absolute paths here, so we need to invoke it

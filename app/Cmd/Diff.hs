@@ -9,6 +9,7 @@ import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
 import System.Directory.BigTrees (Name (..), diff, printDeltas, readOrBuildTree, renameRoot)
+import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -20,8 +21,8 @@ import Test.Tasty.Golden (goldenVsString)
 
 cmdDiff :: AppConfig -> OsPath -> OsPath -> IO ()
 cmdDiff cfg old new = do
-  tree1 <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) old
-  tree2 <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) new
+  tree1 <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (searchCfg cfg) (verbose cfg) old
+  tree2 <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (searchCfg cfg) (verbose cfg) new
   printDeltas $ diff tree1 tree2
 
 -----------
