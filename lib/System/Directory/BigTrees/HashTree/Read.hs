@@ -8,8 +8,8 @@ import Control.DeepSeq (deepseq)
 import qualified Data.ByteString.Char8 as B8
 import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (partition, sortBy)
-import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..),
+import Data.List (partition, sortBy, isInfixOf)
+import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..), NBytes(..), ModTime(..), 
                                            TreeType (..), hashLineP, nullBreakP, parseHashLine, linesP, parseTreeFileRev, hParseTreeFileRev)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes, treeName)
@@ -31,14 +31,43 @@ import System.OsPath (OsPath)
 import System.OsString (osstr)
 import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, parseFooter, commentLineP)
 
+-- { minBytes       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
+-- , maxBytes       :: Maybe Int -- ^ If >, skip. If >=, keep recursing.
+-- , maxDepth       :: Maybe Int -- ^ If <=, keep. If =, stop recursing.
+-- , minDepth       :: Maybe Int -- ^ If <, skip. Always keep recursing.
+-- , minFiles       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
+-- , maxFiles       :: Maybe Int -- ^ If >, skip. If <=, stop recursing.
+-- , minModtime     :: Maybe Int -- ^ If <, skip and stop recursing.
+-- , maxModtime     :: Maybe Int -- ^ If >, skip but keep recursing.
+-- , treeTypes      :: Maybe [Char] -- ^ If any, limit to those (+ D when recursing).
+-- , excludeRegexes :: [String]  -- ^ If any match, skip and stop recursing.
+-- , searchRegexes  :: [String]  -- ^ If any match, keep but stop recursing.
+-- HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name, Maybe LinkTarget)
+
 -- | When reading HashLines with accTrees, whether to accumulate this line or skip it.
 -- To keep the tree structure valid, should always be True when accRecurseChildren is True.
+-- TODO reorder the conditions to optimize speed
 accKeepLine :: SearchConfig -> HashLine -> Bool
-accKeepLine cfg = undefined
+accKeepLine _ hl@(ErrLine _) = False -- TODO is this how we should handle them?
+accKeepLine cfg hl@(HashLine (t, Depth d, _, ModTime mt, NBytes s, NNodes nn, p, mlt)) = all id
+  [ maybe True (s  >=) $ minBytes cfg
+  , maybe True (s  <=) $ maxBytes cfg
+  , maybe True (d  >=) $ minDepth cfg
+  , maybe True (d  <=) $ maxDepth cfg
+  , maybe True (nn >=) $ minFiles cfg
+  , maybe True (nn <=) $ maxFiles cfg
+  , maybe True (mt >=) $ minModtime cfg
+  , maybe True (mt <=) $ maxModtime cfg
+  , maybe True (show t `isInfixOf`) $ treeTypes cfg
+  , any -- TODO finish writing
+  ]
 
 -- | When reading a tree with accTrees, whether to recurse into this line's children.
 accRecurseChildren :: SearchConfig -> HashLine -> Bool
-accRecurseChildren cfg = undefined
+accRecurseChildren cfg hl@(HashLine (t, Depth i, _, mt, s, nn, p, mlt))
+  | t == D = undefined
+  | otherwise          = False -- not a Dir
+accRecurseChildren _ _ = False -- not a Dir
 
 --- read summary info from the end of the file ---
 
@@ -111,7 +140,6 @@ accTrees cfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
     then (d, Err { errMsg = m, errName = n }):cs
     else cs
 
--- HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name, Maybe LinkTarget)
 accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
 
   F -> let f = File

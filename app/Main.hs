@@ -41,7 +41,7 @@ main = do
       lstArg n = D.getAllArgs args $ D.argument n
       reqArg n = D.getArgOrExitWith ptns args $ D.argument n
       optArg n = D.getArg args $ D.longOption n
-      optInt n = (read :: String -> Int) <$> optArg n
+      optRead n = read <$> optArg n
 
   eList <- case optArg "excludes-from" of
              Nothing -> return $ excludeRegexes defaultSearchConfig
@@ -60,15 +60,15 @@ main = do
         , outFormat = optArg "out-fmt"
         , verbose   = flag "verbose"
         , searchCfg = defaultSearchConfig
-          { minBytes   = optInt "min-size"
-          , maxBytes   = optInt "max-size"
-          , minDepth   = optInt "min-depth"
-          , maxDepth   = optInt "max-depth"
-          , minFiles   = optInt "min-files"
-          , maxFiles   = optInt "max-files"
-          , minModtime = optInt "min-modtime"
-          , maxModtime = optInt "max-modtime"
-          , treeTypes      = optArg "types"
+          { minBytes   = optRead "min-size"
+          , maxBytes   = optRead "max-size"
+          , minDepth   = optRead "min-depth"
+          , maxDepth   = optRead "max-depth"
+          , minFiles   = optRead "min-files"
+          , maxFiles   = optRead "max-files"
+          , minModtime = optRead "min-modtime"
+          , maxModtime = optRead "max-modtime"
+          , treeTypes      = optArg "types" -- TODO parse TreeTypes here?
           , excludeRegexes = eList
           , searchRegexes  = sList
           }

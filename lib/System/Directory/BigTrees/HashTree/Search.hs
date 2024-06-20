@@ -18,14 +18,14 @@ import System.Directory.BigTrees.HashTree.Base -- TODO specifics
 -- building a tree, reading it from a .bigtree file, finding paths in it, and
 -- making a dupe map.
 data SearchConfig = SearchConfig
-  { minBytes       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
-  , maxBytes       :: Maybe Int -- ^ If >, skip. If >=, keep recursing.
-  , maxDepth       :: Maybe Int -- ^ If <=, keep. If =, stop recursing.
-  , minDepth       :: Maybe Int -- ^ If <, skip. Always keep recursing.
-  , minFiles       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
-  , maxFiles       :: Maybe Int -- ^ If >, skip. If <=, stop recursing.
-  , minModtime     :: Maybe Int -- ^ If <, skip and stop recursing.
-  , maxModtime     :: Maybe Int -- ^ If >, skip but keep recursing.
+  { minBytes       :: Maybe Integer -- ^ If <, skip. If <=, stop recursing.
+  , maxBytes       :: Maybe Integer -- ^ If >, skip. If >=, keep recursing.
+  , maxDepth       :: Maybe Int     -- ^ If <=, keep. If =, stop recursing.
+  , minDepth       :: Maybe Int     -- ^ If <, skip. Always keep recursing.
+  , minFiles       :: Maybe Int     -- ^ If <, skip. If <=, stop recursing.
+  , maxFiles       :: Maybe Int     -- ^ If >, skip. If <=, stop recursing.
+  , minModtime     :: Maybe Integer -- ^ If <, skip and stop recursing.
+  , maxModtime     :: Maybe Integer -- ^ If >, skip but keep recursing.
   , treeTypes      :: Maybe [Char] -- ^ If any, limit to those (+ D when recursing).
   , excludeRegexes :: [String]  -- ^ If any match, skip and stop recursing.
   , searchRegexes  :: [String]  -- ^ If any match, keep but stop recursing.
