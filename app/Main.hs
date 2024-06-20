@@ -40,7 +40,7 @@ main = do
       short n = D.getArgOrExitWith ptns args $ D.shortOption n
       flag  n = D.isPresent args $ D.shortOption n
       shortO n = D.getArg args $ D.shortOption n
-  eList <- if flag 'e'
+  eList <- if flag 'e' -- TODO update this
              then short 'e' >>= readFile <&> lines
              else return $ exclude defaultConfig
   tPath <- case shortO 't' of
@@ -54,7 +54,7 @@ main = do
         -- , force    = flag 'f'
         , check    = flag 'c'
         , exclude  = eList
-        , format   = shortO 'f'
+        , outfmt   = shortO 'f'
         , regex    = shortO 'r'
         }
 

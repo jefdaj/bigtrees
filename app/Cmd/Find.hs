@@ -32,7 +32,7 @@ import Data.Functor ((<&>))
 cmdFind :: Config -> OsPath -> IO ()
 cmdFind cfg path = do
   tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
-  let paths = listTreePaths (regex cfg) (fromMaybe "" $ format cfg) tree
+  let paths = listTreePaths (regex cfg) (fromMaybe "" $ outfmt cfg) tree
   case txt cfg of
     Nothing -> mapM_ B8.putStrLn paths
     Just p  -> SFO.writeFile p $ B8.fromStrict $ B8.unlines paths

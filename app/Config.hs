@@ -26,7 +26,7 @@ data Config
       -- , force    :: Bool
       , check    :: Bool
       , exclude  :: [String]
-      , format   :: Maybe String
+      , outfmt   :: Maybe String
       , regex    :: Maybe String
       }
   deriving (Show)
@@ -39,7 +39,7 @@ defaultConfig = Config
   -- , force    = False
   , check    = True
   , exclude  = ["\\.sw.*", "^\\.DS_Store$", "\\.plist$", "^\\.snakemake.*"]
-  , format   = Nothing
+  , outfmt   = Nothing
   , regex    = Nothing
   }
 

@@ -21,7 +21,6 @@ import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
 
-
 -------------------------------------
 -- list paths, but don't print yet --
 -------------------------------------

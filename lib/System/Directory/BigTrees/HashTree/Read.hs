@@ -31,6 +31,34 @@ import System.OsString (osstr)
 import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, parseFooter, commentLineP)
 
 
+-- | All the config relevant to whether we should keep or drop the current node
+-- when reading a tree.
+data ReadNodeConfig = ReadNodeConfig
+  { excludeRegexes :: [String]
+  , maxFiles       :: Maybe Int
+  , minDepth       :: Maybe Int
+  , minModtime     :: Maybe Int
+  }
+  deriving (Read, Show, Eq, Ord, Generic, NFData)
+
+-- | All the config relevant to whether we should recursve further into the
+-- tree when reading it or skip child nodes.
+data ReadRecurseConfig = ReadRecurseConfig
+  { maxDepth      :: Maybe Int
+  , maxModtime    :: Maybe Int
+  , minBytes      :: Maybe Int
+  , minFiles      :: Maybe Int
+  , searchRegexes :: [String]
+  }
+  deriving (Read, Show, Eq, Ord, Generic, NFData)
+
+-- | All config relevant to reading a tree.
+data ReadConfig = ReadConfig
+  { readNodeConfig    :: ReadNodeConfig
+  , readRecurseConfig :: ReadRecurseConfig
+  }
+  deriving (Read, Show, Eq, Ord, Generic, NFData)
+
 
 --- read summary info from the end of the file ---
 
