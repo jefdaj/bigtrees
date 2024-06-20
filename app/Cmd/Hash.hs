@@ -2,7 +2,7 @@ module Cmd.Hash where
 
 -- TODO guess and check hashes
 
-import Config (Config (..), defaultConfig)
+import Config (AppConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
@@ -22,7 +22,7 @@ import Test.Tasty.Golden (findByExtension, goldenVsString)
 
 --import Debug.Trace
 
-cmdHash :: Config -> OsPath -> IO ()
+cmdHash :: AppConfig -> OsPath -> IO ()
 cmdHash cfg path = bracket open close write
   where
     open = case txt cfg of
@@ -46,7 +46,7 @@ cmdHash cfg path = bracket open close write
 stripComments :: String -> String
 stripComments = unlines . filter (\l -> not ("#" `isPrefixOf` l)) . lines
 
-hashTarXzAction :: Config -> FilePath -> IO BLU.ByteString
+hashTarXzAction :: AppConfig -> FilePath -> IO BLU.ByteString
 hashTarXzAction cfg xzPath = do
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     let dPath = tmpDir </> dropExtension (takeBaseName xzPath) -- assumes .tar.something
@@ -57,7 +57,7 @@ hashTarXzAction cfg xzPath = do
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString $ stripComments out
 
-mkHashTarXzTest :: Config -> FilePath -> TestTree
+mkHashTarXzTest :: AppConfig -> FilePath -> TestTree
 mkHashTarXzTest cfg xzPath =
   -- TODO different extension since these aren't technically the same without comments?
   -- TODO something cleaner for os-specific golden files
@@ -74,4 +74,4 @@ test_hash_tarxz = do
   -- putStrLn $ show xzPaths
   return $ testGroup
     "hash files extracted from tarballs"
-    [mkHashTarXzTest defaultConfig p | p <- xzPaths']
+    [mkHashTarXzTest defaultAppConfig p | p <- xzPaths']

@@ -85,16 +85,16 @@ readTreeLines path = do
 --- read the main tree ---
 
 -- TODO rewrite with streaming backwards
-readTree :: Maybe Int -> OsPath -> IO ProdTree
+readTree :: SearchConfig -> OsPath -> IO ProdTree
 -- readTree md path = deserializeTree md <$> SFO.readFile' path
-readTree md f = SFO.withFile f ReadMode $ \h -> do
+readTree cfg f = SFO.withFile f ReadMode $ \h -> do
   blksize <- getBlockSize f
-  hReadTree md blksize h
+  hReadTree cfg blksize h
 
-hReadTree :: Maybe Int -> Integer -> Handle -> IO ProdTree
-hReadTree md blksize hdl = do
+hReadTree :: SearchConfig -> Integer -> Handle -> IO ProdTree
+hReadTree cfg blksize hdl = do
   hls <- hParseTreeFileRev blksize hdl
-  return $ case foldr accTrees [] hls of
+  return $ case foldr (accTrees cfg) [] hls of
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
     ((_, tree):_) -> tree
 
@@ -130,13 +130,13 @@ hReadTree md blksize hdl = do
 
 -- TODO verify nfiles here, or just ignore it? should always be recalculated anyway
 -- TODO use a more efficient list append type? or reverse order?
-accTrees :: HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
+accTrees :: SearchConfig -> HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 
-accTrees (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} (d, Err { errMsg = m, errName = n }):cs
+accTrees _ (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} (d, Err { errMsg = m, errName = n }):cs
 
 -- TODO LinkLine too now? Damn gettin' complicated
 
-accTrees (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
+accTrees _ (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
 
   F -> let f = File
                  { fileData = ()
@@ -195,8 +195,8 @@ partitionChildrenSiblings i cs = (children, others)
     children = takeWhile (\(Depth i2, _) -> i2 > i) cs
     others   = drop (length children) cs
 
-readTestTree :: Maybe Int -> Bool -> [String] -> OsPath -> IO TestTree
-readTestTree md = buildTree SFO.readFile'
+readTestTree :: SearchConfig -> Bool -> OsPath -> IO TestTree
+readTestTree cfg = buildTree cfg SFO.readFile'
 
 --- attoparsec parsers ---
 

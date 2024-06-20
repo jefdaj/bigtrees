@@ -9,7 +9,7 @@ module Cmd.Find
 
 -- TODO use the actual path passed as the first breadcrumb? would match unix find
 
-import Config (Config (..), defaultConfig)
+import Config (AppConfig (..), defaultAppConfig)
 import Control.Concurrent.Thread.Delay (delay)
 import Data.List (sort)
 import System.Directory.BigTrees (TestTree, listTreePaths, readOrBuildTree, treeName, unName,
@@ -29,7 +29,7 @@ import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
 import Data.Functor ((<&>))
 
-cmdFind :: Config -> OsPath -> IO ()
+cmdFind :: AppConfig -> OsPath -> IO ()
 cmdFind cfg path = do
   tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
   let paths = listTreePaths (regex cfg) (fromMaybe "" $ outfmt cfg) tree
@@ -56,7 +56,7 @@ cmdFindUnixFind t =
     SDO.createDirectoryIfMissing False treeDir'
     writeTestTreeDir treeDir' t
 
-    let cfg = defaultConfig { txt = Just myFindOut' }
+    let cfg = defaultAppConfig { txt = Just myFindOut' }
     cmdFind cfg treeDir'
 
     -- Unix find will print whole absolute paths here, so we need to invoke it

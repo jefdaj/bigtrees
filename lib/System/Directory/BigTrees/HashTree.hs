@@ -80,7 +80,7 @@ import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, path
 import System.Directory.BigTrees.HashTree.Read (accTrees, hReadTree, 
                                                 readLastHashLineAndFooter,
                                                 readTestTree, readTree)
-import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..))
+import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..), emptySearchConfig)
 import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
 import System.IO.Temp (withSystemTempDirectory)
@@ -96,12 +96,12 @@ import qualified Test.HUnit as HU
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
 -- TODO don't assume??
-readOrBuildTree :: Bool -> Maybe Int -> [String] -> OsPath -> IO ProdTree
-readOrBuildTree verbose mmaxdepth excludes path = do
+readOrBuildTree :: SearchConfig -> Bool -> OsPath -> IO ProdTree
+readOrBuildTree cfg verbose path = do
   isDir  <- SDO.doesDirectoryExist path
   isFile <- SDO.doesFileExist      path
-  if      isFile then readTree mmaxdepth path
-  else if isDir then buildProdTree verbose excludes path
+  if      isFile then readTree cfg path
+  else if isDir then buildProdTree cfg verbose path
   else error $ "No such file: " ++ show path
 
 -- TODO test tree in haskell
@@ -129,7 +129,7 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   knob <- K.newKnob mempty
   (t1 :: ProdTree) <- pick arbitrary
   K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree [] h t1 -- TODO hClose?
-  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree Nothing 4096
+  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree emptySearchConfig 4096
   assert $ t2 == t1
 
 bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()
@@ -146,7 +146,7 @@ roundtripProdTreeToBigtreeFile t =
     path' <- encodeFS path
     hClose hdl
     writeTree [] path' t -- TODO exclude defaultConfig?
-    readTree Nothing path'
+    readTree emptySearchConfig path'
 
 prop_roundtrip_ProdTree_to_bigtree_file :: Property
 prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
@@ -176,7 +176,7 @@ roundtripTestTreeToTmpdir t =
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
     let treeRootDir = tmpDir' </> unName (treeName t)
-    readTestTree Nothing False [] treeRootDir
+    readTestTree emptySearchConfig False treeRootDir
     -- parent <- readTestTree Nothing False [] tmpDir'
     -- return $ head $ dirContents parent
 
@@ -197,7 +197,7 @@ unit_tree_from_bad_path_is_Err =
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
     let badPath = tmpDir' </> [osp|doesnotexist|]
-    tree <- buildProdTree False [] badPath
+    tree <- buildProdTree emptySearchConfig False badPath
     HU.assertBool "tree built from non-existent path should be Err" $ isErr tree
 
 unit_roundtrip_Err_to_bigtree_file :: HU.Assertion
@@ -205,7 +205,7 @@ unit_roundtrip_Err_to_bigtree_file = do
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
     let badPath = tmpDir' </> [osp|doesnotexist|]
-    t1 <- buildProdTree False [] badPath
+    t1 <- buildProdTree emptySearchConfig False badPath
     t2 <- roundtripProdTreeToBigtreeFile t1
     -- TODO is there a good way to communicate the name to the parser?
     let t2' = renameRoot (Name [osp|doesnotexist|]) t2
@@ -219,7 +219,7 @@ unit_buildProdTree_catches_permission_error = do
     badPath' <- encodeFS badPath
     _ <- readCreateProcess ((proc "touch" [badPath]      ) {cwd = Just tmpDir}) ""
     _ <- readCreateProcess ((proc "chmod" ["-r", badPath]) {cwd = Just tmpDir}) ""
-    t1 <- buildProdTree False [] badPath'
+    t1 <- buildProdTree emptySearchConfig False badPath'
     HU.assertBool "Err looks right" $ errLooksRight t1
   where
     badName = "file-without-read-permission.txt"

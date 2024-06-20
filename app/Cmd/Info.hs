@@ -1,6 +1,6 @@
 module Cmd.Info where
 
-import Config (Config (..))
+import Config (AppConfig (..))
 import Control.Exception.Safe
 import System.IO
 -- import System.Directory.BigTrees.HashTree
@@ -14,7 +14,7 @@ import System.Directory.BigTrees.HeadFoot (Footer, Header (..), scanSeconds, rea
 -- import qualified Data.ByteString.Short as BS
 import System.OsPath (OsPath, encodeFS)
 
-cmdInfo :: Config -> OsPath -> IO ()
+cmdInfo :: AppConfig -> OsPath -> IO ()
 cmdInfo cfg path = do
   mH  <- readHeader path
   mLF <- readLastHashLineAndFooter path

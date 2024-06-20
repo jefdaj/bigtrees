@@ -33,9 +33,8 @@ data SearchConfig = SearchConfig
 
 instance NFData SearchConfig
 
--- TODO instance Default?
-defaultSearchConfig :: SearchConfig
-defaultSearchConfig = SearchConfig
+emptySearchConfig :: SearchConfig
+emptySearchConfig = SearchConfig
   { minBytes       = Nothing
   , maxBytes       = Nothing
   , maxDepth       = Nothing
@@ -44,8 +43,14 @@ defaultSearchConfig = SearchConfig
   , maxFiles       = Nothing
   , minModtime     = Nothing
   , maxModtime     = Nothing
-  , excludeRegexes = ["\\.sw.*", "^\\.DS_Store$", "\\.plist$", "^\\.snakemake.*"]
+  , excludeRegexes = []
   , searchRegexes  = []
+  }
+
+-- TODO instance Default?
+defaultSearchConfig :: SearchConfig
+defaultSearchConfig = emptySearchConfig
+  { excludeRegexes = ["\\.sw.*", "^\\.DS_Store$", "\\.plist$", "^\\.snakemake.*"]
   }
 
 -------------------

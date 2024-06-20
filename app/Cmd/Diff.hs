@@ -4,7 +4,7 @@ module Cmd.Diff where
 
 -- TODO guess and check hashes
 
-import Config (Config (..), defaultConfig)
+import Config (AppConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
@@ -18,7 +18,7 @@ import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
 
-cmdDiff :: Config -> OsPath -> OsPath -> IO ()
+cmdDiff :: AppConfig -> OsPath -> OsPath -> IO ()
 cmdDiff cfg old new = do
   tree1 <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) old
   tree2 <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) new
@@ -40,7 +40,7 @@ diffTarXz xz1 xz2 = do
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
     _ <- readCreateProcess ((proc "tar" ["-xf", xz2']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultConfig d1' d2'
+    (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultAppConfig d1' d2'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 

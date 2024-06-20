@@ -1,6 +1,6 @@
 module Cmd.SetAdd (cmdSetAdd) where
 
-import Config (Config (..), log)
+import Config (AppConfig (..), log)
 import Control.DeepSeq (force)
 import Control.Monad (foldM, forM, forM_)
 import Data.Attoparsec.ByteString.Char8 (char, parseOnly)
@@ -19,14 +19,14 @@ import System.IO (IOMode (..), withFile)
 import System.OsPath (OsPath)
 import Text.Pretty.Simple (pPrint)
 
-readTreeHashList :: Config -> Maybe Note -> OsPath -> IO HashList
+readTreeHashList :: AppConfig -> Maybe Note -> OsPath -> IO HashList
 readTreeHashList cfg mn path = do
   ls <- readTreeLines path
   let hl = mapMaybe (hashSetDataFromLine mn) ls
   log cfg $ "adding hashes from " ++ show path
   return hl
 
-readHashListIO :: Config -> OsPath -> IO HashList
+readHashListIO :: AppConfig -> OsPath -> IO HashList
 readHashListIO cfg path = do
   log cfg $ "adding hashes from " ++ show path
   eHL <- readHashList path
@@ -34,7 +34,7 @@ readHashListIO cfg path = do
     Left msg -> error $ "failed to read " ++ show path
     Right hl -> return hl
 
-cmdSetAdd :: Config -> OsPath -> Maybe String -> [OsPath] -> IO ()
+cmdSetAdd :: AppConfig -> OsPath -> Maybe String -> [OsPath] -> IO ()
 cmdSetAdd _ _ _ [] = return () -- Docopt should prevent this, but just in case
 cmdSetAdd cfg setPath mNoteStr treePaths = do
 

@@ -23,6 +23,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
                                                 hashContents, sumNodes, treeModTime, treeNBytes,
                                                 treeName, sortContentsByName)
+import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
 import System.Directory.BigTrees.Name
 import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Tree as DT
@@ -57,15 +58,15 @@ import Text.Regex.TDFA.ByteString
 --              }
 
 -- TODO double check the breadcrumbs aren't backward
-keepPath :: [String] -> OsPath -> IO Bool
-keepPath excludes p = do
+keepPath :: SearchConfig -> OsPath -> IO Bool
+keepPath cfg p = do
   path <- decodeFS p
-  return $ not $ any (path =~) excludes
+  return $ not $ any (path =~) (excludeRegexes cfg)
 
-regexFilterTrees :: [String] -> OsPath -> [DT.DirTree a] -> IO [DT.DirTree a]
-regexFilterTrees excludes rootDir trees = filterM noExclude trees
+regexFilterTrees :: SearchConfig -> OsPath -> [DT.DirTree a] -> IO [DT.DirTree a]
+regexFilterTrees cfg rootDir trees = filterM noExclude trees
   where
-    noExclude t = keepPath excludes $ rootDir </> (DT.name t)
+    noExclude t = keepPath cfg $ rootDir </> (DT.name t)
 
 -- TODO hey is this not that hard to swap out for my new version?
 -- TODO have this apply to the whole paths, not just one name/component?
@@ -80,18 +81,18 @@ regexFilterTrees excludes rootDir trees = filterM noExclude trees
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
 -- TODO rename buildProdTreeL?
-buildProdTree :: Bool -> [String] -> OsPath -> IO ProdTree
-buildProdTree = buildTree (return . const ())
+buildProdTree :: SearchConfig -> Bool -> OsPath -> IO ProdTree
+buildProdTree cfg = buildTree cfg (return . const ())
 
 -- TODO rename buildTreeL?
-buildTree :: (OsPath -> IO a) -> Bool -> [String] -> OsPath -> IO (HashTree a)
-buildTree readFileFn beVerbose excludes path = do
+buildTree :: SearchConfig -> (OsPath -> IO a) -> Bool -> OsPath -> IO (HashTree a)
+buildTree cfg readFileFn beVerbose path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
   -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
   tree <- DT.readDirectoryWithL readFileFn path -- TODO need to rename root here?
   -- putStrLn $ show tree
-  buildTree' readFileFn beVerbose (Depth 0) excludes tree
+  buildTree' cfg readFileFn beVerbose (Depth 0) tree
 
 -- This is mainly meant as an error handler, but also works for the trivial
 -- case of re-wrapping directory-tree error nodes.
@@ -129,7 +130,7 @@ pathIsInTree (Depth d) (Just path) = notAbsolute && foldHeight comps < d
 -- contents) should be strict, because we want to be able to immediately wrap
 -- any IO errors in an Err tree constructor.
 -- TODO is there a safer way to do that with lazy evaluation?
-buildTree' :: (OsPath -> IO a) -> Bool -> Depth -> [String] -> DT.AnchoredDirTree a -> IO (HashTree a)
+buildTree' :: SearchConfig -> (OsPath -> IO a) -> Bool -> Depth -> DT.AnchoredDirTree a -> IO (HashTree a)
 
 buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
 
@@ -137,7 +138,7 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
 -- We handle them all here.
 -- Note that readFileFn and hashFile both read the file, but in practice that
 -- isn't a problem because readFileFn is a no-op in production.
-buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n) $ do
+buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n) $ do
   let fPath = a </> n
   notBroken <- SDO.doesPathExist      fPath
   isLink    <- SDO.pathIsSymbolicLink fPath
@@ -216,7 +217,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = handleAny (mkErrTree 
         , fileData = fd
         }
 
-buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTree n) $ do
+buildTree' cfg readFileFn v depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTree n) $ do
 
   -- TODO of course, this is forcing the whole tree! have to be lazier about it
   -- (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
@@ -225,10 +226,10 @@ buildTree' readFileFn v depth es (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTre
   -- (maybe it's handled by sorting in directory-tree anyway now?)
   -- let cs' = sortBy (compare `on` DT.name) cs
   -- TODO also do this while reading a tree, right? apply filters in a uniform way everywhere!
-  cs'' <- regexFilterTrees es a cs
+  cs'' <- regexFilterTrees cfg a cs
   let root = a </> n
       -- bang t has no effect on memory usage
-      hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
+      hashSubtree t = unsafeInterleaveIO $ buildTree' cfg readFileFn v (depth+1) $ root DT.:/ t
 
   -- this works, but doesn't affect memory usage:
   -- subTrees <- (if depth > 10 then M.forM else P.forM) cs' hashSubtree

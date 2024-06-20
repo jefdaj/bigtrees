@@ -18,7 +18,7 @@ import Test.Tasty.Golden (goldenVsString)
 
 cmdDupes :: AppConfig -> OsPath -> IO ()
 cmdDupes cfg path = do
-  tree <- BT.readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
+  tree <- BT.readOrBuildTree (verbose cfg) (searchCfg cfg) (exclude cfg) path
   -- TODO rewrite sorting with lower memory usage
   -- let dupes = runST $ BT.dupesByNNodes =<< BT.pathsByHash tree
   -- printDupes $ map sortDupePaths $ simplifyDupes BT.dupes
