@@ -54,7 +54,7 @@ main = do
         -- , force    = flag 'f'
         , check    = flag 'c'
         , exclude  = eList
-        , metafmt  = shortO 'm'
+        , format   = shortO 'f'
         , regex    = shortO 'r'
         }
 

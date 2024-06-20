@@ -32,10 +32,10 @@ import Data.Functor ((<&>))
 cmdFind :: Config -> OsPath -> IO ()
 cmdFind cfg path = do
   tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
-  let paths = listTreePaths (regex cfg) (fromMaybe "" $ metafmt cfg) tree
+  let paths = listTreePaths (regex cfg) (fromMaybe "" $ format cfg) tree
   case txt cfg of
     Nothing -> mapM_ B8.putStrLn paths
-    Just p  -> SFO.writeFile p $ B8.fromStrict $ B8.unlines paths -- TODO does this write lazily? we want it to
+    Just p  -> SFO.writeFile p $ B8.fromStrict $ B8.unlines paths
 
 readAndSortLines :: OsPath -> IO B8.ByteString
 readAndSortLines path = SFO.readFile' path <&> (B8.unlines . sort . B8.lines)

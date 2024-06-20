@@ -3,11 +3,11 @@ Create and manipulate hash trees representing collections of files.
 Usage:
   bigtrees version
   bigtrees [-v] info PATH
-  bigtrees [-v] hash [-e EXCLUDE] [-o OUT] PATH
+  bigtrees [-v] hash [-e EXCLUDE] [-o OUTFILE] PATH
   bigtrees [-v] diff OLD NEW
-  bigtrees [-v] dupes [-o OUT] [--max-depth N] HASHES
+  bigtrees [-v] dupes [-o OUTFILE] [--max-depth N] HASHES
   bigtrees [-v] set-add -s SET [-n NOTE] PATH...
-  bigtrees [-v] find [-m METAFMT] [-r REGEX] [--min-depth N] [--max-depth N] [-o OUT] PATH
+  bigtrees [-v] find [-f FORMAT] [-r REGEX | --regexes-from FILE] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [-o OUTFILE] PATH
 
 Commands:
   info       Succinct summary of a tree file: stats, etc
@@ -16,29 +16,42 @@ Commands:
   hash       Reads files + folders and prints their hashes to stdout.
 
 Options:
-  -v --verbose             Explain each step as it runs.
-  -e --exclude EXCLUDE     Read a list of globs and exclude any files matching it.
-                           If none given, the list defaults to [".git*"]
-  -o --out OUT             Stream output to a file rather than stdout.
-  --min-depth N            Look only at nodes at least N deep in the folder structure.
-  --max-depth N            Look for dupes only N levels into the folder structure.
-                           Drastically reduces time and memory use when reading hashes
-                           from a file, without affecting accuracy up to the max depth.
-                           WARNING: only works on a saved hashes file. No effect
-                           when reading a tree of files and deduping them
-                           at the same time.
-  --min-files N            Find nodes containing at least N files.
-  --max-files N            Find nodes containing at most N files.
-  --min-size BYTES         Find nodes containing at least BYTES (human-readable format OK).
-  --max-size BYTES         Find nodes containing at most BYTES (human-readable format OK).
-  --min-modtime DATE       Find nodes modified on or after DATE.
-  --max-modtime DATE       Find nodes modified on or before DATE.
-  -m --meta-fmt METAFMT    Optional space-separated metadata fields to print at the
-                           beginning of each line. Options are: "h" (hash),
-                           "t" (type), "d" (depth) For example: "ht" -> hash, type
-  -r --regex REGEX         Regex filter filenames.
-  -s --set SET             Bigset to operate on.
-  -n --note NOTE           Replace all hashset notes with the given string.
+
+  -v --verbose          Explain each step as it runs.
+
+  -e --exclude EXCLUDE  Read a list of globs and exclude any files matching it.
+                        If none given, the list defaults to [".git*"]
+
+  -o --out OUTFILE      Stream output to a file rather than stdout.
+
+  -f --format FORMAT    Optional space-separated metadata fields to print at the
+                        beginning of each line. Options are: "h" (hash),
+                        "t" (type), "d" (depth) For example: "ht" -> hash, type
+
+  -r --regex REGEX      Single regular expression to test out filename filtering.
+  --regexes-from FILE   Load a map of search labels -> regexes. (TODO explain format below)
+
+  -s --set SET          Bigset to operate on.
+  -n --note NOTE        Replace all hashset notes with the given string.
+
+  --min-files N         Find nodes containing at least N files.
+  --max-files N         Find nodes containing at most N files.
+  --min-size N          Find nodes containing at least N bytes (TODO parse human readable)
+  --max-size N          Find nodes containing at most N bytes (TODO parse human readable)
+  --min-modtime N       Find nodes modified on or after unix time N (TODO parse human readable)
+  --max-modtime N       Find nodes modified on or before unix time N (TODO parse human readable)
+  --min-depth N         Look only at nodes at least N deep in the folder structure.
+  --max-depth N         Look for dupes only N levels into the folder structure.
+                        Drastically reduces time and memory use when reading hashes
+                        from a file, without affecting accuracy up to the max depth.
+                        WARNING: only works on a saved hashes file. No effect
+                        when reading a tree of files and deduping them
+                        at the same time.
+
+  --types TYPES         Find nodes of the specified tree type(s).
+                        Options are: D=Dir, F=File, L=Symlink (content in tree),
+                        B=Symlink ("broken", or potentially broken by pointing outside tree),
+                        E=Error. For example: "TFL" or "BE".
 
 Conditions:
   type (file, dir, graft)
