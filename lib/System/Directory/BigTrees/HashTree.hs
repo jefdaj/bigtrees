@@ -75,6 +75,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 treeModTime, treeNBytes, treeName, treeType, treeEqIgnoringModTime)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
+import System.Directory.BigTrees.HashTree.Prune -- TODO specifics
 import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)
 import System.Directory.BigTrees.HashTree.Read (accTrees, hReadTree, 
                                                 readLastHashLineAndFooter,

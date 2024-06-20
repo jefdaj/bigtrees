@@ -32,6 +32,7 @@ library
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Edit
       System.Directory.BigTrees.HashTree.Find
+      System.Directory.BigTrees.HashTree.Prune
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
@@ -257,6 +258,7 @@ test-suite test-lib
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Edit
       System.Directory.BigTrees.HashTree.Find
+      System.Directory.BigTrees.HashTree.Prune
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
@@ -340,6 +342,7 @@ benchmark test-bench
       System.Directory.BigTrees.HashTree.Build
       System.Directory.BigTrees.HashTree.Edit
       System.Directory.BigTrees.HashTree.Find
+      System.Directory.BigTrees.HashTree.Prune
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
