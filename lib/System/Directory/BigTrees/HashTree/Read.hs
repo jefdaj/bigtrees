@@ -84,9 +84,7 @@ readTreeLines path = do
 
 --- read the main tree ---
 
--- TODO rewrite with streaming backwards
 readTree :: SearchConfig -> OsPath -> IO ProdTree
--- readTree md path = deserializeTree md <$> SFO.readFile' path
 readTree cfg f = SFO.withFile f ReadMode $ \h -> do
   blksize <- getBlockSize f
   hReadTree cfg blksize h
@@ -98,43 +96,15 @@ hReadTree cfg blksize hdl = do
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
     ((_, tree):_) -> tree
 
-  -- TODO rewrite with streaming backwards
-  -- bs <- B8.hGetContents hdl
-  -- return $ deserializeTree Nothing bs
-
--- TODO error on null string/lines?
--- TODO wtf why is reverse needed? remove that to save RAM
--- TODO refactor so there's a proper buildTree function and this uses it
--- TODO what about files with newlines in them? might need to split at \n(file|dir)
--- TODO also return header + footer?
--- TODO should this return a *list* of trees? or is only one possible now that forests are gone?
--- deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
--- deserializeTree md bs = case parseTreeFile md bs of
---   Left msg -> Err { errName = Name [osstr|deserializeTree|], errMsg = ErrMsg msg }
---   Right (h, ls, f) -> case foldr accTrees [] $ reverse ls of -- TODO leak here?
---     []            -> Err { errName = Name [osstr|deserializeTree|], errMsg = ErrMsg "no HashLines parsed" } -- TODO better name?
---     ((_, tree):_) -> tree
-
 {- This one is confusing! It accumulates a list of trees and their depth,
  - and when it comes across a dir it uses the depths to determine
  - which files are children to put inside it vs which are siblings.
- -
- - If a value for d (max depth) is given, any line with a depth above that
- - will be dropped from the list to decrease memory usage.
+ - TODO error on null string/lines?
+ - TODO should this return a *list* of trees? or is only one possible now that forests are gone?
  -}
--- accTrees :: Maybe Int -> HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
--- accTrees Nothing hl cs = accTrees' hl cs
--- accTrees (Just d) hl@(_, depth, _, _) cs
---   | depth > d = cs
---   | otherwise  = accTrees' hl cs
-
--- TODO verify nfiles here, or just ignore it? should always be recalculated anyway
--- TODO use a more efficient list append type? or reverse order?
 accTrees :: SearchConfig -> HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 
 accTrees _ (ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-} (d, Err { errMsg = m, errName = n }):cs
-
--- TODO LinkLine too now? Damn gettin' complicated
 
 accTrees _ (HashLine (t, Depth i, h, mt, s, _, p, mlt)) cs = case t of
 
