@@ -32,9 +32,10 @@ Options:
                          TODO add regex search labels here
                          TODO caps should also work
 
-  --search-label LABEL   Single label to test --out-fmt printing.
   --search-regex REGEX   Single regular expression to test filtering.
-  --searches-from SFILE  Load a map of search labels -> regexes. (TODO explain format below)
+  --search-label LABEL   Single label to test --out-fmt printing. Output is tab separated,
+                         so spaces are fine here. [default: "unlabeled-search"]
+  --searches-from SFILE  Load a map of search labels -> regexes. (TODO explain format)
 
   --set SET              Bigset to operate on.
   --note NOTE            Replace all hashset notes with the given string.

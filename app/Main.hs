@@ -12,7 +12,7 @@ import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
 import System.Directory.BigTrees (NBytes(..), Depth(..), NNodes(..), ModTime(..), TreeType(..))
-import Config (AppConfig (..), SearchConfig(..), defaultAppConfig, defaultSearchConfig)
+import Config (AppConfig (..), SearchConfig(..), defaultAppConfig, defaultSearchConfig, parseLabeledSearchStrings)
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
 import System.Environment (getArgs, setEnv)
@@ -22,6 +22,7 @@ import Text.Pretty.Simple (pPrint)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.OsPath (OsPath, encodeFS)
+import Data.Maybe (fromJust)
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -49,10 +50,23 @@ main = do
              Just f  -> readFile f <&> lines -- TODO more detailed parsing?
 
   sList <- case optArg "searches-from" of
-             Just f  -> readFile f <&> lines -- TODO more detailed parsing?
+
+             -- get searches + labels from the file if given
+             Just f -> do
+               txt <- readFile f
+               case parseLabeledSearchStrings txt of
+                 Left  msg -> error $ show msg -- failed to parse file
+                 Right lrs -> return lrs
+
+             -- if no file, look for a single search + label in cli args
              Nothing -> case optArg "search-regex" of
+
+               -- regex given; return it along with possibly-default label
+               Just r -> let label = fromJust $ optArg "search-label"
+                         in return [(label, [r])]
+
+               -- no regex given; use default (empty) search list
                Nothing -> return $ searchRegexes defaultSearchConfig
-               Just r  -> return [r]
 
   oPath <- case optArg "output" of
              Nothing -> return Nothing

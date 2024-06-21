@@ -59,11 +59,6 @@ module System.Directory.BigTrees
   -- , serializeTree
   , treeContainsHash
   , treeContainsPath
-  , SearchConfig(..)
-  , emptySearchConfig
-  , defaultSearchConfig
-  , listTreePaths
-  , pathMatches
   , treeName
   , treeHash
   , treeNBytes
@@ -72,6 +67,16 @@ module System.Directory.BigTrees
   , readTreeLines
   , getTreeSize
   , zeroModTime
+
+  -- search
+  , SearchConfig(..)
+  , emptySearchConfig
+  , defaultSearchConfig
+  , listTreePaths
+  , SearchLabel
+  , SearchString
+  , LabeledSearchStrings
+  , parseLabeledSearchStrings
 
   -- hashset
   , SetData(..)
@@ -133,10 +138,10 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dr
                                                 treeModTime, treeNBytes, treeName, zeroModTime)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Find (listTreePaths, pathMatches)
+import System.Directory.BigTrees.HashTree.Find (listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter,
                                                 readTree, readTreeLines)
-import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..), emptySearchConfig, defaultSearchConfig)
+import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..), emptySearchConfig, defaultSearchConfig, SearchLabel, SearchString, LabeledSearchStrings, parseLabeledSearchStrings)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumbs2bs, bs2n, fp2n,

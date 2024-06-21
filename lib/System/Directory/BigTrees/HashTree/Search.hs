@@ -14,22 +14,28 @@ import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
 import System.Directory.BigTrees.HashTree.Base -- TODO specifics
 
+type SearchLabel = String -- TODO bytestring? newtype?
+
+-- | We store them as Strings to keep the config simple, then compile in listTreePaths.
+type SearchString = String
+
+type LabeledSearchStrings = [(SearchLabel, [SearchString])]
 
 -- | All the info relevant to searching a tree. Used in different ways when
 -- building a tree, reading it from a .bigtree file, finding paths in it, and
 -- making a dupe map.
 data SearchConfig = SearchConfig
-  { minBytes       :: Maybe NBytes     -- ^ If <, skip. If <=, stop recursing.
-  , maxBytes       :: Maybe NBytes     -- ^ If >, skip. If >=, keep recursing.
-  , maxDepth       :: Maybe Depth      -- ^ If <=, keep. If =, stop recursing.
-  , minDepth       :: Maybe Depth      -- ^ If <, skip. Always keep recursing.
-  , minFiles       :: Maybe NNodes     -- ^ If <, skip. If <=, stop recursing.
-  , maxFiles       :: Maybe NNodes     -- ^ If >, skip. If <=, stop recursing.
-  , minModtime     :: Maybe ModTime    -- ^ If <, skip and stop recursing.
-  , maxModtime     :: Maybe ModTime    -- ^ If >, skip but keep recursing.
-  , treeTypes      :: Maybe [TreeType] -- ^ If any, limit to those (+ D when recursing).
-  , excludeRegexes :: [String]         -- ^ If any match, skip and stop recursing.
-  , searchRegexes  :: [String]         -- ^ If any match, keep but stop recursing.
+  { minBytes       :: Maybe NBytes
+  , maxBytes       :: Maybe NBytes
+  , maxDepth       :: Maybe Depth
+  , minDepth       :: Maybe Depth
+  , minFiles       :: Maybe NNodes
+  , maxFiles       :: Maybe NNodes
+  , minModtime     :: Maybe ModTime
+  , maxModtime     :: Maybe ModTime
+  , treeTypes      :: Maybe [TreeType]
+  , excludeRegexes :: [String]
+  , searchRegexes  :: LabeledSearchStrings
   }
   deriving (Read, Show, Eq, Ord, Generic)
 
@@ -55,6 +61,9 @@ defaultSearchConfig :: SearchConfig
 defaultSearchConfig = emptySearchConfig
   { excludeRegexes = ["\\.sw.*", "^\\.DS_Store$", "\\.plist$", "^\\.snakemake.*"]
   }
+
+parseLabeledSearchStrings :: String -> Either String LabeledSearchStrings
+parseLabeledSearchStrings = undefined
 
 -------------------
 -- search a tree --
