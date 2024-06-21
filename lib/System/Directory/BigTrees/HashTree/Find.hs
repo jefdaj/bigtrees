@@ -34,7 +34,7 @@ import Debug.Trace
  -}
 listTreePaths :: SearchConfig -> String -> HashTree a -> [B8.ByteString]
 listTreePaths cfg fmt =
-  let lrs = compileRegexes $ searchRegexes cfg
+  let lrs = compileRegexes $ let rs = searchRegexes cfg in traceShow rs rs
   in case mkLineMetaFormatter fmt of
        (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
        (Right fmtFn ) -> listTreePaths' cfg lrs fmtFn (Depth 0) []
@@ -64,14 +64,12 @@ listTreePaths' cfg lrs fmtFn (Depth d) ns t =
      -- we already have the one unique top-level match we want.
      -- else if pathMatches lrs ns' then curPaths
      else if findKeepNode cfg (Depth d) t then
-       case findLabelNode cfg lrs ns of
-         Nothing -> [] -- node matches other "keep" criteria but none of the regexes
-         Just l  -> [pathLine fmtFn (Depth d) (Just l) ns' t] -- has a labeled match
+       case findLabelNode lrs ns' of
+         Nothing -> recPaths -- node matches other "keep" criteria but none of the regexes
+         Just l  -> [pathLine fmtFn (Depth d) (Just l) ns t] -- has a labeled match
 
      -- If there are regexes but they don't match, keep looking.
      else recPaths
-
-findLabelNode = undefined
 
 findKeepNode :: SearchConfig -> Depth -> HashTree a -> Bool
 findKeepNode _ _ (Err {}) = False -- TODO is this how we should handle them?
@@ -122,6 +120,11 @@ compileRegexes ((l, ss):lrs) = (l, map compileRegex ss) : compileRegexes lrs
 -- pathMatches [] _  = False -- TODO True? (since no searches = match everything)
 -- pathMatches rs ns = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
 
+findLabelNode :: LabeledRegexes -> [Name] -> Maybe SearchLabel
+findLabelNode [] _ = Nothing
+findLabelNode ((l, rs):lrs) ns = if anyMatch then Just l else findLabelNode lrs ns
+  where
+    anyMatch = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
 
 ---------------------
 -- format metadata --
