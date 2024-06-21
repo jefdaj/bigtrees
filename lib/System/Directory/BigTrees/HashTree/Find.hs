@@ -21,7 +21,7 @@ import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
 
-import Debug.Trace
+-- import Debug.Trace
 
 ----------------
 -- list paths --
@@ -34,7 +34,7 @@ import Debug.Trace
  -}
 listTreePaths :: SearchConfig -> String -> HashTree a -> [B8.ByteString]
 listTreePaths cfg fmt =
-  let lrs = compileRegexes $ let rs = searchRegexes cfg in traceShow rs rs
+  let lrs = compileRegexes $ searchRegexes cfg
   in case mkLineMetaFormatter fmt of
        (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
        (Right fmtFn ) -> listTreePaths' cfg lrs fmtFn (Depth 0) []

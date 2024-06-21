@@ -31,7 +31,7 @@ import System.OsPath (OsPath)
 import System.OsString (osstr)
 import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, parseFooter, commentLineP)
 
-import Debug.Trace
+-- import Debug.Trace
 
 -- { minBytes       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
 -- , maxBytes       :: Maybe Int -- ^ If >, skip. If >=, keep recursing.
