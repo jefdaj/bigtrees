@@ -3,7 +3,7 @@ Create and manipulate hash trees representing collections of files.
 Usage:
   bigtrees version
   bigtrees [-v] info PATH
-  bigtrees [-v] hash PATH [--excludes-from EFILE] [-o OUTFILE]
+  bigtrees [-v] hash PATH [--excludes-from EFILE] [--output OUTFILE]
   bigtrees [-v] diff OLD NEW [--output OUTFILE]
   bigtrees [-v] dupes HASHES [--output OUTFILE] [--max-depth N]
   bigtrees [-v] set-add --set SET PATH... [--note NOTE]
