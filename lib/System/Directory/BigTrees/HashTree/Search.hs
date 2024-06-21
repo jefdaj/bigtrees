@@ -9,17 +9,12 @@ import System.Directory.BigTrees.Name (Name, os2ns)
 import System.Directory.BigTrees.Util (pathComponents)
 import System.Directory.BigTrees.HashLine (NBytes(..), NNodes(..), Depth(..), ModTime(..), TreeType(..))
 import System.OsPath (OsPath, joinPath)
+import Data.Aeson (eitherDecodeFileStrict)
+import qualified Data.ByteString.Lazy as BL
 
 import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
 import System.Directory.BigTrees.HashTree.Base -- TODO specifics
-
-type SearchLabel = String -- TODO bytestring? newtype?
-
--- | We store them as Strings to keep the config simple, then compile in listTreePaths.
-type SearchString = String
-
-type LabeledSearchStrings = [(SearchLabel, [SearchString])]
 
 -- | All the info relevant to searching a tree. Used in different ways when
 -- building a tree, reading it from a .bigtree file, finding paths in it, and
@@ -62,8 +57,22 @@ defaultSearchConfig = emptySearchConfig
   { excludeRegexes = ["\\.sw.*", "^\\.DS_Store$", "\\.plist$", "^\\.snakemake.*"]
   }
 
-parseLabeledSearchStrings :: String -> Either String LabeledSearchStrings
-parseLabeledSearchStrings = undefined
+---------------------------
+-- labeled searches file --
+---------------------------
+
+type SearchLabel = String -- TODO bytestring? newtype?
+
+-- | We store them as Strings to keep the config simple, then compile in listTreePaths.
+type SearchString = String
+
+type LabeledSearchStrings = [(SearchLabel, [SearchString])]
+
+-- instance ToJSON LabeledSearchStrings where toEncoding = genericToEncoding defaultOptions
+-- instance FromJSON LabeledSearchStrings where parseJSON = genericParseJSON defaultOptions
+
+parseLabeledSearchStrings :: FilePath -> IO (Either String LabeledSearchStrings)
+parseLabeledSearchStrings = eitherDecodeFileStrict
 
 -------------------
 -- search a tree --

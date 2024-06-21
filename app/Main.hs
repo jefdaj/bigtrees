@@ -53,9 +53,9 @@ main = do
 
              -- get searches + labels from the file if given
              Just f -> do
-               txt <- readFile f
-               case parseLabeledSearchStrings txt of
-                 Left  msg -> error $ show msg -- failed to parse file
+               parsed <- parseLabeledSearchStrings f
+               case parsed of
+                 Left  msg -> error $ show msg -- parse failure
                  Right lrs -> return lrs
 
              -- if no file, look for a single search + label in cli args
