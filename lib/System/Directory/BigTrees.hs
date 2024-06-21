@@ -63,7 +63,6 @@ module System.Directory.BigTrees
   , emptySearchConfig
   , defaultSearchConfig
   , listTreePaths
-  , Filter(..)
   , pathMatches
   , treeName
   , treeHash
@@ -134,7 +133,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dr
                                                 treeModTime, treeNBytes, treeName, zeroModTime)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
-import System.Directory.BigTrees.HashTree.Find (Filter (..), listTreePaths, pathMatches)
+import System.Directory.BigTrees.HashTree.Find (listTreePaths, pathMatches)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter,
                                                 readTree, readTreeLines)
 import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..), emptySearchConfig, defaultSearchConfig)

@@ -2,7 +2,6 @@
 
 module System.Directory.BigTrees.HashTree.Find
   ( listTreePaths
-  , Filter(..)
   , pathMatches
   )
   where
@@ -35,7 +34,7 @@ import Debug.Trace
  -}
 listTreePaths :: SearchConfig -> String -> HashTree a -> [B8.ByteString]
 listTreePaths cfg fmt =
-  let fs = if null (searchRegexes cfg) then [Anything] else map FilterRegex $ searchRegexes cfg
+  let fs = searchRegexes cfg
   in case mkLineMetaFormatter fmt of
        (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
        (Right fmtFn ) -> listTreePaths' fs fmtFn (Depth 0) []
@@ -44,16 +43,16 @@ listTreePaths cfg fmt =
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
  - TODO implement this via Foldable or Traversable instead?
  -}
-listTreePaths' :: [Filter] -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
-listTreePaths' fs fmtFn (Depth i) ns t =
+listTreePaths' :: [TmpRegex] -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
+listTreePaths' rs fmtFn (Depth i) ns t =
   let ns' = treeName t:ns
   -- If the current path matches we DO NOT need to search inside it, because
   -- we only want one unique top-level match.
-  in if pathMatches fs ns'
+  in if pathMatches rs ns'
        then pathLine fmtFn (Depth i) ns t : [] -- : recPaths
        else case t of
          (Dir {}) -> concat $ (flip map) (dirContents t) $
-                       listTreePaths' fs fmtFn (Depth $ i+1) ns'
+                       listTreePaths' rs fmtFn (Depth $ i+1) ns'
          _        -> []
 
 pathLine :: FmtFn -> Depth -> [Name] -> HashTree a -> B8.ByteString
@@ -110,14 +109,10 @@ mkLineMetaFormatter cs =
 
 -- TODO have a distinction between filtering paths and filtering tree nNodes?
 -- TODO have a distinction between filtering name and wholename?
+-- TODO use paths rather than breadcrumbs for speed?
 
--- TODO does the string type of the regex matter? String is probably fine right?
-data Filter
-  = Anything -- TODO is this useful?
-  | FilterRegex String
-  deriving (Read, Show)
+type TmpRegex = String -- TODO compile for speed
 
-pathMatches :: [Filter] -> [Name] -> Bool
-pathMatches []                    _  = False -- TODO is that right?
-pathMatches (Anything:_)          _  = True
-pathMatches ((FilterRegex re):fs) ns = (breadcrumbs2bs ns) =~ re || pathMatches fs ns
+pathMatches :: [TmpRegex] -> [Name] -> Bool
+pathMatches []     _  = False
+pathMatches (r:rs) ns = (breadcrumbs2bs ns) =~ r || pathMatches rs ns
