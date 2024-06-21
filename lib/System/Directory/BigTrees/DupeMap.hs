@@ -38,7 +38,7 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..))
+import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..), Depth(..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
 import System.Directory.BigTrees.Name (Name (..), n2bs)
@@ -189,11 +189,12 @@ writeDupes cfg path groups = do
   msg <- explainDupes (maxDepth cfg) groups
   SFO.writeFile' path msg
 
-explainDupes :: Maybe Int -> [DupeList] -> IO B.ByteString
+explainDupes :: Maybe Depth -> [DupeList] -> IO B.ByteString
 explainDupes md ls = mapM explainGroup ls <&> B.unlines
   where
     disclaimer Nothing  = ""
-    disclaimer (Just d) = " (up to " `B.append` B.pack (show d) `B.append` " levels deep)"
+    disclaimer (Just (Depth d)) =
+      " (up to " `B.append` B.pack (show d) `B.append` " levels deep)"
 
     explainGroup :: DupeList -> IO B.ByteString
     explainGroup (n, t, paths) = do

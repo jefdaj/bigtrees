@@ -14,7 +14,7 @@ import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
                                            TreeType (..), sepChar)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeName,
-                                                treeType)
+                                                treeType, treeModTime, treeNBytes)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
 import System.Directory.BigTrees.Name (Name, breadcrumbs2bs)
 import System.IO (hFlush, stdout)
@@ -37,30 +37,50 @@ listTreePaths cfg fmt =
   let rs = searchRegexes cfg
   in case mkLineMetaFormatter fmt of
        (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
-       (Right fmtFn ) -> listTreePaths' rs fmtFn (Depth 0) []
+       (Right fmtFn ) -> listTreePaths' cfg rs fmtFn (Depth 0) []
 
 {- Recursively render paths, passing a list of breadcrumbs.
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
  - TODO implement this via Foldable or Traversable instead?
  -}
-listTreePaths' :: [TmpRegex] -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
-listTreePaths' rs fmtFn (Depth i) ns t =
+listTreePaths' :: SearchConfig -> [TmpRegex] -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
+listTreePaths' cfg rs fmtFn (Depth d) ns t =
   let ns' = treeName t:ns
-      thisPath = pathLine fmtFn (Depth i) ns t
+
+      curPaths = if findKeepNode cfg (Depth d) t
+                   then [pathLine fmtFn (Depth d) ns t]
+                   else []
+
       recPaths = case t of
         (Dir {}) -> concat $ (flip map) (dirContents t) $
-                      listTreePaths' rs fmtFn (Depth $ i+1) ns'
+                      listTreePaths' cfg rs fmtFn (Depth $ d+1) ns'
         _        -> []
+
   in
      -- If no regexes, list everything.
-     if null rs then thisPath:recPaths
+     if null rs then curPaths ++ recPaths
 
      -- If the current path matches we DO NOT need to search inside it, because
      -- we already have the one unique top-level match we want.
-     else if pathMatches rs ns' then thisPath:[]
+     else if pathMatches rs ns' then curPaths
 
      -- If there are regexes but they don't match, keep looking.
      else recPaths
+
+findKeepNode :: SearchConfig -> Depth -> HashTree a -> Bool
+findKeepNode _ _ (Err {}) = False -- TODO is this how we should handle them?
+findKeepNode cfg d t = all id
+  [ maybe True (d >=) $ minDepth cfg
+  , maybe True (d <=) $ maxDepth cfg
+  , maybe True (treeNBytes  t >=) $ minBytes cfg
+  , maybe True (treeNBytes  t <=) $ maxBytes cfg
+  , maybe True (sumNodes    t >=) $ minFiles cfg
+  , maybe True (sumNodes    t <=) $ maxFiles cfg
+  , maybe True (treeModTime t >=) $ minModtime cfg
+  , maybe True (treeModTime t <=) $ maxModtime cfg
+  , maybe True (treeType t `elem`) $ treeTypes cfg -- no need to save Dirs this time
+  -- TODO finish regex conditions here
+  ]
 
 pathLine :: FmtFn -> Depth -> [Name] -> HashTree a -> B8.ByteString
 pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
@@ -101,7 +121,7 @@ combineFmtFns fs i t = separate $ map (\f -> f i t) fs
 
 allFmtFns :: [(Char, FmtFn)]
 allFmtFns =
-  [ ('t', \_ t -> B8.singleton $ treeType t)
+  [ ('t', \_ t -> B8.pack $ show $ treeType t)
   , ('h', \_ t -> prettyHash $ hash $ nodeData t)
   , ('d', \(Depth i) _ -> B8.pack $ show i)
   , ('m', \_ t -> B8.pack $ show $ (\(ModTime n) -> n) $ modTime $ nodeData t)

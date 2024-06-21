@@ -7,6 +7,7 @@ import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.Name (Name, os2ns)
 import System.Directory.BigTrees.Util (pathComponents)
+import System.Directory.BigTrees.HashLine (NBytes(..), NNodes(..), Depth(..), ModTime(..), TreeType(..))
 import System.OsPath (OsPath, joinPath)
 
 import GHC.Generics (Generic)
@@ -18,17 +19,17 @@ import System.Directory.BigTrees.HashTree.Base -- TODO specifics
 -- building a tree, reading it from a .bigtree file, finding paths in it, and
 -- making a dupe map.
 data SearchConfig = SearchConfig
-  { minBytes       :: Maybe Integer -- ^ If <, skip. If <=, stop recursing.
-  , maxBytes       :: Maybe Integer -- ^ If >, skip. If >=, keep recursing.
-  , maxDepth       :: Maybe Int     -- ^ If <=, keep. If =, stop recursing.
-  , minDepth       :: Maybe Int     -- ^ If <, skip. Always keep recursing.
-  , minFiles       :: Maybe Int     -- ^ If <, skip. If <=, stop recursing.
-  , maxFiles       :: Maybe Int     -- ^ If >, skip. If <=, stop recursing.
-  , minModtime     :: Maybe Integer -- ^ If <, skip and stop recursing.
-  , maxModtime     :: Maybe Integer -- ^ If >, skip but keep recursing.
-  , treeTypes      :: Maybe [Char] -- ^ If any, limit to those (+ D when recursing).
-  , excludeRegexes :: [String]  -- ^ If any match, skip and stop recursing.
-  , searchRegexes  :: [String]  -- ^ If any match, keep but stop recursing.
+  { minBytes       :: Maybe NBytes     -- ^ If <, skip. If <=, stop recursing.
+  , maxBytes       :: Maybe NBytes     -- ^ If >, skip. If >=, keep recursing.
+  , maxDepth       :: Maybe Depth      -- ^ If <=, keep. If =, stop recursing.
+  , minDepth       :: Maybe Depth      -- ^ If <, skip. Always keep recursing.
+  , minFiles       :: Maybe NNodes     -- ^ If <, skip. If <=, stop recursing.
+  , maxFiles       :: Maybe NNodes     -- ^ If >, skip. If <=, stop recursing.
+  , minModtime     :: Maybe ModTime    -- ^ If <, skip and stop recursing.
+  , maxModtime     :: Maybe ModTime    -- ^ If >, skip but keep recursing.
+  , treeTypes      :: Maybe [TreeType] -- ^ If any, limit to those (+ D when recursing).
+  , excludeRegexes :: [String]         -- ^ If any match, skip and stop recursing.
+  , searchRegexes  :: [String]         -- ^ If any match, keep but stop recursing.
   }
   deriving (Read, Show, Eq, Ord, Generic)
 

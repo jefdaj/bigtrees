@@ -8,7 +8,7 @@ import Control.DeepSeq (deepseq)
 import qualified Data.ByteString.Char8 as B8
 import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (partition, sortBy, isInfixOf)
+import Data.List (partition, sortBy)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..), NBytes(..), ModTime(..), 
                                            TreeType (..), hashLineP, nullBreakP, parseHashLine, linesP, parseTreeFileRev, hParseTreeFileRev)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
@@ -51,7 +51,7 @@ import Debug.Trace
 -- TODO reorder the conditions to optimize speed
 accKeepLine :: SearchConfig -> HashLine -> Bool
 accKeepLine _ hl@(ErrLine _) = False -- TODO is this how we should handle them?
-accKeepLine cfg hl@(HashLine (t, Depth d, _, ModTime mt, NBytes s, NNodes nn, p, mlt)) = all id
+accKeepLine cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = all id
   [ maybe True (s  >=) $ minBytes cfg
   , maybe True (s  <=) $ maxBytes cfg
   , maybe True (d  >=) $ minDepth cfg
@@ -60,13 +60,13 @@ accKeepLine cfg hl@(HashLine (t, Depth d, _, ModTime mt, NBytes s, NNodes nn, p,
   , maybe True (nn <=) $ maxFiles cfg
   , maybe True (mt >=) $ minModtime cfg
   , maybe True (mt <=) $ maxModtime cfg
-  , maybe True (show t `isInfixOf`) $ treeTypes cfg
+  , maybe True (t `elem`) $ treeTypes cfg
   -- TODO finish regex conditions here
   ]
 
 -- | When reading a tree with accTrees, whether to recurse into this line's children.
 accRecurseChildren :: SearchConfig -> HashLine -> Bool
-accRecurseChildren cfg hl@(HashLine (t, Depth d, _, ModTime mt, NBytes s, NNodes nn, p, mlt)) = all id
+accRecurseChildren cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = all id
   [ t == D -- if not a Dir, can't recurse
   , maybe True (s  > ) $ minBytes cfg
   , maybe True (d  < ) $ maxDepth cfg

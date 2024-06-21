@@ -11,6 +11,7 @@ import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
+import System.Directory.BigTrees (NBytes(..), Depth(..), NNodes(..), ModTime(..), TreeType(..))
 import Config (AppConfig (..), SearchConfig(..), defaultAppConfig, defaultSearchConfig)
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
@@ -62,15 +63,15 @@ main = do
         , outFormat = optArg "out-fmt"
         , verbose   = flag "verbose"
         , searchCfg = defaultSearchConfig
-          { minBytes   = optRead "min-size"
-          , maxBytes   = optRead "max-size"
-          , minDepth   = optRead "min-depth"
-          , maxDepth   = optRead "max-depth"
-          , minFiles   = optRead "min-files"
-          , maxFiles   = optRead "max-files"
-          , minModtime = optRead "min-modtime"
-          , maxModtime = optRead "max-modtime"
-          , treeTypes      = optArg "types" -- TODO parse TreeTypes here?
+          { minBytes   = NBytes  <$> optRead "min-size"
+          , maxBytes   = NBytes  <$> optRead "max-size"
+          , minDepth   = Depth   <$> optRead "min-depth"
+          , maxDepth   = Depth   <$> optRead "max-depth"
+          , minFiles   = NNodes  <$> optRead "min-files"
+          , maxFiles   = NNodes  <$> optRead "max-files"
+          , minModtime = ModTime <$> optRead "min-modtime"
+          , maxModtime = ModTime <$> optRead "max-modtime"
+          , treeTypes      = (map $ \c -> read [c]) <$> optArg "types"
           , excludeRegexes = eList
           , searchRegexes  = sList
           }
