@@ -31,7 +31,11 @@ import Debug.Trace
 -- TODO should this be implemented in terms of a Foldable/Traversable instance?
 -- TODO don't try to make it efficient before doing the reverse read thing?
 
--- TODO also consider excludeRegexes here? Or should they have been handled already?
+{- We sort on filename here because 1) it's the only thing we can sort on
+ - without keeping additional state, and 2) it makes it easy to property test
+ - that `bigtrees find <path>` always matches `find <path> | sort`.
+ - TODO also consider excludeRegexes here? Or should they have been handled already?
+ -}
 listTreePaths :: SearchConfig -> String -> HashTree a -> [B8.ByteString]
 listTreePaths cfg fmt =
   let fs = if null (searchRegexes cfg) then [Anything] else map FilterRegex $ searchRegexes cfg
@@ -39,6 +43,10 @@ listTreePaths cfg fmt =
        (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
        (Right fmtFn ) -> listTreePaths' fs fmtFn (Depth 0) []
 
+{- Recursively render paths, passing a list of breadcrumbs.
+ - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
+ - TODO implement this via Foldable or Traversable instead?
+ -}
 listTreePaths' :: [Filter] -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
 listTreePaths' fs fmtFn (Depth i) ns t =
   let ns' = treeName t:ns
@@ -50,42 +58,6 @@ listTreePaths' fs fmtFn (Depth i) ns t =
          (Dir {}) -> concat $ (flip map) (dirContents t) $
                        listTreePaths' fs fmtFn (Depth $ i+1) ns'
          _        -> []
-
-
------------------
--- print paths --
------------------
-
-{- We sort on filename here because 1) it's the only thing we can sort on
- - without keeping additional state, and 2) it makes it easy to property test
- - that `bigtrees find <path>` always matches `find <path> | sort`.
- -}
--- TODO pass which metadata options to print here without a Config
-printTreePaths :: SearchConfig -> String -> HashTree a -> IO ()
-printTreePaths cfg fmt =
-  let fs = if null (searchRegexes cfg) then [Anything] else map FilterRegex $ searchRegexes cfg
-  in case mkLineMetaFormatter fmt of
-    Left  errMsg -> error errMsg -- TODO anything to do besides die here?
-    Right fmtFn  -> printTreePaths' fs fmtFn (Depth 0) []
-
-{- Recursively print paths, passing a list of breadcrumbs.
- - A couple gotchas:
- - * breadcrumbs are in reverse order to make `cons`ing simple
- - * have to print main path before subtrees if any.... except we won't print
- -   subtrees in that case
- - TODO implement this via Foldable or Traversable instead?
- -}
-printTreePaths' :: [Filter] -> FmtFn -> Depth -> [Name] -> HashTree a -> IO ()
-printTreePaths' fs fmtFn (Depth i) ns t = do
-  let ns' = treeName t:ns
-  if pathMatches fs ns' then do
-    B8.putStrLn $ pathLine fmtFn (Depth i) ns t
-    hFlush stdout -- TODO maybe not?
-  -- We actually want to skip this if the current path matches, because we just
-  -- want one unique line for the top level of each match.
-  else trace ("no match " ++ show ns') $ case t of
-    (Dir {}) -> mapM_ (printTreePaths' fs fmtFn (Depth $ i+1) ns') (dirContents t)
-    _        -> return ()
 
 pathLine :: FmtFn -> Depth -> [Name] -> HashTree a -> B8.ByteString
 pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
