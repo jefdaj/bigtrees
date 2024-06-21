@@ -53,14 +53,14 @@ import qualified System.OsPath as SF
 import System.OsPath (OsPath, osp, (</>))
 import System.Path.NameManip (absolute_path, guess_dotdot)
 -- import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
+import Data.Maybe (fromMaybe)
+import System.OsPath (decodeFS)
+import System.Posix.Files (fileBlockSize, getFileStatus)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
-import Data.Maybe (fromMaybe)
-import System.Posix.Files (getFileStatus, fileBlockSize)
-import System.OsPath (decodeFS)
 
 -- describe "Util" $ do
 --   describe "absolute" $ do
@@ -282,7 +282,7 @@ hTakePrevUntil' cond maxChars hdl cs = do
 getBlockSize :: OsPath -> IO Integer
 getBlockSize path = do
   stat <- getFileStatus =<< decodeFS path
-  return $ fromMaybe 4096 $ fmap toInteger $ fileBlockSize stat
+  return $ maybe 4096 toInteger (fileBlockSize stat)
 
 --------------
 -- old code --

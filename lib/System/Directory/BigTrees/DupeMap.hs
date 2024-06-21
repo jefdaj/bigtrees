@@ -38,15 +38,15 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (NNodes (..), TreeType (..), Depth(..))
+import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
-import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
+import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name (Name (..), n2bs)
 -- import System.OsPath (splitDirectories, (</>))
 
+import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
 import System.OsPath
-import Data.Functor ((<&>))
 
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup

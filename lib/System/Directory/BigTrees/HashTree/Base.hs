@@ -13,6 +13,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import qualified Data.CaseInsensitive as CI
 import Data.Char (toLower)
+import Data.Function (on)
 import Data.List (nubBy, sort, sortBy)
 import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
 import GHC.Generics (Generic)
@@ -25,7 +26,6 @@ import System.Info (os)
 import System.OsPath (OsPath)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
 import TH.Derive (Deriving, derive)
-import Data.Function (on)
 
 -- import Debug.Trace
 

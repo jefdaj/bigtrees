@@ -11,18 +11,19 @@ import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
-import System.Directory.BigTrees (NBytes(..), Depth(..), NNodes(..), ModTime(..), TreeType(..))
-import Config (AppConfig (..), SearchConfig(..), defaultAppConfig, defaultSearchConfig, parseLabeledSearchStrings)
+import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
+               parseLabeledSearchStrings)
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
+import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), TreeType (..))
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
-import System.Locale.SetLocale (Category (LC_ALL), setLocale)
-import Text.Pretty.Simple (pPrint)
+import Data.Maybe (fromJust)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
+import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
-import Data.Maybe (fromJust)
+import Text.Pretty.Simple (pPrint)
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -85,7 +86,7 @@ main = do
           , maxFiles   = NNodes  <$> optRead "max-files"
           , minModtime = ModTime <$> optRead "min-modtime"
           , maxModtime = ModTime <$> optRead "max-modtime"
-          , treeTypes      = (map $ \c -> read [c]) <$> optArg "types"
+          , treeTypes      = map (\c -> read [c]) <$> optArg "types"
           , excludeRegexes = eList
           , searchRegexes  = sList
           }

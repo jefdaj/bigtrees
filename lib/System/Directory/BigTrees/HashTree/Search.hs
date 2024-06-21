@@ -3,18 +3,19 @@
 module System.Directory.BigTrees.HashTree.Search where
 
 import Control.Monad (msum)
-import Data.Maybe (isJust)
-import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.Name (Name, os2ns)
-import System.Directory.BigTrees.Util (pathComponents)
-import System.Directory.BigTrees.HashLine (NBytes(..), NNodes(..), Depth(..), ModTime(..), TreeType(..))
-import System.OsPath (OsPath, joinPath)
 import Data.Aeson (eitherDecodeFileStrict)
 import qualified Data.ByteString.Lazy as BL
+import Data.Maybe (isJust)
+import System.Directory.BigTrees.Hash (Hash)
+import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
+                                           TreeType (..))
+import System.Directory.BigTrees.Name (Name, os2ns)
+import System.Directory.BigTrees.Util (pathComponents)
+import System.OsPath (OsPath, joinPath)
 
-import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
-import System.Directory.BigTrees.HashTree.Base -- TODO specifics
+import GHC.Generics (Generic)
+import System.Directory.BigTrees.HashTree.Base
 
 -- | All the info relevant to searching a tree. Used in different ways when
 -- building a tree, reading it from a .bigtree file, finding paths in it, and

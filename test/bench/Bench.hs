@@ -17,8 +17,8 @@ main = do
 
   Test.Tasty.Bench.defaultMain $
 
-    (flip map) hlData (\(n, bs) ->
-      bench ("parse " ++ show n ++ " HashLines") (nf parseHashLinesBS bs))
+    map (\(n, bs) ->
+      bench ("parse " ++ show n ++ " HashLines") (nf parseHashLinesBS bs)) hlData
 
     -- [ bench "fibo   20" $ nf bench_fibo   20
     -- , bench "myFibo 20" $ nf myFibo 20
@@ -38,7 +38,11 @@ main = do
     -- TODO more specific tests until we find the performance problem here
 
     -- TODO more specific tests until we find the performance problem here
-    (flip map) [1, 2, 5, 10, 20, 50] (\n ->
+
+    -- TODO more specific tests until we find the performance problem here
+
+    -- TODO more specific tests until we find the performance problem here
+    map (\n ->
       bench
         ("round-trip ProdTree (" ++ show n ++ " nodes) to ByteString ")
-        (nfIO $ bench_roundtrip_ProdTree_to_ByteString n))
+        (nfIO $ bench_roundtrip_ProdTree_to_ByteString n)) [1, 2, 5, 10, 20, 50]

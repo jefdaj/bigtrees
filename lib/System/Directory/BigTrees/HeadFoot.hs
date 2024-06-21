@@ -11,21 +11,21 @@ import System.Info (arch, compilerName, fullCompilerVersion, os)
 -- import System.FilePath.Glob (Pattern)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 -- import Data.Time.Clock (secondsToDiffTime)
+import Control.Monad (forM, replicateM)
 import Data.Aeson (FromJSON, ToJSON, decode)
 import qualified Data.Aeson.Encode.Pretty as AP
-import qualified Data.ByteString.Char8 as B8
-import Data.Functor ((<&>))
-import GHC.Generics (Generic)
-import System.IO (Handle, IOMode(..), hGetLine)
-import Data.String.Utils (replace)
-import Control.Monad (forM, replicateM)
-import Data.Attoparsec.Combinator (lookAhead)
-import System.Directory.BigTrees.HashLine.Base -- TODO specifics
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
                                          endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
-import System.OsPath (OsPath)
+import Data.Attoparsec.Combinator (lookAhead)
+import qualified Data.ByteString.Char8 as B8
+import Data.Functor ((<&>))
+import Data.String.Utils (replace)
+import GHC.Generics (Generic)
+import System.Directory.BigTrees.HashLine.Base
 import qualified System.File.OsPath as SFO
+import System.IO (Handle, IOMode (..), hGetLine)
+import System.OsPath (OsPath)
 
 {- Header + footer info to write before and after HashLines, respectively.
  - The initial format is to read/write JSON delimited from other lines by '#'.

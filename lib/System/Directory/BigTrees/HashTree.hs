@@ -61,7 +61,7 @@ import System.Directory.BigTrees.Name (Name (..))
 import qualified System.Directory.OsPath as SDO
 import System.OsPath (OsPath, encodeFS, osp, (</>))
 -- import System.FilePath.Glob (Pattern)
-import Control.Monad (when)
+import Control.Monad (unless)
 import qualified System.FilePath as SF
 import System.IO (IOMode (..), hClose)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
@@ -72,15 +72,16 @@ import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.Knob as K
 import Data.List (isInfixOf)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
-                                                dropFileData, isErr, renameRoot, sumNodes, treeHash,
-                                                treeModTime, treeNBytes, treeName, treeType, treeEqIgnoringModTime)
+                                                dropFileData, isErr, renameRoot, sumNodes,
+                                                treeEqIgnoringModTime, treeHash, treeModTime,
+                                                treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
-import System.Directory.BigTrees.HashTree.Read (accTrees, hReadTree, 
-                                                readLastHashLineAndFooter,
+import System.Directory.BigTrees.HashTree.Read (accTrees, hReadTree, readLastHashLineAndFooter,
                                                 readTestTree, readTree)
-import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..), emptySearchConfig)
+import System.Directory.BigTrees.HashTree.Search (SearchConfig (..), dropTo, emptySearchConfig,
+                                                  treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
 import System.IO.Temp (withSystemTempDirectory)
@@ -189,7 +190,7 @@ prop_roundtrip_TestTree_to_tmpdir = monadicIO $ do
   run $ D.delay 100000
   t2 <- run $ roundtripTestTreeToTmpdir t1
   run $ D.delay 100000
-  when (not $ treeEqIgnoringModTime t1 t2) $ do
+  unless (treeEqIgnoringModTime t1 t2) $ do
     run $ print t1
     run $ print t2
   assert $ treeEqIgnoringModTime t1 t2

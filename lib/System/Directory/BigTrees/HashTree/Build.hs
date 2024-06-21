@@ -6,8 +6,8 @@ module System.Directory.BigTrees.HashTree.Build where
 import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 -- import Control.Exception -- TODO specifics
 -- import GHC.IO.Exception -- TODO specifics
-import qualified Control.Monad.Parallel as P
 import Control.Monad (filterM)
+import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.List (elem, intercalate, sortBy)
@@ -21,14 +21,14 @@ import System.Directory.BigTrees.Hash (hashFile, hashFromAnnexPath, hashSymlinkL
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..), NBytes (..),
                                            simplifyErrMsg)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
-                                                hashContents, sumNodes, treeModTime, treeNBytes,
-                                                treeName, sortContentsByName)
-import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
+                                                hashContents, sortContentsByName, sumNodes,
+                                                treeModTime, treeNBytes, treeName)
+import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name
 import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Tree as DT
 import qualified System.OsPath as SOP
-import System.OsPath (OsPath, encodeFS, decodeFS, takeDirectory, (</>))
+import System.OsPath (OsPath, decodeFS, encodeFS, takeDirectory, (</>))
 -- import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
 --                              matchWith)
 import Data.Char

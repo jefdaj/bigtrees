@@ -10,7 +10,7 @@ import System.Directory.BigTrees.Hash (Hash (..), prettyHash)
 import System.Directory.BigTrees.HashLine (ErrMsg (..), HashLine (..), ModTime (..), NBytes (..),
                                            NNodes (..), parseHashLine)
 import System.Directory.BigTrees.HashTree (HashTree (..), readLastHashLineAndFooter)
-import System.Directory.BigTrees.HeadFoot (Footer, Header (..), scanSeconds, readHeader)
+import System.Directory.BigTrees.HeadFoot (Footer, Header (..), readHeader, scanSeconds)
 -- import qualified Data.ByteString.Short as BS
 import System.OsPath (OsPath, encodeFS)
 

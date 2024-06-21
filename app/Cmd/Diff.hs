@@ -8,7 +8,8 @@ import Config (AppConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
-import System.Directory.BigTrees (Name (..), diff, printDeltas, readOrBuildTree, renameRoot, SearchConfig(..))
+import System.Directory.BigTrees (Name (..), SearchConfig (..), diff, printDeltas, readOrBuildTree,
+                                  renameRoot)
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)

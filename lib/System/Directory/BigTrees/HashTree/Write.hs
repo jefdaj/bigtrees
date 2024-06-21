@@ -1,12 +1,12 @@
 module System.Directory.BigTrees.HashTree.Write where
 
-import Control.Monad (when, unless)
+import Control.Monad (unless, when)
 import qualified Data.ByteString.Char8 as B8
 import Data.Maybe (isNothing)
 import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
-import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
+import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Name (unName)
 import qualified System.Directory.OsPath as SDO

@@ -148,7 +148,7 @@ instance Arbitrary Name where
 isValidName :: SOS.OsString -> Bool
 isValidName s
   = SOP.isValid s
-  && not ("/" `SBS.isInfixOf` (SOS.getPosixString $ SOS.getOsString s))
+  && not ("/" `SBS.isInfixOf` SOS.getPosixString (SOS.getOsString s))
   && notElem s [[SOS.osstr|.|], [SOS.osstr|..|]]
 
 -- * Convert paths to/from names

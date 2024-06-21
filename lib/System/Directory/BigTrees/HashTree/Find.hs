@@ -13,9 +13,10 @@ import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
                                            TreeType (..), sepChar)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeName,
-                                                treeType, treeModTime, treeNBytes)
-import System.Directory.BigTrees.HashTree.Search (SearchConfig(..), SearchLabel, SearchString, LabeledSearchStrings)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeModTime,
+                                                treeNBytes, treeName, treeType)
+import System.Directory.BigTrees.HashTree.Search (LabeledSearchStrings, SearchConfig (..),
+                                                  SearchLabel, SearchString)
 import System.Directory.BigTrees.Name (Name, breadcrumbs2bs)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
@@ -54,10 +55,8 @@ listTreePaths' cfg lrs fmtFn (Depth d) ns t =
 
   in
      -- If no regexes, list everything.
-     if null lrs then 
-       let curPaths = if findKeepNode cfg (Depth d) t
-                        then [pathLine fmtFn (Depth d) Nothing ns t]
-                        else []
+     if null lrs then
+       let curPaths = ([pathLine fmtFn (Depth d) Nothing ns t | findKeepNode cfg (Depth d) t])
        in curPaths ++ recPaths
 
      -- If the current path matches we DO NOT need to search inside it, because
@@ -73,7 +72,7 @@ listTreePaths' cfg lrs fmtFn (Depth d) ns t =
 
 findKeepNode :: SearchConfig -> Depth -> HashTree a -> Bool
 findKeepNode _ _ (Err {}) = False -- TODO is this how we should handle them?
-findKeepNode cfg d t = all id
+findKeepNode cfg d t = and
   [ maybe True (d >=) $ minDepth cfg
   , maybe True (d <=) $ maxDepth cfg
   , maybe True (treeNBytes  t >=) $ minBytes cfg
@@ -113,7 +112,7 @@ compileRegex = makeRegexOpts cOpt eOpt
 type LabeledRegexes = [(SearchLabel, [Regex])]
 
 compileRegexes :: LabeledSearchStrings -> LabeledRegexes
-compileRegexes []     = []
+compileRegexes []            = []
 compileRegexes ((l, ss):lrs) = (l, map compileRegex ss) : compileRegexes lrs
 
 -- pathMatches :: LabeledRegexes -> [Name] -> Bool
@@ -152,7 +151,7 @@ allFmtFns =
   , ('b', \_ _ t -> B8.pack $ show $ (\(NBytes n ) -> n) $ nBytes $ nodeData t)
   , ('f', \_ _ t -> B8.pack $ show $ (\(NNodes n ) -> n) $ sumNodes t) -- f for "files"
   , ('l', \_ mLabel _ -> case mLabel of
-                       Nothing -> error "no search label given, but it was specified in out-fmt"
+                       Nothing    -> error "no search label given, but it was specified in out-fmt"
                        Just label -> B8.pack label) -- TODO any sanitizing needed?
   ]
 

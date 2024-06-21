@@ -23,11 +23,11 @@ import Test.QuickCheck (Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 -- import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B8
+import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
-import Data.Functor ((<&>))
 
 cmdFind :: AppConfig -> OsPath -> IO ()
 cmdFind cfg path = do

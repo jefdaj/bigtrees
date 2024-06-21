@@ -139,9 +139,13 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dr
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
-import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter,
-                                                readTree, readTreeLines)
-import System.Directory.BigTrees.HashTree.Search (dropTo, treeContainsHash, treeContainsPath, SearchConfig(..), emptySearchConfig, defaultSearchConfig, SearchLabel, SearchString, LabeledSearchStrings, parseLabeledSearchStrings)
+import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter, readTree,
+                                                readTreeLines)
+import System.Directory.BigTrees.HashTree.Search (LabeledSearchStrings, SearchConfig (..),
+                                                  SearchLabel, SearchString, defaultSearchConfig,
+                                                  dropTo, emptySearchConfig,
+                                                  parseLabeledSearchStrings, treeContainsHash,
+                                                  treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumbs2bs, bs2n, fp2n,

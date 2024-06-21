@@ -93,15 +93,15 @@ import Data.Attoparsec.Combinator
 import qualified Data.ByteString.Char8 as B8
 -- import System.Directory.BigTrees
 -- import System.Directory.BigTrees.HashTree.Read
-import System.IO -- TODO specifics
-import System.Posix.Files -- TODO specifics
+import System.IO
+import System.Posix.Files
 
 -- import Debug.Trace
-import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..), headerP, footerP)
 import Control.Applicative (many)
-import System.Directory.BigTrees.HashLine.Base -- TODO specifics
-import qualified System.File.OsPath as SFO
 import Control.Monad (forM, replicateM)
+import System.Directory.BigTrees.HashLine.Base
+import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..), footerP, headerP)
+import qualified System.File.OsPath as SFO
 
 -----------
 -- types --
@@ -504,7 +504,7 @@ breakPNC = do
 -- partial line, so it can be appended to the next chunk and properly parsed
 -- there.
 endofprevP :: Parser B8.ByteString
-endofprevP = fmap B8.pack $ (manyTill anyChar $ lookAhead breakPNC) <* nullBreakP
+endofprevP = fmap B8.pack $ manyTill anyChar (lookAhead breakPNC) <* nullBreakP
 
 -- create list of data chunks, backwards in order through the file
 -- based on https://stackoverflow.com/a/33853796

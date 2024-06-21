@@ -9,14 +9,16 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.List (partition, sortBy)
-import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), NNodes (..), NBytes(..), ModTime(..), 
-                                           TreeType (..), hashLineP, nullBreakP, parseHashLine, linesP, parseTreeFileRev, hParseTreeFileRev)
+import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), ModTime (..),
+                                           NBytes (..), NNodes (..), TreeType (..),
+                                           hParseTreeFileRev, hashLineP, linesP, nullBreakP,
+                                           parseHashLine, parseTreeFileRev)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
-import System.Directory.BigTrees.HashTree.Search (SearchConfig(..))
+import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name (Name (..))
-import System.Directory.BigTrees.Util (hTakePrevUntil, getBlockSize)
+import System.Directory.BigTrees.Util (getBlockSize, hTakePrevUntil)
 -- import System.FilePath.Glob (Pattern)
 import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.Attoparsec.ByteString (skipWhile)
@@ -25,11 +27,12 @@ import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, e
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes, fromJust)
+import System.Directory.BigTrees.HeadFoot (Footer, Header, commentLineP, footerP, headerP,
+                                           parseFooter)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
-import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, parseFooter, commentLineP)
 
 -- import Debug.Trace
 
@@ -51,7 +54,7 @@ import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, par
 -- TODO reorder the conditions to optimize speed
 accKeepLine :: SearchConfig -> HashLine -> Bool
 accKeepLine _ hl@(ErrLine _) = False -- TODO is this how we should handle them?
-accKeepLine cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = all id
+accKeepLine cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
   [ maybe True (s  >=) $ minBytes cfg
   , maybe True (s  <=) $ maxBytes cfg
   , maybe True (d  >=) $ minDepth cfg
@@ -66,7 +69,7 @@ accKeepLine cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = all id
 
 -- | When reading a tree with accTrees, whether to recurse into this line's children.
 accRecurseChildren :: SearchConfig -> HashLine -> Bool
-accRecurseChildren cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = all id
+accRecurseChildren cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
   [ t == D -- if not a Dir, can't recurse
   , maybe True (s  > ) $ minBytes cfg
   , maybe True (d  < ) $ maxDepth cfg

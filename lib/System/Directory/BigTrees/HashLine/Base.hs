@@ -7,9 +7,9 @@ module System.Directory.BigTrees.HashLine.Base
   )
   where
 
-import qualified Data.ByteString.Char8 as B8
 import Control.Monad (void)
 import Data.Attoparsec.ByteString.Char8 (Parser, char, endOfLine)
+import qualified Data.ByteString.Char8 as B8
 
 sepChar :: Char
 sepChar = '\t'
