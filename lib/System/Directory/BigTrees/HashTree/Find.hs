@@ -61,6 +61,20 @@ pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
     meta = fmtFn i t
     path = breadcrumbs2bs $ treeName t:ns -- TODO ns already includes name t?
 
+------------------
+-- filter paths --
+------------------
+
+-- TODO have a distinction between filtering paths and filtering tree nNodes?
+-- TODO have a distinction between filtering name and wholename?
+-- TODO use paths rather than breadcrumbs for speed?
+
+type TmpRegex = String -- TODO compile for speed
+
+pathMatches :: [TmpRegex] -> [Name] -> Bool
+pathMatches []     _  = False
+pathMatches (r:rs) ns = (breadcrumbs2bs ns) =~ r || pathMatches rs ns
+
 ---------------------
 -- format metadata --
 ---------------------
@@ -102,17 +116,3 @@ mkLineMetaFormatter cs =
   in if not (null bad)
        then Left  $ "Invalid metadata format char '" ++ bad ++ "' in " ++ show cs
        else Right $ combineFmtFns $ matchingFmtFns cs
-
-------------------
--- filter paths --
-------------------
-
--- TODO have a distinction between filtering paths and filtering tree nNodes?
--- TODO have a distinction between filtering name and wholename?
--- TODO use paths rather than breadcrumbs for speed?
-
-type TmpRegex = String -- TODO compile for speed
-
-pathMatches :: [TmpRegex] -> [Name] -> Bool
-pathMatches []     _  = False
-pathMatches (r:rs) ns = (breadcrumbs2bs ns) =~ r || pathMatches rs ns
