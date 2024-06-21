@@ -31,6 +31,8 @@ import System.OsPath (OsPath)
 import System.OsString (osstr)
 import System.Directory.BigTrees.HeadFoot (Header, Footer, headerP, footerP, parseFooter, commentLineP)
 
+import Debug.Trace
+
 -- { minBytes       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
 -- , maxBytes       :: Maybe Int -- ^ If >, skip. If >=, keep recursing.
 -- , maxDepth       :: Maybe Int -- ^ If <=, keep. If =, stop recursing.
@@ -186,9 +188,9 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            -- childrenSorted = sortBy (compare `on` (treeName . snd)) children
-           children' = if accRecurseChildren cfg hl then map snd children else []
+           recurse = accRecurseChildren cfg hl
            dir = Dir
-                   { dirContents = {-# SCC "DdirContents" #-} children'
+                   { dirContents = {-# SCC "DdirContents" #-} if recurse then map snd children else []
                    , nNodes = nn
                    , nodeData = {-# SCC "DNodeData" #-} NodeData
                      { name = p
@@ -197,7 +199,9 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} if accKeepLine cfg hl then (Depth i, dir) : siblings else siblings
+       in {-# SCC "Dappend" #-} if recurse || accKeepLine cfg hl
+                                  then (Depth i, dir) : siblings
+                                  else siblings
 
 -- partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
 partitionChildrenSiblings i cs = (children, others)

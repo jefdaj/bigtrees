@@ -48,8 +48,10 @@ main = do
              Just f  -> readFile f <&> lines -- TODO more detailed parsing?
 
   sList <- case optArg "searches-from" of
-             Nothing -> return $ searchRegexes defaultSearchConfig
              Just f  -> readFile f <&> lines -- TODO more detailed parsing?
+             Nothing -> case optArg "search-regex" of
+               Nothing -> return $ searchRegexes defaultSearchConfig
+               Just r  -> return [r]
 
   oPath <- case optArg "output" of
              Nothing -> return Nothing

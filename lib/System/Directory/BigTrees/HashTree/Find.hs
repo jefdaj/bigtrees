@@ -22,6 +22,8 @@ import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
 
+import Debug.Trace
+
 -------------------------------------
 -- list paths, but don't print yet --
 -------------------------------------
@@ -81,7 +83,7 @@ printTreePaths' fs fmtFn (Depth i) ns t = do
     hFlush stdout -- TODO maybe not?
   -- We actually want to skip this if the current path matches, because we just
   -- want one unique line for the top level of each match.
-  else case t of
+  else trace ("no match " ++ show ns') $ case t of
     (Dir {}) -> mapM_ (printTreePaths' fs fmtFn (Depth $ i+1) ns') (dirContents t)
     _        -> return ()
 
@@ -148,5 +150,6 @@ data Filter
   deriving (Read, Show)
 
 pathMatches :: [Filter] -> [Name] -> Bool
-pathMatches (Anything:_) _           = True
+pathMatches []                    _  = False -- TODO is that right?
+pathMatches (Anything:_)          _  = True
 pathMatches ((FilterRegex re):fs) ns = (breadcrumbs2bs ns) =~ re || pathMatches fs ns
