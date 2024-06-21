@@ -59,14 +59,19 @@ accKeepLine cfg hl@(HashLine (t, Depth d, _, ModTime mt, NBytes s, NNodes nn, p,
   , maybe True (mt >=) $ minModtime cfg
   , maybe True (mt <=) $ maxModtime cfg
   , maybe True (show t `isInfixOf`) $ treeTypes cfg
-  , any -- TODO finish writing
+  -- TODO finish regex conditions here
   ]
 
 -- | When reading a tree with accTrees, whether to recurse into this line's children.
 accRecurseChildren :: SearchConfig -> HashLine -> Bool
-accRecurseChildren cfg hl@(HashLine (t, Depth i, _, mt, s, nn, p, mlt))
-  | t == D = undefined
-  | otherwise          = False -- not a Dir
+accRecurseChildren cfg hl@(HashLine (t, Depth d, _, ModTime mt, NBytes s, NNodes nn, p, mlt)) = all id
+  [ t == D -- if not a Dir, can't recurse
+  , maybe True (s  > ) $ minBytes cfg
+  , maybe True (d  < ) $ maxDepth cfg
+  , maybe True (nn > ) $ minFiles cfg
+  , maybe True (mt >=) $ minModtime cfg
+  -- TODO finish regex conditions here
+  ]
 accRecurseChildren _ _ = False -- not a Dir
 
 --- read summary info from the end of the file ---
