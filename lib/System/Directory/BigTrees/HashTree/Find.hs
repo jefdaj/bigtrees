@@ -29,15 +29,15 @@ import Debug.Trace
 
 {- We sort on filename here because 1) it's the only thing we can sort on
  - without keeping additional state, and 2) it makes it easy to property test
- - that `bigtrees find <path>` always matches `find <path> | sort`.
+ - that `bigtrees find <path>` always matches `find <path>`.
  - TODO also consider excludeRegexes here? Or should they have been handled already?
  -}
 listTreePaths :: SearchConfig -> String -> HashTree a -> [B8.ByteString]
 listTreePaths cfg fmt =
-  let fs = searchRegexes cfg
+  let rs = searchRegexes cfg
   in case mkLineMetaFormatter fmt of
        (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
-       (Right fmtFn ) -> listTreePaths' fs fmtFn (Depth 0) []
+       (Right fmtFn ) -> listTreePaths' rs fmtFn (Depth 0) []
 
 {- Recursively render paths, passing a list of breadcrumbs.
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
@@ -46,14 +46,21 @@ listTreePaths cfg fmt =
 listTreePaths' :: [TmpRegex] -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
 listTreePaths' rs fmtFn (Depth i) ns t =
   let ns' = treeName t:ns
-  -- If the current path matches we DO NOT need to search inside it, because
-  -- we only want one unique top-level match.
-  in if pathMatches rs ns'
-       then pathLine fmtFn (Depth i) ns t : [] -- : recPaths
-       else case t of
-         (Dir {}) -> concat $ (flip map) (dirContents t) $
-                       listTreePaths' rs fmtFn (Depth $ i+1) ns'
-         _        -> []
+      thisPath = pathLine fmtFn (Depth i) ns t
+      recPaths = case t of
+        (Dir {}) -> concat $ (flip map) (dirContents t) $
+                      listTreePaths' rs fmtFn (Depth $ i+1) ns'
+        _        -> []
+  in
+     -- If no regexes, list everything.
+     if null rs then thisPath:recPaths
+
+     -- If the current path matches we DO NOT need to search inside it, because
+     -- we already have the one unique top-level match we want.
+     else if pathMatches rs ns' then thisPath:[]
+
+     -- If there are regexes but they don't match, keep looking.
+     else recPaths
 
 pathLine :: FmtFn -> Depth -> [Name] -> HashTree a -> B8.ByteString
 pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
