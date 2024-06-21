@@ -97,6 +97,7 @@ pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
 
 -- | These are optimized for speed at the cost of not supporting capture groups.
 -- They haven't been tested enough for me to be confident that's necessary though.
+-- TODO would case sensitive be a better default? it does NOT seem faster so far
 compileRegex :: String -> Regex
 compileRegex = makeRegexOpts cOpt eOpt
   where
