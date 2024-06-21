@@ -2,8 +2,8 @@
 
 module System.Directory.BigTrees.HashTree.Find
   ( listTreePaths
-  , Filter(..)  -- TODO remove from exports?
-  , pathMatches -- TODO remove from exports?
+  , Filter(..)
+  , pathMatches
   )
   where
 
@@ -24,12 +24,9 @@ import Text.Regex.TDFA.ByteString
 
 import Debug.Trace
 
--------------------------------------
--- list paths, but don't print yet --
--------------------------------------
-
--- TODO should this be implemented in terms of a Foldable/Traversable instance?
--- TODO don't try to make it efficient before doing the reverse read thing?
+----------------
+-- list paths --
+----------------
 
 {- We sort on filename here because 1) it's the only thing we can sort on
  - without keeping additional state, and 2) it makes it easy to property test
@@ -69,7 +66,6 @@ pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
 -- format metadata --
 ---------------------
 
--- TODO is the type variable a valid here?
 type FmtFn = forall a. Depth -> HashTree a -> B8.ByteString
 
 -- TODO complain if nub is needed rather than silently fixing it?
@@ -96,17 +92,17 @@ allFmtFns =
 validFmtChars :: String
 validFmtChars = map fst allFmtFns
 
--- The overall "make formatter" function. Takes the metafmt description and
--- returns an error if it's invalid, or a function for formatting the metadata.
--- TODO return a list of bytestrings and let the caller handle intercalating?
+{- | The overall "make formatter" function. Takes the metafmt description and
+ - returns an error if it's invalid, or a function for formatting the metadata.
+ - TODO return a list of bytestrings and let the caller handle intercalating?
+ - TODO test that it throws exceptions on invalid formats
+ -}
 mkLineMetaFormatter :: String -> Either String FmtFn
 mkLineMetaFormatter cs =
   let bad = filter (not . flip elem validFmtChars) cs
   in if not (null bad)
        then Left  $ "Invalid metadata format char '" ++ bad ++ "' in " ++ show cs
        else Right $ combineFmtFns $ matchingFmtFns cs
-
--- TODO test that ^ throws exceptions on invalid formats
 
 ------------------
 -- filter paths --
