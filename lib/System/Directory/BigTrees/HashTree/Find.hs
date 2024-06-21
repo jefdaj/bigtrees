@@ -34,7 +34,7 @@ import Debug.Trace
  -}
 listTreePaths :: SearchConfig -> String -> HashTree a -> [B8.ByteString]
 listTreePaths cfg fmt =
-  let rs = searchRegexes cfg
+  let rs = map compileRegex $ searchRegexes cfg
   in case mkLineMetaFormatter fmt of
        (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
        (Right fmtFn ) -> listTreePaths' cfg rs fmtFn (Depth 0) []
@@ -43,7 +43,7 @@ listTreePaths cfg fmt =
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
  - TODO implement this via Foldable or Traversable instead?
  -}
-listTreePaths' :: SearchConfig -> [TmpRegex] -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
+listTreePaths' :: SearchConfig -> [Regex] -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
 listTreePaths' cfg rs fmtFn (Depth d) ns t =
   let ns' = treeName t:ns
 
@@ -94,13 +94,18 @@ pathLine fmtFn i ns t = separate $ filter (not . B8.null) [meta, path]
 
 -- TODO have a distinction between filtering paths and filtering tree nNodes?
 -- TODO have a distinction between filtering name and wholename?
--- TODO use paths rather than breadcrumbs for speed?
 
-type TmpRegex = String -- TODO compile for speed
+-- | These are optimized for speed at the cost of not supporting capture groups.
+-- They haven't been tested enough for me to be confident that's necessary though.
+compileRegex :: String -> Regex
+compileRegex = makeRegexOpts cOpt eOpt
+  where
+    cOpt = defaultCompOpt { caseSensitive = False, lastStarGreedy = False }
+    eOpt = defaultExecOpt { captureGroups = False }
 
-pathMatches :: [TmpRegex] -> [Name] -> Bool
-pathMatches []     _  = False
-pathMatches (r:rs) ns = (breadcrumbs2bs ns) =~ r || pathMatches rs ns
+pathMatches :: [Regex] -> [Name] -> Bool
+pathMatches [] _  = False -- TODO remove?
+pathMatches rs ns = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
 
 ---------------------
 -- format metadata --
