@@ -55,7 +55,7 @@ emptySearchConfig = SearchConfig
 -- TODO instance Default?
 defaultSearchConfig :: SearchConfig
 defaultSearchConfig = emptySearchConfig
-  { excludeRegexes = ["\\.sw.*", "^\\.DS_Store$", "\\.plist$", "^\\.snakemake.*"]
+  { excludeRegexes = ["\\.sw.*", "\\.DS_Store$", "\\.plist$", "\\.snakemake.*"]
   }
 
 ---------------------------

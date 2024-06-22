@@ -23,7 +23,7 @@ import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
-import Text.Pretty.Simple (pPrint)
+-- import Text.Pretty.Simple (pPrint)
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -92,7 +92,7 @@ main = do
           }
         }
 
-  pPrint cfg
+  -- pPrint cfg
 
   if cmd "diff" then do
     old <- encodeFS =<< reqArg "OLD"
