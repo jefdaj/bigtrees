@@ -33,7 +33,7 @@ cmdFind :: AppConfig -> OsPath -> IO ()
 cmdFind cfg path = do
   tree <- readOrBuildTree (searchCfg cfg) (verbose cfg) path
   let fmt   = fromMaybe "" $ outFormat cfg
-      paths = listTreePaths (searchCfg cfg) fmt tree
+  paths <- listTreePaths (searchCfg cfg) fmt tree
   case outFile cfg of
     Nothing -> mapM_ B8.putStrLn paths
     Just p  -> SFO.writeFile p $ B8.fromStrict $ B8.unlines paths

@@ -33,11 +33,11 @@ data SearchConfig = SearchConfig
   , maxModtime     :: Maybe ModTime
   , treeTypes      :: Maybe [TreeType]
   , excludeRegexes :: [String]
-  , searchRegexes  :: LabeledSearchStrings
+  , searchRegexes  :: LabeledSearch2
   }
-  deriving (Read, Show, Eq, Ord, Generic)
+  deriving (Read, Show, Generic)
 
-instance NFData SearchConfig
+-- instance NFData SearchConfig
 
 emptySearchConfig :: SearchConfig
 emptySearchConfig = SearchConfig
@@ -67,15 +67,15 @@ defaultSearchConfig = emptySearchConfig
 type SearchLabel = String -- TODO bytestring? newtype?
 
 -- | We store them as Strings to keep the config simple, then compile in listTreePaths.
-type SearchString = String
+-- type SearchString = String
 
-type LabeledSearchStrings = [(SearchLabel, [SearchString])]
+-- type LabeledSearchStrings = [(SearchLabel, [SearchString])]
 
 -- instance ToJSON LabeledSearchStrings where toEncoding = genericToEncoding defaultOptions
 -- instance FromJSON LabeledSearchStrings where parseJSON = genericParseJSON defaultOptions
 
-parseLabeledSearchStrings :: FilePath -> IO (Either String LabeledSearchStrings)
-parseLabeledSearchStrings = eitherDecodeFileStrict
+-- parseLabeledSearchStrings :: FilePath -> IO (Either String LabeledSearchStrings)
+-- parseLabeledSearchStrings = eitherDecodeFileStrict
 
 data Search2 = Search2
   { dirContainsPath       :: Maybe String
@@ -90,7 +90,7 @@ instance ToJSON Search2 where
 instance FromJSON Search2 where
   parseJSON = genericParseJSON defaultOptions { omitNothingFields = True }
 
-type LabeledSearch2 = [(SearchString, [Search2])]
+type LabeledSearch2 = [(SearchLabel, [Search2])]
 
 parseLabeledSearch2 :: FilePath -> IO (Either String LabeledSearch2)
 parseLabeledSearch2 = eitherDecodeFileStrict

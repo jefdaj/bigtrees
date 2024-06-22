@@ -4,9 +4,8 @@ module Config
   , defaultAppConfig
   , SearchConfig(..)
   , SearchLabel
-  , SearchString
-  , LabeledSearchStrings
-  , parseLabeledSearchStrings
+  , LabeledSearch2
+  , parseLabeledSearch2
   , defaultSearchConfig
   , log
   )
@@ -14,8 +13,8 @@ module Config
 
 import Control.Monad (when)
 import Prelude hiding (log)
-import System.Directory.BigTrees (LabeledSearchStrings, SearchConfig (..), SearchLabel,
-                                  SearchString, defaultSearchConfig, parseLabeledSearchStrings)
+import System.Directory.BigTrees (LabeledSearch2, SearchConfig (..), SearchLabel,
+                                  defaultSearchConfig, parseLabeledSearch2)
 import System.OsPath (OsPath)
 
 -- TODO derive To/FromJSON for the AppConfig so it can go in Headers?
@@ -36,7 +35,7 @@ data AppConfig = AppConfig
   -- , maxdepth :: Maybe Int
   -- , regex    :: Maybe String
   }
-  deriving (Show, Eq, Ord)
+  deriving (Show)
 
 defaultAppConfig :: AppConfig
 defaultAppConfig = AppConfig

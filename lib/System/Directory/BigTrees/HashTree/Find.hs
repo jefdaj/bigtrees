@@ -16,8 +16,8 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
                                            TreeType (..), sepChar)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeModTime,
                                                 treeNBytes, treeName, treeType)
-import System.Directory.BigTrees.HashTree.Search (LabeledSearchStrings, SearchConfig (..),
-                                                  SearchLabel, SearchString, Search2(..), LabeledSearch2, treeContainsPath)
+import System.Directory.BigTrees.HashTree.Search (SearchConfig (..),
+                                                  SearchLabel, Search2(..), LabeledSearch2, treeContainsPath)
 import System.Directory.BigTrees.Name (Name(..), breadcrumbs2bs, fp2ns, n2bs)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
@@ -34,37 +34,37 @@ import Text.Regex.TDFA.ByteString
  - that `bigtrees find <path>` always matches `find <path>`.
  - TODO also consider excludeRegexes here? Or should they have been handled already?
  -}
-listTreePaths :: SearchConfig -> String -> HashTree a -> [B8.ByteString]
-listTreePaths cfg fmt =
-  let lrs = compileRegexes $ searchRegexes cfg
-  in case mkLineMetaFormatter fmt of
-       (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
-       (Right fmtFn ) -> listTreePaths' cfg lrs fmtFn (Depth 0) []
+listTreePaths :: SearchConfig -> String -> HashTree a -> IO [B8.ByteString]
+listTreePaths cfg fmt tree = do
+  cls <- compileLabeledSearch2 $ searchRegexes cfg
+  return $ case mkLineMetaFormatter fmt of
+    (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
+    (Right fmtFn ) -> listTreePaths' cfg cls fmtFn (Depth 0) [] tree
 
 {- Recursively render paths, passing a list of breadcrumbs.
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
  - TODO implement this via Foldable or Traversable instead?
  -}
-listTreePaths' :: SearchConfig -> LabeledRegexes -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
-listTreePaths' cfg lrs fmtFn (Depth d) ns t =
+listTreePaths' :: SearchConfig -> CompiledLabeledSearches -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
+listTreePaths' cfg cls fmtFn (Depth d) ns t =
   let ns' = treeName t:ns
 
       recPaths = case t of
         (Dir {}) -> concat $ (flip map) (dirContents t) $
-                      listTreePaths' cfg lrs fmtFn (Depth $ d+1) ns'
+                      listTreePaths' cfg cls fmtFn (Depth $ d+1) ns'
         _        -> []
 
   in
      -- If no regexes, list everything.
-     if null lrs then
+     if null cls then
        let curPaths = ([pathLine fmtFn (Depth d) Nothing ns t | findKeepNode cfg (Depth d) t])
        in curPaths ++ recPaths
 
      -- If the current path matches we DO NOT need to search inside it, because
      -- we already have the one unique top-level match we want.
-     -- else if pathMatches lrs ns' then curPaths
+     -- else if pathMatches cls ns' then curPaths
      else if findKeepNode cfg (Depth d) t then
-       case findLabelNode lrs ns' of
+       case findLabelNode2 cls ns t of
          Nothing -> recPaths -- node matches other "keep" criteria but none of the regexes
          Just l  -> [pathLine fmtFn (Depth d) (Just l) ns t] -- has a labeled match
 
@@ -110,21 +110,21 @@ compileRegex = makeRegexOpts cOpt eOpt
     cOpt = defaultCompOpt { caseSensitive = False, lastStarGreedy = False }
     eOpt = defaultExecOpt { captureGroups = False }
 
-type LabeledRegexes = [(SearchLabel, [Regex])]
+-- type LabeledRegexes = [(SearchLabel, [Regex])]
 
-compileRegexes :: LabeledSearchStrings -> LabeledRegexes
-compileRegexes []            = []
-compileRegexes ((l, ss):lrs) = (l, map compileRegex ss) : compileRegexes lrs
+-- compileRegexes :: LabeledSearchStrings -> LabeledRegexes
+-- compileRegexes []            = []
+-- compileRegexes ((l, ss):lrs) = (l, map compileRegex ss) : compileRegexes lrs
 
 -- pathMatches :: LabeledRegexes -> [Name] -> Bool
 -- pathMatches [] _  = False -- TODO True? (since no searches = match everything)
 -- pathMatches rs ns = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
 
-findLabelNode :: LabeledRegexes -> [Name] -> Maybe SearchLabel
-findLabelNode [] _ = Nothing
-findLabelNode ((l, rs):lrs) ns = if anyMatch then Just l else findLabelNode lrs ns
-  where
-    anyMatch = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
+-- findLabelNode :: LabeledRegexes -> [Name] -> Maybe SearchLabel
+-- findLabelNode [] _ = Nothing
+-- findLabelNode ((l, rs):lrs) ns = if anyMatch then Just l else findLabelNode lrs ns
+--   where
+--     anyMatch = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
 
 data CompiledSearch2 = CompiledSearch2
   { cDirContainsPath       :: Maybe [Name]
@@ -132,7 +132,7 @@ data CompiledSearch2 = CompiledSearch2
   , cWholeNameMatchesRegex :: Maybe Regex
   }
 
-type CompiledLabeledSearches = [(SearchString, [CompiledSearch2])]
+type CompiledLabeledSearches = [(SearchLabel, [CompiledSearch2])]
 
 compileLabeledSearch2 :: LabeledSearch2 -> IO CompiledLabeledSearches
 compileLabeledSearch2 [] = return []

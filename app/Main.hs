@@ -12,10 +12,10 @@ import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
 import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
-               parseLabeledSearchStrings)
+               parseLabeledSearch2)
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
-import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), TreeType (..))
+import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), TreeType (..), Search2(..))
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Data.Maybe (fromJust)
@@ -54,7 +54,7 @@ main = do
 
              -- get searches + labels from the file if given
              Just f -> do
-               parsed <- parseLabeledSearchStrings f
+               parsed <- parseLabeledSearch2 f
                case parsed of
                  Left  msg -> error $ show msg -- parse failure
                  Right lrs -> return lrs
@@ -64,7 +64,12 @@ main = do
 
                -- regex given; return it along with possibly-default label
                Just r -> let label = fromJust $ optArg "search-label"
-                         in return [(label, [r])]
+                             search = Search2
+                                        { dirContainsPath = Nothing
+                                        , baseNameMatchesRegex = Nothing
+                                        , wholeNameMatchesRegex = Just r
+                                        }
+                         in return [(label, [search])]
 
                -- no regex given; use default (empty) search list
                Nothing -> return $ searchRegexes defaultSearchConfig
