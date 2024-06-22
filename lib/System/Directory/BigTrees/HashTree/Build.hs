@@ -57,6 +57,13 @@ import Text.Regex.TDFA.ByteString
 --              , ignoreDotSlash      = True
 --              }
 
+data BuildError = NotARegularFile
+
+instance Show BuildError where
+  show NotARegularFile = "not a regular file"
+
+instance Exception BuildError
+
 -- TODO double check the breadcrumbs aren't backward
 keepPath :: SearchConfig -> OsPath -> IO Bool
 keepPath cfg p = do
@@ -96,7 +103,7 @@ buildTree cfg readFileFn beVerbose path = do
 
 -- This is mainly meant as an error handler, but also works for the trivial
 -- case of re-wrapping directory-tree error nodes.
-mkErrTree :: (Show e) => DT.FileName -> e -> IO (HashTree a)
+mkErrTree :: (Exception e) => DT.FileName -> e -> IO (HashTree a)
 mkErrTree n e = do
   return $ Err
     { errName = Name n
@@ -198,7 +205,9 @@ buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n
     -- so the last thing to check is whether it's one of the "weird" files
     -- that can cause hashing to freeze, like fifos or block devices
     -- TODO are there any other "non-regular" files we can do something useful with?
-    else if not isRegular then mkErrTree n "not a regular file"
+    -- TODO proper way to throw an exception here?
+    -- TODO upstream PR for directory-tree doing something like this?
+    else if not isRegular then mkErrTree n NotARegularFile
 
     else do
       -- actual regular file

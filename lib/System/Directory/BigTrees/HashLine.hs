@@ -162,7 +162,7 @@ sanitizeErrMsg = filter $ \c ->
 
 -- | Cut the (redundant) filepath off the beginning of most IO-related error messages.
 simplifyErrMsg :: String -> String
-simplifyErrMsg s = if null sSplit then s' else intercalate ": " $ tail sSplit
+simplifyErrMsg s = if length sSplit < 2 then s' else intercalate ": " $ tail sSplit
   where
     s' = sanitizeErrMsg s
     sSplit = splitOn ": " s'
