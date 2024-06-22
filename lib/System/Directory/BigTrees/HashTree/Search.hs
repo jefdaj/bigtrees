@@ -93,7 +93,7 @@ type LabeledSearch2 = [(SearchString, [Search2])]
 parseLabeledSearch2 :: FilePath -> IO (Either String LabeledSearch2)
 parseLabeledSearch2 = eitherDecodeFileStrict
 
--------------------
+ -------------------
 -- search a tree --
 -------------------
 

@@ -1,10 +1,10 @@
 {-# LANGUAGE ImpredicativeTypes #-}
 
-module System.Directory.BigTrees.HashTree.Find
-  ( listTreePaths
+module System.Directory.BigTrees.HashTree.Find where
+  -- ( listTreePaths
   -- , pathMatches
-  )
-  where
+  -- )
+  -- where
 
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
@@ -16,7 +16,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeModTime,
                                                 treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Search (LabeledSearchStrings, SearchConfig (..),
-                                                  SearchLabel, SearchString)
+                                                  SearchLabel, SearchString, Search2(..), LabeledSearch2)
 import System.Directory.BigTrees.Name (Name, breadcrumbs2bs)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
@@ -124,6 +124,24 @@ findLabelNode [] _ = Nothing
 findLabelNode ((l, rs):lrs) ns = if anyMatch then Just l else findLabelNode lrs ns
   where
     anyMatch = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
+
+data CompiledSearch2 = CompiledSearch2
+  { cDirContainsPath       :: Maybe FilePath
+  , cBaseNameMatchesRegex  :: Maybe Regex
+  , cWholeNameMatchesRegex :: Maybe Regex
+  }
+
+type CompiledLabeledSearch2 = [(SearchString, [CompiledSearch2])]
+
+compileLabeledSearch2 :: LabeledSearch2 -> CompiledLabeledSearch2
+compileLabeledSearch2 [] = []
+compileLabeledSearch2 ((l, ss):lss) = (l, map compile ss) : compileLabeledSearch2 lss
+  where
+    compile s = CompiledSearch2
+                  { cDirContainsPath       = dirContainsPath s
+                  , cBaseNameMatchesRegex  = compileRegex <$> baseNameMatchesRegex s
+                  , cWholeNameMatchesRegex = compileRegex <$> wholeNameMatchesRegex s
+                  }
 
 ---------------------
 -- format metadata --
