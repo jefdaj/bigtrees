@@ -34,7 +34,7 @@ Options:
 
   --search-regex REGEX   Single regular expression to test filtering.
   --search-label LABEL   Single label to test --out-fmt printing. Output is tab separated,
-                         so spaces are fine here. [default: "unlabeled-search"]
+                         so spaces are fine here. [default: unlabeled]
   --searches-from SFILE  Load a map of search labels -> regexes. (TODO explain format)
 
   --set SET              Bigset to operate on.
