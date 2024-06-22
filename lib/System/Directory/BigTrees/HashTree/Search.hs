@@ -17,6 +17,8 @@ import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.HashTree.Base
 
+import qualified Data.ByteString.Char8 as B8
+
 -- | All the info relevant to searching a tree. Used in different ways when
 -- building a tree, reading it from a .bigtree file, finding paths in it, and
 -- making a dupe map.
@@ -97,8 +99,9 @@ parseLabeledSearch2 = eitherDecodeFileStrict
 -- search a tree --
 -------------------
 
-treeContainsPath :: HashTree a -> OsPath -> Bool
-treeContainsPath tree path = isJust $ dropTo tree $ os2ns path
+-- TODO variant that takes an OsPath and uses op2ns as before?
+treeContainsPath :: HashTree a -> [Name] -> Bool
+treeContainsPath tree names = isJust $ dropTo tree names
 
 dropTo :: HashTree a -> [Name] -> Maybe (HashTree a)
 dropTo t [] = Just t -- TODO is that right?

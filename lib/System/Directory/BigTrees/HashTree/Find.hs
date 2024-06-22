@@ -9,6 +9,7 @@ module System.Directory.BigTrees.HashTree.Find where
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
+import Data.Maybe (fromMaybe)
 import Data.Maybe (mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
@@ -16,8 +17,8 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeModTime,
                                                 treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Search (LabeledSearchStrings, SearchConfig (..),
-                                                  SearchLabel, SearchString, Search2(..), LabeledSearch2)
-import System.Directory.BigTrees.Name (Name, breadcrumbs2bs)
+                                                  SearchLabel, SearchString, Search2(..), LabeledSearch2, treeContainsPath)
+import System.Directory.BigTrees.Name (Name(..), breadcrumbs2bs, fp2ns, n2bs)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
@@ -126,22 +127,42 @@ findLabelNode ((l, rs):lrs) ns = if anyMatch then Just l else findLabelNode lrs 
     anyMatch = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
 
 data CompiledSearch2 = CompiledSearch2
-  { cDirContainsPath       :: Maybe FilePath
+  { cDirContainsPath       :: Maybe [Name]
   , cBaseNameMatchesRegex  :: Maybe Regex
   , cWholeNameMatchesRegex :: Maybe Regex
   }
 
-type CompiledLabeledSearch2 = [(SearchString, [CompiledSearch2])]
+type CompiledLabeledSearches = [(SearchString, [CompiledSearch2])]
 
-compileLabeledSearch2 :: LabeledSearch2 -> CompiledLabeledSearch2
-compileLabeledSearch2 [] = []
-compileLabeledSearch2 ((l, ss):lss) = (l, map compile ss) : compileLabeledSearch2 lss
+compileLabeledSearch2 :: LabeledSearch2 -> IO CompiledLabeledSearches
+compileLabeledSearch2 [] = return []
+compileLabeledSearch2 ((l, ss):lss) = do
+  cs  <- mapM compile ss
+  css <- compileLabeledSearch2 lss
+  return $ (l, cs) : css
   where
-    compile s = CompiledSearch2
-                  { cDirContainsPath       = dirContainsPath s
-                  , cBaseNameMatchesRegex  = compileRegex <$> baseNameMatchesRegex s
-                  , cWholeNameMatchesRegex = compileRegex <$> wholeNameMatchesRegex s
-                  }
+    compile s = do
+      ns <- case dirContainsPath s of
+              Nothing -> return Nothing
+              Just p  -> Just <$> fp2ns p
+      return $ CompiledSearch2
+        { cDirContainsPath       = ns
+        , cBaseNameMatchesRegex  = compileRegex <$> baseNameMatchesRegex s
+        , cWholeNameMatchesRegex = compileRegex <$> wholeNameMatchesRegex s
+        }
+
+findLabelNode2 :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
+findLabelNode2 []            _  _ = Nothing
+findLabelNode2 ((l, cs):css) ns t = if anySearchMatches then Just l else findLabelNode2 css ns t
+  where
+    baseName  = n2bs $ treeName t
+    wholeName = breadcrumbs2bs $ treeName t : ns
+    anySearchMatches = any searchMatches cs
+    searchMatches c = and
+      [ fromMaybe True $ (treeContainsPath t) <$> cDirContainsPath c
+      , fromMaybe True $ (\r -> matchTest r baseName) <$> cBaseNameMatchesRegex c
+      , fromMaybe True $ (\r -> matchTest r wholeName) <$> cWholeNameMatchesRegex c
+      ]
 
 ---------------------
 -- format metadata --
