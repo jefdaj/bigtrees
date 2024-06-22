@@ -12,10 +12,10 @@ import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
 import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
-               parseLabeledSearch2)
+               parseLabeledSearches)
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
-import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), TreeType (..), Search2(..))
+import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), TreeType (..), Search(..))
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Data.Maybe (fromJust)
@@ -54,7 +54,7 @@ main = do
 
              -- get searches + labels from the file if given
              Just f -> do
-               parsed <- parseLabeledSearch2 f
+               parsed <- parseLabeledSearches f
                case parsed of
                  Left  msg -> error $ show msg -- parse failure
                  Right lrs -> return lrs
@@ -64,7 +64,7 @@ main = do
 
                -- regex given; return it along with possibly-default label
                Just r -> let label = fromJust $ optArg "search-label"
-                             search = Search2
+                             search = Search
                                         { dirContainsPath = Nothing
                                         , baseNameMatchesRegex = Nothing
                                         , wholeNameMatchesRegex = Just r
@@ -72,7 +72,7 @@ main = do
                          in return [(label, [search])]
 
                -- no regex given; use default (empty) search list
-               Nothing -> return $ searchRegexes defaultSearchConfig
+               Nothing -> return $ searches defaultSearchConfig
 
   oPath <- case optArg "output" of
              Nothing -> return Nothing
@@ -93,7 +93,7 @@ main = do
           , maxModtime = ModTime <$> optRead "max-modtime"
           , treeTypes      = map (\c -> read [c]) <$> optArg "types"
           , excludeRegexes = eList
-          , searchRegexes  = sList
+          , searches  = sList
           }
         }
 

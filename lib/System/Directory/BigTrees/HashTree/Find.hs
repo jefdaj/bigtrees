@@ -17,7 +17,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeModTime,
                                                 treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..),
-                                                  SearchLabel, Search2(..), LabeledSearch2, treeContainsPath)
+                                                  SearchLabel, Search(..), LabeledSearches, treeContainsPath)
 import System.Directory.BigTrees.Name (Name(..), breadcrumbs2bs, fp2ns, n2bs)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
@@ -36,7 +36,7 @@ import Text.Regex.TDFA.ByteString
  -}
 listTreePaths :: SearchConfig -> String -> HashTree a -> IO [B8.ByteString]
 listTreePaths cfg fmt tree = do
-  cls <- compileLabeledSearch2 $ searchRegexes cfg
+  cls <- compileLabeledSearches $ searches cfg
   return $ case mkLineMetaFormatter fmt of
     (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
     (Right fmtFn ) -> listTreePaths' cfg cls fmtFn (Depth 0) [] tree
@@ -64,7 +64,7 @@ listTreePaths' cfg cls fmtFn (Depth d) ns t =
      -- we already have the one unique top-level match we want.
      -- else if pathMatches cls ns' then curPaths
      else if findKeepNode cfg (Depth d) t then
-       case findLabelNode2 cls ns t of
+       case findLabelNode cls ns t of
          Nothing -> recPaths -- node matches other "keep" criteria but none of the regexes
          Just l  -> [pathLine fmtFn (Depth d) (Just l) ns t] -- has a labeled match
 
@@ -99,7 +99,6 @@ pathLine fmtFn d ml ns t = separate $ filter (not . B8.null) [meta, path]
 ------------------
 
 -- TODO have a distinction between filtering paths and filtering tree nNodes?
--- TODO have a distinction between filtering name and wholename?
 
 -- | These are optimized for speed at the cost of not supporting capture groups.
 -- They haven't been tested enough for me to be confident that's necessary though.
@@ -110,50 +109,34 @@ compileRegex = makeRegexOpts cOpt eOpt
     cOpt = defaultCompOpt { caseSensitive = False, lastStarGreedy = False }
     eOpt = defaultExecOpt { captureGroups = False }
 
--- type LabeledRegexes = [(SearchLabel, [Regex])]
-
--- compileRegexes :: LabeledSearchStrings -> LabeledRegexes
--- compileRegexes []            = []
--- compileRegexes ((l, ss):lrs) = (l, map compileRegex ss) : compileRegexes lrs
-
--- pathMatches :: LabeledRegexes -> [Name] -> Bool
--- pathMatches [] _  = False -- TODO True? (since no searches = match everything)
--- pathMatches rs ns = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
-
--- findLabelNode :: LabeledRegexes -> [Name] -> Maybe SearchLabel
--- findLabelNode [] _ = Nothing
--- findLabelNode ((l, rs):lrs) ns = if anyMatch then Just l else findLabelNode lrs ns
---   where
---     anyMatch = flip any rs $ \r -> matchTest r $ breadcrumbs2bs ns
-
-data CompiledSearch2 = CompiledSearch2
+data CompiledSearch = CompiledSearch
   { cDirContainsPath       :: Maybe [Name]
   , cBaseNameMatchesRegex  :: Maybe Regex
   , cWholeNameMatchesRegex :: Maybe Regex
   }
 
-type CompiledLabeledSearches = [(SearchLabel, [CompiledSearch2])]
+type CompiledLabeledSearches = [(SearchLabel, [CompiledSearch])]
 
-compileLabeledSearch2 :: LabeledSearch2 -> IO CompiledLabeledSearches
-compileLabeledSearch2 [] = return []
-compileLabeledSearch2 ((l, ss):lss) = do
+compileLabeledSearches :: LabeledSearches -> IO CompiledLabeledSearches
+compileLabeledSearches [] = return []
+compileLabeledSearches ((l, ss):lss) = do
   cs  <- mapM compile ss
-  css <- compileLabeledSearch2 lss
+  css <- compileLabeledSearches lss
   return $ (l, cs) : css
   where
     compile s = do
       ns <- case dirContainsPath s of
               Nothing -> return Nothing
               Just p  -> Just <$> fp2ns p
-      return $ CompiledSearch2
+      return $ CompiledSearch
         { cDirContainsPath       = ns
         , cBaseNameMatchesRegex  = compileRegex <$> baseNameMatchesRegex s
         , cWholeNameMatchesRegex = compileRegex <$> wholeNameMatchesRegex s
         }
 
-findLabelNode2 :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
-findLabelNode2 []            _  _ = Nothing
-findLabelNode2 ((l, cs):css) ns t = if anySearchMatches then Just l else findLabelNode2 css ns t
+findLabelNode :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
+findLabelNode []            _  _ = Nothing
+findLabelNode ((l, cs):css) ns t = if anySearchMatches then Just l else findLabelNode css ns t
   where
     baseName  = n2bs $ treeName t
     wholeName = breadcrumbs2bs $ treeName t : ns

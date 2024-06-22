@@ -35,7 +35,7 @@ data SearchConfig = SearchConfig
   , maxModtime     :: Maybe ModTime
   , treeTypes      :: Maybe [TreeType]
   , excludeRegexes :: [String]
-  , searchRegexes  :: LabeledSearch2
+  , searches  :: LabeledSearches
   }
   deriving (Read, Show, Generic)
 
@@ -53,7 +53,7 @@ emptySearchConfig = SearchConfig
   , maxModtime     = Nothing
   , treeTypes      = Nothing
   , excludeRegexes = []
-  , searchRegexes  = []
+  , searches  = []
   }
 
 -- TODO instance Default?
@@ -71,31 +71,31 @@ type SearchLabel = String -- TODO bytestring? newtype?
 -- | We store them as Strings to keep the config simple, then compile in listTreePaths.
 -- type SearchString = String
 
--- type LabeledSearchStrings = [(SearchLabel, [SearchString])]
+-- type LabeledSearches = [(SearchLabel, [SearchString])]
 
--- instance ToJSON LabeledSearchStrings where toEncoding = genericToEncoding defaultOptions
--- instance FromJSON LabeledSearchStrings where parseJSON = genericParseJSON defaultOptions
+-- instance ToJSON LabeledSearches where toEncoding = genericToEncoding defaultOptions
+-- instance FromJSON LabeledSearches where parseJSON = genericParseJSON defaultOptions
 
--- parseLabeledSearchStrings :: FilePath -> IO (Either String LabeledSearchStrings)
--- parseLabeledSearchStrings = eitherDecodeFileStrict
+-- parseLabeledSearches :: FilePath -> IO (Either String LabeledSearches)
+-- parseLabeledSearches = eitherDecodeFileStrict
 
-data Search2 = Search2
+data Search = Search
   { dirContainsPath       :: Maybe String
   , baseNameMatchesRegex  :: Maybe String
   , wholeNameMatchesRegex :: Maybe String
   }
   deriving (Read, Show, Generic)
 
-instance ToJSON Search2 where
+instance ToJSON Search where
   toJSON = genericToJSON defaultOptions { omitNothingFields = True }
 
-instance FromJSON Search2 where
+instance FromJSON Search where
   parseJSON = genericParseJSON defaultOptions { omitNothingFields = True }
 
-type LabeledSearch2 = [(SearchLabel, [Search2])]
+type LabeledSearches = [(SearchLabel, [Search])]
 
-parseLabeledSearch2 :: FilePath -> IO (Either String LabeledSearch2)
-parseLabeledSearch2 = eitherDecodeFileStrict
+parseLabeledSearches :: FilePath -> IO (Either String LabeledSearches)
+parseLabeledSearches = eitherDecodeFileStrict
 
  -------------------
 -- search a tree --

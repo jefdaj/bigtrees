@@ -69,14 +69,14 @@ module System.Directory.BigTrees
   , zeroModTime
 
   -- search
-  , Search2(..)
+  , Search(..)
   , SearchConfig(..)
   , emptySearchConfig
   , defaultSearchConfig
   , listTreePaths
   , SearchLabel
-  , LabeledSearch2
-  , parseLabeledSearch2
+  , LabeledSearches
+  , parseLabeledSearches
 
   -- hashset
   , SetData(..)
@@ -141,10 +141,10 @@ import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter, readTree,
                                                 readTreeLines)
-import System.Directory.BigTrees.HashTree.Search (Search2(..), LabeledSearch2, SearchConfig (..),
+import System.Directory.BigTrees.HashTree.Search (Search(..), LabeledSearches, SearchConfig (..),
                                                   SearchLabel, defaultSearchConfig,
                                                   dropTo, emptySearchConfig,
-                                                  parseLabeledSearch2, treeContainsHash,
+                                                  parseLabeledSearches, treeContainsHash,
                                                   treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)

@@ -46,7 +46,7 @@ import System.OsString (osstr)
 -- , maxModtime     :: Maybe Int -- ^ If >, skip but keep recursing.
 -- , treeTypes      :: Maybe [Char] -- ^ If any, limit to those (+ D when recursing).
 -- , excludeRegexes :: [String]  -- ^ If any match, skip and stop recursing.
--- , searchRegexes  :: [String]  -- ^ If any match, keep but stop recursing.
+-- , searches  :: [String]  -- ^ If any match, keep but stop recursing.
 -- HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name, Maybe LinkTarget)
 
 -- | When reading HashLines with accTrees, whether to accumulate this line or skip it.
