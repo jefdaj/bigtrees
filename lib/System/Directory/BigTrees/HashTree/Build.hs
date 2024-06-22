@@ -6,7 +6,7 @@ module System.Directory.BigTrees.HashTree.Build where
 import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 -- import Control.Exception -- TODO specifics
 -- import GHC.IO.Exception -- TODO specifics
-import Control.Monad (filterM)
+import Control.Monad (filterM, unless)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.Functor ((<&>))
@@ -33,7 +33,7 @@ import System.OsPath (OsPath, decodeFS, encodeFS, takeDirectory, (</>))
 --                              matchWith)
 import Data.Char
 import System.IO.Unsafe (unsafeInterleaveIO)
-import System.Posix.Files (getFileStatus, isDirectory, readSymbolicLink)
+import System.Posix.Files (getFileStatus, readSymbolicLink, isRegularFile)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
@@ -96,7 +96,7 @@ buildTree cfg readFileFn beVerbose path = do
 
 -- This is mainly meant as an error handler, but also works for the trivial
 -- case of re-wrapping directory-tree error nodes.
-mkErrTree :: (Exception e) => DT.FileName -> e -> IO (HashTree a)
+mkErrTree :: (Show e) => DT.FileName -> e -> IO (HashTree a)
 mkErrTree n e = do
   return $ Err
     { errName = Name n
@@ -140,11 +140,13 @@ buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
 -- isn't a problem because readFileFn is a no-op in production.
 buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n) $ do
   let fPath = a </> n
+  fPath' <- SOP.decodeFS fPath
   notBroken <- SDO.doesPathExist      fPath
   isLink    <- SDO.pathIsSymbolicLink fPath
   -- TODO why is the if/else needed here?
   notDir    <- if not notBroken then return False
                else not <$> SDO.doesDirectoryExist fPath
+  isRegular <- isRegularFile <$> getFileStatus fPath'
   if isLink
     then do
 
@@ -192,8 +194,14 @@ buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n
             , linkTarget = target
             }
 
+    -- we're past all the special cases we know how to handle,
+    -- so the last thing to check is whether it's one of the "weird" files
+    -- that can cause hashing to freeze, like fifos or block devices
+    -- TODO are there any other "non-regular" files we can do something useful with?
+    else if not isRegular then mkErrTree n "not a regular file"
+
     else do
-      -- regular file
+      -- actual regular file
       !mt <- unsafeInterleaveIO $ getFileDirModTime fPath
       !s  <- unsafeInterleaveIO $ getFileDirNBytes fPath
 
