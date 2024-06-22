@@ -159,9 +159,9 @@ findLabelNode2 ((l, cs):css) ns t = if anySearchMatches then Just l else findLab
     wholeName = breadcrumbs2bs $ treeName t : ns
     anySearchMatches = any searchMatches cs
     searchMatches c = and
-      [ fromMaybe True $ (treeContainsPath t) <$> cDirContainsPath c
-      , fromMaybe True $ (\r -> matchTest r baseName) <$> cBaseNameMatchesRegex c
-      , fromMaybe True $ (\r -> matchTest r wholeName) <$> cWholeNameMatchesRegex c
+      [ fromMaybe True $ (treeContainsPath t      ) <$> cDirContainsPath c
+      , fromMaybe True $ (flip matchTest baseName ) <$> cBaseNameMatchesRegex c
+      , fromMaybe True $ (flip matchTest wholeName) <$> cWholeNameMatchesRegex c
       ]
 
 ---------------------

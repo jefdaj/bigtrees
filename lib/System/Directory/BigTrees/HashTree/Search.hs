@@ -19,6 +19,8 @@ import System.Directory.BigTrees.HashTree.Base
 
 import qualified Data.ByteString.Char8 as B8
 
+-- import Debug.Trace
+
 -- | All the info relevant to searching a tree. Used in different ways when
 -- building a tree, reading it from a .bigtree file, finding paths in it, and
 -- making a dupe map.
@@ -103,13 +105,15 @@ parseLabeledSearch2 = eitherDecodeFileStrict
 treeContainsPath :: HashTree a -> [Name] -> Bool
 treeContainsPath tree names = isJust $ dropTo tree names
 
+-- TODO write tests for this! it seems potentially a little off
 dropTo :: HashTree a -> [Name] -> Maybe (HashTree a)
-dropTo t [] = Just t -- TODO is that right?
-dropTo t@(Err {errName=n}) (n2:_) = if n == n2 then Just t else Nothing
-dropTo t@(Dir  {nodeData=nd1, dirContents=cs}) (n:ns)
-  | name nd1 /= n = Nothing
-  | otherwise = msum $ map (`dropTo` ns) cs
-dropTo t (n2:_) = if name (nodeData t) == n2 then Just t else Nothing
+dropTo _ [] = Nothing
+dropTo t@(Dir {nodeData=nd1, dirContents=cs}) (n:ns)
+  = case filter (\t -> treeName t == n) cs of
+      []  -> Nothing
+      [c] -> if null ns then Just c else msum $ map (`dropTo` ns) cs
+      _   -> Nothing
+dropTo _ _ = Nothing
 
 treeContainsHash :: HashTree a -> Hash -> Bool
 treeContainsHash (Err {}) _ = False
