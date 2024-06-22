@@ -3,7 +3,7 @@
 module System.Directory.BigTrees.HashTree.Search where
 
 import Control.Monad (msum)
-import Data.Aeson (eitherDecodeFileStrict)
+import Data.Aeson -- (eitherDecodeFileStrict)
 import qualified Data.ByteString.Lazy as BL
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
@@ -74,6 +74,24 @@ type LabeledSearchStrings = [(SearchLabel, [SearchString])]
 
 parseLabeledSearchStrings :: FilePath -> IO (Either String LabeledSearchStrings)
 parseLabeledSearchStrings = eitherDecodeFileStrict
+
+data Search2 = Search2
+  { dirContainsPath       :: Maybe String
+  , baseNameMatchesRegex  :: Maybe String
+  , wholeNameMatchesRegex :: Maybe String
+  }
+  deriving (Read, Show, Generic)
+
+instance ToJSON Search2 where
+  toJSON = genericToJSON defaultOptions { omitNothingFields = True }
+
+instance FromJSON Search2 where
+  parseJSON = genericParseJSON defaultOptions { omitNothingFields = True }
+
+type LabeledSearch2 = [(SearchString, [Search2])]
+
+parseLabeledSearch2 :: FilePath -> IO (Either String LabeledSearch2)
+parseLabeledSearch2 = eitherDecodeFileStrict
 
 -------------------
 -- search a tree --
