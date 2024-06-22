@@ -3,7 +3,7 @@
 module System.Directory.BigTrees.HashTree.Search where
 
 import Control.Monad (msum)
-import Data.Aeson -- (eitherDecodeFileStrict)
+import Data.Aeson
 import qualified Data.ByteString.Lazy as BL
 import Data.Maybe (isJust)
 import System.Directory.BigTrees.Hash (Hash)
@@ -35,7 +35,7 @@ data SearchConfig = SearchConfig
   , maxModtime     :: Maybe ModTime
   , treeTypes      :: Maybe [TreeType]
   , excludeRegexes :: [String]
-  , searches  :: LabeledSearches
+  , searches       :: LabeledSearches
   }
   deriving (Read, Show, Generic)
 

@@ -15,7 +15,8 @@ import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearc
                parseLabeledSearches)
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
-import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), TreeType (..), Search(..))
+import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
+                                  TreeType (..))
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Data.Maybe (fromJust)

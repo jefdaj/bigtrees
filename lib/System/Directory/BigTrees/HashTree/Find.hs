@@ -9,16 +9,15 @@ module System.Directory.BigTrees.HashTree.Find where
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
-import Data.Maybe (fromMaybe)
-import Data.Maybe (mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
                                            TreeType (..), sepChar)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeModTime,
                                                 treeNBytes, treeName, treeType)
-import System.Directory.BigTrees.HashTree.Search (SearchConfig (..),
-                                                  SearchLabel, Search(..), LabeledSearches, treeContainsPath)
-import System.Directory.BigTrees.Name (Name(..), breadcrumbs2bs, fp2ns, n2bs)
+import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
+                                                  SearchLabel, treeContainsPath)
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
