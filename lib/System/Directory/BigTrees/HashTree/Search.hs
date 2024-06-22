@@ -106,10 +106,10 @@ treeContainsPath tree names = isJust $ dropTo tree names
 dropTo :: HashTree a -> [Name] -> Maybe (HashTree a)
 dropTo t [] = Just t -- TODO is that right?
 dropTo t@(Err {errName=n}) (n2:_) = if n == n2 then Just t else Nothing
-dropTo t@(File {nodeData=nd1}) (n2:_) = if name nd1 == n2 then Just t else Nothing
 dropTo t@(Dir  {nodeData=nd1, dirContents=cs}) (n:ns)
   | name nd1 /= n = Nothing
   | otherwise = msum $ map (`dropTo` ns) cs
+dropTo t (n2:_) = if name (nodeData t) == n2 then Just t else Nothing
 
 treeContainsHash :: HashTree a -> Hash -> Bool
 treeContainsHash (Err {}) _ = False
