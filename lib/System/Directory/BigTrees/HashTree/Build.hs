@@ -295,7 +295,10 @@ getSymlinkLiteralModTime :: OsPath -> IO ModTime
 getSymlinkLiteralModTime p = do
   -- s <- SDO.getModificationTime p -- TODO is it a bug that this fails on broken symlinks?
   s <- SDI.modificationTimeFromMetadata <$> SDI.getSymbolicLinkMetadata p
-  return $ ModTime $ round $ utcTimeToPOSIXSeconds s
+  let n  = round $ utcTimeToPOSIXSeconds s
+      n' = max 0 n -- TODO why do some files have "implausibly old" timestamps?
+                   -- TODO and why does it break bigtrees find??
+  return $ ModTime n'
 
 -- Mod time of a symlink target, if it exists
 -- TODO fix this so it works recursively in case of more than one link!
@@ -314,7 +317,10 @@ getSymlinkTargetModTime p = do
 getFileDirModTime :: OsPath -> IO ModTime
 getFileDirModTime f = do
   s <- SDO.getModificationTime f
-  return $ ModTime $ round $ utcTimeToPOSIXSeconds s
+  let n  = round $ utcTimeToPOSIXSeconds s
+      n' = max 0 n -- TODO why do some files have "implausibly old" timestamps?
+                   -- TODO and why does it break bigtrees find??
+  return $ ModTime n
 
 getSymlinkLiteralNBytes :: OsPath -> IO NBytes
 getSymlinkLiteralNBytes p = do
