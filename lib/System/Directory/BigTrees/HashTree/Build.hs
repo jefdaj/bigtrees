@@ -6,7 +6,7 @@ module System.Directory.BigTrees.HashTree.Build where
 import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 -- import Control.Exception -- TODO specifics
 -- import GHC.IO.Exception -- TODO specifics
-import Control.Monad (filterM, unless)
+import Control.Monad (filterM, unless, when)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.Functor ((<&>))
@@ -32,6 +32,7 @@ import System.OsPath (OsPath, decodeFS, encodeFS, takeDirectory, (</>))
 -- import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
 --                              matchWith)
 import Data.Char
+import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Posix.Files (getFileStatus, readSymbolicLink, isRegularFile)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
@@ -93,21 +94,26 @@ buildProdTree cfg = buildTree cfg (return . const ())
 
 -- TODO rename buildTreeL?
 buildTree :: SearchConfig -> (OsPath -> IO a) -> Bool -> OsPath -> IO (HashTree a)
-buildTree cfg readFileFn beVerbose path = do
+buildTree cfg readFileFn verbose path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
   -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
   tree <- DT.readDirectoryWithL False readFileFn path -- TODO need to rename root here?
   -- putStrLn $ show tree
-  buildTree' cfg readFileFn beVerbose (Depth 0) tree
+  buildTree' cfg readFileFn verbose (Depth 0) tree
 
 -- This is mainly meant as an error handler, but also works for the trivial
--- case of re-wrapping directory-tree error nodes.
-mkErrTree :: (Exception e) => DT.FileName -> e -> IO (HashTree a)
-mkErrTree n e = do
+-- case of re-wrapping directory-tree error nodes. Also the main "verbose"
+-- thing in the program.
+mkErrTree :: (Exception e) => Bool -> OsPath -> DT.FileName -> e -> IO (HashTree a)
+mkErrTree verbose a n e = do
+  let msg = simplifyErrMsg $ show e
+  when verbose $ do
+    path <- SOP.decodeFS $ a </> n
+    hPutStrLn stderr $ msg ++ " " ++ path -- TODO worth setting up proper logging?
   return $ Err
     { errName = Name n
-    , errMsg = ErrMsg $ simplifyErrMsg $ show e
+    , errMsg = ErrMsg msg
     }
 
 -- | Absolute paths are NOT "in the tree", even if they currently happen to be,
@@ -139,13 +145,13 @@ pathIsInTree (Depth d) (Just path) = notAbsolute && foldHeight comps < d
 -- TODO is there a safer way to do that with lazy evaluation?
 buildTree' :: SearchConfig -> (OsPath -> IO a) -> Bool -> Depth -> DT.AnchoredDirTree a -> IO (HashTree a)
 
-buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = mkErrTree n e
+buildTree' _ _ v _  (a DT.:/ (DT.Failed n e )) = mkErrTree v a n e
 
 -- A "File" can be a real file, but also several variants of symlink.
 -- We handle them all here.
 -- Note that readFileFn and hashFile both read the file, but in practice that
 -- isn't a problem because readFileFn is a no-op in production.
-buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n) $ do
+buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree v a n) $ do
   let fPath = a </> n
   fPath' <- SOP.decodeFS fPath
   notBroken <- SDO.doesPathExist      fPath
@@ -207,7 +213,7 @@ buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n
     -- TODO are there any other "non-regular" files we can do something useful with?
     -- TODO proper way to throw an exception here?
     -- TODO upstream PR for directory-tree doing something like this?
-    else if not isRegular then mkErrTree n NotARegularFile
+    else if not isRegular then mkErrTree v a n NotARegularFile
 
     else do
       -- actual regular file
@@ -234,7 +240,7 @@ buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree n
         , fileData = fd
         }
 
-buildTree' cfg readFileFn v depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTree n) $ do
+buildTree' cfg readFileFn v depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTree v a n) $ do
 
   -- TODO of course, this is forcing the whole tree! have to be lazier about it
   -- (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?

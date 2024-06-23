@@ -17,7 +17,7 @@ Commands:
 
 Options:
 
-  --verbose              Explain each step as it runs.
+  -v, --verbose          Print error messages rather than only writing them to .bigtree files.
 
   --excludes-from EFILE  Read a list of regexes and exclude any files matching it.
                          TODO rename to reflect that it's also regexes.
