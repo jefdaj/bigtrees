@@ -372,7 +372,10 @@ breakP =
 
 -- TODO is there a built-in thing for this?
 numStrP :: Parser String
-numStrP = manyTill digit sepP -- TODO does this also consume the sep?
+numStrP = do
+  negSign <- option [] $ (:[]) <$> char '-' -- TODO clean this up
+  digits  <- manyTill digit sepP -- TODO does this also consume the sep?
+  return $ negSign ++ digits
 
 -- TODO applicative version?
 depthP :: Parser Depth
