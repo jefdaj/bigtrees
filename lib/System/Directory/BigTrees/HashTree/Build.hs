@@ -26,6 +26,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name
 import qualified System.Directory.OsPath as SDO
+import qualified System.Directory.Internal as SDI
 import qualified System.Directory.Tree as DT
 import qualified System.OsPath as SOP
 import System.OsPath (OsPath, decodeFS, encodeFS, takeDirectory, (</>))
@@ -154,12 +155,13 @@ buildTree' _ _ v _  (a DT.:/ (DT.Failed n e )) = mkErrTree v a n e
 buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree v a n) $ do
   let fPath = a </> n
   fPath' <- SOP.decodeFS fPath
+  -- TODO clean up this funny logic, being careful not to cause regressions
   notBroken <- SDO.doesPathExist      fPath
   isLink    <- SDO.pathIsSymbolicLink fPath
-  -- TODO why is the if/else needed here?
   notDir    <- if not notBroken then return False
                else not <$> SDO.doesDirectoryExist fPath
-  isRegular <- isRegularFile <$> getFileStatus fPath'
+  isRegular <- if not notBroken then return False
+               else isRegularFile <$> getFileStatus fPath'
   if isLink
     then do
 
@@ -168,12 +170,16 @@ buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree v
 
       if doHashContents
         then do
+
           -- the symlink target is the relevant file for most data,
           -- except the mod time which should be the more recent of the two
           -- (in case the link target changed to a different valid file)
           !mt1 <- unsafeInterleaveIO $ getSymlinkLiteralModTime fPath
-          !mt2 <- unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
+          !mt2 <- if notBroken
+                    then unsafeInterleaveIO $ getSymlinkTargetModTime  fPath
+                    else return 0 -- max will be the valid link time above
           let mt = max mt1 mt2
+
           !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
           !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
           !fd <- unsafeInterleaveIO $ readFileFn fPath
@@ -287,8 +293,8 @@ buildTree' cfg readFileFn v depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTr
 -- Mod time of a symlink itself (not the target)
 getSymlinkLiteralModTime :: OsPath -> IO ModTime
 getSymlinkLiteralModTime p = do
-  -- (CTime s) <- modificationTime <$> getSymbolicLinkStatus p
-  s <- SDO.getModificationTime p
+  -- s <- SDO.getModificationTime p -- TODO is it a bug that this fails on broken symlinks?
+  s <- SDI.modificationTimeFromMetadata <$> SDI.getSymbolicLinkMetadata p
   return $ ModTime $ round $ utcTimeToPOSIXSeconds s
 
 -- Mod time of a symlink target, if it exists
@@ -312,9 +318,8 @@ getFileDirModTime f = do
 
 getSymlinkLiteralNBytes :: OsPath -> IO NBytes
 getSymlinkLiteralNBytes p = do
-  -- status <- getSymbolicLinkStatus p
-  -- return $ NBytes $ toInteger $ fileSize status
-  fsint <- SDO.getFileSize p
+  -- fsint <- SDO.getFileSize p -- TODO is it a bug that this fails on broken symlinks?
+  fsint <- SDI.fileSizeFromMetadata <$> SDI.getSymbolicLinkMetadata p
   return $ NBytes fsint
 
 -- TODO does this work recursively?
