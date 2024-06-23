@@ -97,7 +97,7 @@ buildTree cfg readFileFn beVerbose path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
   -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
-  tree <- DT.readDirectoryWithL readFileFn path -- TODO need to rename root here?
+  tree <- DT.readDirectoryWithL False readFileFn path -- TODO need to rename root here?
   -- putStrLn $ show tree
   buildTree' cfg readFileFn beVerbose (Depth 0) tree
 

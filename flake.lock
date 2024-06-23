@@ -8,16 +8,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1718822900,
-        "narHash": "sha256-M7f/QoULRVctUU5/1RNun5deF9gAJmNysaev9q5oqd0=",
+        "lastModified": 1719123711,
+        "narHash": "sha256-RMmnbGuKAlsRyFznZ2TwPQ2tlJt2Rmv78YhGylob6wY=",
         "owner": "jefdaj",
         "repo": "directory-tree",
-        "rev": "70f173822a38541abc1d2aca651104409da8eca8",
+        "rev": "ca9a70f1ecc042ea8ef2bbd5e3c9d70d49f64939",
         "type": "github"
       },
       "original": {
         "owner": "jefdaj",
-        "ref": "wip-for-bigtrees",
+        "ref": "add-no-follow-symlinks-option-again",
         "repo": "directory-tree",
         "type": "github"
       }
