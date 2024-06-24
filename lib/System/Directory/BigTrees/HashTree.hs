@@ -75,11 +75,11 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 dropFileData, isErr, renameRoot, sumNodes,
                                                 treeEqIgnoringModTime, treeHash, treeModTime,
                                                 treeNBytes, treeName, treeType)
-import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
+import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree, readTestTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (accTrees, hReadTree, readLastHashLineAndFooter,
-                                                readTestTree, readTree)
+                                                readTree)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..), dropTo, emptySearchConfig,
                                                   treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,

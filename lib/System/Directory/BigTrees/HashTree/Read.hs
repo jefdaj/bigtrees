@@ -15,7 +15,6 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..
                                            parseHashLine, parseTreeFileRev)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes, treeName)
-import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name (Name (..))
 import System.Directory.BigTrees.Util (getBlockSize, hTakePrevUntil)
@@ -211,9 +210,6 @@ partitionChildrenSiblings i cs = (children, others)
   where
     children = takeWhile (\(Depth i2, _) -> i2 > i) cs
     others   = drop (length children) cs
-
-readTestTree :: SearchConfig -> Bool -> OsPath -> IO TestTree
-readTestTree cfg = buildTree cfg SFO.readFile'
 
 --- attoparsec parsers ---
 

@@ -10,7 +10,7 @@ import Control.Monad (filterM, unless, when)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (elem, intercalate, sortBy)
+import Data.List (elem, intercalate, sortBy, isSuffixOf)
 import Data.List.Split (splitOn)
 import Data.Maybe (isJust)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -20,13 +20,15 @@ import System.Directory.BigTrees.Hash (hashFile, hashFromAnnexPath, hashSymlinkL
                                        hashSymlinkTarget)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..), NBytes (..),
                                            simplifyErrMsg)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 hashContents, sortContentsByName, sumNodes,
                                                 treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
+import System.Directory.BigTrees.HashTree.Read (readTree)
 import System.Directory.BigTrees.Name
 import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Internal as SDI
+import qualified System.File.OsPath as SFO
 import qualified System.Directory.Tree as DT
 import qualified System.OsPath as SOP
 import System.OsPath (OsPath, decodeFS, encodeFS, takeDirectory, (</>))
@@ -40,7 +42,7 @@ import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTi
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
 
--- import Debug.Trace
+import Debug.Trace
 
 -- import qualified System.File.OsPath as SFO
 
@@ -103,6 +105,7 @@ buildTree cfg readFileFn verbose path = do
   -- putStrLn $ show tree
   buildTree' cfg readFileFn verbose (Depth 0) tree
 
+
 -- This is mainly meant as an error handler, but also works for the trivial
 -- case of re-wrapping directory-tree error nodes. Also the main "verbose"
 -- thing in the program.
@@ -155,6 +158,15 @@ buildTree' _ _ v _  (a DT.:/ (DT.Failed n e )) = mkErrTree v a n e
 buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree v a n) $ do
   let fPath = a </> n
   fPath' <- SOP.decodeFS fPath
+
+  when (".bigtree" `isSuffixOf` fPath') $ trace ("grafting " ++ show fPath') $ do
+    -- TODO add a check for "and we've enabled auto-grafting" here
+    -- special case for "grafting" (reading + inserting) a subtree
+    --
+    -- TODO ufff, this restricts it to only ProdTree, not HashTree a
+    -- TODO so write it as a separate function that calls cases of buildTree'?
+    return ()
+
   -- TODO clean up this funny logic, being careful not to cause regressions
   notBroken <- SDO.doesPathExist      fPath
   isLink    <- SDO.pathIsSymbolicLink fPath
@@ -288,6 +300,32 @@ buildTree' cfg readFileFn v depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTr
               }
             }
 
+
+-- TODO special case for DT.File to check if it's a .bigtree
+-- TODO otherwise call buidTree'?
+-- TODO add optional max depth arg? or is that really just for reading?
+buildTreeWithGrafts :: SearchConfig -> Bool -> OsPath -> IO ProdTree
+buildTreeWithGrafts cfg verbose path = do
+  let noReadFile = return . const ()
+  tree <- DT.readDirectoryWithL False noReadFile path
+  buildTreeG' cfg verbose (Depth 0) tree
+
+buildTreeG' :: SearchConfig -> Bool -> Depth -> DT.AnchoredDirTree () -> IO ProdTree
+buildTreeG' cfg verbose depth tree@(a DT.:/ (DT.File n _)) = do
+  n' <- SOP.decodeFS n -- TODO specialized fn for this?
+  if not (".bigtree" `isSuffixOf` n')
+    then buildTree' cfg (return . const ()) verbose depth tree
+    else do
+      subTree <- readTree cfg $ a </> n
+      let g = Graft
+                { nodeData = nodeData subTree -- TODO get from footer separately
+                , nNodes = nNodes subTree -- TODO get from footer separately
+                , graftTree = subTree
+                }
+      return g
+buildTreeG' cfg verbose depth tree =
+  buildTree' cfg (return . const ()) verbose depth tree
+
 -- TODO move these to Util:
 
 -- Mod time of a symlink itself (not the target)
@@ -342,3 +380,6 @@ getFileDirNBytes p = SDO.getFileSize p <&> NBytes
 -- TODO unit_symlink_to_dir_read_as_file
 -- TODO unit_symlink_to_file_read_as_file_hash_path
 -- TODO unit_symlink_to_annex_read_as_file_hash_content
+
+readTestTree :: SearchConfig -> Bool -> OsPath -> IO TestTree
+readTestTree cfg = buildTree cfg SFO.readFile'
