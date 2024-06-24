@@ -30,7 +30,7 @@ import TH.Derive (Deriving, derive)
 -- import Debug.Trace
 
 -- for comparing two trees without getting hung up on different overall names
-renameRoot :: Name -> ProdTree -> ProdTree
+renameRoot :: Name -> HashTree a -> HashTree a
 renameRoot newName e@(Err {}) = e { errName = newName }
 renameRoot newName tree = tree { nodeData = nd' }
   where
@@ -118,8 +118,9 @@ data HashTree a
       , dirContents :: [HashTree a] -- TODO rename dirContents?
       }
   | Graft
-      { nodeData :: !NodeData -- ^ TODO ok for this to be strict?
-      , nNodes   :: !NNodes   -- ^ TODO ok for this to be strict?
+      { nodeData  :: !NodeData -- TODO should these be here?
+      , nNodes    :: !NNodes   -- TODO should these be here?
+      , graftTree :: HashTree a -- TODO just one, right? not a list/forest
       }
   deriving (Eq, Ord, Show, Generic)
 
@@ -133,6 +134,7 @@ treeType (Err  {})                   = E
 treeType (File {})                   = F
 treeType (Link {linkData = Nothing}) = B
 treeType (Link {})                   = L
+treeType (Graft {})                  = G
 
 -- TODO should this be a lens or something? going to want a setter too at some point
 -- TODO return Maybe here?
@@ -192,6 +194,7 @@ instance Functor HashTree where
   fmap fn f@(File {}) = f { fileData = fn (fileData f) }
   fmap fn d@(Dir  {}) = d { dirContents = map (fmap fn) (dirContents d) }
   fmap fn l@(Link {}) = l { linkData = fmap fn (linkData l) }
+  fmap fn g@(Graft {}) = g { graftTree = fmap fn (graftTree g) }
 
 -- TODO test functor identity law
 
@@ -328,6 +331,7 @@ dropFileData d@(Dir {dirContents = cs}) = d {dirContents = map dropFileData cs}
 dropFileData e@(Err  {})                = Err { errName = errName e, errMsg = errMsg e }
 dropFileData f@(File {})                = f {fileData = ()}
 dropFileData l@(Link {})                = l {linkData = Just ()}
+dropFileData g@(Graft {})               = g {graftTree = dropFileData (graftTree g) }
 
 instance Arbitrary ProdTree where
   arbitrary :: Gen ProdTree
@@ -341,6 +345,9 @@ confirmFileHashes (Link {linkData = l, nodeData=nd}) =
   case l of
     Nothing -> True
     Just ld -> hashBytes ld == hash nd
+confirmFileHashes (Graft {nodeData=nd, graftTree=t}) =
+  let nd' = nd { name = treeName t } -- TODO is that right?
+  in confirmFileHashes t && nodeData t == nd'
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes
