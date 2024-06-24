@@ -117,6 +117,10 @@ data HashTree a
       , nNodes      :: NNodes -- TODO Integer? include in tree files
       , dirContents :: [HashTree a] -- TODO rename dirContents?
       }
+  | Graft
+      { nodeData :: !NodeData -- ^ TODO ok for this to be strict?
+      , nNodes   :: !NNodes   -- ^ TODO ok for this to be strict?
+      }
   deriving (Eq, Ord, Show, Generic)
 
 isErr :: forall a. HashTree a -> Bool
