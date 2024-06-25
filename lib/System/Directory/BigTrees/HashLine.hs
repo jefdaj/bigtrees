@@ -188,6 +188,7 @@ type LinkTarget = OsPath
 -- TODO remove the tuple part now?
 data HashLine
   = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name, Maybe LinkTarget)
+  | GraftLine (Depth, Name)
   | ErrLine  (Depth, ErrMsg, Name)
   deriving (Eq, Ord, Show, Generic)
 
@@ -242,6 +243,7 @@ instance Arbitrary HashLine where
              _ -> return Nothing
     return $ case tt of
       E -> ErrLine  (il, e, n)
+      G -> HashLine (tt, il, h, mt, s, f, n, mlt) -- TODO handle graftlines too
       _ -> HashLine (tt, il, h, mt, s, f, n, mlt)
 
   -- only shrinks the filename
@@ -249,6 +251,7 @@ instance Arbitrary HashLine where
   -- TODO also change the link target if any
   shrink :: HashLine -> [HashLine]
   shrink (ErrLine  (il, e, n)) = map (\n' -> ErrLine  (il, e, n')) (shrink n)
+  shrink (GraftLine (il, n)) = map (\n' -> GraftLine  (il, n')) (shrink n)
   shrink (HashLine (tt, il, h, mt, s, f, n, t)) =
     map (\n' -> HashLine (tt, il, h, mt, s, f, n', t)) (shrink n)
 
@@ -274,6 +277,16 @@ prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
        [ B8.pack $ show E
        , B8.pack $ show d
        , B8.pack $ show m -- unlike other hashline components, this should be quoted
+       , node <> B8.singleton '\NUL'
+       ]
+
+prettyLine breadcrumbs (GraftLine (Depth d, name)) =
+  let node = case breadcrumbs of
+               Nothing -> n2bs name
+               Just ns -> breadcrumbs2bs $ name:ns
+  in joinCols
+       [ B8.pack $ show G
+       , B8.pack $ show d
        , node <> B8.singleton '\NUL'
        ]
 
@@ -451,6 +464,11 @@ parseTheRest E i = do
   !n <- nameP
   -- TODO does this have to be done here when the next line is a comment?
   return $ ErrLine (i, m, n)
+
+parseTheRest G i = do
+  !n <- nameP
+  -- TODO does this have to be done here when the next line is a comment?
+  return $ GraftLine (i, n)
 
 -- this works on F or D; only E is different so far
 parseTheRest t i = do
