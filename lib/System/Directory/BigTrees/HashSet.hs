@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {-|
 Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
@@ -42,6 +44,9 @@ module System.Directory.BigTrees.HashSet
 
   , hashSetDataFromLine
 
+  , note2bs
+  , s2note
+
   , prop_roundtrip_HashSet_to_ByteString
   )
   where
@@ -61,7 +66,7 @@ import Control.DeepSeq (NFData)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 
-import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, endOfLine, parseOnly)
+import Data.Attoparsec.ByteString.Char8 (Parser, char, endOfLine, parseOnly, takeTill)
 import Data.Attoparsec.Combinator (lookAhead, many', manyTill)
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as SBS
@@ -71,22 +76,31 @@ import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (.
                                            nfilesP, sizeP)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, TestTree (..),
                                            sumNodes, treeHash, treeNBytes, treeName)
-import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.Name (Name (..), bs2op)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..))
 import System.OsPath (OsPath)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
+import qualified System.OsString as SOS
+import qualified System.OsString.Internal.Types as SOS
+import qualified Data.ByteString.Short as SBS
+
 
 --- types ---
 
 -- TODO which string type would be best for use in the sets?
 -- A: for this version, whatever can be done easily! String maybe via show?
-newtype Note = Note String
-  deriving (Eq, Ord, Read, Show, Generic)
+-- newtype Note = Note String
+--   deriving (Eq, Ord, Read, Show, Generic)
+-- instance NFData Note
 
-instance NFData Note
+-- Basically the same as a Name, except technically you could put '/' in a Note
+newtype Note = Note { unNote :: SOS.OsString }
+  deriving (Eq, Generic, Ord, Show)
+
+deriving instance NFData Note
 
 -- | Hopefully this won't be too big for RAM in most cases, because we're only
 -- storing hashes and one note which can be short, rather than a list of full
@@ -96,7 +110,7 @@ data SetData = SetData
   , sdBytes :: NBytes
   , sdNote  :: Note
   }
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 instance NFData SetData
 
@@ -144,7 +158,7 @@ setDataFromNode :: Maybe Note -> HashTree () -> SetData
 setDataFromNode mn tree =
   let (Name n) = treeName tree
   in SetData
-       { sdNote  = fromMaybe (Note $ show n) mn
+       { sdNote  = fromMaybe (Note n) mn
        , sdBytes = treeNBytes tree
        , sdNodes = sumNodes tree
        }
@@ -164,7 +178,7 @@ hashSetDataFromLine :: Maybe Note -> HashLine -> Maybe (Hash, SetData)
 hashSetDataFromLine mn (ErrLine {}) = Nothing
 hashSetDataFromLine mn (HashLine (_,_,h,_,nb,nn,Name n,_)) = Just (h, sd)
   where sd = SetData
-               { sdNote  = fromMaybe (Note $ show n) mn
+               { sdNote  = fromMaybe (Note n) mn
                , sdBytes = nb
                , sdNodes = nn
                }
@@ -198,7 +212,7 @@ toUnsortedList = H.foldM (\hs h -> return (h:hs)) []
 
 data HashSetLine
   = HashSetLine (Hash, NNodes, NBytes, Note)
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 instance NFData HashSetLine
 
@@ -208,12 +222,18 @@ listToLines = map elemToLine
     elemToLine (h, sd) = HashSetLine (h, sdNodes sd, sdBytes sd, sdNote sd)
 
 prettySetLine :: HashSetLine -> B8.ByteString
-prettySetLine (HashSetLine (h, NNodes nn, NBytes nb, Note n)) = joinCols
+prettySetLine (HashSetLine (h, NNodes nn, NBytes nb, n)) = joinCols
   [ prettyHash h
   , B8.pack $ show nn
   , B8.pack $ show nb
-  , B8.pack n
+  , note2bs n <> B8.singleton '\NUL'
   ]
+
+note2bs :: Note -> B8.ByteString
+note2bs = SBS.fromShort . SOS.getPosixString . SOS.getOsString . unNote
+
+s2note :: String -> Note
+s2note = Note . SOS.OsString . SOS.PosixString . SBS.toShort . B8.pack
 
 serializeHashList :: HashList -> B8.ByteString
 serializeHashList = B8.unlines . map prettySetLine . listToLines
@@ -239,11 +259,14 @@ writeHashList path l = SFO.withFile path WriteMode $ \h -> hWriteHashListBody h 
 -- This doesn't require a fancy parser, but might as well do one because we
 -- have most of the primitives already...
 
+-- copied from nameP
 noteP :: Parser Note
 noteP = do
-  c  <- anyChar
-  cs <- manyTill anyChar $ lookAhead endOfLine
-  return $ Note $ c:cs
+  -- TODO sepP here?
+  bs <- takeTill (== '\NUL')
+  _  <- char '\NUL'
+  -- _  <- option undefined $ char '\t' -- TODO if this works, move sepP from HashLine
+  return $ Note $ bs2op bs
 
 -- TODO document valid note chars
 setLineP :: Parser HashSetLine
@@ -251,7 +274,7 @@ setLineP = do
   h  <- hashP
   nn <- nfilesP
   nb <- sizeP
-  n  <- noteP -- TODO allow slashes in notes? newlines?
+  n  <- noteP
   _  <- endOfLine
   return $ HashSetLine (h, nn, nb, n)
 

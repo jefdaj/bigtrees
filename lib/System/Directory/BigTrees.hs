@@ -94,6 +94,8 @@ module System.Directory.BigTrees
   , hashSetDataFromLine
   , linesP
   , headerP
+  , note2bs
+  , s2note
 
   -- delta
   , Delta(..)
@@ -131,7 +133,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (.
 import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData (..),
                                           addNodeToHashSet, addTreeToHashSet, emptyHashSet,
                                           hashSetDataFromLine, hashSetFromList, hashSetFromTree,
-                                          readHashList, toSortedList, writeHashList)
+                                          readHashList, toSortedList, writeHashList, note2bs, s2note)
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
                                                 hashContents, renameRoot, sumNodes, treeHash,

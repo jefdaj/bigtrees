@@ -12,7 +12,7 @@ import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToH
                                   addTreeToHashSet, getTreeSize, hashSetDataFromLine,
                                   hashSetFromList, headerP, linesP, readHashList,
                                   readLastHashLineAndFooter, readOrBuildTree, readTreeLines,
-                                  sumNodes, toSortedList, writeHashList)
+                                  sumNodes, toSortedList, writeHashList, s2note)
 import System.Directory.BigTrees.HashSet (emptyHashSet)
 import qualified System.Directory.OsPath as SDO
 import System.IO (IOMode (..), withFile)
@@ -58,7 +58,7 @@ cmdSetAdd cfg setPath mNoteStr treePaths = do
   let maxSetSize' = maxSetSize + length before
   log cfg $ "max expected set size: " ++ show maxSetSize'
 
-  let mNote = Note <$> mNoteStr
+  let mNote = s2note <$> mNoteStr
 
   -- create empty hashset and fold over the trees to add elements
   hl <- concat <$> mapM (readTreeHashList cfg mNote) treePaths
