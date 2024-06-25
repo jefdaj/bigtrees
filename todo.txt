@@ -1,3 +1,8 @@
+nice set features:
+  no need for quotes around comments?
+  should the Notes work just like Names? \NUL terminated and all?
+  add all the same find filter option to small down sets
+
 errata from scanning actual backups:
   bigtrees find --types E doesn't show anything, despite lots of errors in file
   are broken (annex) links being turned into "E no such file or directory"?
