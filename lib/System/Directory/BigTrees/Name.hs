@@ -32,6 +32,7 @@ module System.Directory.BigTrees.Name
   , NamesRev
 
   , n2sbs
+  , n2op -- same as unName
   , sbs2n
   , sbs2op
   , fp2n
@@ -168,6 +169,9 @@ sbs2n = Name . sbs2op
 
 sbs2op :: SBS.ShortByteString -> OsPath
 sbs2op = SOS.OsString . SOS.PosixString
+
+n2op :: Name -> OsPath
+n2op = unName
 
 -- | Convert a `FilePath` to a `Name` using the current filesystem's encoding,
 -- or explain why the conversion failed.

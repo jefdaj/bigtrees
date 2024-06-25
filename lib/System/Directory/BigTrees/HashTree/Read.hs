@@ -148,12 +148,19 @@ accTrees cfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
     then (d, Err { errMsg = m, errName = n }):cs
     else cs
 
-accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
+accTrees cfg gl@(GraftLine (d, n)) cs = {-# SCC "Gappend" #-} do
+  -- Based on the Dir case below, except here we get the children nodes from a
+  -- different file rather than separating them out of cs.
+  let recurse = accRecurseChildren cfg gl -- TODO write this
+      keep    = accKeepLine cfg gl -- TODO write this
+  if not (recurse || keep)
+    then return cs
+    else do
+      gt <- {-# SCC "GgraftTree" #-} readTree cfg $ unName n -- TODO need to get the actual path here!
+      let graft = Graft { graftTree = gt, graftName = n }
+      return $ (d, graft) : cs -- TODO should grafts increase depth?
 
-  G -> do
-    -- TODO map (+ Depth i) over the resulting list
-    undefined
-  
+accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = return $ case t of
 
   F -> let f = File
                  { fileData = ()
@@ -164,7 +171,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Fappend" #-} return $ if accKeepLine cfg hl then (Depth i, f):cs else cs
+       in {-# SCC "Fappend" #-} if accKeepLine cfg hl then (Depth i, f):cs else cs
 
   B -> let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
@@ -177,7 +184,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Bappend" #-} return $ if accKeepLine cfg hl then (Depth i, l):cs else cs
+       in {-# SCC "Bappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
 
   L -> let l = Link
                  { linkData = Just ()
@@ -190,7 +197,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Lappend" #-} return $ if accKeepLine cfg hl then (Depth i, l):cs else cs
+       in {-# SCC "Lappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            recurse = accRecurseChildren cfg hl
@@ -204,7 +211,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} return $ if recurse || accKeepLine cfg hl
+       in {-# SCC "Dappend" #-} if recurse || accKeepLine cfg hl
                                   then (Depth i, dir) : siblings
                                   else siblings
 
