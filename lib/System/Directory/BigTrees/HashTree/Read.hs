@@ -13,11 +13,11 @@ import Data.List (partition, sortBy)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), ModTime (..),
                                            NBytes (..), NNodes (..), TreeType (..),
                                            hParseTreeFileRev, hashLineP, linesP, nullBreakP,
-                                           parseHashLine, parseTreeFileRev)
+                                           parseHashLine, parseTreeFileRev, NamesRev)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 sumNodes, treeName)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
-import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2op, op2breadcrumbs)
 import System.Directory.BigTrees.Util (getBlockSize, hTakePrevUntil)
 -- import System.FilePath.Glob (Pattern)
 import Data.Aeson (FromJSON, ToJSON, decode)
@@ -112,10 +112,19 @@ readTreeLines path = do
 
 --- read the main tree ---
 
+-- | The obvious one for external use.
 readTree :: SearchConfig -> OsPath -> IO ProdTree
-readTree cfg f = SFO.withFile f ReadMode $ \h -> do
-  blksize <- getBlockSize f
-  hReadTree cfg blksize h
+readTree cfg path = readTreeNR cfg $ op2breadcrumbs path
+
+-- | This one takes a list of "breadcrumbs" which are more convenient to build
+-- up than the complete path. It's called from inside accTrees when recursing into
+-- a Graft.
+readTreeNR :: SearchConfig -> NamesRev -> IO ProdTree
+readTreeNR cfg ns =
+  let f = breadcrumbs2op ns
+  in SFO.withFile f ReadMode $ \h -> do
+    blksize <- getBlockSize f
+    hReadTree cfg blksize h
 
 -- https://stackoverflow.com/a/17056952
 -- TODO is this also in MissingH or similar?
@@ -129,6 +138,7 @@ hReadTree cfg blksize hdl = do
 
   -- Looks like it's working properly!
   -- Therefore, should be able to pass a NamesRev down to children that'll let grafts know their full path
+  -- ... and that NamesRev needs to be passed all the way down from readTree in case this isn't the top level
   let hls' = trace ("hls depths: " ++ show (map (\(HashLine (_,Depth d,_,_,_,_,_,_)) -> d) hls)) hls
 
   folded <- foldrM (accTrees cfg) [] hls' -- TODO did this change evaluation order at all?

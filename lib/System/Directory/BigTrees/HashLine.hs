@@ -18,6 +18,8 @@ module System.Directory.BigTrees.HashLine
   , LinkTarget
   -- , Hash(..) TODO re-export here? And Name too?
 
+  , NamesRev
+
   , bsBytes
   , prettyLine
   , hashLineP

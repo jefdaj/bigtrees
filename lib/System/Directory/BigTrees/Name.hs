@@ -40,11 +40,13 @@ module System.Directory.BigTrees.Name
   , n2bs
   , bs2n
   , breadcrumbs2bs
+  , breadcrumbs2op
   , joinNames
   , names2bs
   , os2ns
   , op2n
   , op2ns
+  , op2breadcrumbs
   , op2bs
   , bs2op
 
@@ -207,6 +209,9 @@ os2ns = map Name . SOP.splitDirectories
 op2ns :: SOP.OsPath -> [Name]
 op2ns = os2ns
 
+op2breadcrumbs :: SOP.OsPath -> NamesRev
+op2breadcrumbs = reverse . op2ns
+
 op2n :: SOP.OsPath -> Name
 op2n = head . op2ns -- TODO something safer?
 
@@ -222,6 +227,9 @@ type NamesRev = [Name]
 -- TODO rename?
 breadcrumbs2bs :: NamesRev -> B8.ByteString
 breadcrumbs2bs = joinNames . reverse
+
+breadcrumbs2op :: NamesRev -> OsPath
+breadcrumbs2op = SOP.joinPath . reverse . map unName
 
 -- TODO was this needed for anything else?
 -- TODO can it be done better via SOP.joinPath?
