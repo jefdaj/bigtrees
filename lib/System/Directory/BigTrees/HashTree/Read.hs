@@ -120,11 +120,11 @@ readTree cfg path = readTreeNR cfg $ op2breadcrumbs path
 -- up than the complete path. It's called from inside accTrees when recursing into
 -- a Graft.
 readTreeNR :: SearchConfig -> NamesRev -> IO ProdTree
-readTreeNR cfg ns =
-  let f = breadcrumbs2op ns
+readTreeNR cfg nr =
+  let f = breadcrumbs2op nr
   in SFO.withFile f ReadMode $ \h -> do
     blksize <- getBlockSize f
-    hReadTree cfg blksize h
+    hReadTree cfg nr blksize h
 
 -- https://stackoverflow.com/a/17056952
 -- TODO is this also in MissingH or similar?
@@ -132,16 +132,20 @@ foldrM :: Monad m => (a -> b -> m b) -> b -> [a] -> m b
 foldrM f d []     = return d
 foldrM f d (x:xs) = (\z -> f x z) =<< foldrM f d xs
 
-hReadTree :: SearchConfig -> Integer -> Handle -> IO ProdTree
-hReadTree cfg blksize hdl = do
+hReadTree :: SearchConfig -> NamesRev -> Integer -> Handle -> IO ProdTree
+hReadTree cfg nr blksize hdl = do
   hls <- hParseTreeFileRev blksize hdl
 
   -- Looks like it's working properly!
   -- Therefore, should be able to pass a NamesRev down to children that'll let grafts know their full path
   -- ... and that NamesRev needs to be passed all the way down from readTree in case this isn't the top level
-  let hls' = trace ("hls depths: " ++ show (map (\(HashLine (_,Depth d,_,_,_,_,_,_)) -> d) hls)) hls
+  -- TODO once it gets here, how should/can it be passed into the fold? that part's confusing
+  -- TODO if this is still hard in the morning, switch to putting the entire path in the graftline for now
+  -- TODO or, another morning option: do a scan like scanl in HashLine (but maybe scanrM?)
+  --      ... wait does scanning give us anything useful here? maybe not needed
+  -- let hls' = trace ("hls depths: " ++ show (map (\(HashLine (_,Depth d,_,_,_,_,_,_)) -> d) hls)) hls
 
-  folded <- foldrM (accTrees cfg) [] hls' -- TODO did this change evaluation order at all?
+  folded <- foldrM (accTrees cfg) [] hls -- TODO did this change evaluation order at all?
   return $ case folded of
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
     ((_, tree):_) -> tree
@@ -175,7 +179,7 @@ accTrees cfg gl@(GraftLine (d, n)) cs = {-# SCC "Gappend" #-} trace "accTrees Gr
       let graft = Graft { graftTree = gt, graftName = n }
       return $ (d, graft) : cs -- TODO should grafts increase depth?
 
-accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = trace "accTrees HashLine" $ return $ case t of
+accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = trace ("accTrees HashLine " ++ show hl) $ return $ case t of
 
   F -> let f = File
                  { fileData = ()
@@ -230,10 +234,10 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = trace "accTre
                                   then (Depth i, dir) : siblings
                                   else siblings
 
-partitionChildrenSiblings i cs = (children, others)
+partitionChildrenSiblings i cs = (children, siblings)
   where
     children = takeWhile (\(Depth i2, _) -> i2 > i) cs
-    others   = drop (length children) cs
+    siblings = drop (length children) cs
 
 --- attoparsec parsers ---
 

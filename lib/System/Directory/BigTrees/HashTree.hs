@@ -132,7 +132,7 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   (t1 :: ProdTree) <- pick arbitrary
   let cfg = emptySearchConfig
   K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree cfg h t1 -- TODO hClose?
-  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg 4096
+  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg undefined 4096 -- TODO fix this!
   assert $ t2 == t1
 
 bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()
