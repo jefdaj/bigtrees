@@ -158,15 +158,6 @@ buildTree' _ _ v _  (a DT.:/ (DT.Failed n e )) = mkErrTree v a n e
 buildTree' _ readFileFn v depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree v a n) $ do
   let fPath = a </> n
   fPath' <- SOP.decodeFS fPath
-
-  when (".bigtree" `isSuffixOf` fPath') $ trace ("grafting " ++ show fPath') $ do
-    -- TODO add a check for "and we've enabled auto-grafting" here
-    -- special case for "grafting" (reading + inserting) a subtree
-    --
-    -- TODO ufff, this restricts it to only ProdTree, not HashTree a
-    -- TODO so write it as a separate function that calls cases of buildTree'?
-    return ()
-
   -- TODO clean up this funny logic, being careful not to cause regressions
   notBroken <- SDO.doesPathExist      fPath
   isLink    <- SDO.pathIsSymbolicLink fPath
@@ -314,8 +305,8 @@ buildTreeG' :: SearchConfig -> Bool -> Depth -> DT.AnchoredDirTree () -> IO Prod
 buildTreeG' cfg verbose depth tree@(a DT.:/ (DT.File n _)) = do
   n' <- SOP.decodeFS n -- TODO specialized fn for this?
   if not (".bigtree" `isSuffixOf` n')
-    then buildTree' cfg (return . const ()) verbose depth tree
-    else do
+    then trace "build regular file tree" $ buildTree' cfg (return . const ()) verbose depth tree
+    else trace "build graft" $ do
       gt <- readTree cfg $ a </> n
       let g = Graft { graftName = op2n n, graftTree = gt }
       return g
