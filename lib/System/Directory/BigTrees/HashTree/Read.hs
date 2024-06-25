@@ -133,9 +133,17 @@ readTree cfg f = SFO.withFile f ReadMode $ \h -> do
 hReadTree :: SearchConfig -> Integer -> Handle -> IO ProdTree
 hReadTree cfg blksize hdl = do
   hls <- hParseTreeFileRev blksize hdl
-  return $ case foldr (trace "accTrees" $ accTrees cfg) [] hls of
-    []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
-    ((_, tree):_) -> trace "tree" tree
+  -- TODO does this need to be one of the foldl variants? not sure it can print lazily otherwise
+  -- TODO also then maybe it would be easier to pass a path accumulator?
+  -- return $ case foldr (trace "accTrees" $ accTrees cfg) [] hls of
+  --   []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
+  --   ((_, tree):_) -> trace "tree" tree
+  return $ treeFromHashLines cfg hls
+
+-- TODO write this
+-- TODO hey it would be easy to use IO here if needed for the grafts too
+treeFromHashLines :: SearchConfig -> [HashLine] -> ProdTree
+treeFromHashLines cfg = undefined
 
 n2s :: Name -> String
 n2s = show . unName

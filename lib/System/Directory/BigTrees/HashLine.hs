@@ -584,7 +584,8 @@ strictRevChunkParse (Right (_, eop)) prev =
   -- this shows that it's forcing ALL the chunks before it starts parsing any hashlines :(
   -- TODO does deepseq here make any difference?
   -- in trace ("strictRevChunkParse prev':" ++ show prev') $ deepseq res res
-  in trace ("strictRevChunkParse prev':" ++ show prev') res
+  -- in trace ("strictRevChunkParse prev':" ++ show prev') res
+  in trace ("strictRevChunkParse eop:" ++ show eop) res
 
 -- This returns a lazy list of chunk parse results, but each one will fully evaluate
 -- once accessed. (The `force` is important for that part)
