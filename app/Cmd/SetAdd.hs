@@ -58,6 +58,7 @@ cmdSetAdd cfg setPath mNoteStr treePaths = do
   let maxSetSize' = maxSetSize + length before
   log cfg $ "max expected set size: " ++ show maxSetSize'
 
+  log cfg $ "note: " ++ show mNoteStr
   let mNote = s2note <$> mNoteStr
 
   -- create empty hashset and fold over the trees to add elements

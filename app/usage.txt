@@ -6,7 +6,7 @@ Usage:
   bigtrees [-v] hash PATH [--excludes-from EFILE] [--output OUTFILE]
   bigtrees [-v] diff OLD NEW [--output OUTFILE]
   bigtrees [-v] dupes HASHES [--output OUTFILE] [--max-depth N]
-  bigtrees [-v] set-add --set SET PATH... [--note NOTE]
+  bigtrees [-v] set-add --set SET [--note NOTE] PATH...
   bigtrees [-v] find PATH [--search-regex REGEX [--search-label LABEL] | --searches-from SFILE] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--out-fmt FORMAT]
 
 Commands:
