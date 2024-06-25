@@ -310,6 +310,27 @@ buildTreeG' cfg verbose depth tree@(a DT.:/ (DT.File n _)) = do
       gt <- readTree cfg $ a </> n
       let g = Graft { graftName = op2n n, graftTree = gt }
       return g
+
+buildTreeG' cfg verbose depth tree@(a DT.:/ (DT.Dir n cs)) = do
+  -- TODO figure out how to dedup this with the version in buildTree' above
+  cs'' <- regexFilterTrees cfg a cs
+  let root = a </> n
+      -- TODO would it work to just pass the build "continuation" here?
+      hashSubtree t = unsafeInterleaveIO $ buildTreeG' cfg verbose (depth+1) $ root DT.:/ t
+  subTrees <- P.forM cs'' hashSubtree
+  mt <- getFileDirModTime root
+  s  <- getFileDirNBytes root
+  return $ Dir
+            { dirContents = subTrees
+            , nNodes  = sum $ 1 : map sumNodes subTrees
+            , nodeData = NodeData
+              { name     = Name n
+              , modTime  = maximum $ mt : map treeModTime subTrees
+              , nBytes   = sum $ s : map treeNBytes subTrees
+              , hash     = hashContents subTrees
+              }
+            }
+
 buildTreeG' cfg verbose depth tree =
   buildTree' cfg (return . const ()) verbose depth tree
 

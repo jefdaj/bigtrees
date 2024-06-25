@@ -52,6 +52,7 @@ sumNodes :: HashTree a -> NNodes
 sumNodes (Err  {})        = NNodes 1 -- TODO is this right?
 sumNodes (File {})        = NNodes 1
 sumNodes (Link {})        = NNodes 1 -- TODO is this right?
+sumNodes (Graft {graftTree=t}) = NNodes 1 + sumNodes t
 sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 
 -- TODO is this needed, or will the fields be total?
@@ -138,23 +139,27 @@ treeType (Graft {})                  = G
 -- TODO should this be a lens or something? going to want a setter too at some point
 -- TODO return Maybe here?
 treeName :: HashTree a -> Name
-treeName (Err  {errName =n }) = n
-treeName t                    = name $ nodeData t
+treeName (Err   {errName   = n}) = n
+treeName (Graft {graftName = n}) = n
+treeName t                       = name $ nodeData t
 
 -- TODO is the handling of Err reasonable? think about it more
 -- TODO return Maybe here?
 treeModTime :: HashTree a -> ModTime
 treeModTime (Err {}) = ModTime 0
+treeModTime g@(Graft {graftTree=t}) = treeModTime t
 treeModTime t        = modTime $ nodeData t
 
 -- TODO return Maybe here?
 treeNBytes :: HashTree a -> NBytes
 treeNBytes (Err {}) = NBytes 0
+treeNBytes (Graft {graftTree=t}) = treeNBytes t
 treeNBytes t        = nBytes $ nodeData t
 
 -- TODO return Maybe here?
 treeHash :: HashTree a -> Hash
 treeHash (Err {}) = Hash "ERROR" -- TODO is this reasonable? we do want it to change parent hash
+treeHash (Graft {graftTree=t}) = treeHash t -- TODO is this right?? don't want to duplicate it
 treeHash t        = hash $ nodeData t
 
 -- We only need the file decoration for testing, so we can leave it off the production types
@@ -179,6 +184,7 @@ treeEqIgnoringModTime t1 t2 = zeroModTime t1 == zeroModTime t2
 -- TODO put this in terms of Foldable or Traversable
 zeroModTime :: HashTree a -> HashTree a
 zeroModTime e@(Err {}) = e
+zeroModTime g@(Graft {}) = g { graftTree = zeroModTime $ graftTree g }
 zeroModTime d@(Dir {}) = d
   { nodeData = (nodeData d) { modTime = ModTime 0 }
   , dirContents = map zeroModTime $ dirContents d
