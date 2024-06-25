@@ -86,7 +86,7 @@ import System.OsPath (OsPath)
 import qualified System.OsPath.Internal as OSPI
 import System.OsString.Internal.Types
 
-import Control.DeepSeq (deepseq)
+import Control.DeepSeq (force, deepseq)
 import Control.Monad (foldM, forM, forM_)
 -- import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.Combinator
@@ -96,7 +96,7 @@ import qualified Data.ByteString.Char8 as B8
 import System.IO
 import System.Posix.Files
 
--- import Debug.Trace
+import Debug.Trace
 import Control.Applicative (many)
 import Control.Monad (forM, replicateM)
 import System.Directory.BigTrees.HashLine.Base
@@ -581,15 +581,19 @@ strictRevChunkParse (Right (_, eop)) prev =
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 -- Left msg                -> trace ("Left " ++ show msg) (Left msg)
                 x                       -> x
-  in deepseq res res
+  -- this shows that it's forcing ALL the chunks before it starts parsing any hashlines :(
+  -- TODO does deepseq here make any difference?
+  -- in trace ("strictRevChunkParse prev':" ++ show prev') $ deepseq res res
+  in trace ("strictRevChunkParse prev':" ++ show prev') res
 
 -- This returns a lazy list of chunk parse results, but each one will fully evaluate
--- once accessed.
+-- once accessed. (The `force` is important for that part)
 -- WARNING once it hits an error (Left), it will keep repeating that error indefinitely
 lazyListOfStrictParsedChunks :: [Chunk] -> [Either String [HashLine]]
-lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkParse initial cs
+lazyListOfStrictParsedChunks cs = map (force . fmap getLines) $ tail $ scanl strictRevChunkParse initial cs
   where
     initial = Right ([], "")
+    getLines (hls, _) = trace ("hls: " ++ show hls) hls
 
 -- TODO any need to also get the header + footer here?
 -- TODO put back the maybe depth after basic version works
@@ -620,6 +624,7 @@ hParseTreeFileRev blksize h = do
 
   -- parse chunks lazily, starting from the end, so they can be streamed into a
   -- tree structure without readnig the entire file first
+  -- TODO are these being scanned in the wrong direction?
   let hls = lazyListOfStrictParsedChunks chunks
 
   -- for now, return parsed HashLines directly and error if any of the parses fail

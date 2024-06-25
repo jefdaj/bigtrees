@@ -34,7 +34,7 @@ import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
 
--- import Debug.Trace
+import Debug.Trace
 
 -- { minBytes       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
 -- , maxBytes       :: Maybe Int -- ^ If >, skip. If >=, keep recursing.
@@ -133,9 +133,12 @@ readTree cfg f = SFO.withFile f ReadMode $ \h -> do
 hReadTree :: SearchConfig -> Integer -> Handle -> IO ProdTree
 hReadTree cfg blksize hdl = do
   hls <- hParseTreeFileRev blksize hdl
-  return $ case foldr (accTrees cfg) [] hls of
+  return $ case foldr (trace "accTrees" $ accTrees cfg) [] hls of
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
-    ((_, tree):_) -> tree
+    ((_, tree):_) -> trace "tree" tree
+
+n2s :: Name -> String
+n2s = show . unName
 
 {- This one is confusing! It accumulates a list of trees and their depth,
  - and when it comes across a dir it uses the depths to determine
@@ -161,7 +164,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Fappend" #-} if accKeepLine cfg hl then (Depth i, f):cs else cs
+       in {-# SCC "Fappend" #-} if accKeepLine cfg hl then (Depth $ trace ("d " ++ show i) i, trace ("F " ++ n2s p) f):cs else cs
 
   B -> let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
@@ -174,7 +177,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Bappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
+       in {-# SCC "Bappend" #-} if accKeepLine cfg hl then (Depth $ trace ("d " ++ show i) i, trace ("B " ++ n2s p) l):cs else cs
 
   L -> let l = Link
                  { linkData = Just ()
@@ -187,7 +190,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Lappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
+       in {-# SCC "Lappend" #-} if accKeepLine cfg hl then (Depth $ trace ("d " ++ show i) i, trace ("L " ++ n2s p) l):cs else cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            -- childrenSorted = sortBy (compare `on` (treeName . snd)) children
@@ -203,7 +206,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                      }
                    }
        in {-# SCC "Dappend" #-} if recurse || accKeepLine cfg hl
-                                  then (Depth i, dir) : siblings
+                                  then (Depth $ trace ("d " ++ show i) i, trace ("D " ++ n2s p) dir) : siblings
                                   else siblings
 
 -- partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
