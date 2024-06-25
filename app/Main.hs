@@ -12,7 +12,8 @@ import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
 import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
-               parseLabeledSearches)
+               parseLabeledSearches, log)
+import Prelude hiding (log)
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
@@ -43,7 +44,7 @@ main = do
   let cmd    n = D.isPresent  args $ D.command n
       flag   n = D.isPresent  args $ D.longOption n
       lstArg n = D.getAllArgs args $ D.argument n
-      reqArg n = D.getArgOrExitWith ptns args $ D.argument n
+      reqArg n = D.getArgOrExitWith ptns args $ D.longOption n
       optArg n = D.getArg args $ D.longOption n
       optRead n = read <$> optArg n
 
@@ -110,6 +111,7 @@ main = do
     cmdDupes cfg hashes
 
   else if cmd "set-add" then do
+    -- log cfg "set-add branch"
     set  <- encodeFS =<< reqArg "set"
     let note = optArg "note"
     paths <- mapM encodeFS $ lstArg "PATH"
