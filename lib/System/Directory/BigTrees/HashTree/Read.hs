@@ -34,7 +34,7 @@ import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
 
--- import Debug.Trace
+import Debug.Trace
 
 -- | When reading HashLines with accTrees, whether to accumulate this line or skip it.
 -- To keep the tree structure valid, should always be True when accRecurseChildren is True.
@@ -126,7 +126,12 @@ foldrM f d (x:xs) = (\z -> f x z) =<< foldrM f d xs
 hReadTree :: SearchConfig -> Integer -> Handle -> IO ProdTree
 hReadTree cfg blksize hdl = do
   hls <- hParseTreeFileRev blksize hdl
-  folded <- foldrM (accTrees cfg) [] hls -- TODO did this change evaluation order at all?
+
+  -- Looks like it's working properly!
+  -- Therefore, should be able to pass a NamesRev down to children that'll let grafts know their full path
+  let hls' = trace ("hls depths: " ++ show (map (\(HashLine (_,Depth d,_,_,_,_,_,_)) -> d) hls)) hls
+
+  folded <- foldrM (accTrees cfg) [] hls' -- TODO did this change evaluation order at all?
   return $ case folded of
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
     ((_, tree):_) -> tree
@@ -148,7 +153,7 @@ accTrees cfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
     then (d, Err { errMsg = m, errName = n }):cs
     else cs
 
-accTrees cfg gl@(GraftLine (d, n)) cs = {-# SCC "Gappend" #-} do
+accTrees cfg gl@(GraftLine (d, n)) cs = {-# SCC "Gappend" #-} trace "accTrees GraftLine" $ do
   -- Based on the Dir case below, except here we get the children nodes from a
   -- different file rather than separating them out of cs.
   let recurse = accRecurseChildren cfg gl -- TODO write this
@@ -160,7 +165,7 @@ accTrees cfg gl@(GraftLine (d, n)) cs = {-# SCC "Gappend" #-} do
       let graft = Graft { graftTree = gt, graftName = n }
       return $ (d, graft) : cs -- TODO should grafts increase depth?
 
-accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = return $ case t of
+accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = trace "accTrees HashLine" $ return $ case t of
 
   F -> let f = File
                  { fileData = ()
@@ -171,7 +176,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = return $ case
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Fappend" #-} if accKeepLine cfg hl then (Depth i, f):cs else cs
+       in {-# SCC "Fappend" #-} trace ("accTrees F depth="++ show i) $ if accKeepLine cfg hl then (Depth i, f):cs else cs
 
   B -> let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
@@ -184,7 +189,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = return $ case
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Bappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
+       in {-# SCC "Bappend" #-} trace "accTrees B" $ if accKeepLine cfg hl then (Depth i, l):cs else cs
 
   L -> let l = Link
                  { linkData = Just ()
@@ -197,7 +202,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = return $ case
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Lappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
+       in {-# SCC "Lappend" #-} trace "accTrees L" $ if accKeepLine cfg hl then (Depth i, l):cs else cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            recurse = accRecurseChildren cfg hl
@@ -211,7 +216,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = return $ case
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} if recurse || accKeepLine cfg hl
+       in {-# SCC "Dappend" #-} trace ("accTrees D depth="++show i++ " cs depths=" ++ show (map ((\(Depth d)->d) . fst) cs)) $ if recurse || accKeepLine cfg hl
                                   then (Depth i, dir) : siblings
                                   else siblings
 
