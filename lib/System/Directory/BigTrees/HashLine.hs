@@ -559,7 +559,7 @@ parseHashLinesFromChunk = do
   _ <- option undefined (many endOfLine)
   -- _ <- endOfInput
 
-  -- TODO comment out for production
+  -- TODO assert that remain is empty? (or include that in parser above)
   -- remain <- manyTill anyChar endOfInput
   -- _ <- endOfInput
   -- let tfn x = if null remain then x else trace ("remain: " ++ show remain) x
@@ -577,6 +577,7 @@ strictRevChunkParse
 strictRevChunkParse (Left m) _ = Left m
 strictRevChunkParse (Right (_, eop)) prev =
   let prev' = B8.append prev $ B8.append eop "\NUL\n" -- TODO why is this needed?
+      -- TODO require it to parse everything to avoid any possible "remain" bugs?
       res   = case parseOnly parseHashLinesFromChunk prev' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 -- Left msg                -> trace ("Left " ++ show msg) (Left msg)

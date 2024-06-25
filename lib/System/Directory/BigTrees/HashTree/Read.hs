@@ -35,19 +35,6 @@ import System.OsString (osstr)
 
 -- import Debug.Trace
 
--- { minBytes       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
--- , maxBytes       :: Maybe Int -- ^ If >, skip. If >=, keep recursing.
--- , maxDepth       :: Maybe Int -- ^ If <=, keep. If =, stop recursing.
--- , minDepth       :: Maybe Int -- ^ If <, skip. Always keep recursing.
--- , minFiles       :: Maybe Int -- ^ If <, skip. If <=, stop recursing.
--- , maxFiles       :: Maybe Int -- ^ If >, skip. If <=, stop recursing.
--- , minModtime     :: Maybe Int -- ^ If <, skip and stop recursing.
--- , maxModtime     :: Maybe Int -- ^ If >, skip but keep recursing.
--- , treeTypes      :: Maybe [Char] -- ^ If any, limit to those (+ D when recursing).
--- , excludeRegexes :: [String]  -- ^ If any match, skip and stop recursing.
--- , searches  :: [String]  -- ^ If any match, keep but stop recursing.
--- HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name, Maybe LinkTarget)
-
 -- | When reading HashLines with accTrees, whether to accumulate this line or skip it.
 -- To keep the tree structure valid, should always be True when accRecurseChildren is True.
 -- TODO reorder the conditions to optimize speed
@@ -189,7 +176,6 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
        in {-# SCC "Lappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
-           -- childrenSorted = sortBy (compare `on` (treeName . snd)) children
            recurse = accRecurseChildren cfg hl
            dir = Dir
                    { dirContents = {-# SCC "DdirContents" #-} if recurse then map snd children else []
@@ -205,24 +191,12 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                                   then (Depth i, dir) : siblings
                                   else siblings
 
--- partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
 partitionChildrenSiblings i cs = (children, others)
   where
     children = takeWhile (\(Depth i2, _) -> i2 > i) cs
     others   = drop (length children) cs
 
 --- attoparsec parsers ---
-
--- TODO use bytestring the whole time rather than converting
--- TODO should this propogate the Either?
--- TODO any more elegant way to make the parsing strict?
--- TODO parse rather than parseOnly?
--- TODO count skipped lines here?
--- parseTreeFile :: Maybe Int -> B8.ByteString -> Either String (Header, [HashLine], Footer)
--- parseTreeFile md = parseOnly (fileP md)
-
--- bodyP :: Maybe Int -> Parser [HashLine]
--- bodyP md = linesP md -- <* endOfLine -- <* (lookAhead $ char '#')
 
 -- Without `deepseq`, the large chunk of memory needed by the parsers will be
 -- kept longer than necesary. Might as well force it as soon as we have the
