@@ -143,9 +143,9 @@ hReadTree cfg nr blksize hdl = do
   -- TODO if this is still hard in the morning, switch to putting the entire path in the graftline for now
   -- TODO or, another morning option: do a scan like scanl in HashLine (but maybe scanrM?)
   --      ... wait does scanning give us anything useful here? maybe not needed
-  -- let hls' = trace ("hls depths: " ++ show (map (\(HashLine (_,Depth d,_,_,_,_,_,_)) -> d) hls)) hls
+  let hls' = trace ("hls depths: " ++ show (map (\(HashLine (_,Depth d,_,_,_,_,_,_)) -> d) hls)) hls
 
-  folded <- foldrM (accTrees cfg) [] hls -- TODO did this change evaluation order at all?
+  folded <- foldrM (accTrees cfg) [] hls' -- TODO did this change evaluation order at all?
   return $ case folded of
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
     ((_, tree):_) -> tree
@@ -179,7 +179,7 @@ accTrees cfg gl@(GraftLine (d, n)) cs = {-# SCC "Gappend" #-} trace "accTrees Gr
       let graft = Graft { graftTree = gt, graftName = n }
       return $ (d, graft) : cs -- TODO should grafts increase depth?
 
-accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = trace ("accTrees HashLine " ++ show hl) $ return $ case t of
+accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = trace ("accTrees " ++ show hl) $ return $ case t of
 
   F -> let f = File
                  { fileData = ()
