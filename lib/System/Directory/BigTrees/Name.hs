@@ -42,6 +42,7 @@ module System.Directory.BigTrees.Name
   , joinNames
   , names2bs
   , os2ns
+  , op2n
   , op2ns
   , op2bs
   , bs2op
@@ -201,6 +202,9 @@ os2ns = map Name . SOP.splitDirectories
 
 op2ns :: SOP.OsPath -> [Name]
 op2ns = os2ns
+
+op2n :: SOP.OsPath -> Name
+op2n = head . op2ns -- TODO something safer?
 
 -- | Extra type alias to distinguish lists of Names representing a path in
 -- forward vs reverse order. Both can be converted to/from OsPaths.

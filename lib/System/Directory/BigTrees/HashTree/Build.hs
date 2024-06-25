@@ -316,12 +316,8 @@ buildTreeG' cfg verbose depth tree@(a DT.:/ (DT.File n _)) = do
   if not (".bigtree" `isSuffixOf` n')
     then buildTree' cfg (return . const ()) verbose depth tree
     else do
-      subTree <- readTree cfg $ a </> n
-      let g = Graft
-                { nodeData = nodeData subTree -- TODO get from footer separately
-                , nNodes = nNodes subTree -- TODO get from footer separately
-                , graftTree = subTree
-                }
+      gt <- readTree cfg $ a </> n
+      let g = Graft { graftName = op2n n, graftTree = gt }
       return g
 buildTreeG' cfg verbose depth tree =
   buildTree' cfg (return . const ()) verbose depth tree

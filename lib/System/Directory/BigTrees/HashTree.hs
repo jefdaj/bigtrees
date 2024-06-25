@@ -15,6 +15,7 @@ module System.Directory.BigTrees.HashTree
   , addSubTree
   , buildProdTree
   , buildTree
+  , buildTreeWithGrafts
   , dropTo
   , printTree
   , readOrBuildTree
@@ -75,7 +76,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 dropFileData, isErr, renameRoot, sumNodes,
                                                 treeEqIgnoringModTime, treeHash, treeModTime,
                                                 treeNBytes, treeName, treeType)
-import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree, readTestTree)
+import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree, buildTreeWithGrafts, readTestTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (accTrees, hReadTree, readLastHashLineAndFooter,

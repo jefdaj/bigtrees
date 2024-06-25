@@ -40,6 +40,7 @@ module System.Directory.BigTrees
   , NNodes(..)
   , addSubTree
   , buildTree
+  , buildTreeWithGrafts
   , buildProdTree
   -- , deserializeTree
   , dropTo
@@ -136,7 +137,7 @@ import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
                                                 hashContents, renameRoot, sumNodes, treeHash,
                                                 treeModTime, treeNBytes, treeName, zeroModTime)
-import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
+import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree, buildTreeWithGrafts)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter, readTree,

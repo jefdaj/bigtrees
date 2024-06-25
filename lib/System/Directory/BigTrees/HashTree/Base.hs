@@ -118,8 +118,7 @@ data HashTree a
       , dirContents :: [HashTree a] -- TODO rename dirContents?
       }
   | Graft
-      { nodeData  :: !NodeData -- TODO should these be here?
-      , nNodes    :: !NNodes   -- TODO should these be here?
+      { graftName :: !Name
       , graftTree :: HashTree a -- TODO just one, right? not a list/forest
       }
   deriving (Eq, Ord, Show, Generic)
@@ -341,13 +340,11 @@ confirmFileHashes :: TestTree -> Bool
 confirmFileHashes (File {fileData = f, nodeData=nd}) = hashBytes f == hash nd
 confirmFileHashes (Dir {dirContents = cs})           = all confirmFileHashes cs
 confirmFileHashes (Err {})                           = True -- TODO False?
+confirmFileHashes (Graft {graftTree=t})              = confirmFileHashes t
 confirmFileHashes (Link {linkData = l, nodeData=nd}) =
   case l of
     Nothing -> True
     Just ld -> hashBytes ld == hash nd
-confirmFileHashes (Graft {nodeData=nd, graftTree=t}) =
-  let nd' = nd { name = treeName t } -- TODO is that right?
-  in confirmFileHashes t && nodeData t == nd'
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes
