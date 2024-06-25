@@ -5,6 +5,7 @@ module System.Directory.BigTrees.HashTree.Read where
 
 import Control.DeepSeq (deepseq)
 -- import Control.Exception.Safe (catchAny)
+import Control.Monad (foldM)
 import qualified Data.ByteString.Char8 as B8
 import Data.Function (on)
 import Data.Functor ((<&>))
@@ -116,27 +117,38 @@ readTree cfg f = SFO.withFile f ReadMode $ \h -> do
   blksize <- getBlockSize f
   hReadTree cfg blksize h
 
+-- https://stackoverflow.com/a/17056952
+-- TODO is this also in MissingH or similar?
+foldrM :: Monad m => (a -> b -> m b) -> b -> [a] -> m b
+foldrM f d []     = return d
+foldrM f d (x:xs) = (\z -> f x z) =<< foldrM f d xs
+
 hReadTree :: SearchConfig -> Integer -> Handle -> IO ProdTree
 hReadTree cfg blksize hdl = do
   hls <- hParseTreeFileRev blksize hdl
-  return $ case foldr (accTrees cfg) [] hls of
+  folded <- foldrM (accTrees cfg) [] hls -- TODO did this change evaluation order at all?
+  return $ case folded of
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
     ((_, tree):_) -> tree
 
 {- This one is confusing! It accumulates a list of trees and their depth,
  - and when it comes across a dir it uses the depths to determine
  - which files are children to put inside it vs which are siblings.
+ -
+ - IO is only used in case of a Graft, because then we need to go read another
+ - tree file and insert it.
+ -
  - TODO error on null string/lines?
  - TODO should this return a *list* of trees? or is only one possible now that forests are gone?
  -}
-accTrees :: SearchConfig -> HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
+accTrees :: SearchConfig -> HashLine -> [(Depth, ProdTree)] -> IO [(Depth, ProdTree)]
 
 accTrees cfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
-  if accKeepLine cfg e
+  return $ if accKeepLine cfg e
     then (d, Err { errMsg = m, errName = n }):cs
     else cs
 
-accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
+accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = return $ case t of
 
   F -> let f = File
                  { fileData = ()
