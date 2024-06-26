@@ -41,18 +41,19 @@ main = do
   args <- D.parseArgsOrExit ptns =<< getArgs
   -- pPrint args
 
-  let cmd    n = D.isPresent  args $ D.command n
-      flag   n = D.isPresent  args $ D.longOption n
-      lstArg n = D.getAllArgs args $ D.argument n
-      reqArg n = D.getArgOrExitWith ptns args $ D.longOption n
-      optArg n = D.getArg args $ D.longOption n
-      optRead n = read <$> optArg n
+  let cmd     n = D.isPresent  args $ D.command n
+      flag    n = D.isPresent  args $ D.longOption n
+      lstArg  n = D.getAllArgs args $ D.argument n
+      reqArg  n = D.getArgOrExitWith ptns args $ D.argument   n
+      reqLong n = D.getArgOrExitWith ptns args $ D.longOption n
+      optLong  n = D.getArg args $ D.longOption n
+      optRead n = read <$> optLong n
 
-  eList <- case optArg "excludes-from" of
+  eList <- case optLong "excludes-from" of
              Nothing -> return $ excludeRegexes defaultSearchConfig
              Just f  -> readFile f <&> lines -- TODO more detailed parsing?
 
-  sList <- case optArg "searches-from" of
+  sList <- case optLong "searches-from" of
 
              -- get searches + labels from the file if given
              Just f -> do
@@ -62,10 +63,10 @@ main = do
                  Right lrs -> return lrs
 
              -- if no file, look for a single search + label in cli args
-             Nothing -> case optArg "search-regex" of
+             Nothing -> case optLong "search-regex" of
 
                -- regex given; return it along with possibly-default label
-               Just r -> let label = fromJust $ optArg "search-label"
+               Just r -> let label = fromJust $ optLong "search-label"
                              search = Search
                                         { dirContainsPath = Nothing
                                         , baseNameMatchesRegex = Nothing
@@ -76,13 +77,13 @@ main = do
                -- no regex given; use default (empty) search list
                Nothing -> return $ searches defaultSearchConfig
 
-  oPath <- case optArg "output" of
+  oPath <- case optLong "output" of
              Nothing -> return Nothing
              Just o  -> encodeFS o <&> Just
 
   let cfg = defaultAppConfig
         { outFile   = oPath
-        , outFormat = optArg "out-fmt"
+        , outFormat = optLong "out-fmt"
         , verbose   = flag "verbose"
         , searchCfg = defaultSearchConfig
           { minBytes   = NBytes  <$> optRead "min-size"
@@ -93,9 +94,9 @@ main = do
           , maxFiles   = NNodes  <$> optRead "max-files"
           , minModtime = ModTime <$> optRead "min-modtime"
           , maxModtime = ModTime <$> optRead "max-modtime"
-          , treeTypes      = map (\c -> read [c]) <$> optArg "types"
+          , treeTypes      = map (\c -> read [c]) <$> optLong "types"
           , excludeRegexes = eList
-          , excludeSet = optArg "exclude-set"
+          , excludeSet = optLong "exclude-set"
           , searches  = sList
           }
         }
@@ -113,8 +114,8 @@ main = do
 
   else if cmd "set-add" then do
     -- log cfg "set-add branch"
-    set  <- encodeFS =<< reqArg "set"
-    let note = optArg "note"
+    set  <- encodeFS =<< reqLong "set"
+    let note = optLong "note"
     paths <- mapM encodeFS $ lstArg "PATH"
     cmdSetAdd cfg set note paths
 
@@ -133,6 +134,5 @@ main = do
   else if cmd "version" then
     printVersion
 
-  -- TODO actual exception here?
-  else do
-    putStrLn "no valid command given :("
+  -- docopt should prevent this by aborting + printing usage
+  else error "probably a CLI parsing error"
