@@ -95,6 +95,7 @@ main = do
           , maxModtime = ModTime <$> optRead "max-modtime"
           , treeTypes      = map (\c -> read [c]) <$> optArg "types"
           , excludeRegexes = eList
+          , excludeSet = optArg "exclude-set"
           , searches  = sList
           }
         }
