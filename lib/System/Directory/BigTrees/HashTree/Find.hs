@@ -6,7 +6,7 @@ module System.Directory.BigTrees.HashTree.Find where
   -- )
   -- where
 
-import Control.Monad (when)
+import Control.Monad (when, forM)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (fromMaybe, mapMaybe)
@@ -18,7 +18,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), su
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, treeContainsPath)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.Directory.BigTrees.HashSet (HashSet, readHashSet, emptyHashSet, setContainsHash)
+import System.Directory.BigTrees.HashSet (HashSet, readHashList, hashSetFromList, emptyHashSet, setContainsHash)
 import Control.Monad.ST.Strict (ST, runST)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
@@ -39,12 +39,15 @@ import System.OsPath (encodeFS)
 listTreePaths :: SearchConfig -> String -> HashTree a -> IO [B8.ByteString]
 listTreePaths cfg fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
-  eSet <- case excludeSet cfg of
-            Nothing -> return $ emptyHashSet 0
-            Just fp -> encodeFS fp >>= readHashSet
+  -- TODO is it a problem allocating memory for this list in addition to the hashset?
+  eList <- case excludeSet cfg of
+             Nothing -> return []
+             Just fp -> encodeFS fp >>= readHashList
   return $ case mkLineMetaFormatter fmt of
     (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
-    (Right fmtFn ) -> listTreePaths' cfg cls eSet fmtFn (Depth 0) [] tree
+    (Right fmtFn ) -> runST $ do
+      eSet <- hashSetFromList eList
+      listTreePaths' cfg cls eSet fmtFn (Depth 0) [] tree
 
 {- Recursively render paths, passing a list of breadcrumbs.
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
@@ -53,23 +56,26 @@ listTreePaths cfg fmt tree = do
 listTreePaths'
   :: SearchConfig  -- ^ Main search config
   -> CompiledLabeledSearches -- ^ labeled searches
-  -> (forall s. ST s (HashSet s)) -- ^ Hashes to exclude (may be empty)
+  -> HashSet s -- ^ Hashes to exclude (may be empty)
   -> FmtFn                   -- ^ Path formatting function
   -> Depth                   -- ^ Depth of the tree for filtering min/max
   -> [Name]                  -- ^ Breadcrummbs/anchor to prefix paths with
   -> HashTree a              -- ^ The tree to list paths from
-  -> [B8.ByteString]
-listTreePaths' cfg cls eSet fmtFn (Depth d) ns t =
+  -> ST s [B8.ByteString]
+listTreePaths' cfg cls eSet fmtFn (Depth d) ns t = do
   let ns' = treeName t:ns
 
-      recPaths = case t of
-        (Dir {}) -> concat $ (flip map) (dirContents t) $
-                      listTreePaths' cfg cls eSet fmtFn (Depth $ d+1) ns'
-        _        -> []
+  recPaths <- case t of
 
-      keepNode = findKeepNode cfg eSet (Depth d) t
-  in
+        (Dir {}) ->
+          fmap concat $ forM (dirContents t) $ \t' ->
+            listTreePaths' cfg cls eSet fmtFn (Depth $ d+1) ns' t'
 
+        _        -> return []
+
+  keepNode <- findKeepNode cfg eSet (Depth d) t
+
+  return $
      -- If no regexes, list everything.
      if null cls then
        let curPaths = ([pathLine fmtFn (Depth d) Nothing ns t | keepNode])
@@ -86,21 +92,23 @@ listTreePaths' cfg cls eSet fmtFn (Depth d) ns t =
      -- If there are regexes but they don't match, keep looking.
      else recPaths
 
-findKeepNode :: SearchConfig -> (forall s. ST s (HashSet s)) -> Depth -> HashTree a -> Bool
-findKeepNode _ _ _ (Err {}) = False -- TODO is this how we should handle them?
-findKeepNode cfg eSet d t = and
-  [ not $ setContainsHash eSet $ treeHash t
-  , maybe True (d >=) $ minDepth cfg
-  , maybe True (d <=) $ maxDepth cfg
-  , maybe True (treeNBytes  t >=) $ minBytes cfg
-  , maybe True (treeNBytes  t <=) $ maxBytes cfg
-  , maybe True (sumNodes    t >=) $ minFiles cfg
-  , maybe True (sumNodes    t <=) $ maxFiles cfg
-  , maybe True (treeModTime t >=) $ minModtime cfg
-  , maybe True (treeModTime t <=) $ maxModtime cfg
-  , maybe True (treeType t `elem`) $ treeTypes cfg -- no need to save Dirs this time
-  -- TODO finish regex conditions here
-  ]
+findKeepNode :: SearchConfig -> HashSet s -> Depth -> HashTree a -> ST s Bool
+findKeepNode _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
+findKeepNode cfg eSet d t = do
+  excludeNode <- setContainsHash eSet $ treeHash t
+  return $ and
+    [ maybe True (d >=) $ minDepth cfg
+    , maybe True (d <=) $ maxDepth cfg
+    , maybe True (treeNBytes  t >=) $ minBytes cfg
+    , maybe True (treeNBytes  t <=) $ maxBytes cfg
+    , maybe True (sumNodes    t >=) $ minFiles cfg
+    , maybe True (sumNodes    t <=) $ maxFiles cfg
+    , maybe True (treeModTime t >=) $ minModtime cfg
+    , maybe True (treeModTime t <=) $ maxModtime cfg
+    , maybe True (treeType t `elem`) $ treeTypes cfg -- no need to save Dirs this time
+    , not excludeNode
+    -- TODO finish regex conditions here?
+    ]
 
 -- | A SearchLabel should always be available, unless there are no regex searches at all.
 -- When --search-regex is used on the CLI, the label defaults to "unlabeled-search".

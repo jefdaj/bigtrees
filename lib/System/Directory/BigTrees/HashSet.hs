@@ -125,6 +125,7 @@ type HashList = [(Hash, SetData)]
 
 -- TODO rename BigSet and HashTree -> BigTree?
 -- TODO would the unwrapped bytestring hash be more efficient here?
+-- TODO make a "lite" variant with no set data, only a literal set of hashes?
 type HashSet s = C.HashTable s Hash SetData
 
 
@@ -302,6 +303,7 @@ readHashList path = do
     Left msg -> error $ "failed to read hashset: " ++ msg
     Right hl -> return hl
 
+-- TODO is this the beginning of a transformer stack?
 readHashSet :: OsPath -> IO (ST s (HashSet s))
 readHashSet path = readHashList path >>= return . hashSetFromList
 
@@ -328,14 +330,13 @@ setNote note = map (\(h, sd) -> (h, sd { sdNote = note }))
 --- test whether hash is in set ---
 
 -- TODO clean up once you understand ST better
-lookupHash :: (forall s. ST s (HashSet s)) -> Hash -> Maybe SetData
-lookupHash set hash = runST $ do
-  s' <- set
-  C.lookup s' hash
+-- lookupHash :: ST s (HashSet s) -> Hash -> Maybe SetData
+-- lookupHash set hash = runST $ do
+--   s' <- set
+--   C.lookup s' hash
+
+lookupHash = undefined -- TODO remove for now, write properly when needed?
 
 -- TODO clean up once you understand ST better
-setContainsHash :: (forall s. ST s (HashSet s)) -> Hash -> Bool
-setContainsHash set hash = runST $ do
-  s' <- set
-  mSetData <- C.lookup s' hash
-  return $ isJust mSetData
+setContainsHash :: HashSet s -> Hash -> ST s Bool
+setContainsHash set hash = isJust <$> C.lookup set hash
