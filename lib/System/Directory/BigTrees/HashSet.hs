@@ -49,6 +49,7 @@ module System.Directory.BigTrees.HashSet
   , note2bs
   , s2note
 
+  , lookupHash
   , setContainsHash
 
   , prop_roundtrip_HashSet_to_ByteString
@@ -326,5 +327,13 @@ setNote note = map (\(h, sd) -> (h, sd { sdNote = note }))
 
 --- test whether hash is in set ---
 
-setContainsHash :: (forall s. HashSet s) -> Hash -> Bool
-setContainsHash set hash = runST $ fmap isJust $ C.lookup set hash
+-- TODO clean up once you understand ST better
+lookupHash :: (forall s. ST s (HashSet s)) -> Hash -> ST s (Maybe SetData)
+lookupHash set hash = set >>= \s -> C.lookup s hash
+
+-- TODO clean up once you understand ST better
+setContainsHash :: (forall s. ST s (HashSet s)) -> Hash -> Bool
+setContainsHash set hash = runST $ do
+  s' <- set
+  mSetData <- C.lookup s' hash
+  return $ isJust mSetData
