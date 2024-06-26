@@ -18,9 +18,11 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), su
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, treeContainsPath)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
+import System.Directory.BigTrees.HashSet (HashSet, ST, readHashSet, emptyHashSet)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
+import System.OsPath (encodeFS)
 
 -- import Debug.Trace
 
@@ -36,21 +38,24 @@ import Text.Regex.TDFA.ByteString
 listTreePaths :: SearchConfig -> String -> HashTree a -> IO [B8.ByteString]
 listTreePaths cfg fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
+  eSet <- case excludeSet cfg of
+            Nothing -> return $ emptyHashSet 0
+            Just fp -> encodeFS fp >>= readHashSet
   return $ case mkLineMetaFormatter fmt of
     (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
-    (Right fmtFn ) -> listTreePaths' cfg cls fmtFn (Depth 0) [] tree
+    (Right fmtFn ) -> listTreePaths' cfg cls eSet fmtFn (Depth 0) [] tree
 
 {- Recursively render paths, passing a list of breadcrumbs.
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
  - TODO implement this via Foldable or Traversable instead?
  -}
-listTreePaths' :: SearchConfig -> CompiledLabeledSearches -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
-listTreePaths' cfg cls fmtFn (Depth d) ns t =
+listTreePaths' :: SearchConfig -> CompiledLabeledSearches -> ST s (HashSet s) -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
+listTreePaths' cfg cls eSet fmtFn (Depth d) ns t =
   let ns' = treeName t:ns
 
       recPaths = case t of
         (Dir {}) -> concat $ (flip map) (dirContents t) $
-                      listTreePaths' cfg cls fmtFn (Depth $ d+1) ns'
+                      listTreePaths' cfg cls eSet fmtFn (Depth $ d+1) ns'
         _        -> []
 
   in

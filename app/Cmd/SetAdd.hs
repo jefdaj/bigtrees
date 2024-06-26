@@ -29,10 +29,7 @@ readTreeHashList cfg mn path = do
 readHashListIO :: AppConfig -> OsPath -> IO HashList
 readHashListIO cfg path = do
   log cfg $ "adding hashes from " ++ show path
-  eHL <- readHashList path
-  case eHL of
-    Left msg -> error $ "failed to read " ++ show path
-    Right hl -> return hl
+  readHashList path
 
 cmdSetAdd :: AppConfig -> OsPath -> Maybe String -> [OsPath] -> IO ()
 cmdSetAdd _ _ _ [] = return () -- Docopt should prevent this, but just in case

@@ -31,6 +31,7 @@ module System.Directory.BigTrees.HashSet
   ( SetData(..)
   , HashList
   , HashSet
+  , ST -- TODO is this weird to re-export?
   , Note(..)
   , emptyHashSet
   , hashSetFromTree
@@ -40,6 +41,7 @@ module System.Directory.BigTrees.HashSet
   , toSortedList
   , writeHashList
   , readHashList
+  , readHashSet
   , setNote
 
   , hashSetDataFromLine
@@ -74,7 +76,7 @@ import Data.Either
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, joinCols,
                                            nfilesP, sizeP)
-import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, TestTree (..),
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree (..),
                                            sumNodes, treeHash, treeNBytes, treeName)
 import System.Directory.BigTrees.Name (Name (..), bs2op)
 import qualified System.File.OsPath as SFO
@@ -289,10 +291,16 @@ parseHashList bs = parseHashSetLines bs <&> map f
   where
     f (HashSetLine (h, nn, nb, n)) = (h, SetData nn nb n)
 
--- TODO throw IO error rather than Left here?
-readHashList :: OsPath -> IO (Either String HashList)
-readHashList path = SFO.readFile' path <&> parseHashList
+-- TODO any reason to pass on the Either rather than making it an error?
+readHashList :: OsPath -> IO HashList
+readHashList path = do
+  eHL <- SFO.readFile' path <&> parseHashList
+  case eHL of
+    Left msg -> error $ "failed to read hashset: " ++ msg
+    Right hl -> return hl
 
+readHashSet :: OsPath -> IO (ST s (HashSet s))
+readHashSet path = readHashList path >>= return . hashSetFromList
 
 --- round-trip tests ---
 

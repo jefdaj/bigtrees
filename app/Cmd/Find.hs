@@ -33,7 +33,12 @@ cmdFind :: AppConfig -> OsPath -> IO ()
 cmdFind cfg path = do
   tree <- readOrBuildTree (searchCfg cfg) (verbose cfg) path
   let fmt   = fromMaybe "" $ outFormat cfg
+
+  -- I think hashes have to be removed here rather than above in the read/build
+  -- step, because we don't want to alter the dir hashes.
+  -- TODO should the exclude regexes also not be done at first? Think about pros/cons
   paths <- listTreePaths (searchCfg cfg) fmt tree
+
   case outFile cfg of
     Nothing -> mapM_ B8.putStrLn paths
     Just p  -> SFO.writeFile p $ B8.fromStrict $ B8.unlines paths
