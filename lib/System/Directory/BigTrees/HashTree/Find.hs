@@ -95,7 +95,7 @@ listTreePaths' cfg cls eSet fmtFn (Depth d) ns t = do
 findKeepNode :: SearchConfig -> HashSet s -> Depth -> HashTree a -> ST s Bool
 findKeepNode _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
 findKeepNode cfg eSet d t = do
-  excludeNode <- setContainsHash eSet $ treeHash t
+  excludeHash <- setContainsHash eSet $ treeHash t
   return $ and
     [ maybe True (d >=) $ minDepth cfg
     , maybe True (d <=) $ maxDepth cfg
@@ -106,7 +106,8 @@ findKeepNode cfg eSet d t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg -- no need to save Dirs this time
-    , not excludeNode
+    -- , not $ trace ("exclude? " ++ show excludeNode ++ " " ++ show (treeHash t)) excludeNode
+    , not excludeHash
     -- TODO finish regex conditions here?
     ]
 
