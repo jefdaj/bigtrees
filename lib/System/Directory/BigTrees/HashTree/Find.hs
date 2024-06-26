@@ -49,7 +49,15 @@ listTreePaths cfg fmt tree = do
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
  - TODO implement this via Foldable or Traversable instead?
  -}
-listTreePaths' :: SearchConfig -> CompiledLabeledSearches -> ST s (HashSet s) -> FmtFn -> Depth -> [Name] -> HashTree a -> [B8.ByteString]
+listTreePaths'
+  :: SearchConfig            -- ^ Main search config
+  -> CompiledLabeledSearches -- ^ labeled searches
+  -> ST s (HashSet s)        -- ^ Hashes to exclude (may be empty)
+  -> FmtFn                   -- ^ Path formatting function
+  -> Depth                   -- ^ Depth of the tree for filtering min/max
+  -> [Name]                  -- ^ Breadcrummbs/anchor to prefix paths with
+  -> HashTree a              -- ^ The tree to list paths from
+  -> [B8.ByteString]
 listTreePaths' cfg cls eSet fmtFn (Depth d) ns t =
   let ns' = treeName t:ns
 

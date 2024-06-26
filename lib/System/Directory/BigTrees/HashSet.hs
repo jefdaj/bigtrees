@@ -49,6 +49,8 @@ module System.Directory.BigTrees.HashSet
   , note2bs
   , s2note
 
+  , isHashInSet
+
   , prop_roundtrip_HashSet_to_ByteString
   )
   where
@@ -62,7 +64,7 @@ import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.Massiv.Array as A
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 
 import Control.DeepSeq (NFData)
 import qualified Data.Text as T
@@ -320,3 +322,9 @@ prop_roundtrip_HashSet_to_ByteString = monadicIO $ do
 
 setNote :: Note -> HashList -> HashList
 setNote note = map (\(h, sd) -> (h, sd { sdNote = note }))
+
+
+--- test whether hash is in set ---
+
+isHashInSet :: Hash -> HashSet s -> ST s Bool
+isHashInSet hash set = fmap isJust $ C.lookup set hash
