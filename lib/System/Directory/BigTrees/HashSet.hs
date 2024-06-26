@@ -328,8 +328,10 @@ setNote note = map (\(h, sd) -> (h, sd { sdNote = note }))
 --- test whether hash is in set ---
 
 -- TODO clean up once you understand ST better
-lookupHash :: (forall s. ST s (HashSet s)) -> Hash -> ST s (Maybe SetData)
-lookupHash set hash = set >>= \s -> C.lookup s hash
+lookupHash :: (forall s. ST s (HashSet s)) -> Hash -> Maybe SetData
+lookupHash set hash = runST $ do
+  s' <- set
+  C.lookup s' hash
 
 -- TODO clean up once you understand ST better
 setContainsHash :: (forall s. ST s (HashSet s)) -> Hash -> Bool

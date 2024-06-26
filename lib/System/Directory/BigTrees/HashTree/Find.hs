@@ -53,7 +53,7 @@ listTreePaths cfg fmt tree = do
 listTreePaths'
   :: SearchConfig  -- ^ Main search config
   -> CompiledLabeledSearches -- ^ labeled searches
-  -> (forall s. HashSet s)        -- ^ Hashes to exclude (may be empty)
+  -> (forall s. ST s (HashSet s)) -- ^ Hashes to exclude (may be empty)
   -> FmtFn                   -- ^ Path formatting function
   -> Depth                   -- ^ Depth of the tree for filtering min/max
   -> [Name]                  -- ^ Breadcrummbs/anchor to prefix paths with
@@ -67,16 +67,18 @@ listTreePaths' cfg cls eSet fmtFn (Depth d) ns t =
                       listTreePaths' cfg cls eSet fmtFn (Depth $ d+1) ns'
         _        -> []
 
+      keepNode = findKeepNode cfg eSet (Depth d) t
   in
+
      -- If no regexes, list everything.
      if null cls then
-       let curPaths = ([pathLine fmtFn (Depth d) Nothing ns t | findKeepNode cfg eSet (Depth d) t])
+       let curPaths = ([pathLine fmtFn (Depth d) Nothing ns t | keepNode])
        in curPaths ++ recPaths
 
      -- If the current path matches we DO NOT need to search inside it, because
      -- we already have the one unique top-level match we want.
      -- else if pathMatches cls ns' then curPaths
-     else if findKeepNode cfg eSet (Depth d) t then
+     else if keepNode then
        case findLabelNode cls ns t of
          Nothing -> recPaths -- node matches other "keep" criteria but none of the regexes
          Just l  -> [pathLine fmtFn (Depth d) (Just l) ns t] -- has a labeled match
@@ -84,7 +86,7 @@ listTreePaths' cfg cls eSet fmtFn (Depth d) ns t =
      -- If there are regexes but they don't match, keep looking.
      else recPaths
 
-findKeepNode :: SearchConfig -> (forall s. HashSet s) -> Depth -> HashTree a -> Bool
+findKeepNode :: SearchConfig -> (forall s. ST s (HashSet s)) -> Depth -> HashTree a -> Bool
 findKeepNode _ _ _ (Err {}) = False -- TODO is this how we should handle them?
 findKeepNode cfg eSet d t = and
   [ not $ setContainsHash eSet $ treeHash t
