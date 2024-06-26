@@ -14,11 +14,12 @@ import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
                                            TreeType (..), sepChar)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeModTime,
-                                                treeNBytes, treeName, treeType)
+                                                treeNBytes, treeName, treeType, treeHash)
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, treeContainsPath)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.Directory.BigTrees.HashSet (HashSet, ST, readHashSet, emptyHashSet)
+import System.Directory.BigTrees.HashSet (HashSet, readHashSet, emptyHashSet, setContainsHash)
+import Control.Monad.ST.Strict (ST, runST)
 import System.IO (hFlush, stdout)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
@@ -50,9 +51,9 @@ listTreePaths cfg fmt tree = do
  - TODO implement this via Foldable or Traversable instead?
  -}
 listTreePaths'
-  :: SearchConfig            -- ^ Main search config
+  :: SearchConfig  -- ^ Main search config
   -> CompiledLabeledSearches -- ^ labeled searches
-  -> ST s (HashSet s)        -- ^ Hashes to exclude (may be empty)
+  -> (forall s. HashSet s)        -- ^ Hashes to exclude (may be empty)
   -> FmtFn                   -- ^ Path formatting function
   -> Depth                   -- ^ Depth of the tree for filtering min/max
   -> [Name]                  -- ^ Breadcrummbs/anchor to prefix paths with
@@ -69,13 +70,13 @@ listTreePaths' cfg cls eSet fmtFn (Depth d) ns t =
   in
      -- If no regexes, list everything.
      if null cls then
-       let curPaths = ([pathLine fmtFn (Depth d) Nothing ns t | findKeepNode cfg (Depth d) t])
+       let curPaths = ([pathLine fmtFn (Depth d) Nothing ns t | findKeepNode cfg eSet (Depth d) t])
        in curPaths ++ recPaths
 
      -- If the current path matches we DO NOT need to search inside it, because
      -- we already have the one unique top-level match we want.
      -- else if pathMatches cls ns' then curPaths
-     else if findKeepNode cfg (Depth d) t then
+     else if findKeepNode cfg eSet (Depth d) t then
        case findLabelNode cls ns t of
          Nothing -> recPaths -- node matches other "keep" criteria but none of the regexes
          Just l  -> [pathLine fmtFn (Depth d) (Just l) ns t] -- has a labeled match
@@ -83,10 +84,11 @@ listTreePaths' cfg cls eSet fmtFn (Depth d) ns t =
      -- If there are regexes but they don't match, keep looking.
      else recPaths
 
-findKeepNode :: SearchConfig -> Depth -> HashTree a -> Bool
-findKeepNode _ _ (Err {}) = False -- TODO is this how we should handle them?
-findKeepNode cfg d t = and
-  [ maybe True (d >=) $ minDepth cfg
+findKeepNode :: SearchConfig -> (forall s. HashSet s) -> Depth -> HashTree a -> Bool
+findKeepNode _ _ _ (Err {}) = False -- TODO is this how we should handle them?
+findKeepNode cfg eSet d t = and
+  [ not $ setContainsHash eSet $ treeHash t
+  , maybe True (d >=) $ minDepth cfg
   , maybe True (d <=) $ maxDepth cfg
   , maybe True (treeNBytes  t >=) $ minBytes cfg
   , maybe True (treeNBytes  t <=) $ maxBytes cfg
