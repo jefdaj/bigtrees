@@ -25,6 +25,7 @@ import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
+import Control.Monad (when)
 -- import Text.Pretty.Simple (pPrint)
 
 printVersion :: IO ()
@@ -39,15 +40,17 @@ main = do
 
   let ptns = [D.docoptFile|app/usage.txt|]
   args <- D.parseArgsOrExit ptns =<< getArgs
-  -- pPrint args
 
   let cmd     n = D.isPresent  args $ D.command n
       flag    n = D.isPresent  args $ D.longOption n
       lstArg  n = D.getAllArgs args $ D.argument n
-      reqArg  n = D.getArgOrExitWith ptns args $ D.argument   n
-      reqLong n = D.getArgOrExitWith ptns args $ D.longOption n
+      reqPathArg n = encodeFS =<< D.getArgOrExitWith ptns args (D.argument n)
+      reqPathOpt n = encodeFS =<< D.getArgOrExitWith ptns args (D.longOption n)
       optLong  n = D.getArg args $ D.longOption n
       optRead n = read <$> optLong n
+
+  -- can't use log here because cfg hasn't been parsed yet
+  -- when (flag "verbose") $ pPrint args
 
   eList <- case optLong "excludes-from" of
              Nothing -> return $ excludeRegexes defaultSearchConfig
@@ -101,34 +104,33 @@ main = do
           }
         }
 
-  -- pPrint cfg
+  -- log cfg cfg
 
   if cmd "diff" then do
-    old <- encodeFS =<< reqArg "OLD"
-    new <- encodeFS =<< reqArg "NEW"
+    old <- reqPathArg "OLD"
+    new <- reqPathArg "NEW"
     cmdDiff cfg old new
 
   else if cmd "dupes" then do
-    hashes <- encodeFS =<< reqArg "HASHES"
+    hashes <- reqPathArg "HASHES"
     cmdDupes cfg hashes
 
   else if cmd "set-add" then do
-    -- log cfg "set-add branch"
-    set  <- encodeFS =<< reqLong "set"
+    set  <- reqPathOpt "set"
     let note = optLong "note"
     paths <- mapM encodeFS $ lstArg "PATH"
     cmdSetAdd cfg set note paths
 
   else if cmd "find" then do
-    path <- encodeFS =<< reqArg "PATH" -- TODO multiple paths?
+    path <- reqPathArg "PATH" -- TODO multiple paths?
     cmdFind cfg path
 
   else if cmd "hash" then do
-     path <- encodeFS =<< reqArg "PATH"
+     path <- reqPathArg "PATH"
      cmdHash cfg path
 
   else if cmd "info" then do
-    path <- encodeFS =<< reqArg "PATH"
+    path <- reqPathArg "PATH"
     cmdInfo cfg path
 
   else if cmd "version" then

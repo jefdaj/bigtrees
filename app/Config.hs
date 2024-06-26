@@ -16,6 +16,7 @@ import Prelude hiding (log)
 import System.Directory.BigTrees (LabeledSearches, SearchConfig (..), SearchLabel,
                                   defaultSearchConfig, parseLabeledSearches)
 import System.OsPath (OsPath)
+import Text.Pretty.Simple (pPrint)
 
 -- TODO derive To/FromJSON for the AppConfig so it can go in Headers?
 --      or just the exclude and maxdepth values for now
@@ -25,7 +26,7 @@ import System.OsPath (OsPath)
  -}
 -- TODO remove from non-Cmd modules
 data AppConfig = AppConfig
-  { outFile   :: Maybe OsPath
+  { outFile   :: Maybe OsPath -- TODO String so config can derive Read?
   , outFormat :: Maybe String
   , searchCfg :: SearchConfig
   , verbose   :: Bool
@@ -51,5 +52,5 @@ defaultAppConfig = AppConfig
   }
 
 -- TODO remove this from Util
-log :: AppConfig -> String -> IO ()
-log cfg msg = when (verbose cfg) (putStrLn msg)
+log :: Show a => AppConfig -> a -> IO ()
+log cfg msg = when (verbose cfg) (pPrint msg)
