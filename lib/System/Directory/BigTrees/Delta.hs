@@ -61,6 +61,7 @@ printDeltas ds = mapM prettyDelta ds >>= mapM_ B.putStrLn
 diff :: (Eq a, Show a) => HashTree a -> HashTree a -> [Delta a]
 diff = diff' mempty
 
+-- TODO fix non-exhaustive patterns
 diff' :: (Eq a, Show a) => OsPath -> HashTree a -> HashTree a -> [Delta a]
 diff' a t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
