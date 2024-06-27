@@ -40,13 +40,11 @@ listTreePaths :: SearchConfig -> String -> HashTree a -> IO [B8.ByteString]
 listTreePaths cfg fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
-  eList <- case excludeSet cfg of
-             Nothing -> return []
-             Just fp -> encodeFS fp >>= readHashList
+  eLists <- forM (excludeSetPaths cfg) $ \fp -> encodeFS fp >>= readHashList
   return $ case mkLineMetaFormatter fmt of
-    (Left  errMsg) -> error errMsg -- TODO anything to do besides die here?
+    (Left  errMsg) -> error errMsg -- TODO anything to do besides die?
     (Right fmtFn ) -> runST $ do
-      eSet <- hashSetFromList eList
+      eSet <- hashSetFromList $ concat eLists -- TODO is there a better way than concat?
       listTreePaths' cfg cls eSet fmtFn (Depth 0) [] tree
 
 {- Recursively render paths, passing a list of breadcrumbs.

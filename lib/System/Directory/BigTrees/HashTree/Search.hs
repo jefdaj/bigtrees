@@ -35,7 +35,7 @@ data SearchConfig = SearchConfig
   , maxModtime     :: Maybe ModTime
   , treeTypes      :: Maybe [TreeType]
   , excludeRegexes :: [String]
-  , excludeSet     :: Maybe FilePath
+  , excludeSetPaths :: [FilePath]
   , searches       :: LabeledSearches
   }
   deriving (Read, Show, Generic)
@@ -54,7 +54,7 @@ emptySearchConfig = SearchConfig
   , maxModtime     = Nothing
   , treeTypes      = Nothing
   , excludeRegexes = []
-  , excludeSet     = Nothing
+  , excludeSetPaths = []
   , searches  = []
   }
 

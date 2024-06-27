@@ -47,7 +47,8 @@ main = do
       reqPathArg n = encodeFS =<< D.getArgOrExitWith ptns args (D.argument n)
       reqPathOpt n = encodeFS =<< D.getArgOrExitWith ptns args (D.longOption n)
       optLong  n = D.getArg args $ D.longOption n
-      optRead n = read <$> optLong n
+      optLongs n = D.getAllArgs args $ D.longOption n
+      optRead  n = read <$> optLong n
 
   -- can't use log here because cfg hasn't been parsed yet
   -- when (flag "verbose") $ pPrint args
@@ -99,7 +100,7 @@ main = do
           , maxModtime = ModTime <$> optRead "max-modtime"
           , treeTypes      = map (\c -> read [c]) <$> optLong "types"
           , excludeRegexes = eList
-          , excludeSet = optLong "exclude-set"
+          , excludeSetPaths = optLongs "exclude-set"
           , searches  = sList
           }
         }
