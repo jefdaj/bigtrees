@@ -46,8 +46,8 @@ module System.Directory.BigTrees
   , dropFileData
   , flattenTree
   , hashContents
-  , listAllFiles
-  , listLostFiles
+  -- , listAllFiles
+  -- , listLostFiles
   , printTree
   , writeTree
   , hWriteTree
@@ -112,8 +112,9 @@ module System.Directory.BigTrees
 
   -- dupemap
   , DupeSet
-  , DupeMap
-  , allDupes
+  , DupeTable
+  -- , DupeMap
+  -- , allDupes
   , dupesByNNodes
   , pathsByHash
   , mergeDupeSets
@@ -126,8 +127,8 @@ module System.Directory.BigTrees
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
-import System.Directory.BigTrees.DupeMap (DupeMap, DupeSet, allDupes, dupesByNNodes, listAllFiles,
-                                          listLostFiles, mergeDupeSets, pathsByHash, printDupes,
+import System.Directory.BigTrees.DupeMap (DupeSet, DupeTable, dupesByNNodes,
+                                          mergeDupeSets, pathsByHash, printDupes,
                                           writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),

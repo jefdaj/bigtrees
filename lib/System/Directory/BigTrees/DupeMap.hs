@@ -10,21 +10,22 @@
 
 module System.Directory.BigTrees.DupeMap
   ( DupeSet
-  , DupeMap
+  , DupeTable
   , addToDupeMap
-  , allDupes
-  , anotherCopy
   , dupesByNNodes
   , explainDupes
   , insertDupeSet
-  , listAllFiles
-  , listLostFiles
   , mergeDupeSets
   , pathsByHash
   , printDupes
   , scoreSets
   , simplifyDupes
   , writeDupes
+  -- , DupeMap
+  -- , allDupes
+  -- , anotherCopy
+  -- , listAllFiles
+  -- , listLostFiles
   )
   where
 
@@ -48,18 +49,21 @@ import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
 import System.OsPath
 
+-- TODO be able to serialize dupe tables for debugging
+
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/bigtrees/demo/myfirstdedup/unsorted/backup/backup
 
 -- TODO can Foldable or Traversable simplify these?
 
--- note that most of the functions use (Hash, DupeSet) instead of plain DupeSet
 -- TODO is DupeSet a Monoid?
+-- TODO store paths as NamesRev instead of OsPath?
+-- TODO newtypes here? or strict data?
 type DupeSet  = (Int, TreeType, S.HashSet OsPath)
 type DupeList = (Int, TreeType, [OsPath])
 
 -- TODO remove DupeMap type?
-type DupeMap     = M.HashMap Hash DupeSet
+-- type DupeMap     = M.HashMap Hash DupeSet
 type DupeTable s = C.HashTable s Hash DupeSet
 
 --------------------------------
@@ -216,11 +220,13 @@ explainDupes md ls = mapM explainGroup ls <&> B.unlines
 -- info about copy numbers --
 -----------------------------
 
--- TODO is this actually helpful?
-listAllFiles :: OsPath -> ProdTree -> [(Hash, OsPath)]
-listAllFiles anchor (File {nodeData=(NodeData{name=Name n, hash=h})}) = [(h, anchor </> n)]
-listAllFiles anchor (Dir {nodeData=(NodeData{name=Name n}), dirContents=cs}) =
-  concatMap (listAllFiles $ anchor </> n) cs
+-- TODO remove entire section?
+
+-- TODO remove? works, but not sure if ever needed
+-- listAllFiles :: OsPath -> ProdTree -> [(Hash, OsPath)]
+-- listAllFiles anchor (File {nodeData=(NodeData{name=Name n, hash=h})}) = [(h, anchor </> n)]
+-- listAllFiles anchor (Dir {nodeData=(NodeData{name=Name n}), dirContents=cs}) =
+--   concatMap (listAllFiles $ anchor </> n) cs
 
 
 -- TODO rewrite allDupes by removing the subtree first then testing membership
@@ -228,34 +234,37 @@ listAllFiles anchor (Dir {nodeData=(NodeData{name=Name n}), dirContents=cs}) =
 
 -- helper for allDupes
 -- TODO how to make the lookups safe?
-anotherCopy :: Hash -> DupeMap -> DupeMap -> Bool
-anotherCopy h mainMap subMap = nMain > nSub
-  where
-    (Just nMain) = (\(n,_,_) -> n) <$> M.lookup h mainMap
-    (Just nSub ) = (\(n,_,_) -> n) <$> M.lookup h subMap
+-- TODO remove? works, but not sure if ever needed
+-- anotherCopy :: Hash -> DupeMap -> DupeMap -> Bool
+-- anotherCopy h mainMap subMap = nMain > nSub
+--   where
+--     (Just nMain) = (\(n,_,_) -> n) <$> M.lookup h mainMap
+--     (Just nSub ) = (\(n,_,_) -> n) <$> M.lookup h subMap
 
 -- TODO finish this
-allDupes :: ProdTree -> ProdTree -> Bool
--- allDupes mainTree subTree = all safeToRmHash $ undefined subDupes
-allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
-  where
-    mainDupes = undefined $ pathsByHash mainTree
-    subDupes  = undefined $ pathsByHash subTree
-    safeToRmHash h = anotherCopy h mainDupes subDupes
+-- TODO remove? not sure if ever needed
+--allDupes :: ProdTree -> ProdTree -> Bool
+---- allDupes mainTree subTree = all safeToRmHash $ undefined subDupes
+--allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
+--  where
+--    mainDupes = undefined $ pathsByHash mainTree
+--    subDupes  = undefined $ pathsByHash subTree
+--    safeToRmHash h = anotherCopy h mainDupes subDupes
 
+-- TODO remove? not sure if ever needed
 -- for warning the user when their action will delete the last copy of a file
 -- TODO also warn about directories, because sometimes they might care (Garageband files for example)
 -- TODO make more efficient by restricting to hashes found in the removed subtree!
 --      (only used for Rm right?)
-listLostFiles :: HashTree () -> HashTree () -> [OsPath]
-listLostFiles before after = filesLost
-  where
-    hashesBefore = pathsByHash before
-    hashesAfter  = pathsByHash after
-    hashesLost   = undefined hashesBefore hashesAfter
-    filesLost    = sort $ S.toList $ S.unions $ M.elems
-                 $ M.map (\(_,_,fs) -> fs)
-                 $ M.filter (\(_,t,_) -> t == F) hashesLost
+--listLostFiles :: HashTree () -> HashTree () -> [OsPath]
+--listLostFiles before after = filesLost
+--  where
+--    hashesBefore = pathsByHash before
+--    hashesAfter  = pathsByHash after
+--    hashesLost   = undefined hashesBefore hashesAfter
+--    filesLost    = sort $ S.toList $ S.unions $ M.elems
+--                 $ M.map (\(_,_,fs) -> fs)
+--                 $ M.filter (\(_,t,_) -> t == F) hashesLost
 
 -----------
 -- tests --
