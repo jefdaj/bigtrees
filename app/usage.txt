@@ -7,7 +7,7 @@ Usage:
   bigtrees [-v] diff OLD NEW [--output OUTFILE]
   bigtrees [-v] dupes HASHES [--output OUTFILE] [--max-depth N]
   bigtrees [-v] set-add --set SET [--note NOTE] PATH...
-  bigtrees [-v] find PATH [--exclude-set ESET...] [--search-regex REGEX [--search-label LABEL] | --searches-from SFILE] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--out-fmt FORMAT]
+  bigtrees [-v] find PATH [--search-regex REGEX [--search-label LABEL] | --searches-json SJSON] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--out-fmt FORMAT] [--exclude-set ESET...]
 
 Commands:
   hash       Reads files + folders and prints/saves their hashes + metadata.
@@ -38,7 +38,7 @@ Options:
   --search-regex REGEX   Single regular expression to test filtering.
   --search-label LABEL   Single label to test --out-fmt printing. Output is tab separated,
                          so spaces are fine here. [default: unlabeled]
-  --searches-from SFILE  Load a map of search labels -> regexes. (TODO explain format)
+  --searches-json SJSON  Load a map of search labels -> regexes. (TODO explain format)
 
   --set SET              Bigset to operate on.
   --note NOTE            Replace all hashset notes with the given string.

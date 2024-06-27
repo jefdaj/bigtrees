@@ -57,7 +57,7 @@ main = do
              Nothing -> return $ excludeRegexes defaultSearchConfig
              Just f  -> readFile f <&> lines -- TODO more detailed parsing?
 
-  sList <- case optLong "searches-from" of
+  sList <- case optLong "searches-json" of
 
              -- get searches + labels from the file if given
              Just f -> do
@@ -78,7 +78,7 @@ main = do
                                         }
                          in return [(label, [search])]
 
-               -- no regex given; use default (empty) search list
+               -- no search file given; use default (empty) search list
                Nothing -> return $ searches defaultSearchConfig
 
   oPath <- case optLong "output" of
