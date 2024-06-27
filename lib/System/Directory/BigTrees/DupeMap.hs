@@ -11,6 +11,8 @@
 module System.Directory.BigTrees.DupeMap
   ( DupeSet
   , DupeTable
+  , SortedDupeLists
+  , SortedDupeSets
   , addToDupeMap
   , dupesByNNodes
   , explainDupes
@@ -31,7 +33,7 @@ module System.Directory.BigTrees.DupeMap
 
 import Control.Monad.ST (ST, runST)
 import qualified Data.ByteString.Char8 as B
-import qualified Data.HashMap.Strict as M
+-- import qualified Data.HashMap.Strict as M TODO remove package?
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
@@ -42,7 +44,7 @@ import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
-import System.Directory.BigTrees.Name (Name (..), n2bs)
+import System.Directory.BigTrees.Name (Name (..))
 -- import System.OsPath (splitDirectories, (</>))
 
 import Data.Functor ((<&>))
@@ -65,6 +67,10 @@ type DupeList = (Int, TreeType, [OsPath])
 -- TODO remove DupeMap type?
 -- type DupeMap     = M.HashMap Hash DupeSet
 type DupeTable s = C.HashTable s Hash DupeSet
+
+-- TODO newtypes?
+type SortedDupeSets  = [DupeSet]
+type SortedDupeLists = [DupeList]
 
 --------------------------------
 -- DupeTable from hashes file --
@@ -97,7 +103,13 @@ addToDupeMap ht = addToDupeMap' ht mempty
 
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> OsPath -> ProdTree -> ST s ()
-addToDupeMap' ht dir (File {nodeData=(NodeData{name=Name n, hash=h})}) = insertDupeSet ht h (1, F, S.singleton $ dir </> n)
+
+-- TODO Link case (separate L from B?)
+-- TODO Err case
+
+addToDupeMap' ht dir (File {nodeData=(NodeData{name=Name n, hash=h})})
+  = insertDupeSet ht h (1, F, S.singleton $ dir </> n)
+
 addToDupeMap' ht dir (Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
   insertDupeSet ht h (fs, D, S.singleton $ dir </> n)
   mapM_ (addToDupeMap' ht (dir </> n)) cs
@@ -116,7 +128,7 @@ mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 -- TODO is this reasonable?
 type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
-dupesByNNodes :: (forall s. ST s (DupeTable s)) -> [DupeList]
+dupesByNNodes :: (forall s. ST s (DupeTable s)) -> SortedDupeLists
 dupesByNNodes ht = simplifyDupes $ Prelude.map fixElem sortedL
   where
     sets     = runST $ scoreSets =<< ht
@@ -130,10 +142,12 @@ dupesByNNodes ht = simplifyDupes $ Prelude.map fixElem sortedL
  - * adjusts the int scores from "n files in set" to "n files saved by dedup"
  - * negates scores so quicksort will put them in descending order
  -}
-scoreSets :: C.HashTable s Hash DupeSet -> ST s [DupeSet]
+scoreSets :: C.HashTable s Hash DupeSet -> ST s SortedDupeSets 
 scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
   return $ if length fs > 1 then (negate $ score v,t,fs):vs else vs) []
   where
+    -- TODO L, B, E cases
+    -- TODO reference set case
     score (n, D, fs) = n - n `div` length fs
     score (n, F, _ ) = n - 1
 
@@ -152,7 +166,7 @@ scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
  - ... then the second set is redundant and confusing to show.
  -}
-simplifyDupes :: [DupeList] -> [DupeList]
+simplifyDupes :: SortedDupeLists -> SortedDupeLists
 simplifyDupes [] = []
 simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
   where
@@ -180,20 +194,19 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
 -- hasDupes :: (Hash, DupeSet) -> Bool
 -- hasDupes (_, (nfiles, _, paths)) = S.size paths > 1 && nfiles > 0
 
--- TODO use this as the basis for the dedup repl
 -- TODO subtract one group when saying how many dupes in a dir,
 --      and 1 when saying how many in a file. because it's about how much you would save
-printDupes :: SearchConfig -> [DupeList] -> IO ()
+printDupes :: SearchConfig -> SortedDupeLists -> IO ()
 printDupes cfg groups = do
   msg <- explainDupes (maxDepth cfg) groups
   B.putStrLn msg
 
-writeDupes :: SearchConfig -> OsPath -> [DupeList] -> IO ()
+writeDupes :: SearchConfig -> OsPath -> SortedDupeLists -> IO ()
 writeDupes cfg path groups = do
   msg <- explainDupes (maxDepth cfg) groups
   SFO.writeFile' path msg
 
-explainDupes :: Maybe Depth -> [DupeList] -> IO B.ByteString
+explainDupes :: Maybe Depth -> SortedDupeLists -> IO B.ByteString
 explainDupes md ls = mapM explainGroup ls <&> B.unlines
   where
     disclaimer Nothing  = ""
@@ -207,6 +220,7 @@ explainDupes md ls = mapM explainGroup ls <&> B.unlines
              $ (header t n (length paths) `B.append` ":")
              : sort (map B.pack paths')
 
+    -- TODO L, B, E cases
     header :: TreeType -> Int -> Int -> B.ByteString
     header F n fs = B.intercalate " " [ "# deduping these"  , B.pack (show fs)
       , "files would remove", B.append (B.pack (show n )) (disclaimer md)
