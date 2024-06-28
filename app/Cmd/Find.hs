@@ -35,8 +35,9 @@ cmdFind cfg path = do
   let fmt   = fromMaybe "" $ outFormat cfg
 
   -- I think hashes have to be removed here rather than above in the read/build
-  -- step, because we don't want to alter the dir hashes.
+  -- step (when building, not reading), because we don't want to alter the dir hashes.
   -- TODO should the exclude regexes also not be done at first? Think about pros/cons
+  -- TODO is this a reason to separate read from build more definitively?
   paths <- listTreePaths (searchCfg cfg) fmt tree
 
   case outFile cfg of

@@ -81,7 +81,6 @@ listTreePaths' cfg cls eSet fmtFn (Depth d) ns t = do
 
      -- If the current path matches we DO NOT need to search inside it, because
      -- we already have the one unique top-level match we want.
-     -- else if pathMatches cls ns' then curPaths
      else if keepNode then
        case findLabelNode cls ns t of
          Nothing -> recPaths -- node matches other "keep" criteria but none of the regexes

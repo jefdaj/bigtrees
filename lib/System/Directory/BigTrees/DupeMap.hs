@@ -39,12 +39,13 @@ import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.Name (Name (..), n2op)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
-                                           ProdTree, treeType, treeHash,
+                                           ProdTree, treeType, treeHash, treeModTime, sumNodes, treeNBytes,
                                            treeName, SearchConfig (..))
 import System.IO (Handle, IOMode (..))
 import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath, (</>), splitDirectories, decodeFS)
+import System.Directory.BigTrees.HashSet (HashSet, readHashList, hashSetFromList, emptyHashSet, setContainsHash)
 
 -- TODO be able to serialize dupe tables for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -63,9 +64,8 @@ type DupeTable s = C.HashTable s Hash DupeSet
 type SortedDupeSets  = [DupeSet]
 type SortedDupeLists = [DupeList]
 
------------------------------
--- DupeTable from HashTree --
------------------------------
+
+--- DupeTable from HashTree ---
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
@@ -200,9 +200,30 @@ explainDupes md ls = mapM explainGroup ls <&> B8.unlines
       , "links would remove", B8.append (B8.pack $ show n) (disclaimer md)
       ]
 
------------
--- tests --
------------
+
+------------------- filter which nodes are added to dupemaps ------------------
+
+-- TODO is there a smarter way to combine this with findKeepNode in HashTree.Find?
+--      it's almost the same except it includes rather than excludes the set
+dupesKeepNode :: SearchConfig -> HashSet s -> Depth -> HashTree a -> ST s Bool
+dupesKeepNode _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
+dupesKeepNode cfg eSet d t = do
+  includeHash <- setContainsHash eSet $ treeHash t
+  return $ and
+    [ maybe True (d >=) $ minDepth cfg
+    , maybe True (d <=) $ maxDepth cfg
+    , maybe True (treeNBytes  t >=) $ minBytes cfg
+    , maybe True (treeNBytes  t <=) $ maxBytes cfg
+    , maybe True (sumNodes    t >=) $ minFiles cfg
+    , maybe True (sumNodes    t <=) $ maxFiles cfg
+    , maybe True (treeModTime t >=) $ minModtime cfg
+    , maybe True (treeModTime t <=) $ maxModtime cfg
+    , maybe True (treeType t `elem`) $ treeTypes cfg
+    , includeHash
+    ]
+
+
+---------------------------------- tests --------------------------------------
 
 -- TODO property: if you dedup a list of the same dir 2+ times,
 -- there should only be one big overall dupe
