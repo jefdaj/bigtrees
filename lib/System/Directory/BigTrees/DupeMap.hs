@@ -15,7 +15,8 @@ module System.Directory.BigTrees.DupeMap
   , SortedDupeSets
   , addTreeToDupeMap
   , dupesByNegScore
-  , explainDupes
+  , explainDupesSelf
+  , explainDupesRef
   , hWriteDupes
   , insertDupeSet
   , mergeDupeSets
@@ -194,13 +195,41 @@ scoreSetSelf (n, _, _ ) = n - 1 -- TODO is this right?
 
 -------------------------------- write output ---------------------------------
 
-hWriteDupes :: SearchConfig -> Handle -> SortedDupeLists -> IO ()
-hWriteDupes cfg hdl groups = do
-  msg <- explainDupes (maxDepth cfg) groups
+-- TODO factor explainFn out here?
+hWriteDupes :: SearchConfig -> ExplainFn -> Handle -> SortedDupeLists -> IO ()
+hWriteDupes cfg explainFn hdl groups = do
+  msg <- explainFn (maxDepth cfg) groups
   B8.hPutStr hdl msg
 
-explainDupes :: Maybe Depth -> SortedDupeLists -> IO B8.ByteString
-explainDupes md ls = mapM explainGroup ls <&> B8.unlines
+type ExplainFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
+
+-- TODO print the hash + note of the reference set here!
+explainDupesRef :: ExplainFn
+explainDupesRef md ls = mapM explainGroup ls <&> B8.unlines
+  where
+    -- TODO disclaimer about depths here too?
+
+    explainGroup :: DupeList -> IO B8.ByteString
+    explainGroup (n, t, paths) = do
+      paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
+      return $ B8.unlines
+             $ (header t n (length paths) `B8.append` ":")
+             : sort (map B8.pack paths')
+
+    header :: TreeType -> Int -> Int -> B8.ByteString
+    header E _ _ = "" -- TODO is that a good idea?
+    header D n ds = B8.intercalate " "
+      [ "# these" , B8.pack $ show ds
+      , "dirs with", B8.pack $ show n
+      , "files total can be removed"
+      ]
+    header F n fs = B8.intercalate " "
+      [ "# these", B8.pack $ show fs, "files can be removed" ]
+    header _ n ls = B8.intercalate " "
+      [ "# these", B8.pack $ show ls, "links can be removed" ]
+
+explainDupesSelf :: ExplainFn
+explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
   where
     disclaimer Nothing  = ""
     disclaimer (Just (Depth d)) =
