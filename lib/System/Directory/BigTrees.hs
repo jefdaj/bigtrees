@@ -122,6 +122,7 @@ module System.Directory.BigTrees
   -- , printDupes
   -- , writeDupes
   , hWriteDupes
+  , addTreeToDupeMap
   -- , simplifyDupes
   -- , sortDupePaths
   )
@@ -131,7 +132,7 @@ import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prett
                                         simDelta, simDeltas)
 import System.Directory.BigTrees.DupeMap (DupeSet, DupeTable, dupesByNNodes,
                                           mergeDupeSets, pathsByHash, scoreSets,
-                                          hWriteDupes)
+                                          hWriteDupes, addTreeToDupeMap)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),
                                            NNodes (..), TreeType (..), linesP)
