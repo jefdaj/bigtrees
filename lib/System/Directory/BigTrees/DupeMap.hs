@@ -27,7 +27,7 @@ module System.Directory.BigTrees.DupeMap
   )
   where
 
-import Control.Monad.ST (ST, runST)
+import Control.Monad.ST (ST)
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
@@ -121,15 +121,14 @@ mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 -- TODO is this reasonable?
 type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
--- TODO shit, is this going to be complicated to put into ST?
-dupesByNNodes :: (forall s. ST s (DupeTable s)) -> SortedDupeLists
-dupesByNNodes ht = simplifyDupes $ Prelude.map fixElem sortedL
-  where
-    sets     = runST $ scoreSets =<< ht
-    unsorted = A.fromList A.Par sets :: DupeSetVec
-    sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
-    sortedL  = A.toList sorted
-    fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
+dupesByNNodes :: DupeTable s -> ST s SortedDupeLists
+dupesByNNodes ht = do
+  sets <- scoreSets ht
+  let unsorted = A.fromList A.Par sets :: DupeSetVec
+      sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
+      sortedL  = A.toList sorted
+      fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
+  return $ simplifyDupes $ Prelude.map fixElem sortedL
 
 {- This does a few things:
  - * removes singleton sets (no duplicates)

@@ -2,11 +2,12 @@ module Cmd.Dupes where
 
 -- TODO guess and check hashes
 
-import Config (AppConfig (..), defaultAppConfig)
+import Config (AppConfig (..), SearchConfig(..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
 import qualified System.Directory.BigTrees as BT
+import qualified System.Directory.BigTrees (SearchConfig(..))
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
@@ -17,6 +18,8 @@ import Test.Tasty.Golden (goldenVsString)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
 import Control.Exception (bracket)
+import Control.Monad (forM)
+import Control.Monad.ST.Strict (ST, runST)
 
 cmdDupes :: AppConfig -> OsPath -> IO ()
 cmdDupes cfg path = bracket open close write
@@ -27,16 +30,16 @@ cmdDupes cfg path = bracket open close write
 
     write hdl = do
       tree <- BT.readOrBuildTree (searchCfg cfg) (verbose cfg) path
-      -- TODO move some of this to DupeMap? or is it better here?
-      rLists <- forM (referenceSetPaths $ searchCfg cfg) $ \fp -> encodeFS fp >>= readHashList
 
-      -- TODO these all need to go inside the same runST call, right?
-      --      just put dupesByNNodes into ST too to make it simple
-      -- rSet <- BT.hashSetFromList $ concat rLists
-      -- let ds = BT.dupesByNNodes $ BT.pathsByHash (searchCfg cfg) rSet tree
+      -- TODO move some of this to DupeMap? or is it better here?
+      rLists <- forM (referenceSetPaths $ searchCfg cfg) $ \fp -> encodeFS fp >>= BT.readHashList
+
+      -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
-        rSet <- BT.hashSetFromList $ concat rLists
-        BT.dupesByNNodes $ BT.pathsByHash (searchCfg cfg) rSet tree
+            rSet <- BT.hashSetFromList $ concat rLists
+            ht <- BT.pathsByHash (searchCfg cfg) rSet tree
+            gs <- BT.scoreSets ht
+            BT.dupesByNNodes ht
 
       BT.hWriteDupes (searchCfg cfg) hdl ds
 
