@@ -158,22 +158,10 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
                        `isPrefixOf`
                        splitDirectories e' | e <- fs]
 
--- TODO subtract one group when saying how many dupes in a dir,
---      and 1 when saying how many in a file. because it's about how much you would save
--- printDupes :: SearchConfig -> SortedDupeLists -> IO ()
--- printDupes cfg groups = do
---   msg <- explainDupes (maxDepth cfg) groups
---   B8.putStrLn msg
--- 
--- writeDupes :: SearchConfig -> OsPath -> SortedDupeLists -> IO ()
--- writeDupes cfg path groups = do
---   msg <- explainDupes (maxDepth cfg) groups
---   SFO.writeFile' path msg
-
 hWriteDupes :: SearchConfig -> Handle -> SortedDupeLists -> IO ()
 hWriteDupes cfg hdl groups = do
   msg <- explainDupes (maxDepth cfg) groups
-  B8.hPutStrLn hdl msg
+  B8.hPutStr hdl msg
 
 explainDupes :: Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 explainDupes md ls = mapM explainGroup ls <&> B8.unlines
