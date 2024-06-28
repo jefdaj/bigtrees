@@ -115,10 +115,12 @@ module System.Directory.BigTrees
   , DupeTable
   -- , DupeMap
   -- , allDupes
-  , dupesByNNodes
+  , dupesByNegScore
   , pathsByHash
   , mergeDupeSets
   , scoreSets
+  , scoreSetSelf
+  , scoreSetRef
   -- , printDupes
   -- , writeDupes
   , hWriteDupes
@@ -130,8 +132,8 @@ module System.Directory.BigTrees
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
-import System.Directory.BigTrees.DupeMap (DupeSet, DupeTable, dupesByNNodes,
-                                          mergeDupeSets, pathsByHash, scoreSets,
+import System.Directory.BigTrees.DupeMap (DupeSet, DupeTable, dupesByNegScore,
+                                          mergeDupeSets, pathsByHash, scoreSets, scoreSetSelf, scoreSetRef,
                                           hWriteDupes, addTreeToDupeMap)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),

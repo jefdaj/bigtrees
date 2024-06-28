@@ -35,19 +35,20 @@ cmdDupes cfg path = bracket open close write
 
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
-      log cfg rListPaths
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList
+      log cfg $ "loaded rList with " ++ show (length rList) ++ " paths"
 
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
             mrSet <- if null rList
                        then return Nothing
                        else fmap Just $ BT.hashSetFromList rList
-            -- ht <- BT.pathsByHash (searchCfg cfg) mrSet tree
-            ht <- H.newSized $ maximum [length rList, 1000] -- TODO better defaults?
+            let size = maximum [length rList, 1000] -- TODO better defaults?
+            ht <- H.newSized size
+            -- log cfg $ "created hashtable sized " ++ show size
             BT.addTreeToDupeMap (searchCfg cfg) mrSet ht tree
-            gs <- BT.scoreSets ht
-            BT.dupesByNNodes ht
+            let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
+            BT.dupesByNegScore scoreFn ht
 
       BT.hWriteDupes (searchCfg cfg) hdl ds
 

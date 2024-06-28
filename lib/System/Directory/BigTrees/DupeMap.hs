@@ -14,13 +14,15 @@ module System.Directory.BigTrees.DupeMap
   , SortedDupeLists
   , SortedDupeSets
   , addTreeToDupeMap
-  , dupesByNNodes
+  , dupesByNegScore
   , explainDupes
   , insertDupeSet
   , mergeDupeSets
   , pathsByHash
   -- , printDupes
   , scoreSets
+  , scoreSetSelf
+  , scoreSetRef
   , simplifyDupes
   -- , writeDupes
   , hWriteDupes
@@ -124,9 +126,11 @@ mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 -- TODO is this reasonable?
 type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
-dupesByNNodes :: DupeTable s -> ST s SortedDupeLists
-dupesByNNodes ht = do
-  sets <- scoreSets ht
+-- The negate here undoes the one in scoreSets below, leaving a positive score.
+-- TODO is that the cleanest way to do it, or should both negates be in this fn?
+dupesByNegScore :: ScoreFn -> DupeTable s -> ST s SortedDupeLists
+dupesByNegScore scoreFn ht = do
+  sets <- scoreSets scoreFn ht -- TODO separate scoring for ref set than within same tree
   let unsorted = A.fromList A.Par sets :: DupeSetVec
       sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
       sortedL  = A.toList sorted
@@ -137,16 +141,27 @@ dupesByNNodes ht = do
  - * removes singleton sets (no duplicates)
  - * adjusts the int scores from "n files in set" to "n files saved by dedup"
  - * negates scores so quicksort will put them in descending order
+ - TODO should length-1 sets not be rejected?
  -}
-scoreSets :: C.HashTable s Hash DupeSet -> ST s SortedDupeSets 
-scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
-  return $ if length fs > 1 then (negate $ score v,t,fs):vs else vs) []
-  where
-    -- TODO reference set case
-    score (n, D, fs) = n - n `div` length fs
-    score (n, _, _ ) = n - 1 -- TODO is this right?
+scoreSets :: ScoreFn -> C.HashTable s Hash DupeSet -> ST s SortedDupeSets 
+scoreSets scoreFn = H.foldM (\vs (_, v@(_,t,fs)) ->
+  return $ if length fs > 1 then (negate $ scoreFn v,t,fs):vs else vs) []
 
-{- Assumes a pre-sorted list as provided by dupesByNNodes.
+type ScoreFn = DupeSet -> Int
+
+-- | This version is for dupes vs a reference set. It's simpler because there's
+-- no need to leave out one canonical version from each dupe set.
+scoreSetRef :: ScoreFn
+scoreSetRef (n, _, _) = n -- TODO is that all? lol
+
+-- | This version is for dupes within the tree itself, which is a little more
+-- complicated because we want to save (not delete) one copy from each dupe
+-- group.
+scoreSetSelf :: ScoreFn
+scoreSetSelf (n, D, fs) = n - n `div` length fs
+scoreSetSelf (n, _, _ ) = n - 1 -- TODO is this right?
+
+{- Assumes a pre-sorted list as provided by dupesByScore.
  - Removes lists whose elements are all inside elements of the first list.
  - For example if the first is dir1, dir2, dir3
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
