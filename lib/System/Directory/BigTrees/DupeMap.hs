@@ -155,10 +155,9 @@ scoreSets :: C.HashTable s Hash DupeSet -> ST s SortedDupeSets
 scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
   return $ if length fs > 1 then (negate $ score v,t,fs):vs else vs) []
   where
-    -- TODO L, B, E cases
     -- TODO reference set case
     score (n, D, fs) = n - n `div` length fs
-    score (n, F, _ ) = n - 1
+    score (n, _, _ ) = n - 1 -- TODO is this right?
 
 -- TODO could this be faster than quicksorting everything even though single threaded?
 -- usage: H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes) dt
@@ -234,14 +233,20 @@ explainDupes md ls = mapM explainGroup ls <&> B8.unlines
              $ (header t n (length paths) `B8.append` ":")
              : sort (map B8.pack paths')
 
-    -- TODO L, B, E cases
     header :: TreeType -> Int -> Int -> B8.ByteString
-    header F n fs = B8.intercalate " " [ "# deduping these"  , B8.pack (show fs)
-      , "files would remove", B8.append (B8.pack (show n )) (disclaimer md)
-      ]
-    header D n ds = B8.intercalate " " [ "# deduping these" , B8.pack (show ds)
-      , "dirs would remove", B8.pack (show n )
+    header E _ _ = "" -- TODO is that a good idea?
+    header D n ds = B8.intercalate " "
+      [ "# deduping these" , B8.pack (show ds)
+      , "dirs would remove", B8.pack (show n)
       , B8.append "files" (disclaimer md)
+      ]
+    header F n fs = B8.intercalate " "
+      [ "# deduping these"  , B8.pack   (show fs)
+      , "files would remove", B8.append (B8.pack $ show n) (disclaimer md)
+      ]
+    header _ n ls = B8.intercalate " "
+      [ "# deduping these"  , B8.pack   (show ls)
+      , "links would remove", B8.append (B8.pack $ show n) (disclaimer md)
       ]
 
 -----------------------------
