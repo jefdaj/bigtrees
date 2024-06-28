@@ -13,7 +13,7 @@ module System.Directory.BigTrees.DupeMap
   , DupeTable
   , SortedDupeLists
   , SortedDupeSets
-  , addToDupeMap
+  , addTreeToDupeMap
   , dupesByNNodes
   , explainDupes
   , insertDupeSet
@@ -65,44 +65,44 @@ type SortedDupeSets  = [DupeSet]
 type SortedDupeLists = [DupeList]
 
 
---- DupeTable from HashTree ---
+------------------------- DupeTable from HashTree -----------------------------
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: HashTree () -> ST s (DupeTable s)
-pathsByHash t = do
+pathsByHash :: SearchConfig -> HashTree a -> ST s (DupeTable s)
+pathsByHash cfg tree = do
   ht <- H.newSized 1 -- TODO size from top node of tree or from reference hashset
-  addToDupeMap ht t
+  addTreeToDupeMap cfg ht tree
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
   return ht
 
--- inserts all nodes from a tree into an existing dupemap in ST s
+-- inserts all nodes from a tree into an existing dupemap
 -- TODO The empty string (mempty) behaves right, right? (disappears)
-addToDupeMap :: DupeTable s -> ProdTree -> ST s ()
-addToDupeMap ht = addToDupeMap' ht mempty
+addTreeToDupeMap :: SearchConfig -> DupeTable s -> HashTree a -> ST s ()
+addTreeToDupeMap cfg ht = addTreeToDupeMap' cfg ht mempty
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
-addToDupeMap' :: DupeTable s -> OsPath -> ProdTree -> ST s ()
+addTreeToDupeMap' :: SearchConfig -> DupeTable s -> OsPath -> HashTree a -> ST s ()
 
-addToDupeMap' ht dir (Err {}) = return () -- TODO anything better to do with Errs?
+addTreeToDupeMap' _ ht dir (Err {}) = return () -- TODO anything better to do with Errs?
 
 -- Links can be "good" or "broken" based on whether their content should be in
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addToDupeMap' ht dir l@(Link {})
+addTreeToDupeMap' cfg ht dir l@(Link {})
   = insertDupeSet ht (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
 
-addToDupeMap' ht dir (File {nodeData=(NodeData{name=Name n, hash=h})})
+addTreeToDupeMap' cfg ht dir (File {nodeData=(NodeData{name=Name n, hash=h})})
   = insertDupeSet ht h (1, F, S.singleton $ dir </> n)
 
-addToDupeMap' ht dir (Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
+addTreeToDupeMap' cfg ht dir (Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
   insertDupeSet ht h (fs, D, S.singleton $ dir </> n)
-  mapM_ (addToDupeMap' ht (dir </> n)) cs
+  mapM_ (addTreeToDupeMap' cfg ht (dir </> n)) cs
 
--- inserts one node into an existing dupemap in ST s
+-- inserts one node into an existing dupemap
 insertDupeSet :: DupeTable s -> Hash -> DupeSet -> ST s ()
 insertDupeSet ht h d2 = do
   existing <- H.lookup ht h

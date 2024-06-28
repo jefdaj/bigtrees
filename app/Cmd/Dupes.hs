@@ -27,7 +27,7 @@ cmdDupes cfg path = bracket open close write
 
     write hdl = do
       tree <- BT.readOrBuildTree (searchCfg cfg) (verbose cfg) path
-      let ds = BT.dupesByNNodes $ BT.pathsByHash tree
+      let ds = BT.dupesByNNodes $ BT.pathsByHash (searchCfg cfg) tree
       BT.hWriteDupes (searchCfg cfg) hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?

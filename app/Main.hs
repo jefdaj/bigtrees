@@ -113,8 +113,8 @@ main = do
     cmdDiff cfg old new
 
   else if cmd "dupes" then do
-    hashes <- reqPathArg "HASHES"
-    cmdDupes cfg hashes
+    path <- reqPathArg "PATH"
+    cmdDupes cfg path
 
   else if cmd "set-add" then do
     set  <- reqPathOpt "set"
