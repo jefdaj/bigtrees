@@ -101,6 +101,7 @@ main = do
           , treeTypes      = map (\c -> read [c]) <$> optLong "types"
           , excludeRegexes = eList
           , excludeSetPaths = optLongs "exclude-set"
+          , referenceSetPaths = optLongs "reference-set"
           , searches  = sList
           }
         }

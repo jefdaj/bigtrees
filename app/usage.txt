@@ -7,7 +7,7 @@ Usage:
   bigtrees [-v] diff OLD NEW [--output OUTFILE]
   bigtrees [-v] set-add --set SET [--note NOTE] PATH...
   bigtrees [-v] find PATH [--search-regex REGEX [--search-label LABEL] | --searches-json SJSON] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--out-fmt FORMAT] [--exclude-set ESET...]
-  bigtrees [-v] dupes PATH [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE]
+  bigtrees [-v] dupes PATH [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--types TYPES] [--output OUTFILE] [--reference-set RSET...]
 
 Commands:
   hash       Reads files + folders and prints/saves their hashes + metadata.
@@ -21,6 +21,8 @@ Options:
 
   --exclude-set ESET     Read a .bigset file and exclude those hashes from find results.
                          Can be used more than once.
+
+  --reference-set RSET   Read a .bigset file and consider any matching hashes as dupes.
 
   --excludes-from EFILE  Read a list of regexes and exclude any files matching it.
                          TODO rename to reflect that it's also regexes.

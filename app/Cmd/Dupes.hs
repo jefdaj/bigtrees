@@ -27,7 +27,17 @@ cmdDupes cfg path = bracket open close write
 
     write hdl = do
       tree <- BT.readOrBuildTree (searchCfg cfg) (verbose cfg) path
-      let ds = BT.dupesByNNodes $ BT.pathsByHash (searchCfg cfg) tree
+      -- TODO move some of this to DupeMap? or is it better here?
+      rLists <- forM (referenceSetPaths $ searchCfg cfg) $ \fp -> encodeFS fp >>= readHashList
+
+      -- TODO these all need to go inside the same runST call, right?
+      --      just put dupesByNNodes into ST too to make it simple
+      -- rSet <- BT.hashSetFromList $ concat rLists
+      -- let ds = BT.dupesByNNodes $ BT.pathsByHash (searchCfg cfg) rSet tree
+      let ds = runST $ do
+        rSet <- BT.hashSetFromList $ concat rLists
+        BT.dupesByNNodes $ BT.pathsByHash (searchCfg cfg) rSet tree
+
       BT.hWriteDupes (searchCfg cfg) hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
