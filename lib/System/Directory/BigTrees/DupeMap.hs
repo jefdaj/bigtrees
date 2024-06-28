@@ -19,10 +19,10 @@ module System.Directory.BigTrees.DupeMap
   , insertDupeSet
   , mergeDupeSets
   , pathsByHash
-  , printDupes
+  -- , printDupes
   , scoreSets
   , simplifyDupes
-  , writeDupes
+  -- , writeDupes
   , hWriteDupes
   )
   where
@@ -69,42 +69,47 @@ type SortedDupeLists = [DupeList]
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: SearchConfig -> HashTree a -> ST s (DupeTable s)
-pathsByHash cfg tree = do
+pathsByHash :: SearchConfig -> HashSet s -> HashTree a -> ST s (DupeTable s)
+pathsByHash cfg rSet tree = do
   ht <- H.newSized 1 -- TODO size from top node of tree or from reference hashset
-  addTreeToDupeMap cfg ht tree
+  addTreeToDupeMap cfg rSet ht tree
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
   return ht
 
 -- inserts all nodes from a tree into an existing dupemap
--- TODO The empty string (mempty) behaves right, right? (disappears)
-addTreeToDupeMap :: SearchConfig -> DupeTable s -> HashTree a -> ST s ()
-addTreeToDupeMap cfg ht = addTreeToDupeMap' cfg ht mempty
+-- TODO The empty string (mempty) behaves rigdt, rigdt? (disappears)
+addTreeToDupeMap :: SearchConfig -> HashSet s -> DupeTable s -> HashTree a -> ST s ()
+addTreeToDupeMap cfg rSet dt = do
+  addTreeToDupeMap' cfg rSet dt mempty
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
-addTreeToDupeMap' :: SearchConfig -> DupeTable s -> OsPath -> HashTree a -> ST s ()
+addTreeToDupeMap' :: SearchConfig -> HashSet s -> DupeTable s -> OsPath -> HashTree a -> ST s ()
 
-addTreeToDupeMap' _ ht dir (Err {}) = return () -- TODO anything better to do with Errs?
+addTreeToDupeMap' _ _ dt dir (Err {}) = return () -- TODO anything better to do with Errs?
 
 -- Links can be "good" or "broken" based on whether their content should be in
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg ht dir l@(Link {})
-  = insertDupeSet ht (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
+addTreeToDupeMap' cfg rSet dt dir l@(Link {}) = do
+  keepNode <- dupesKeepNode cfg rSet l
+  insertDupeSet cfg dt (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
 
-addTreeToDupeMap' cfg ht dir (File {nodeData=(NodeData{name=Name n, hash=h})})
-  = insertDupeSet ht h (1, F, S.singleton $ dir </> n)
+addTreeToDupeMap' cfg rSet dt dir f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
+  keepNode <- dupesKeepNode cfg rSet f
+  insertDupeSet cfg dt h (1, F, S.singleton $ dir </> n)
 
-addTreeToDupeMap' cfg ht dir (Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
-  insertDupeSet ht h (fs, D, S.singleton $ dir </> n)
-  mapM_ (addTreeToDupeMap' cfg ht (dir </> n)) cs
+addTreeToDupeMap' cfg rSet dt dir d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
+  keepNode <- dupesKeepNode cfg rSet d
+  insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
+  mapM_ (addTreeToDupeMap' cfg rSet dt (dir </> n)) cs
 
 -- inserts one node into an existing dupemap
-insertDupeSet :: DupeTable s -> Hash -> DupeSet -> ST s ()
-insertDupeSet ht h d2 = do
+-- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
+insertDupeSet :: SearchConfig -> DupeTable s -> Hash -> DupeSet -> ST s ()
+insertDupeSet cfg ht h d2 = do
   existing <- H.lookup ht h
   case existing of
     Nothing -> H.insert ht h d2
@@ -116,6 +121,7 @@ mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 -- TODO is this reasonable?
 type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
+-- TODO shit, is this going to be complicated to put into ST?
 dupesByNNodes :: (forall s. ST s (DupeTable s)) -> SortedDupeLists
 dupesByNNodes ht = simplifyDupes $ Prelude.map fixElem sortedL
   where
@@ -155,15 +161,15 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
 
 -- TODO subtract one group when saying how many dupes in a dir,
 --      and 1 when saying how many in a file. because it's about how much you would save
-printDupes :: SearchConfig -> SortedDupeLists -> IO ()
-printDupes cfg groups = do
-  msg <- explainDupes (maxDepth cfg) groups
-  B8.putStrLn msg
-
-writeDupes :: SearchConfig -> OsPath -> SortedDupeLists -> IO ()
-writeDupes cfg path groups = do
-  msg <- explainDupes (maxDepth cfg) groups
-  SFO.writeFile' path msg
+-- printDupes :: SearchConfig -> SortedDupeLists -> IO ()
+-- printDupes cfg groups = do
+--   msg <- explainDupes (maxDepth cfg) groups
+--   B8.putStrLn msg
+-- 
+-- writeDupes :: SearchConfig -> OsPath -> SortedDupeLists -> IO ()
+-- writeDupes cfg path groups = do
+--   msg <- explainDupes (maxDepth cfg) groups
+--   SFO.writeFile' path msg
 
 hWriteDupes :: SearchConfig -> Handle -> SortedDupeLists -> IO ()
 hWriteDupes cfg hdl groups = do
@@ -205,14 +211,13 @@ explainDupes md ls = mapM explainGroup ls <&> B8.unlines
 
 -- TODO is there a smarter way to combine this with findKeepNode in HashTree.Find?
 --      it's almost the same except it includes rather than excludes the set
-dupesKeepNode :: SearchConfig -> HashSet s -> Depth -> HashTree a -> ST s Bool
-dupesKeepNode _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
-dupesKeepNode cfg eSet d t = do
-  includeHash <- setContainsHash eSet $ treeHash t
+--      (oh, and no depth tests)
+dupesKeepNode :: SearchConfig -> HashSet s -> HashTree a -> ST s Bool
+dupesKeepNode _ _ (Err {}) = return False -- TODO is this how we should handle them?
+dupesKeepNode cfg rSet t = do
+  includeHash <- setContainsHash rSet $ treeHash t
   return $ and
-    [ maybe True (d >=) $ minDepth cfg
-    , maybe True (d <=) $ maxDepth cfg
-    , maybe True (treeNBytes  t >=) $ minBytes cfg
+    [ maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
     , maybe True (sumNodes    t >=) $ minFiles cfg
     , maybe True (sumNodes    t <=) $ maxFiles cfg

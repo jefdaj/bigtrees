@@ -36,6 +36,7 @@ data SearchConfig = SearchConfig
   , treeTypes      :: Maybe [TreeType]
   , excludeRegexes :: [String]
   , excludeSetPaths :: [FilePath]
+  , referenceSetPaths :: [FilePath]
   , searches       :: LabeledSearches
   }
   deriving (Read, Show, Generic)
@@ -55,6 +56,7 @@ emptySearchConfig = SearchConfig
   , treeTypes      = Nothing
   , excludeRegexes = []
   , excludeSetPaths = []
+  , referenceSetPaths = []
   , searches  = []
   }
 
