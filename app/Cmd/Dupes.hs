@@ -33,7 +33,7 @@ cmdDupes cfg path = bracket open close write
     write hdl = do
       tree <- BT.readOrBuildTree (searchCfg cfg) (verbose cfg) path
 
-      -- TODO move some of this to DupeMap? or is it better here?
+      -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
       log cfg rListPaths
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList

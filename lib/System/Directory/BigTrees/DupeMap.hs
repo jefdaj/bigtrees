@@ -81,35 +81,33 @@ pathsByHash cfg mrSet tree = do
 -- inserts all nodes from a tree into an existing dupemap
 -- TODO The empty string (mempty) behaves rigdt, rigdt? (disappears)
 addTreeToDupeMap :: SearchConfig -> Maybe (HashSet s) -> DupeTable s -> HashTree a -> ST s ()
-addTreeToDupeMap cfg rSet dt = do
-  addTreeToDupeMap' cfg rSet dt mempty
+addTreeToDupeMap cfg mrSet dt = addTreeToDupeMap' cfg mrSet dt mempty (Depth 0)
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
-addTreeToDupeMap' :: SearchConfig -> Maybe (HashSet s) -> DupeTable s -> OsPath -> HashTree a -> ST s ()
+addTreeToDupeMap' :: SearchConfig -> Maybe (HashSet s) -> DupeTable s -> OsPath -> Depth -> HashTree a -> ST s ()
 
-addTreeToDupeMap' _ _ dt dir (Err {}) = return () -- TODO anything better to do with Errs?
+addTreeToDupeMap' _ _ dt dir _ (Err {}) = return () -- TODO anything better to do with Errs?
 
 -- Links can be "good" or "broken" based on whether their content should be in
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg mrSet dt dir l@(Link {}) = do
+addTreeToDupeMap' cfg mrSet dt dir _ l@(Link {}) = do
   keepNode <- dupesKeepNode cfg mrSet l
   when keepNode $
     insertDupeSet cfg dt (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
 
-addTreeToDupeMap' cfg mrSet dt dir f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
+addTreeToDupeMap' cfg mrSet dt dir _ f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
   keepNode <- dupesKeepNode cfg mrSet f
   when keepNode $
     insertDupeSet cfg dt h (1, F, S.singleton $ dir </> n)
 
-addTreeToDupeMap' cfg mrSet dt dir d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
+addTreeToDupeMap' cfg mrSet dt dir depth d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
   keepNode <- dupesKeepNode cfg mrSet d
-  -- TODO either add more elaborate conditions for when to recurse, or remove some filters
-  when keepNode $ do
-    insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
-    mapM_ (addTreeToDupeMap' cfg mrSet dt (dir </> n)) cs
+  let recurse = dupesRecurseChildren cfg depth d
+  when keepNode $ insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
+  when recurse  $ mapM_ (addTreeToDupeMap' cfg mrSet dt (dir </> n) (depth+1)) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
@@ -223,6 +221,16 @@ dupesKeepNode cfg mrSet t = do
     , maybe True (treeType t `elem`) $ treeTypes cfg
     , includeHash
     ]
+
+-- | When adding a tree to a dupemap, whether to recurse into the tree's children.
+-- The tree should always be a Dir, but we don't check for that here.
+dupesRecurseChildren :: SearchConfig -> Depth -> HashTree a -> Bool
+dupesRecurseChildren cfg d t = and
+  [ maybe True (d <) $ maxDepth cfg
+  , maybe True (treeNBytes  t > ) $ minBytes cfg
+  , maybe True (sumNodes    t > ) $ minFiles cfg
+  , maybe True (treeModTime t >=) $ minModtime cfg
+  ]
 
 
 ---------------------------------- tests --------------------------------------
