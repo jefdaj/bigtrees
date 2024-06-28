@@ -31,6 +31,7 @@ module System.Directory.BigTrees.Name
   , NamesFwd
   , NamesRev
 
+  , n2op
   , n2sbs
   , sbs2n
   , sbs2op
@@ -160,6 +161,9 @@ isValidName s
 
 n2sbs :: Name -> SBS.ShortByteString
 n2sbs = SOS.getPosixString . SOS.getOsString . unName
+
+n2op :: Name -> SOS.OsString
+n2op = unName
 
 -- | Note this does NOT check whether it's a valid Name.
 sbs2n :: SBS.ShortByteString -> Name

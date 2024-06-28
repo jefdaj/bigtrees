@@ -43,9 +43,9 @@ import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
-import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree)
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, treeType, treeHash, treeName)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
-import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.Name (Name (..), n2op)
 -- import System.OsPath (splitDirectories, (</>))
 import System.IO (Handle, IOMode (..))
 
@@ -107,8 +107,14 @@ addToDupeMap ht = addToDupeMap' ht mempty
 -- TODO NamesFwd or NamesRev instead of OsPath?
 addToDupeMap' :: DupeTable s -> OsPath -> ProdTree -> ST s ()
 
--- TODO Link case (separate L from B?)
--- TODO Err case
+addToDupeMap' ht dir (Err {}) = return () -- TODO anything better to do with Errs?
+
+-- Links can be "good" or "broken" based on whether their content should be in
+-- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
+-- of the actual target or of the link itself, and either way it will go into a
+-- corresponding dupeset.
+addToDupeMap' ht dir l@(Link {})
+  = insertDupeSet ht (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
 
 addToDupeMap' ht dir (File {nodeData=(NodeData{name=Name n, hash=h})})
   = insertDupeSet ht h (1, F, S.singleton $ dir </> n)
