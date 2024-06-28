@@ -8,25 +8,32 @@ import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
 import qualified System.Directory.BigTrees as BT
 import System.FilePath (dropExtension, takeBaseName, (</>))
-import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
 import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
+import qualified System.File.OsPath as SFO
+import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
+import Control.Exception (bracket)
 
 cmdDupes :: AppConfig -> OsPath -> IO ()
-cmdDupes cfg path = do
-  tree <- BT.readOrBuildTree (searchCfg cfg) (verbose cfg) path
-  -- TODO rewrite sorting with lower memory usage
-  -- let dupes = runST $ BT.dupesByNNodes =<< BT.pathsByHash tree
-  -- printDupes $ map sortDupePaths $ simplifyDupes BT.dupes
-  let ds = BT.dupesByNNodes $ BT.pathsByHash tree
-  -- TODO handle backet thing here instead?
-  case outFile cfg of
-    Nothing -> BT.printDupes (searchCfg cfg) ds
-    Just p  -> BT.writeDupes (searchCfg cfg) p ds
+cmdDupes cfg path = bracket open close write
+  where
+    open = case outFile cfg of
+             Nothing -> return stdout
+             Just op -> SFO.openBinaryFile op WriteMode
+
+    write hdl = do
+      tree <- BT.readOrBuildTree (searchCfg cfg) (verbose cfg) path
+      let ds = BT.dupesByNNodes $ BT.pathsByHash tree
+      BT.hWriteDupes (searchCfg cfg) hdl ds
+
+    -- TODO why is this required? shouldn't hClose be OK?
+    -- TODO maybe close it, but only if /= stdout?
+    close = hFlush
+
 
 -----------
 -- tests --

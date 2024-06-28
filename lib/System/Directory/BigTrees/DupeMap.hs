@@ -23,6 +23,7 @@ module System.Directory.BigTrees.DupeMap
   , scoreSets
   , simplifyDupes
   , writeDupes
+  , hWriteDupes
   -- , DupeMap
   -- , allDupes
   -- , anotherCopy
@@ -32,7 +33,7 @@ module System.Directory.BigTrees.DupeMap
   where
 
 import Control.Monad.ST (ST, runST)
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as B8
 -- import qualified Data.HashMap.Strict as M TODO remove package?
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
@@ -46,6 +47,7 @@ import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTre
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name (Name (..))
 -- import System.OsPath (splitDirectories, (</>))
+import System.IO (Handle, IOMode (..))
 
 import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
@@ -59,7 +61,7 @@ import System.OsPath
 -- TODO can Foldable or Traversable simplify these?
 
 -- TODO is DupeSet a Monoid?
--- TODO store paths as NamesRev instead of OsPath?
+-- TODO store paths as NamesFwd/NamesRev instead of OsPath?
 -- TODO newtypes here? or strict data?
 type DupeSet  = (Int, TreeType, S.HashSet OsPath)
 type DupeList = (Int, TreeType, [OsPath])
@@ -102,6 +104,7 @@ addToDupeMap :: DupeTable s -> ProdTree -> ST s ()
 addToDupeMap ht = addToDupeMap' ht mempty
 
 -- same, but start from a given root path
+-- TODO NamesFwd or NamesRev instead of OsPath?
 addToDupeMap' :: DupeTable s -> OsPath -> ProdTree -> ST s ()
 
 -- TODO Link case (separate L from B?)
@@ -181,10 +184,10 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
 -- sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
 -- sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ S.toList ps))
 --   where
---     myCompare p1 p2 = let d1 = length $ splitDirectories $ B.unpack p1
---                           d2 = length $ splitDirectories $ B.unpack p2
---                           l1 = length $ B.unpack p1
---                           l2 = length $ B.unpack p2
+--     myCompare p1 p2 = let d1 = length $ splitDirectories $ B8.unpack p1
+--                           d2 = length $ splitDirectories $ B8.unpack p2
+--                           l1 = length $ B8.unpack p1
+--                           l2 = length $ B8.unpack p2
 --                       in if      d1 > d2 then GT
 --                          else if d1 < d2 then LT
 --                          else if l1 > l2 then GT
@@ -199,35 +202,40 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
 printDupes :: SearchConfig -> SortedDupeLists -> IO ()
 printDupes cfg groups = do
   msg <- explainDupes (maxDepth cfg) groups
-  B.putStrLn msg
+  B8.putStrLn msg
 
 writeDupes :: SearchConfig -> OsPath -> SortedDupeLists -> IO ()
 writeDupes cfg path groups = do
   msg <- explainDupes (maxDepth cfg) groups
   SFO.writeFile' path msg
 
-explainDupes :: Maybe Depth -> SortedDupeLists -> IO B.ByteString
-explainDupes md ls = mapM explainGroup ls <&> B.unlines
+hWriteDupes :: SearchConfig -> Handle -> SortedDupeLists -> IO ()
+hWriteDupes cfg hdl groups = do
+  msg <- explainDupes (maxDepth cfg) groups
+  B8.hPutStrLn hdl msg
+
+explainDupes :: Maybe Depth -> SortedDupeLists -> IO B8.ByteString
+explainDupes md ls = mapM explainGroup ls <&> B8.unlines
   where
     disclaimer Nothing  = ""
     disclaimer (Just (Depth d)) =
-      " (up to " `B.append` B.pack (show d) `B.append` " levels deep)"
+      " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
 
-    explainGroup :: DupeList -> IO B.ByteString
+    explainGroup :: DupeList -> IO B8.ByteString
     explainGroup (n, t, paths) = do
       paths' <- mapM decodeFS paths
-      return $ B.unlines
-             $ (header t n (length paths) `B.append` ":")
-             : sort (map B.pack paths')
+      return $ B8.unlines
+             $ (header t n (length paths) `B8.append` ":")
+             : sort (map B8.pack paths')
 
     -- TODO L, B, E cases
-    header :: TreeType -> Int -> Int -> B.ByteString
-    header F n fs = B.intercalate " " [ "# deduping these"  , B.pack (show fs)
-      , "files would remove", B.append (B.pack (show n )) (disclaimer md)
+    header :: TreeType -> Int -> Int -> B8.ByteString
+    header F n fs = B8.intercalate " " [ "# deduping these"  , B8.pack (show fs)
+      , "files would remove", B8.append (B8.pack (show n )) (disclaimer md)
       ]
-    header D n ds = B.intercalate " " [ "# deduping these" , B.pack (show ds)
-      , "dirs would remove", B.pack (show n )
-      , B.append "files" (disclaimer md)
+    header D n ds = B8.intercalate " " [ "# deduping these" , B8.pack (show ds)
+      , "dirs would remove", B8.pack (show n )
+      , B8.append "files" (disclaimer md)
       ]
 
 -----------------------------
