@@ -24,17 +24,11 @@ module System.Directory.BigTrees.DupeMap
   , simplifyDupes
   , writeDupes
   , hWriteDupes
-  -- , DupeMap
-  -- , allDupes
-  -- , anotherCopy
-  -- , listAllFiles
-  -- , listLostFiles
   )
   where
 
 import Control.Monad.ST (ST, runST)
 import qualified Data.ByteString.Char8 as B8
--- import qualified Data.HashMap.Strict as M TODO remove package?
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
@@ -42,15 +36,15 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
-import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, treeType, treeHash, treeName)
-import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name (Name (..), n2op)
+import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
+                                           ProdTree, treeType, treeHash,
+                                           treeName, SearchConfig (..))
 import System.IO (Handle, IOMode (..))
-
 import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
-import System.OsPath
+import System.OsPath (OsPath, (</>), splitDirectories, decodeFS)
 
 -- TODO be able to serialize dupe tables for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -77,7 +71,7 @@ type SortedDupeLists = [DupeList]
 -- TODO what about if we make it from the serialized hashes instead of a tree?
 pathsByHash :: HashTree () -> ST s (DupeTable s)
 pathsByHash t = do
-  ht <- H.newSized 1 -- TODO size from tree
+  ht <- H.newSized 1 -- TODO size from top node of tree or from reference hashset
   addToDupeMap ht t
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
@@ -159,25 +153,6 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
                        `isPrefixOf`
                        splitDirectories e' | e <- fs]
 
--- sorts paths by shallowest (fewest dirs down), then length of filename,
--- then finally alphabetical
--- TODO is it inefficient enough to slow down the dupes command? rewrite if so
--- sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
--- sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ S.toList ps))
---   where
---     myCompare p1 p2 = let d1 = length $ splitDirectories $ B8.unpack p1
---                           d2 = length $ splitDirectories $ B8.unpack p2
---                           l1 = length $ B8.unpack p1
---                           l2 = length $ B8.unpack p2
---                       in if      d1 > d2 then GT
---                          else if d1 < d2 then LT
---                          else if l1 > l2 then GT
---                          else if l1 < l2 then LT
---                          else compare p1 p2
-
--- hasDupes :: (Hash, DupeSet) -> Bool
--- hasDupes (_, (nfiles, _, paths)) = S.size paths > 1 && nfiles > 0
-
 -- TODO subtract one group when saying how many dupes in a dir,
 --      and 1 when saying how many in a file. because it's about how much you would save
 printDupes :: SearchConfig -> SortedDupeLists -> IO ()
@@ -204,7 +179,7 @@ explainDupes md ls = mapM explainGroup ls <&> B8.unlines
 
     explainGroup :: DupeList -> IO B8.ByteString
     explainGroup (n, t, paths) = do
-      paths' <- mapM decodeFS paths
+      paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
              $ (header t n (length paths) `B8.append` ":")
              : sort (map B8.pack paths')
