@@ -36,7 +36,7 @@ cmdDupes cfg path = bracket open close write
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList
-      log cfg $ "loaded rList with " ++ show (length rList) ++ " paths"
+      -- log cfg $ "loaded rList with " ++ show (length rList) ++ " paths"
 
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
@@ -50,7 +50,8 @@ cmdDupes cfg path = bracket open close write
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
             BT.dupesByNegScore scoreFn ht
 
-      BT.hWriteDupes (searchCfg cfg) hdl ds
+      let explainFn = if null rList then BT.explainDupesRef else BT.explainDupesRef
+      BT.hWriteDupes (searchCfg cfg) explainFn hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?

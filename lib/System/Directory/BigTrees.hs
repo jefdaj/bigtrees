@@ -121,6 +121,8 @@ module System.Directory.BigTrees
   , scoreSetRef
   , scoreSetSelf
   , scoreSets
+  , explainDupesSelf
+  , explainDupesRef
   )
   where
 
@@ -128,7 +130,7 @@ import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prett
                                         simDelta, simDeltas)
 import System.Directory.BigTrees.DupeMap (DupeSet, DupeMap, dupesByNegScore,
                                           mergeDupeSets, pathsByHash, scoreSets, scoreSetSelf, scoreSetRef,
-                                          hWriteDupes, addTreeToDupeMap)
+                                          hWriteDupes, addTreeToDupeMap, explainDupesSelf, explainDupesRef)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),
                                            NNodes (..), TreeType (..), linesP)
