@@ -111,28 +111,22 @@ module System.Directory.BigTrees
   , assertSameTrees
 
   -- dupemap
+  , DupeMap
   , DupeSet
-  , DupeTable
-  -- , DupeMap
-  -- , allDupes
-  , dupesByNegScore
-  , pathsByHash
-  , mergeDupeSets
-  , scoreSets
-  , scoreSetSelf
-  , scoreSetRef
-  -- , printDupes
-  -- , writeDupes
-  , hWriteDupes
   , addTreeToDupeMap
-  -- , simplifyDupes
-  -- , sortDupePaths
+  , dupesByNegScore
+  , hWriteDupes
+  , mergeDupeSets
+  , pathsByHash
+  , scoreSetRef
+  , scoreSetSelf
+  , scoreSets
   )
   where
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
-import System.Directory.BigTrees.DupeMap (DupeSet, DupeTable, dupesByNegScore,
+import System.Directory.BigTrees.DupeMap (DupeSet, DupeMap, dupesByNegScore,
                                           mergeDupeSets, pathsByHash, scoreSets, scoreSetSelf, scoreSetRef,
                                           hWriteDupes, addTreeToDupeMap)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
