@@ -4,19 +4,19 @@ module Cmd.Dupes where
 
 import Config (AppConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
+import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
 import qualified System.Directory.BigTrees as BT
+import qualified System.File.OsPath as SFO
 import System.FilePath (dropExtension, takeBaseName, (</>))
+import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
 import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
-import qualified System.File.OsPath as SFO
-import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
-import Control.Exception (bracket)
 
 cmdDupes :: AppConfig -> OsPath -> IO ()
 cmdDupes cfg path = bracket open close write

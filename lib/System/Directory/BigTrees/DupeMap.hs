@@ -29,6 +29,7 @@ module System.Directory.BigTrees.DupeMap
 
 import Control.Monad.ST (ST, runST)
 import qualified Data.ByteString.Char8 as B8
+import Data.Functor ((<&>))
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
@@ -36,15 +37,13 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.Name (Name (..), n2op)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
-import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
-                                           ProdTree, treeType, treeHash,
-                                           treeName, SearchConfig (..))
-import System.IO (Handle, IOMode (..))
-import Data.Functor ((<&>))
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree,
+                                           SearchConfig (..), treeHash, treeName, treeType)
+import System.Directory.BigTrees.Name (Name (..), n2op)
 import qualified System.File.OsPath as SFO
-import System.OsPath (OsPath, (</>), splitDirectories, decodeFS)
+import System.IO (Handle, IOMode (..))
+import System.OsPath (OsPath, decodeFS, splitDirectories, (</>))
 
 -- TODO be able to serialize dupe tables for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -130,7 +129,7 @@ dupesByNNodes ht = simplifyDupes $ Prelude.map fixElem sortedL
  - * adjusts the int scores from "n files in set" to "n files saved by dedup"
  - * negates scores so quicksort will put them in descending order
  -}
-scoreSets :: C.HashTable s Hash DupeSet -> ST s SortedDupeSets 
+scoreSets :: C.HashTable s Hash DupeSet -> ST s SortedDupeSets
 scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
   return $ if length fs > 1 then (negate $ score v,t,fs):vs else vs) []
   where

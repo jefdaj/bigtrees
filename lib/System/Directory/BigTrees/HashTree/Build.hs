@@ -25,8 +25,8 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name
-import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Internal as SDI
+import qualified System.Directory.OsPath as SDO
 import qualified System.Directory.Tree as DT
 import qualified System.OsPath as SOP
 import System.OsPath (OsPath, decodeFS, encodeFS, takeDirectory, (</>))
@@ -35,7 +35,7 @@ import System.OsPath (OsPath, decodeFS, encodeFS, takeDirectory, (</>))
 import Data.Char
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafeInterleaveIO)
-import System.Posix.Files (getFileStatus, readSymbolicLink, isRegularFile)
+import System.Posix.Files (getFileStatus, isRegularFile, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString

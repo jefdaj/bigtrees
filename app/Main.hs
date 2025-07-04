@@ -11,21 +11,21 @@ import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
-import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
-               parseLabeledSearches, log)
-import Prelude hiding (log)
+import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig, log,
+               parseLabeledSearches)
 import Data.Functor ((<&>))
+import Prelude hiding (log)
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
                                   TreeType (..))
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
+import Control.Monad (when)
 import Data.Maybe (fromJust)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
-import Control.Monad (when)
 -- import Text.Pretty.Simple (pPrint)
 
 printVersion :: IO ()

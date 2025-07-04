@@ -11,8 +11,8 @@ import Prelude hiding (log)
 import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToHashSet,
                                   addTreeToHashSet, getTreeSize, hashSetDataFromLine,
                                   hashSetFromList, headerP, linesP, readHashList,
-                                  readLastHashLineAndFooter, readOrBuildTree, readTreeLines,
-                                  sumNodes, toSortedList, writeHashList, s2note)
+                                  readLastHashLineAndFooter, readOrBuildTree, readTreeLines, s2note,
+                                  sumNodes, toSortedList, writeHashList)
 import System.Directory.BigTrees.HashSet (emptyHashSet)
 import qualified System.Directory.OsPath as SDO
 import System.IO (IOMode (..), withFile)

@@ -128,16 +128,16 @@ module System.Directory.BigTrees
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
-import System.Directory.BigTrees.DupeMap (DupeSet, DupeTable, dupesByNNodes,
-                                          mergeDupeSets, pathsByHash, printDupes,
-                                          writeDupes, hWriteDupes)
+import System.Directory.BigTrees.DupeMap (DupeSet, DupeTable, dupesByNNodes, hWriteDupes,
+                                          mergeDupeSets, pathsByHash, printDupes, writeDupes)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),
                                            NNodes (..), TreeType (..), linesP)
 import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData (..),
                                           addNodeToHashSet, addTreeToHashSet, emptyHashSet,
                                           hashSetDataFromLine, hashSetFromList, hashSetFromTree,
-                                          readHashList, readHashSet, toSortedList, writeHashList, note2bs, s2note, setContainsHash)
+                                          note2bs, readHashList, readHashSet, s2note,
+                                          setContainsHash, toSortedList, writeHashList)
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
                                                 hashContents, renameRoot, sumNodes, treeHash,

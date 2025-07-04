@@ -6,24 +6,25 @@ module System.Directory.BigTrees.HashTree.Find where
   -- )
   -- where
 
-import Control.Monad (when, forM)
+import Control.Monad (forM, when)
+import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (fromMaybe, mapMaybe)
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
                                            TreeType (..), sepChar)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeModTime,
-                                                treeNBytes, treeName, treeType, treeHash)
+import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList, readHashList,
+                                          setContainsHash)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeHash,
+                                                treeModTime, treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, treeContainsPath)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.Directory.BigTrees.HashSet (HashSet, readHashList, hashSetFromList, emptyHashSet, setContainsHash)
-import Control.Monad.ST.Strict (ST, runST)
 import System.IO (hFlush, stdout)
+import System.OsPath (encodeFS)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
-import System.OsPath (encodeFS)
 
 -- import Debug.Trace
 
@@ -169,6 +170,7 @@ findLabelNode ((l, cs):css) ns t = if anySearchMatches then Just l else findLabe
       , fromMaybe True $ (flip matchTest baseName ) <$> cBaseNameMatchesRegex c
       , fromMaybe True $ (flip matchTest wholeName) <$> cWholeNameMatchesRegex c
       ]
+
 
 ---------------------
 -- format metadata --

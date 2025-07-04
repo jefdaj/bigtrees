@@ -1,8 +1,8 @@
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving  #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 
 {-|
 Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
@@ -79,8 +79,9 @@ import Data.Either
 import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, joinCols,
                                            nfilesP, sizeP)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree (..),
-                                           sumNodes, treeHash, treeNBytes, treeName)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
+                                                TestTree (..), sumNodes, treeHash, treeNBytes,
+                                                treeName)
 import System.Directory.BigTrees.Name (Name (..), bs2op)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..))
@@ -88,9 +89,9 @@ import System.OsPath (OsPath)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
+import qualified Data.ByteString.Short as SBS
 import qualified System.OsString as SOS
 import qualified System.OsString.Internal.Types as SOS
-import qualified Data.ByteString.Short as SBS
 
 
 --- types ---
@@ -305,7 +306,7 @@ readHashList path = do
 
 -- TODO is this the beginning of a transformer stack?
 readHashSet :: OsPath -> IO (ST s (HashSet s))
-readHashSet path = readHashList path >>= return . hashSetFromList
+readHashSet path = readHashList path <&> hashSetFromList
 
 --- round-trip tests ---
 
