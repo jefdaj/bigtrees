@@ -76,18 +76,10 @@
           overlays = [ haskellOverlay ];
         });
 
-        # Wrap Stack to configure Nix integration and target the correct Stack-Nix file
-        # - nix: Enable Nix support
-        # - no-nix-pure: Pass environment variables, like `NIX_PATH`
-        # - nix-shell-file: Nix file to use (otherwise it uses `shell.nix` by default)
-
-        # TODO rewrite based on modern integration guide:
-        #        https://docs.haskellstack.org/en/stable/topics/nix_integration/
-        #
         # Wrap Stack to work with our Nix integration. We don't want to modify
         # stack.yaml so non-Nix users don't notice anything.
         # - no-nix: We don't want Stack's way of integrating Nix.
-        # --system-ghc    # Use the existing GHC on PATH (will come from this Nix file)
+        # --system-ghc      # Use the existing GHC on PATH (will come from this Nix file)
         # --no-install-ghc  # Don't try to install GHC if no matching GHC found on PATH
         stack-wrapped = pkgsDynamic.symlinkJoin {
           name = "stack"; # will be available as the usual `stack` in terminal
@@ -108,23 +100,23 @@
                                                  # from stack.yaml snapshot
 
         myDevTools = [
+
+          # basics
           hPkgs.ghc # GHC compiler in the desired version (will be available on PATH)
-          # hPkgs.ghcid # Continuous terminal Haskell compile checker
+          pkgsDynamic.zlib # External C library needed by some Haskell packages
+          stack-wrapped
+
+          # dev
+          hPkgs.ghcid # Continuous terminal Haskell compile checker
+          hPkgs.haskell-language-server # LSP server for editor
+          hPkgs.hoogle # Lookup Haskell documentation
+          # pkgs.vscode
+
+          # TODO any of these helpful? They're from the example so should work
           # hPkgs.ormolu # Haskell formatter
-          # hPkgs.hoogle # Lookup Haskell documentation
-          # hPkgs.haskell-language-server # LSP server for editor
           # hPkgs.implicit-hie # auto generate LSP hie.yaml file from cabal
           # hPkgs.retrie # Haskell refactoring tool
           # hPkgs.cabal-install
-          stack-wrapped
-          pkgsDynamic.zlib # External C library needed by some Haskell packages
-
-          # TODO clean this up
-          # pkgs.haskell-language-server
-          # pkgs.vscode
-
-          # test
-          pkgsDynamic.tree
 
           # analyze/lint
           hPkgs.hlint # Haskell codestyle checker
@@ -132,6 +124,10 @@
           pkgsDynamic.stylish-haskell
           hPkgs.weeder
           hPkgs.stan
+
+          # test
+          pkgsDynamic.tree
+
         ];
 
       # Static by default, but allow pkgsDynamic to be referenced explicitly for dev tools.
