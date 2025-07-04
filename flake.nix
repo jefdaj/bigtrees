@@ -24,20 +24,11 @@
 
   outputs = { self, nixpkgs, flake-utils, directory-tree }:
     flake-utils.lib.eachDefaultSystem (system:
-
-      # TODO what was legacyPackages for?
-      # with nixpkgs.legacyPackages.${system}.pkgsStatic;
-
       let
 
-        # TODO is docopt finally fixed??
-        # TODO why is docopt still blocking evaluation after markUnbroken?
-        #      oh, there's a bug:
-        #      https://github.com/NixOS/nixpkgs/issues/235960
-        #      exposing it as haskellPackages does not help
         haskellOverlay = (final: prev: {
 
-          # Currently this is ghc948, but ok to follow the default when it
+          # Currently this is ghc984, but ok to follow the default when it
           # updates. Just remember to update the package versions below too, by
           # removing them and adding new overrides as needed until it builds.
           # myHaskellPackages = prev.haskell.packages.ghc948.override {
@@ -187,12 +178,6 @@
 
         defaultPackage = self.packages.${system}.pkg;
 
-        executableSystemDepends = [
-          # gitAndTools.git
-          # gitAndTools.gitAnnex
-          # rsync
-        ];
-
         # The dev tools could probably also be static, but why rebuild them?
         # devShells.default = pkgs.mkShell {
         devShell = pkgsDynamic.mkShell {
@@ -214,23 +199,6 @@
           # TODO still?
           TASTY_NUM_THREADS = 1;
         };
-
-        # devShell = project (executableSystemDepends ++ [
-          # TODO *any* package here evaluates the broken docopt? weird
-          # hello
-          # cabal-fmt
-          # cabal-install TODO why does this fail on perl?
-          # haskell-language-server
-          # hlint
-          # test
-          # pkgsDynamic.tree
-          # analyze/lint
-          # pkgsDynamic.hlint
-          # pkgsDynamic.haskellPackages.apply-refact
-          # stylish-haskell
-          # pkgsDynamic.haskellPackages.weeder
-          # pkgsDynamic.haskellPackages.stan
-        # ]);
 
       });
 }
