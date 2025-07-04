@@ -1,8 +1,7 @@
 {
 
   inputs = {
-    # TODO stable release? nixpkgs-unstable? see what ppl are doing these days
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-unstable;
+    nixpkgs.url = github:NixOS/nixpkgs/nixos-25.05;
     flake-utils.url = "github:numtide/flake-utils";
     # TODO consider removing the git submodule in favor of this
     directory-tree = {
