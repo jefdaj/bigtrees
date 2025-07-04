@@ -122,7 +122,6 @@
           hPkgs.ghc # GHC compiler in the desired version (will be available on PATH)
           # hPkgs.ghcid # Continuous terminal Haskell compile checker
           # hPkgs.ormolu # Haskell formatter
-          # hPkgs.hlint # Haskell codestyle checker
           # hPkgs.hoogle # Lookup Haskell documentation
           # hPkgs.haskell-language-server # LSP server for editor
           # hPkgs.implicit-hie # auto generate LSP hie.yaml file from cabal
@@ -130,6 +129,20 @@
           # hPkgs.cabal-install
           stack-wrapped
           pkgsDynamic.zlib # External C library needed by some Haskell packages
+
+          # TODO clean this up
+          # pkgs.haskell-language-server
+          # pkgs.vscode
+
+          # test
+          pkgsDynamic.tree
+
+          # analyze/lint
+          hPkgs.hlint # Haskell codestyle checker
+          hPkgs.apply-refact
+          pkgsDynamic.stylish-haskell
+          hPkgs.weeder
+          hPkgs.stan
         ];
 
       # Static by default, but allow pkgsDynamic to be referenced explicitly for dev tools.
@@ -189,6 +202,17 @@
           # pkgs.haskell.lib.buildStackProject does
           # https://github.com/NixOS/nixpkgs/blob/d64780ea0e22b5f61cd6012a456869c702a72f20/pkgs/development/haskell-modules/generic-stack-builder.nix#L38
           LD_LIBRARY_PATH = pkgsDynamic.lib.makeLibraryPath myDevTools;
+
+          # TODO is this still needed/helpful?
+          # Configure the Nix path to our own `pkgs`, to ensure Stack-with-Nix uses the
+          # correct one rather than the global <nixpkgs> when looking for the right
+          # `ghc` argument to pass in `nix/stack-integration.nix`
+          # See https://nixos.org/nixos/nix-pills/nix-search-paths.html for more information
+          # NIX_PATH = "nixpkgs=" + pkgs.path;
+
+          # This seems to be necessary when running tests that capture stdout/stderr
+          # TODO still?
+          TASTY_NUM_THREADS = 1;
         };
 
         # devShell = project (executableSystemDepends ++ [

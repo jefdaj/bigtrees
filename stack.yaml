@@ -5,7 +5,10 @@ packages:
   - ./directory-tree
   - .
 
-# TODO does this help?
+# All the Nix integration business happens in the nix flake;
+# by the time we run (Nix-wrapped) stack it shouldn't have to do anything.
+# TODO test whether this works independently of Nix on a regular Linux machine.
+notify-if-nix-on-path: false
 nix:
   enable: false
   pure: false
