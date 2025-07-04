@@ -1,15 +1,11 @@
 {
 
-  # The current state of the code is that this flake *finally* does a proper
-  # static build, but I haven't figured out how to get it to also do a nice
-  # stack-based dev env yet. So that's still done via the old infrastrcture:
-  # shell.nix + nix/* + stack.yaml.
+  # This is an unusual flake because the final nix build is static, but the
+  # dev shell is dynamic (regular). So often one can break while the other is still
+  # fine.
 
-  # TODO try current nixos-25.05 nixpkgs, but don't update hs pkgs yet
-  #        nope, gotta also update the packages
-  #        it looks promising though because docopt finally evaluates again
-  #        i think they updated default ghc -> 9.8.4 now?
-  # TODO try adding the exact logic from shell.nix as a devShell
+  # Currently, the dynamic shell + stack build works and I'm adjusting the hs overrides for the static build
+  # TODO cleanly separate the two visually below
 
   inputs = {
     nixpkgs.url = github:NixOS/nixpkgs/nixos-25.05;
@@ -42,30 +38,32 @@
               # iterating in stack.yaml, then translate the working versions
               # into nix overrides here.
 
-              Cabal        = hFinal.Cabal_3_10_3_0;
-              Cabal-syntax = hFinal.Cabal-syntax_3_10_3_0;
+              # Current overrides are pretty simple and based on stack.yaml
+              directory           = hFinal.callHackage "directory" "1.3.8.5" {};
+              unix                = hFinal.callHackage "unix" "2.8.6.0" {};
+              file-io             = hFinal.callHackage "file-io" "0.1.5" {};
+              process             = hFinal.callHackage "process" "1.6.25.0" {};
+              filepath            = hFinal.callHackage "filepath" "1.5.4.0" {};
+              filepath-bytestring = hFinal.callHackage "filepath-bytestring" "1.5.2.0.2" {};
 
-              docopt   = hFinal.callHackage "docopt" "0.7.0.8" {};
-              filepath = hFinal.callHackage "filepath" "1.5.2.0" {};
-              process  = hFinal.callHackage "process" "1.6.20.0" {};
-
-              directory = final.haskell.lib.doJailbreak (hFinal.callHackage "directory" "1.3.8.2" {});
-              file-io   = final.haskell.lib.doJailbreak (hFinal.callHackage "file-io" "0.1.1" {});
-              unix      = final.haskell.lib.doJailbreak (hFinal.callHackage "unix" "2.8.5.1" {});
-
-              MissingH = final.haskell.lib.doJailbreak hPrev.MissingH;
-
-              hashable = final.haskell.lib.doJailbreak (hFinal.callHackageDirect {
-                pkg = "hashable";
-                ver = "1.4.6.0";
-                sha256 = "sha256-UK24kyPDWNwkmSJP04DATlXRrfmX+mWBUeGaO4ZYgTM=";
-              } {});
-
-              os-string = hFinal.callHackageDirect {
-                pkg = "os-string";
-                ver = "2.0.3";
-                sha256 = "sha256-dX6TlnZnZswoolVBGhOAifuVRgCApojto3CzhCaYITs=";
-              } {};
+              # Some old examples of more complicated overrides for reference:
+              # Cabal        = hFinal.Cabal_3_10_3_0;
+              # Cabal-syntax = hFinal.Cabal-syntax_3_10_3_0;
+              # docopt   = hFinal.callHackage "docopt" "0.7.0.8" {};
+              # process  = hFinal.callHackage "process" "1.6.20.0" {};
+              # directory = final.haskell.lib.doJailbreak (hFinal.callHackage "directory" "1.3.8.2" {});
+              # file-io   = final.haskell.lib.doJailbreak (hFinal.callHackage "file-io" "0.1.1" {});
+              # MissingH = final.haskell.lib.doJailbreak hPrev.MissingH;
+              # hashable = final.haskell.lib.doJailbreak (hFinal.callHackageDirect {
+              #   pkg = "hashable";
+              #   ver = "1.4.6.0";
+              #   sha256 = "sha256-UK24kyPDWNwkmSJP04DATlXRrfmX+mWBUeGaO4ZYgTM=";
+              # } {});
+              # os-string = hFinal.callHackageDirect {
+              #   pkg = "os-string";
+              #   ver = "2.0.3";
+              #   sha256 = "sha256-dX6TlnZnZswoolVBGhOAifuVRgCApojto3CzhCaYITs=";
+              # } {};
 
             };
           };
