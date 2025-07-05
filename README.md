@@ -13,14 +13,15 @@ backups" use case.
 git clone https://github.com/jefdaj/bigtrees
 cd bigtrees
 
-# old way, still works:
-nix-shell
+# dynamic, incremental build for dev work
+nix develop
 stack test
 
-# new way, static build in progress:
+# final static build
 nix build
 
 # benchmarking
+# TODO still works?
 stack bench --ba --baseline=test/bench/bench.csv --timeout=60s
 ```
 
@@ -36,16 +37,16 @@ stack bench --ba --baseline=test/bench/bench.csv --timeout=60s
 * Added mod time, size (bytes), n files (nodes) to tree data
 * Added header + footer to hashes describing filters, version used, start/end time, table format
 * Rename data structures: Depth, NFiles, NBytes
+* Static build so it can be used offline without Nix
+* "`find` mode": list full paths, filter by metadata and glob/regex
+* Add `Link` nodes that indicate whether their target data is present in the tree
+* Add `Error` nodes to wrap errors, the same way directory-tree does it
 
 
 #### Todo
 
-* Static build so it can be used offline without Nix
-* "`find` mode": list full paths, filter by metadata and glob/regex
 * Rewrite command line interface
 * Add `Graft` nodes that import other tree files
-* Add `Link` nodes that indicate whether their target data is present in the tree
-* Add `Error` nodes to wrap errors, the same way directory-tree does it
 * Intelligent re-hashing of only the files whose mod times have changed
 * Clean up: write haddocks, hide partial constructors, etc
 * Upload to Hackage
