@@ -12,15 +12,26 @@ backups" use case.
 ``` .sh
 git clone https://github.com/jefdaj/bigtrees
 cd bigtrees
+```
 
-# old way, still works:
-nix-shell
-stack test
+``` .sh
+# incremental dev build using nix + stack
+nix develop
+stack repl
+stack build
+stack exec bigtrees -- <bigtrees args>
+stack test # TODO fix failing tests
+```
 
-# new way, static build in progress:
+``` .sh
+# final static build for use outside a nix environment
 nix build
+ldd result/bin/bigtrees # should say "not a dynamic executable"
+```
 
+``` .sh
 # benchmarking
+# TODO still works?
 stack bench --ba --baseline=test/bench/bench.csv --timeout=60s
 ```
 
