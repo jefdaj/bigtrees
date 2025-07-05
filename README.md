@@ -2,9 +2,18 @@
 
 ### BigTrees
 
-A rewrite of [gander](https://github.com/jefdaj/gander) focusing more on
-usability of the data structures as a library, rather than on my own "dedup
-backups" use case.
+A re-imagining of [gander](https://github.com/jefdaj/gander) that gives up on
+some aspirational "easy mode" features in favor of simplicity for power users.
+
+The core data structures and algorithms perform very well already!
+In fact I'm not aware of any open source program that's better at large-scale file deduplication.
+(Scale is mainly limited by your RAM; I've tried up to ~15 million files on my laptop which required ~30G)
+
+Now the main things left to do are:
+
+- clean up the interface
+- get all the tests passing
+- write some documentation
 
 
 #### Quick Start
