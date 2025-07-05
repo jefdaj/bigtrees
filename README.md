@@ -53,8 +53,8 @@ TODO:
 - [x] "`find` mode": list full paths, filter by metadata and glob/regex
 - [ ] Rewrite command line interface
 - [ ] Add `Graft` nodes that import other tree files
-- [ ] Add `Link` nodes that indicate whether their target data is present in the tree
-- [ ] Add `Error` nodes to wrap errors, the same way directory-tree does it
+- [x] Add `Link` nodes that indicate whether their target data is present in the tree
+- [x] Add `Error` nodes to wrap errors, the same way directory-tree does it
 - [ ] Intelligent re-hashing of only the files whose mod times have changed
 - [ ] Clean up: write haddocks, hide partial constructors, etc
 - [ ] Upload to Hackage
