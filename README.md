@@ -13,44 +13,41 @@ backups" use case.
 git clone https://github.com/jefdaj/bigtrees
 cd bigtrees
 
-# dynamic, incremental build for dev work
-nix develop
+# old way, still works:
+nix-shell
 stack test
 
-# final static build
+# new way, static build in progress:
 nix build
 
 # benchmarking
-# TODO still works?
 stack bench --ba --baseline=test/bench/bench.csv --timeout=60s
 ```
 
-#### Done
+#### Development
 
-* Moved `Gander.Cmd` -> `BigTrees.OldCmd`, leaving old commands functional during the rewrite
-* Wrote a meta lint script (hlint, stan, stylish-haskell, weeder) and applied some basic suggestions
-* Some initial work in progress writing haddocs
-* Moved tests into lib/ + app/ alongside the functions they test, wrote more of them
-* Broke HashTree into smaller modules by operation: Build, Write, etc
-* Rewrote my old directory-tree code using a typeclass, started [a PR upstream](https://github.com/jberryman/directory-tree/pull/18)
-* Wrote comparison of text vs binary format file sizes, realized binary is always larger, removed it
-* Added mod time, size (bytes), n files (nodes) to tree data
-* Added header + footer to hashes describing filters, version used, start/end time, table format
-* Rename data structures: Depth, NFiles, NBytes
-* Static build so it can be used offline without Nix
-* "`find` mode": list full paths, filter by metadata and glob/regex
-* Add `Link` nodes that indicate whether their target data is present in the tree
-* Add `Error` nodes to wrap errors, the same way directory-tree does it
+TODO:
 
-
-#### Todo
-
-* Rewrite command line interface
-* Add `Graft` nodes that import other tree files
-* Intelligent re-hashing of only the files whose mod times have changed
-* Clean up: write haddocks, hide partial constructors, etc
-* Upload to Hackage
-* Example screencasts of using the binary + data structures in repl
+- [x] Move `Gander.Cmd` -> `BigTrees.OldCmd`, leaving old commands functional during the rewrite
+- [x] Write a meta lint script (hlint, stan, stylish-haskell, weeder) and applied some basic suggestions
+- [x] Some initial work in progress writing haddocs
+- [x] Move tests into lib/ + app/ alongside the functions they test, wrote more of them
+- [x] Break HashTree into smaller modules by operation: Build, Write, etc
+- [x] Rewrite my old directory-tree code using a typeclass, start [a PR upstream](https://github.com/jberryman/directory-tree/pull/18)
+- [x] Write comparison of text vs binary format file sizes, realize binary is always larger, remove it
+- [x] Add mod time, size (bytes), n files (nodes) to tree data
+- [x] Add header + footer to hashes describing filters, version used, start/end time, table format
+- [x] Rename data structures: Depth, NFiles, NBytes
+- [x] Static build so it can be used offline without Nix
+- [x] "`find` mode": list full paths, filter by metadata and glob/regex
+- [ ] Rewrite command line interface
+- [ ] Add `Graft` nodes that import other tree files
+- [ ] Add `Link` nodes that indicate whether their target data is present in the tree
+- [ ] Add `Error` nodes to wrap errors, the same way directory-tree does it
+- [ ] Intelligent re-hashing of only the files whose mod times have changed
+- [ ] Clean up: write haddocks, hide partial constructors, etc
+- [ ] Upload to Hackage
+- [ ] Example screencasts of using the binary + data structures in repl
 
 ```
 bigtrees hash   <src> [-o <tree>]
