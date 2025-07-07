@@ -17,6 +17,7 @@ div#content {
     margin-right: auto;
     padding-left: 50px;
     padding-right: 50px;
+    line-height: 1.6em;
 }
 
 div#nav {
