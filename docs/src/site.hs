@@ -58,7 +58,7 @@ main = hakyllWith config $ do
             -- examples <- fmap (take 3 .reverse) . recentFirst =<< loadAll "examples/*"
             let indexCtx =
                     -- listField "examples" exampleCtx (return examples) `mappend`
-                    constField "title" "BigTrees"                `mappend`
+                    constField "title" ""                `mappend`
                     defaultContext
 
             getResourceBody
