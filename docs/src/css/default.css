@@ -83,10 +83,18 @@ div#nav {
     text-transform: uppercase;
 }
 
-code, .sourceCode {
+p > code, .sourceCode {
     background: #cfffff;
     font-family: monospace;
-    font-weight: bold;
+}
+
+p > code {
+    padding: 3pt;
+}
+
+.sourceCode {
+    padding-left: 3pt;
+    padding-right: 3pt;
 }
 
 h1 {
