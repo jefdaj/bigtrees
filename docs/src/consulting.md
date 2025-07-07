@@ -6,10 +6,10 @@ Go ahead and reach out!
 I'm happy answering all sorts of questions from regular people or businesses.
 For example...
 
-* Can BigTrees do this? It isn't quite like any of the examples on the site.
+* Can BigTrees do _this_? It isn't quite like any of the examples on the site.
 * How can I run a Linux command on my Windows drive?
 * How can I dedup my recordings while being sure not to lose anything accidentally?
-* How much RAM would we need to dedup so many millions of files?
+* How much RAM would we need to search so many millions of files?
 * Can you add a particular feature, like a new search option or output format?
 * Can you work with our developers to add a dedup step to our data pipeline?
 * Can you write a faster algorithm for our unique data format?
