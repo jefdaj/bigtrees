@@ -94,11 +94,19 @@ library:
   - System.Directory.BigTrees.Hash
   - System.Directory.BigTrees.Delta
 
-executable:
-  main: Main.hs
-  source-dirs: app
-  dependencies:
-  - bigtrees
+executables:
+
+  bigtrees:
+    main: Main.hs
+    source-dirs: app
+    dependencies:
+    - bigtrees
+
+  docs-site:
+    main: site.hs
+    source-dirs: "docs-src"
+    dependencies:
+    - hakyll
 
 tests:
 

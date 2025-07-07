@@ -46,6 +46,20 @@ packages:
       size: 883
   original:
     hackage: filepath-bytestring-1.5.2.0.2@sha256:d410c6e273c926411a9b35009e8c25ef8fe522c49fa6c226365a20dceb96b6e7,3183
+- completed:
+    hackage: Cabal-3.10.3.0@sha256:4a36954a66769eef90353daa0dbb07d43e49c228281383c7e4134445d495f714,12313
+    pantry-tree:
+      sha256: 1d8835f47d5a86a326a4997ce77f7bfd78d732a483264deaf0c280e8d2b764b7
+      size: 9222
+  original:
+    hackage: Cabal-3.10.3.0
+- completed:
+    hackage: Cabal-syntax-3.10.3.0@sha256:c2ca36499bf9365726968b1e11a757e6d846c47cdf0c2c26a003698fd3c300fe,7431
+    pantry-tree:
+      sha256: ac04439a8a9da0ad2ead90ebeaf5c27f133018954c70a4933b677a3f2aca538c
+      size: 11052
+  original:
+    hackage: Cabal-syntax-3.10.3.0
 snapshots:
 - completed:
     sha256: 1191e70bcd219fb660a5bf5d43a0fb235ef12a891994fd02d02643f61d6755ed

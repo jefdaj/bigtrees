@@ -28,6 +28,8 @@ extra-deps:
   - filepath-1.5.4.0
   - process-1.6.25.0
   - filepath-bytestring-1.5.2.0.2@sha256:d410c6e273c926411a9b35009e8c25ef8fe522c49fa6c226365a20dceb96b6e7,3183
+  - Cabal-3.10.3.0
+  - Cabal-syntax-3.10.3.0
 
 allow-newer: true
 

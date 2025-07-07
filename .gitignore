@@ -16,3 +16,6 @@ result*
 # linting
 .lint/*.log
 .lint/*.html
+
+# hakyll
+docs-src/.hakyll-cache/

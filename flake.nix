@@ -39,6 +39,8 @@
               # into nix overrides here.
 
               # Current overrides are pretty simple and based on stack.yaml
+              Cabal               = hFinal.Cabal_3_14_2_0;
+              Cabal-syntax        = hFinal.Cabal-syntax_3_14_2_0;
               directory           = hFinal.callHackage "directory" "1.3.8.5" {};
               unix                = hFinal.callHackage "unix" "2.8.6.0" {};
               file-io             = hFinal.callHackage "file-io" "0.1.5" {};
@@ -84,6 +86,12 @@
         stack-wrapped = pkgsDynamic.symlinkJoin {
           name = "stack"; # will be available as the usual `stack` in terminal
           paths = [ pkgsDynamic.stack ];
+
+          # TODO does this help anything?
+          # nativeBuildInputs = [
+          #   pkgsDynamic.pkg-config
+          # ];
+
           buildInputs = [ pkgsDynamic.makeWrapper ];
           postBuild = ''
             wrapProgram $out/bin/stack \
@@ -175,6 +183,7 @@
         # The dev tools could probably also be static, but why rebuild them?
         # devShells.default = pkgs.mkShell {
         devShell = pkgsDynamic.mkShell {
+          nativeBuildInputs = [ pkgsDynamic.pkg-config ];
           buildInputs = myDevTools;
 
           # Make external Nix c libraries like zlib known to GHC, like

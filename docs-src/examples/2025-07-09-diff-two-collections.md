@@ -1,0 +1,3 @@
+---
+title: Diff two collections
+...

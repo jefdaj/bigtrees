@@ -1,4 +1,4 @@
-<img align="right" src="bigtrees.png"></img>
+<img align="right" src="docs-src/images/bigtrees.png"></img>
 
 ### BigTrees
 
@@ -36,6 +36,11 @@ stack test # TODO fix failing tests
 # final static build for use outside a nix environment
 nix build
 ldd result/bin/bigtrees # should say "not a dynamic executable"
+```
+
+```.sh
+# update the website
+stack run docs-site build
 ```
 
 ``` .sh
