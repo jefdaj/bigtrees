@@ -2,11 +2,12 @@
 title: Questions / Consulting
 ---
 
-Go ahead and reach out!
-I'm happy answering all sorts of questions from regular people or businesses.
-For example...
+Go ahead and reach out! There's contact info on [my blog](https://cryptoisland.blog/about.html).
+I'm happy answering all sorts of questions from regular people or businesses,
+even if you don't feel like you know what you want yet!
+Some ideas...
 
-* Can BigTrees do _this_? It isn't quite like any of the examples on the site.
+* Can BigTrees help with _my thing_? It isn't quite like any of the examples.
 * How can I run a Linux command on my Windows drive?
 * How can I dedup my recordings while being sure not to lose anything accidentally?
 * How much RAM would we need to search so many millions of files?
