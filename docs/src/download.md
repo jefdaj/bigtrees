@@ -10,8 +10,9 @@ users willing to double check things themselves. Here are the binaries:
 
 See the [GitHub release page](https://github.com/jefdaj/bigtrees/releases/tag/v0.15) for details.
 
-Download the binary file, give it execute permissions, and move it somewhere on your
-`PATH`. For example:
+Download the binary file for your system,
+give it e<b>x</b>ecute permission, and move it somewhere on your `PATH`.
+For example:
 
 ```.sh
 chmod +x ~/Downloads/bigtrees
@@ -19,5 +20,5 @@ mv ~/Downloads/bigtrees ~/.local/bin/
 which bigtrees
 ```
 
-You can `echo $PATH` to see the options, then use `which bigtrees` or `bigtrees
-version` to check that you got it.
+You can `echo $PATH` to see the options first,
+and use `bigtrees version` after to check that you got it working.
