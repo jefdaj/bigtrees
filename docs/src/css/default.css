@@ -83,13 +83,10 @@ div#nav {
     text-transform: uppercase;
 }
 
-div#footer {
-    border-top: solid 2px black;
-    color: #555;
-    font-size: 12px;
-    margin-top: 30px;
-    padding: 12px 0px 12px 0px;
-    text-align: right;
+code, .sourceCode {
+    background: #cfffff;
+    font-family: monospace;
+    font-weight: bold;
 }
 
 h1 {

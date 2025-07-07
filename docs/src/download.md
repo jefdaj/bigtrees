@@ -2,17 +2,21 @@
 title: Download
 ...
 
-Nullam imperdiet sodales orci vitae molestie. Nunc quam orci, pharetra a
-rhoncus vitae, eleifend id felis. Suspendisse potenti. Etiam vitae urna orci.
-Quisque pellentesque dignissim felis, egestas tempus urna luctus vitae. In hac
-habitasse platea dictumst. Morbi fringilla mattis odio, et mattis tellus
-accumsan vitae.
+The latest version is `v0.15`. It's a _pre-release_, suitable for adventerous
+users willing to double check things themselves. Here are the binaries:
 
-1. Amamus Unicode 碁
-2. Interdum nex magna.
+* [Linux x86_64](https://github.com/jefdaj/bigtrees/releases/download/v0.15/bigtrees-x86_64-linux)
+* MacOS coming soon
 
-Vivamus eget mauris sit amet nulla laoreet lobortis. Nulla in diam elementum
-risus convallis commodo. Cras vehicula varius dui vitae facilisis. Proin
-elementum libero eget leo aliquet quis euismod orci vestibulum. Duis rhoncus
-lorem consequat tellus vestibulum aliquam. Quisque orci orci, malesuada porta
-blandit et, interdum nec magna.
+See the [GitHub release page](https://github.com/jefdaj/bigtrees/releases/tag/v0.15) for details.
+
+To install, download the binary file and move it somewhere on your
+`PATH`. For example:
+
+```.sh
+mv ~/Downloads/bigtrees ~/.local/bin/
+which bigtrees
+```
+
+You can `echo $PATH` to see the options, then use `which bigtrees` or `bigtrees
+version` to check that you got it.
