@@ -2,15 +2,10 @@
 title: Simple one-line dedup
 ---
 
-Mauris in lorem nisl. Maecenas tempus facilisis ante, eget viverra nisl
-tincidunt et. Donec turpis lectus, mattis ac malesuada a, accumsan eu libero.
-Morbi condimentum, tortor et tincidunt ullamcorper, sem quam pretium nulla, id
-convallis lectus libero nec turpis. Proin dapibus nisi id est sodales nec
-ultrices tortor pellentesque.
+```.sh
+bigtrees dupes PATH --output NAME-dupes.txt
+```
 
-Vivamus vel nisi ac lacus sollicitudin vulputate
-ac ut ligula. Nullam feugiat risus eget eros gravida in molestie sapien euismod.
-Nunc sed hendrerit orci. Nulla mollis consequat lorem ac blandit. Ut et turpis
-mauris. Nulla est odio, posuere id ullamcorper sit amet, tincidunt vel justo.
-Curabitur placerat tincidunt varius. Nulla vulputate, ipsum eu consectetur
-mollis, dui nibh aliquam neque, at ultricies leo ligula et arcu.
+Where `PATH` is a path to the folder you want to scan (on Macs, you can drop the folder in the terminal window to paste the path), and `NAME` is whatever you want to name the output text file.
+
+<!-- TODO example dupes file -->
