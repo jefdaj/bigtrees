@@ -10,10 +10,11 @@ users willing to double check things themselves. Here are the binaries:
 
 See the [GitHub release page](https://github.com/jefdaj/bigtrees/releases/tag/v0.15) for details.
 
-To install, download the binary file and move it somewhere on your
+Download the binary file, give it execute permissions, and move it somewhere on your
 `PATH`. For example:
 
 ```.sh
+chmod +x ~/Downloads/bigtrees
 mv ~/Downloads/bigtrees ~/.local/bin/
 which bigtrees
 ```
