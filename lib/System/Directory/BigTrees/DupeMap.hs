@@ -232,6 +232,7 @@ explainDupesRef md ls = mapM explainGroup ls <&> B8.unlines
 explainDupesSelf :: ExplainFn
 explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
   where
+    -- TODO does it actually depend on recursion? each node has nfiles already
     disclaimer Nothing  = ""
     disclaimer (Just (Depth d)) =
       " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
@@ -240,23 +241,24 @@ explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
     explainGroup (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
-             $ (header t n (length paths) `B8.append` ":")
+             $ header t n (length paths)
              : sort (map B8.pack paths')
 
+    -- TODO is n the number *saved*, or total number of dupes?
     header :: TreeType -> Int -> Int -> B8.ByteString
     header E _ _ = "" -- TODO is that a good idea?
     header D n ds = B8.intercalate " "
-      [ "# deleting all but 1 of these" , B8.pack (show ds)
-      , "directories would save", B8.pack (show n)
+      [ "# deleting", B8.pack (show $ ds - 1), "of these" , B8.pack (show ds)
+      , "duplicate directories would save", B8.pack (show n)
       , B8.append "files" (disclaimer md)
       ]
     header F n fs = B8.intercalate " "
-      [ "# deleting all but 1 of these"  , B8.pack   (show fs)
-      , "files would save", B8.append (B8.pack $ show n) (disclaimer md)
+      [ "# you could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
+      , "duplicate files", disclaimer md
       ]
     header _ n ls = B8.intercalate " "
-      [ "# deleting all but 1 of these"  , B8.pack   (show ls)
-      , "links would save", B8.append (B8.pack $ show n) (disclaimer md)
+      [ "# you could delete", B8.pack (show $ ls - 1), "of these"  , B8.pack   (show ls)
+      , "duplicate links", disclaimer md
       ]
 
 
