@@ -159,7 +159,7 @@ dupesByNegScore scoreFn ht = do
  -}
 simplifyDupes :: SortedDupeLists -> SortedDupeLists
 simplifyDupes [] = []
-simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
+simplifyDupes (d@(_,_,fs):ds) = d : (simplifyDupes $ filter (not . redundantSet) ds)
   where
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
