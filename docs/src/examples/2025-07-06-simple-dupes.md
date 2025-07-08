@@ -3,16 +3,17 @@ title: Simple one-line dedup
 ---
 
 ```.sh
-bigtrees dupes PATH --output NAME-dupes.txt
+bigtrees dupes PATH --output dupes.txt
 ```
 
-Where `PATH` is a path to the folder you want to scan (on Macs, you can drop the folder in the terminal window to paste the path), and `NAME` is whatever you want to name the output text file.
+Where `PATH` is a path to the folder you want to scan.
+On some systems, you can drop the folder in the terminal window to paste the path instead of typing it.
 
 I have a big `tmprepos` folder for trying new code.
 Here's what it looks like when I scan it for dupes:
 
 ```.sh
-bigtrees dupes ~/tmprepos --output --output tmprepos-dupes.txt
+bigtrees dupes ~/tmprepos --output dupes.txt
 ```
 
 ```.sh
@@ -27,7 +28,7 @@ tmprepos/aiken/crates/uplc/test_data/conformance/v2/builtin/interleaving/iteForc
 tmprepos/aiken/crates/uplc/test_data/conformance/v2/builtin/interleaving/iteForcedForced/iteForcedForced.uplc.expected
 tmprepos/aiken/crates/uplc/test_data/conformance/v2/builtin/interleaving/iteUnforcedFullyApplied/iteUnforcedFullyApplied.uplc.budget.expected
 
-...about 44,000 lines later...
+# ...about 44,000 lines later...
 
 # these 2 files can be removed:
 tmprepos/hello-world/node_modules/blake2b/test.js
@@ -38,4 +39,4 @@ tmprepos/nixos-root/home/jefdaj/.nix-defexpr/channels_root
 tmprepos/nixos-root/root/.nix-defexpr/channels
 ```
 
-As you can see, it's a list of sets of duplicate files, with the biggest (in terms of number of duplicate files) at the top. You probably don't need to bother with more than the first few results.
+As you can see, it's a list of sets of duplicate files, starting with the biggest (most dupes) at the top. Just manually delete the ones you don't want, and stop when they no longer seem big enough to worry about.
