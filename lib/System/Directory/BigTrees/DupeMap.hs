@@ -208,7 +208,7 @@ type ExplainFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 explainDupesRef :: ExplainFn
 explainDupesRef md ls = mapM explainGroup ls <&> B8.unlines
   where
-    -- TODO disclaimer about depths here too?
+    -- TODO disclaimer about depths here too? only when it would affect results
 
     explainGroup :: DupeList -> IO B8.ByteString
     explainGroup (n, t, paths) = do
@@ -246,17 +246,17 @@ explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
     header :: TreeType -> Int -> Int -> B8.ByteString
     header E _ _ = "" -- TODO is that a good idea?
     header D n ds = B8.intercalate " "
-      [ "# deduping these" , B8.pack (show ds)
-      , "dirs would remove", B8.pack (show n)
+      [ "# deleting all but 1 of these" , B8.pack (show ds)
+      , "directories would save", B8.pack (show n)
       , B8.append "files" (disclaimer md)
       ]
     header F n fs = B8.intercalate " "
-      [ "# deduping these"  , B8.pack   (show fs)
-      , "files would remove", B8.append (B8.pack $ show n) (disclaimer md)
+      [ "# deleting all but 1 of these"  , B8.pack   (show fs)
+      , "files would save", B8.append (B8.pack $ show n) (disclaimer md)
       ]
     header _ n ls = B8.intercalate " "
-      [ "# deduping these"  , B8.pack   (show ls)
-      , "links would remove", B8.append (B8.pack $ show n) (disclaimer md)
+      [ "# deleting all but 1 of these"  , B8.pack   (show ls)
+      , "links would save", B8.append (B8.pack $ show n) (disclaimer md)
       ]
 
 
