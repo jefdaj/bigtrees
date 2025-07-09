@@ -53,9 +53,10 @@ main = do
   -- can't use log here because cfg hasn't been parsed yet
   -- when (flag "verbose") $ pPrint args
 
-  eList <- case optLong "excludes-from" of
-             Nothing -> return $ hashExcludeRegexes defaultSearchConfig
-             Just f  -> readFile f <&> lines -- TODO more detailed parsing?
+  -- TODO should the main command determine which config field this goes in?
+  herList <- case optLong "hash-exclude-regexes-from" of
+               Nothing -> return $ hashExcludeRegexes defaultSearchConfig
+               Just f  -> readFile f <&> lines -- TODO more detailed parsing?
 
   sList <- case optLong "searches-json" of
 
@@ -99,7 +100,7 @@ main = do
           , minModtime = ModTime <$> optRead "min-modtime"
           , maxModtime = ModTime <$> optRead "max-modtime"
           , treeTypes      = map (\c -> read [c]) <$> optLong "types"
-          , hashExcludeRegexes = eList
+          , hashExcludeRegexes = herList
           , excludeSetPaths = optLongs "exclude-set"
           , referenceSetPaths = optLongs "reference-set"
           , searches  = sList

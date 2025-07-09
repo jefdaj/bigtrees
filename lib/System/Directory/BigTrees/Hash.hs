@@ -96,6 +96,7 @@ instance Arbitrary Hash where
   shrink :: Hash -> [Hash]
   shrink _ = []
 
+-- TODO put this in the HashConfig/BuildConfig if/when there is one
 digestLength :: Int
 digestLength = 20
 

@@ -34,7 +34,7 @@ data SearchConfig = SearchConfig
   , minModtime     :: Maybe ModTime
   , maxModtime     :: Maybe ModTime
   , treeTypes      :: Maybe [TreeType]
-  , hashExcludeRegexes :: [String]
+  , hashExcludeRegexes :: [String] -- TODO separate HashConfig from SearchConfig?
   , excludeSetPaths :: [FilePath]
   , referenceSetPaths :: [FilePath]
   , searches       :: LabeledSearches
