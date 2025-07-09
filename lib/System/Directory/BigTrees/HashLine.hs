@@ -38,7 +38,7 @@ module System.Directory.BigTrees.HashLine
   , parseTreeFileRev
   , hParseTreeFileRev
 
-  -- for testing (TODO remove?)
+  -- for testing
   -- , nameP
   , bench_roundtrip_HashLines_to_ByteString
   , prop_roundtrip_HashLines_to_ByteString
@@ -318,12 +318,16 @@ parseHashLinesBS bs =
 
 -- Note that these random lines can't be parsed into a valid tree;
 -- the only test the HashLine parser
-bench_roundtrip_HashLines_to_ByteString :: Int -> IO Bool
-bench_roundtrip_HashLines_to_ByteString n = do
-  bs <- genHashLinesBS n
+-- TODO wait is this actually round-tripping at all? seems like it's just parsing
+bench_roundtrip_HashLines_to_ByteString :: B8.ByteString -> IO Bool
+bench_roundtrip_HashLines_to_ByteString bs = do
+  -- bs <- genHashLinesBS n
   case parseHashLinesBS bs of
     Left msg -> error msg
-    Right ls -> return $ length ls == n
+    Right ls -> do
+      let bs' = B8.unlines $ map (prettyLine Nothing) ls
+      return $ bs' == bs
+	    -- return $ length ls == n
 
 -- Note that these lines won't form a valid tree.
 prop_roundtrip_HashLines_to_ByteString :: [HashLine] -> Bool
