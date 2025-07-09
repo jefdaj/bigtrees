@@ -3,8 +3,8 @@ import Test.Tasty.Bench
 -- TODO get tasty-discover to pick up these bench_* functions
 import Control.DeepSeq (force)
 import Control.Monad (forM)
-import System.Directory.BigTrees.HashLine (genHashLinesBS, parseHashLinesBS)
-import System.Directory.BigTrees.HashTree (bench_roundtrip_ProdTree_to_ByteString)
+import System.Directory.BigTrees.HashLine (genHashLinesBS, parseHashLinesBS, bench_roundtrip_HashLines_to_ByteString)
+import System.Directory.BigTrees.HashTree (bench_roundtrip_ProdTree_to_bigtree_file)
 
 main :: IO ()
 main = do
@@ -35,14 +35,20 @@ main = do
 
     ++
 
-    -- TODO more specific tests until we find the performance problem here
-
-    -- TODO more specific tests until we find the performance problem here
-
-    -- TODO more specific tests until we find the performance problem here
-
-    -- TODO more specific tests until we find the performance problem here
     map (\n ->
       bench
-        ("round-trip ProdTree (" ++ show n ++ " nodes) to ByteString ")
-        (nfIO $ bench_roundtrip_ProdTree_to_ByteString n)) [1, 2, 5, 10, 20, 50]
+        ("round-trip " ++ show n ++ "-node ProdTree to .bigtree file ")
+        (nfIO $ bench_roundtrip_ProdTree_to_bigtree_file n))
+        -- [1, 2, 5, 10, 20, 50, 100, 500, 1000, 5000, 10000]
+	[2^n | n <- [0..11]]
+
+    ++
+	    --
+    -- TODO figure out what's wrong with performance here
+    --      it should be at least as fast as round-tripping a tree with the same n nodes, right?
+    map (\n ->
+      bench
+        ("round-trip " ++ show n ++ " HashLines to ByteString ")
+        (nfIO $ bench_roundtrip_HashLines_to_ByteString n))
+        -- [1, 2, 5, 10, 20, 50, 100, 500, 1000, 2000, 3000]
+	[2^n | n <- [0..11]]
