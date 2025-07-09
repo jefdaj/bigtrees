@@ -34,7 +34,7 @@ data SearchConfig = SearchConfig
   , minModtime     :: Maybe ModTime
   , maxModtime     :: Maybe ModTime
   , treeTypes      :: Maybe [TreeType]
-  , excludeRegexes :: [String]
+  , hashExcludeRegexes :: [String]
   , excludeSetPaths :: [FilePath]
   , referenceSetPaths :: [FilePath]
   , searches       :: LabeledSearches
@@ -54,7 +54,7 @@ emptySearchConfig = SearchConfig
   , minModtime     = Nothing
   , maxModtime     = Nothing
   , treeTypes      = Nothing
-  , excludeRegexes = []
+  , hashExcludeRegexes = []
   , excludeSetPaths = []
   , referenceSetPaths = []
   , searches  = []
@@ -63,7 +63,7 @@ emptySearchConfig = SearchConfig
 -- TODO instance Default?
 defaultSearchConfig :: SearchConfig
 defaultSearchConfig = emptySearchConfig
-  { excludeRegexes = ["\\.sw.*", "\\.DS_Store$", "\\.plist$", "\\.snakemake.*"]
+  { hashExcludeRegexes = ["\\.sw.*", "\\.DS_Store$", "\\.plist$", "\\.snakemake.*"]
   }
 
 ---------------------------

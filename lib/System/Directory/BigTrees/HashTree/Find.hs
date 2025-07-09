@@ -35,7 +35,7 @@ import Text.Regex.TDFA.ByteString
 {- We sort on filename here because 1) it's the only thing we can sort on
  - without keeping additional state, and 2) it makes it easy to property test
  - that `bigtrees find <path>` always matches `find <path>`.
- - TODO also consider excludeRegexes here? Or should they have been handled already?
+ - TODO also consider hashExcludeRegexes here? Or should they have been handled already?
  -}
 listTreePaths :: SearchConfig -> String -> HashTree a -> IO [B8.ByteString]
 listTreePaths cfg fmt tree = do

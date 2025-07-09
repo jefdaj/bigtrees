@@ -54,7 +54,7 @@ main = do
   -- when (flag "verbose") $ pPrint args
 
   eList <- case optLong "excludes-from" of
-             Nothing -> return $ excludeRegexes defaultSearchConfig
+             Nothing -> return $ hashExcludeRegexes defaultSearchConfig
              Just f  -> readFile f <&> lines -- TODO more detailed parsing?
 
   sList <- case optLong "searches-json" of
@@ -99,7 +99,7 @@ main = do
           , minModtime = ModTime <$> optRead "min-modtime"
           , maxModtime = ModTime <$> optRead "max-modtime"
           , treeTypes      = map (\c -> read [c]) <$> optLong "types"
-          , excludeRegexes = eList
+          , hashExcludeRegexes = eList
           , excludeSetPaths = optLongs "exclude-set"
           , referenceSetPaths = optLongs "reference-set"
           , searches  = sList
