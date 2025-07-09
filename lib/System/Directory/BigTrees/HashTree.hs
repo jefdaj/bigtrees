@@ -54,6 +54,7 @@ module System.Directory.BigTrees.HashTree
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
+import Control.DeepSeq (deepseq)
 
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.HashLine (ErrMsg (..))
@@ -138,8 +139,8 @@ bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()
 bench_roundtrip_ProdTree_to_bigtree_file n = do
   (t1 :: ProdTree) <- generate $ resize n arbitrary
   t2 <- roundtripProdTreeToBigtreeFile t1
-  -- assert $ t2 == t1
-  return ()
+  -- assert $ t2 == t1 -- TODO why aren't we asserting this? because it's a benchmark?
+  return $ deepseq t2 ()
 
 -- TODO unify with the knob version above
 roundtripProdTreeToBigtreeFile :: ProdTree -> IO ProdTree

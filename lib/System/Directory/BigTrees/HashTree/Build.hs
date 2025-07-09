@@ -70,7 +70,7 @@ instance Exception BuildError
 keepPath :: SearchConfig -> OsPath -> IO Bool
 keepPath cfg p = do
   path <- decodeFS p
-  return $ not $ any (path =~) (excludeRegexes cfg)
+  return $ not $ any (path =~) (hashExcludeRegexes cfg)
 
 regexFilterTrees :: SearchConfig -> OsPath -> [DT.DirTree a] -> IO [DT.DirTree a]
 regexFilterTrees cfg rootDir trees = filterM noExclude trees

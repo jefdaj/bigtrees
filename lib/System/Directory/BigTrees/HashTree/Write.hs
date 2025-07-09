@@ -40,7 +40,7 @@ writeTree cfg path tree = SFO.withFile path WriteMode $ \h -> hWriteTree cfg h t
 -- TODO how often to actuall flush?
 hWriteTree :: SearchConfig -> Handle -> HashTree a -> IO ()
 hWriteTree cfg h tree = do
-  hWriteHeader   h $ excludeRegexes cfg
+  hWriteHeader   h $ hashExcludeRegexes cfg
   hWriteTreeBody h tree
   hWriteFooter   h
 

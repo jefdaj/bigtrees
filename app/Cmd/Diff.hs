@@ -49,7 +49,7 @@ test_demo_diff :: TestTree
 test_demo_diff =
   let xz1 = "test/app/demo1.tar.xz"
       xz2 = "test/app/demo2.tar.xz"
-      gld = "test/app/demo12.diff"
+      gld = "test/app/demo12.bigdiff"
   in goldenVsString
        "diff demo1 -> demo2"
        gld

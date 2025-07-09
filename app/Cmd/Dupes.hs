@@ -52,7 +52,7 @@ cmdDupes cfg path = bracket open close write
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
             BT.dupesByNegScore scoreFn ht
 
-      let explainFn = if null rList then BT.explainDupesRef else BT.explainDupesRef
+      let explainFn = if null rList then BT.explainDupesSelf else BT.explainDupesRef
       BT.hWriteDupes (searchCfg cfg) explainFn hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
@@ -80,7 +80,7 @@ dupesTarXz xz1 = do
 test_demo_dupes :: TestTree
 test_demo_dupes =
   let xz1 = "test/app/demo1.tar.xz"
-      gld = "test/app/demo1.dupes"
+      gld = "test/app/demo1.bigdupes"
   in goldenVsString
        "dupes demo1"
        gld

@@ -159,7 +159,7 @@ dupesByNegScore scoreFn ht = do
  -}
 simplifyDupes :: SortedDupeLists -> SortedDupeLists
 simplifyDupes [] = []
-simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantSet) ds
+simplifyDupes (d@(_,_,fs):ds) = d : (simplifyDupes $ filter (not . redundantSet) ds)
   where
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
@@ -208,7 +208,7 @@ type ExplainFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 explainDupesRef :: ExplainFn
 explainDupesRef md ls = mapM explainGroup ls <&> B8.unlines
   where
-    -- TODO disclaimer about depths here too?
+    -- TODO disclaimer about depths here too? only when it would affect results
 
     explainGroup :: DupeList -> IO B8.ByteString
     explainGroup (n, t, paths) = do
@@ -220,18 +220,19 @@ explainDupesRef md ls = mapM explainGroup ls <&> B8.unlines
     header :: TreeType -> Int -> Int -> B8.ByteString
     header E _ _ = "" -- TODO is that a good idea?
     header D n ds = B8.intercalate " "
-      [ "# these" , B8.pack $ show ds
-      , "dirs with", B8.pack $ show n
+      [ "# all" , B8.pack $ show ds
+      , "of these duplicate directories with", B8.pack $ show n
       , "files total can be removed"
       ]
     header F n fs = B8.intercalate " "
-      [ "# these", B8.pack $ show fs, "files can be removed" ]
+      [ "# all", B8.pack $ show fs, "of these duplicate files can be removed" ]
     header _ n ls = B8.intercalate " "
-      [ "# these", B8.pack $ show ls, "links can be removed" ]
+      [ "# all", B8.pack $ show ls, "of these duplicate links can be removed" ]
 
 explainDupesSelf :: ExplainFn
 explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
   where
+    -- TODO does it actually depend on recursion? each node has nfiles already
     disclaimer Nothing  = ""
     disclaimer (Just (Depth d)) =
       " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
@@ -240,23 +241,24 @@ explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
     explainGroup (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
-             $ (header t n (length paths) `B8.append` ":")
+             $ header t n (length paths)
              : sort (map B8.pack paths')
 
+    -- TODO is n the number *saved*, or total number of dupes?
     header :: TreeType -> Int -> Int -> B8.ByteString
     header E _ _ = "" -- TODO is that a good idea?
     header D n ds = B8.intercalate " "
-      [ "# deduping these" , B8.pack (show ds)
-      , "dirs would remove", B8.pack (show n)
+      [ "# deleting", B8.pack (show $ ds - 1), "of these" , B8.pack (show ds)
+      , "duplicate directories would save", B8.pack (show n)
       , B8.append "files" (disclaimer md)
       ]
     header F n fs = B8.intercalate " "
-      [ "# deduping these"  , B8.pack   (show fs)
-      , "files would remove", B8.append (B8.pack $ show n) (disclaimer md)
+      [ "# you could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
+      , "duplicate files", disclaimer md
       ]
     header _ n ls = B8.intercalate " "
-      [ "# deduping these"  , B8.pack   (show ls)
-      , "links would remove", B8.append (B8.pack $ show n) (disclaimer md)
+      [ "# you could delete", B8.pack (show $ ls - 1), "of these"  , B8.pack   (show ls)
+      , "duplicate links", disclaimer md
       ]
 
 

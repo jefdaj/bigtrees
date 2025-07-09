@@ -38,7 +38,7 @@ module System.Directory.BigTrees.HashLine
   , parseTreeFileRev
   , hParseTreeFileRev
 
-  -- for testing (TODO remove?)
+  -- for testing
   -- , nameP
   , bench_roundtrip_HashLines_to_ByteString
   , prop_roundtrip_HashLines_to_ByteString
@@ -51,7 +51,7 @@ module System.Directory.BigTrees.HashLine
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
-import Control.DeepSeq (NFData (..), force)
+import Control.DeepSeq (NFData (..))
 import Control.Monad (void)
 import Data.Attoparsec.ByteString (skipWhile)
 
@@ -298,7 +298,7 @@ genHashLinesBS :: Int -> IO B8.ByteString
 genHashLinesBS n = do
   -- TODO is this resizing the lines themselves in addition to the list?
   (ls :: [HashLine]) <- generate $ resize n arbitrary
-  let bs = force $ B8.unlines $ map (prettyLine Nothing) ls
+  let bs = B8.unlines $ map (prettyLine Nothing) ls
   return bs
 
 -- This returns the length of the list, which can either be throw out or used
@@ -318,12 +318,14 @@ parseHashLinesBS bs =
 
 -- Note that these random lines can't be parsed into a valid tree;
 -- the only test the HashLine parser
-bench_roundtrip_HashLines_to_ByteString :: Int -> IO Bool
-bench_roundtrip_HashLines_to_ByteString n = do
-  bs <- genHashLinesBS n
+-- TODO wait is this actually round-tripping at all? seems like it's just parsing
+bench_roundtrip_HashLines_to_ByteString :: B8.ByteString -> IO Bool
+bench_roundtrip_HashLines_to_ByteString bs = do
   case parseHashLinesBS bs of
     Left msg -> error msg
-    Right ls -> return $ length ls == n
+    Right ls -> do
+      let bs' = B8.unlines $ map (prettyLine Nothing) ls
+      return $ bs' == bs -- TODO any way to do it without asserting the prop too?
 
 -- Note that these lines won't form a valid tree.
 prop_roundtrip_HashLines_to_ByteString :: [HashLine] -> Bool
