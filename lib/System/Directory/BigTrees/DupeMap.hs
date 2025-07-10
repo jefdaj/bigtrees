@@ -128,8 +128,10 @@ addTreeToDupeMap'
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
     keepNode <- dupesKeepNode cfg mrSet cle (op2ns dir) d
     let recurse = dupesRecurseChildren cfg depth d
-    when keepNode $ insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
-    when recurse  $ mapM_ (addTreeToDupeMap' cfg mrSet cle dt (dir </> n) (depth+1)) cs
+    when keepNode $ do
+      insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
+      -- TODO is there any situation where we want to NOT keep the current node, but still recurse?
+      when recurse  $ mapM_ (addTreeToDupeMap' cfg mrSet cle dt (dir </> n) (depth+1)) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
@@ -284,7 +286,7 @@ dupesKeepNode cfg mrSet cle ns t = do
   -- let mExcludeLabel = trace ("running findLabelNode") $ findLabelNode cle (reverse ns) t -- TODO why doesn't this work? debug a bit further...
   let mExcludeLabel = findLabelNode cle (reverse ns) t -- TODO why doesn't this work? debug a bit further...
 
-  -- TODO interesting! why is it still recursing? debug a bit further...
+  -- TODO last thing is to print this to stderr only when --debug flag given
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
   let excludeMsg l = "dupes exclude " ++ l ++ ": '" ++ B8.unpack wholeName ++ "'"
 
