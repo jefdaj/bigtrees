@@ -19,7 +19,7 @@ import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeHash,
                                                 treeModTime, treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
-                                                  SearchLabel, treeContainsPath)
+                                                  SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
 import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
@@ -122,40 +122,6 @@ pathLine fmtFn d ml ns t = separate $ filter (not . B8.null) [meta, path]
 ------------------
 
 -- TODO have a distinction between filtering paths and filtering tree nNodes?
-
--- | These are optimized for speed at the cost of not supporting capture groups.
--- They haven't been tested enough for me to be confident that's necessary though.
--- TODO would case sensitive be a better default? it does NOT seem faster so far
-compileRegex :: String -> Regex
-compileRegex = makeRegexOpts cOpt eOpt
-  where
-    cOpt = defaultCompOpt { caseSensitive = False, lastStarGreedy = False }
-    eOpt = defaultExecOpt { captureGroups = False }
-
-data CompiledSearch = CompiledSearch
-  { cDirContainsPath       :: Maybe [Name]
-  , cBaseNameMatchesRegex  :: Maybe Regex
-  , cWholeNameMatchesRegex :: Maybe Regex
-  }
-
-type CompiledLabeledSearches = [(SearchLabel, [CompiledSearch])]
-
-compileLabeledSearches :: LabeledSearches -> IO CompiledLabeledSearches
-compileLabeledSearches [] = return []
-compileLabeledSearches ((l, ss):lss) = do
-  cs  <- mapM compile ss
-  css <- compileLabeledSearches lss
-  return $ (l, cs) : css
-  where
-    compile s = do
-      ns <- case dirContainsPath s of
-              Nothing -> return Nothing
-              Just p  -> Just <$> fp2ns p
-      return $ CompiledSearch
-        { cDirContainsPath       = ns
-        , cBaseNameMatchesRegex  = compileRegex <$> baseNameMatchesRegex s
-        , cWholeNameMatchesRegex = compileRegex <$> wholeNameMatchesRegex s
-        }
 
 findLabelNode :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
 findLabelNode []            _  _ = Nothing

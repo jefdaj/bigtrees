@@ -40,7 +40,7 @@ cmdDupes cfg path = bracket open close write
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList
       -- log cfg $ "loaded rList with " ++ show (length rList) ++ " paths"
 
-      cle <- compileLabeledSearches $ excludeHashes cfg
+      cle <- BT.compileLabeledSearches $ excludeHashes cfg
 
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
