@@ -39,7 +39,7 @@ import Data.List (isPrefixOf, sort)
 import qualified Data.List as L
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
-import System.Directory.BigTrees.Name (Name (..), n2op)
+import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
                                            ProdTree, treeType, treeHash, treeModTime, sumNodes, treeNBytes,
@@ -55,6 +55,8 @@ import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), 
 
 import System.Directory.BigTrees.HashTree.Find (findLabelNode)
 import Data.Maybe (isNothing)
+
+import Debug.Trace
 
 -- TODO be able to serialize dupemaps for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -110,21 +112,21 @@ addTreeToDupeMap' _ _ _ dt dir _ (Err {}) = return () -- TODO anything better to
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
 addTreeToDupeMap' cfg mrSet cle dt dir _ l@(Link {}) = do
-  keepNode <- dupesKeepNode cfg mrSet cle l
+  keepNode <- dupesKeepNode cfg mrSet cle (op2ns dir) l
   when keepNode $
     insertDupeSet cfg dt (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
 
 addTreeToDupeMap'
   cfg mrSet cle dt dir _
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
-    keepNode <- dupesKeepNode cfg mrSet cle f
+    keepNode <- dupesKeepNode cfg mrSet cle (op2ns dir) f
     when keepNode $
       insertDupeSet cfg dt h (1, F, S.singleton $ dir </> n)
 
 addTreeToDupeMap'
   cfg mrSet cle dt dir depth
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
-    keepNode <- dupesKeepNode cfg mrSet cle d
+    keepNode <- dupesKeepNode cfg mrSet cle (op2ns dir) d
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
     when recurse  $ mapM_ (addTreeToDupeMap' cfg mrSet cle dt (dir </> n) (depth+1)) cs
@@ -271,16 +273,17 @@ explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
-dupesKeepNode :: SearchConfig -> Maybe (HashSet s) -> CompiledLabeledSearches -> HashTree a -> ST s Bool
-dupesKeepNode _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
-dupesKeepNode cfg mrSet cle t = do
+dupesKeepNode :: SearchConfig -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> HashTree a -> ST s Bool
+dupesKeepNode _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
+dupesKeepNode cfg mrSet cle ns t = do
   includeHash <- case mrSet of
                    Nothing -> return True
                    Just rSet -> setContainsHash rSet $ treeHash t
+
   -- findLabelNode :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
-  let ns = undefined :: [Name]
-  let mExcludeLabel = findLabelNode cle ns t -- TODO display the label if debugging!
-  return $ and
+  let mExcludeLabel = findLabelNode cle (reverse ns) t -- TODO why doesn't this work? debug a bit further...
+
+  trace ("ns: " ++ show ns ++ ", mExcludeLabel: " ++ show mExcludeLabel) $ return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
     , maybe True (sumNodes    t >=) $ minFiles cfg
@@ -288,7 +291,7 @@ dupesKeepNode cfg mrSet cle t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
-    , maybe True (const False) mExcludeLabel -- TODO is this at all right?
+    , isNothing mExcludeLabel
     , includeHash
     ]
 
