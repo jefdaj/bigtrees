@@ -40,6 +40,8 @@ cmdDupes cfg path = bracket open close write
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList
       -- log cfg $ "loaded rList with " ++ show (length rList) ++ " paths"
 
+      cle <- compileLabeledSearches $ excludeHashes cfg
+
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
             mrSet <- if null rList
@@ -48,7 +50,7 @@ cmdDupes cfg path = bracket open close write
             let size = maximum [length rList, 1000] -- TODO better defaults?
             ht <- H.newSized size
             -- log cfg $ "created hashtable sized " ++ show size
-            BT.addTreeToDupeMap (searchCfg cfg) mrSet ht tree
+            BT.addTreeToDupeMap (searchCfg cfg) mrSet cle ht tree
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
             BT.dupesByNegScore scoreFn ht
 

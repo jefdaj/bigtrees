@@ -72,38 +72,39 @@ type SortedDupeLists = [DupeList]
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: SearchConfig -> Maybe (HashSet s) -> HashTree a -> ST s (DupeMap s)
-pathsByHash cfg mrSet tree = do
+pathsByHash :: SearchConfig -> Maybe (HashSet s) -> CompiledLabeledSearches -> HashTree a -> ST s (DupeMap s)
+pathsByHash cfg mrSet cle tree = do
   ht <- H.newSized 1 -- TODO size from top node of tree or from reference hashset
-  addTreeToDupeMap cfg mrSet ht tree
+  addTreeToDupeMap cfg mrSet cle ht tree
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
   return ht
 
 -- inserts all nodes from a tree into an existing dupemap
--- TODO The empty string (mempty) behaves rigdt, rigdt? (disappears)
-addTreeToDupeMap :: SearchConfig -> Maybe (HashSet s) -> DupeMap s -> HashTree a -> ST s ()
-addTreeToDupeMap cfg mrSet dt = addTreeToDupeMap' cfg mrSet dt mempty (Depth 0)
+-- TODO The empty string (mempty) behaves right, right? (disappears)
+addTreeToDupeMap :: SearchConfig -> Maybe (HashSet s) -> CompiledLabeledSearches -> DupeMap s -> HashTree a -> ST s ()
+addTreeToDupeMap cfg mrSet cle dt = addTreeToDupeMap' cfg mrSet cle dt mempty (Depth 0)
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
 addTreeToDupeMap'
   :: SearchConfig
   -> Maybe (HashSet s)
+  -> CompiledLabeledSearches
   -> DupeMap s
   -> OsPath
   -> Depth
   -> HashTree a
   -> ST s ()
 
-addTreeToDupeMap' _ _ dt dir _ (Err {}) = return () -- TODO anything better to do with Errs?
+addTreeToDupeMap' _ _ _ dt dir _ (Err {}) = return () -- TODO anything better to do with Errs?
 
 -- Links can be "good" or "broken" based on whether their content should be in
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg mrSet dt dir _ l@(Link {}) = do
-  keepNode <- dupesKeepNode cfg mrSet l
+addTreeToDupeMap' cfg mrSet cle dt dir _ l@(Link {}) = do
+  keepNode <- dupesKeepNode cfg mrSet cle l
   when keepNode $
     insertDupeSet cfg dt (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
 
@@ -264,15 +265,14 @@ explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
--- TODO is there a smarter way to combine this with findKeepNode in HashTree.Find?
---      it's almost the same except it includes rather than excludes the set
---      (oh, and no depth tests)
-dupesKeepNode :: SearchConfig -> Maybe (HashSet s) -> HashTree a -> ST s Bool
-dupesKeepNode _ _ (Err {}) = return False -- TODO is this how we should handle them?
-dupesKeepNode cfg mrSet t = do
+dupesKeepNode :: SearchConfig -> Maybe (HashSet s) -> CompiledLabeledSearches -> HashTree a -> ST s Bool
+dupesKeepNode _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
+dupesKeepNode cfg mrSet cle t = do
   includeHash <- case mrSet of
                    Nothing -> return True
                    Just rSet -> setContainsHash rSet $ treeHash t
+  -- findLabelNode :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
+  let mExcludeLabel = findLabelNode cle ns t
   return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
@@ -281,6 +281,7 @@ dupesKeepNode cfg mrSet t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
+    , maybe True isNothing mExcludeLabel -- did not match any exclude search
     , includeHash
     ]
 
