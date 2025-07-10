@@ -58,6 +58,16 @@ main = do
                Nothing -> return $ hashExcludeRegexes defaultSearchConfig
                Just f  -> readFile f <&> lines -- TODO more detailed parsing?
 
+  desList <- case optLong "dupes-exclude-searches" of
+
+             -- get searches + labels from the file if given
+             Nothing -> return []
+             Just f -> do
+               parsed <- parseLabeledSearches f
+               case parsed of
+                 Left  msg -> error $ show msg -- parse failure
+                 Right lrs -> return lrs
+
   sList <- case optLong "searches-json" of
 
              -- get searches + labels from the file if given
@@ -104,6 +114,7 @@ main = do
           , excludeSetPaths = optLongs "exclude-set"
           , referenceSetPaths = optLongs "reference-set"
           , searches  = sList
+          , dupesExcludeSearches = desList
           }
         }
 
