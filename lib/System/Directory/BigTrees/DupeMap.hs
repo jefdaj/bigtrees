@@ -13,10 +13,10 @@ module System.Directory.BigTrees.DupeMap
   , DupeSet
   , SortedDupeLists
   , SortedDupeSets
+  , ExplainFn
   , addTreeToDupeMap
   , dupesByNegScore
-  , explainDupesSelf
-  , explainDupesRef
+  , renderDupesSuggestions
   , hWriteDupes
   , insertDupeSet
   , mergeDupeSets
@@ -209,70 +209,55 @@ scoreSetSelf (n, _, _ ) = n - 1 -- TODO is this right?
 -------------------------------- write output ---------------------------------
 
 -- TODO factor explainFn out here?
-hWriteDupes :: SearchConfig -> ExplainFn -> Handle -> SortedDupeLists -> IO ()
-hWriteDupes cfg explainFn hdl groups = do
-  msg <- explainFn (maxDepth cfg) groups
+hWriteDupes :: SearchConfig -> ExplainFn -> Bool -> Handle -> SortedDupeLists -> IO ()
+hWriteDupes cfg explainFn keepOneDupe hdl groups = do
+  msg <- explainFn keepOneDupe (maxDepth cfg) groups
   B8.hPutStr hdl msg
 
-type ExplainFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
+type ExplainFn = Bool -> Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
--- TODO print the hash + note of the reference set here!
-explainDupesRef :: ExplainFn
-explainDupesRef md ls = mapM explainGroup ls <&> B8.unlines
+renderDupesSuggestions :: ExplainFn
+renderDupesSuggestions keepOne md ls = do
+  body <- mapM groupDupes ls
+  return $ B8.unlines $ fileHeader : body
   where
-    -- TODO disclaimer about depths here too? only when it would affect results
 
-    explainGroup :: DupeList -> IO B8.ByteString
-    explainGroup (n, t, paths) = do
-      paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      return $ B8.unlines
-             $ (header t n (length paths) `B8.append` ":")
-             : sort (map B8.pack paths')
+    fileHeader = B8.pack $
+      "# This is the default 'suggestions' output format.\n\
+      \# It just suggests what you might delete manually yourself.\n"
+      ++ if keepOne then "" else
+      "\n\
+      \# Since you're deduping vs a reference set, the suggestion is to\n\
+      \# delete ALL these dupes, assuming you have another copy wherever you got\n\
+      \# the reference set from.\n"
 
-    header :: TreeType -> Int -> Int -> B8.ByteString
-    header E _ _ = "" -- TODO is that a good idea?
-    header D n ds = B8.intercalate " "
-      [ "# all" , B8.pack $ show ds
-      , "of these duplicate directories with", B8.pack $ show n
-      , "files total can be removed"
-      ]
-    header F n fs = B8.intercalate " "
-      [ "# all", B8.pack $ show fs, "of these duplicate files can be removed" ]
-    header _ n ls = B8.intercalate " "
-      [ "# all", B8.pack $ show ls, "of these duplicate links can be removed" ]
-
-explainDupesSelf :: ExplainFn
-explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
-  where
-    -- TODO does it actually depend on recursion? each node has nfiles already
-    disclaimer Nothing  = ""
-    disclaimer (Just (Depth d)) =
+    depthWarning Nothing  = ""
+    depthWarning (Just (Depth d)) =
       " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
 
-    explainGroup :: DupeList -> IO B8.ByteString
-    explainGroup (n, t, paths) = do
+    groupDupes :: DupeList -> IO B8.ByteString
+    groupDupes (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
-             $ header t n (length paths)
+             $ groupHeader t n (length paths)
              : sort (map B8.pack paths')
 
     -- TODO is n the number *saved*, or total number of dupes?
-    header :: TreeType -> Int -> Int -> B8.ByteString
-    header E _ _ = "" -- TODO is that a good idea?
-    header D n ds = B8.intercalate " "
-      [ "# you could save", B8.pack (show n)
-      , "files by deleting", B8.pack (show $ ds - 1), "of these" , B8.pack (show ds)
-      , B8.append "duplicate directories" (disclaimer md)
+    groupHeader :: TreeType -> Int -> Int -> B8.ByteString
+    groupHeader E _ _ = "" -- TODO is that a good idea?
+    groupHeader D n ds = B8.intercalate " "
+      [ "# You could save", B8.pack (show n)
+      , "files by deleting all but one of these", B8.pack (show ds)
+      , B8.append "duplicate directories" (depthWarning md)
       ]
-    header F n fs = B8.intercalate " "
-      [ "# you could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
-      , "duplicate files", disclaimer md
+    groupHeader F n fs = B8.intercalate " "
+      [ "# You could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
+      , "duplicate files", depthWarning md
       ]
-    header _ n ls = B8.intercalate " "
-      [ "# you could delete", B8.pack (show $ ls - 1), "of these"  , B8.pack   (show ls)
-      , "duplicate links", disclaimer md
+    groupHeader _ n ls = B8.intercalate " "
+      [ "# You could delete", B8.pack (show $ ls - 1), "of these"  , B8.pack   (show ls)
+      , "duplicate links", depthWarning md
       ]
-
 
 ------------------- filter which nodes are added to dupemaps ------------------
 

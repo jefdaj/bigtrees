@@ -27,7 +27,8 @@ import Text.Pretty.Simple (pPrint)
 -- TODO remove from non-Cmd modules
 data AppConfig = AppConfig
   { outFile   :: Maybe OsPath -- TODO String so config can derive Read?
-  , outFormat :: Maybe String
+  , findOutFormat :: Maybe String
+  , dupesOutFormat :: Maybe String
   , searchCfg :: SearchConfig
   , verbose   :: Bool
   -- , check    :: Bool
@@ -41,7 +42,8 @@ data AppConfig = AppConfig
 defaultAppConfig :: AppConfig
 defaultAppConfig = AppConfig
   { outFile   = Nothing
-  , outFormat = Nothing
+  , findOutFormat = Nothing
+  , dupesOutFormat = Nothing
   , searchCfg = defaultSearchConfig
   , verbose   = True
   -- , check    = True

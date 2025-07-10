@@ -6,8 +6,8 @@ Usage:
   bigtrees [-v] hash PATH [--hash-exclude-regexes-from EFILE] [--output OUTFILE]
   bigtrees [-v] diff OLD NEW [--output OUTFILE]
   bigtrees [-v] set-add --set SET [--note NOTE] PATH...
-  bigtrees [-v] find PATH [--search-regex REGEX [--search-label LABEL] | --searches-json SJSON] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--out-fmt FORMAT] [--exclude-set ESET...]
-  bigtrees [-v] dupes PATH [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--types TYPES] [--output OUTFILE] [--reference-set RSET...] [--dupes-exclude-searches SJSON]
+  bigtrees [-v] find PATH [--search-regex REGEX [--search-label LABEL] | --searches-json SJSON] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--find-out-fmt FORMAT] [--exclude-set ESET...]
+  bigtrees [-v] dupes PATH [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--types TYPES] [--output OUTFILE] [--reference-set RSET...] [--dupes-exclude-searches SJSON] [--dupes-out-fmt DFORMAT]
 
 Commands:
   hash       Reads files + folders and prints/saves their hashes + metadata.
@@ -28,13 +28,16 @@ Options:
 
   --output OUTFILE       Stream output to a file rather than stdout.
 
-  --out-fmt FORMAT       Optional tab-separated metadata fields to print at the
+  --find-out-fmt FORMAT  Optional tab-separated metadata fields to print at the
                          beginning of each line. Options are: "h" (hash),
                          "t" (type), "d" (depth). Example: "ht".
                          TODO add the other current options
                          TODO rename -p --print ?
                          TODO add regex search labels here
                          TODO caps should also work
+
+  --dupes-out-fmt FORMAT  Dupes output format. Options are "suggestions", "rsync-exclude-file". [default: "suggestions"]
+                          TODO write "rm-script"
 
   --search-regex REGEX   Single regular expression to test filtering.
   --search-label LABEL   Single label to test --out-fmt printing. Output is tab separated,
