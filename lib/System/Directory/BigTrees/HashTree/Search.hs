@@ -43,6 +43,7 @@ data SearchConfig = SearchConfig
   , excludeSetPaths :: [FilePath]
   , referenceSetPaths :: [FilePath]
   , searches       :: LabeledSearches
+  , dupesExcludeSearches :: LabeledSearches -- TODO does this go somewhere else?
   }
   deriving (Read, Show, Generic)
 
@@ -63,6 +64,7 @@ emptySearchConfig = SearchConfig
   , excludeSetPaths = []
   , referenceSetPaths = []
   , searches  = []
+  , dupesExcludeSearches  = []
   }
 
 -- TODO instance Default?
