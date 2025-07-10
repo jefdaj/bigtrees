@@ -80,23 +80,24 @@ type SortedDupeLists = [DupeList]
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: SearchConfig -> Maybe (HashSet s) -> CompiledLabeledSearches -> HashTree a -> ST s (DupeMap s)
-pathsByHash cfg mrSet cle tree = do
+pathsByHash :: SearchConfig -> Bool -> Maybe (HashSet s) -> CompiledLabeledSearches -> HashTree a -> ST s (DupeMap s)
+pathsByHash cfg v mrSet cle tree = do
   ht <- H.newSized 1 -- TODO size from top node of tree or from reference hashset
-  addTreeToDupeMap cfg mrSet cle ht tree
+  addTreeToDupeMap cfg v mrSet cle ht tree
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
   return ht
 
 -- inserts all nodes from a tree into an existing dupemap
 -- TODO The empty string (mempty) behaves right, right? (disappears)
-addTreeToDupeMap :: SearchConfig -> Maybe (HashSet s) -> CompiledLabeledSearches -> DupeMap s -> HashTree a -> ST s ()
-addTreeToDupeMap cfg mrSet cle dt = addTreeToDupeMap' cfg mrSet cle dt mempty (Depth 0)
+addTreeToDupeMap :: SearchConfig -> Bool -> Maybe (HashSet s) -> CompiledLabeledSearches -> DupeMap s -> HashTree a -> ST s ()
+addTreeToDupeMap cfg v mrSet cle dt = addTreeToDupeMap' cfg v mrSet cle dt mempty (Depth 0)
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
 addTreeToDupeMap'
   :: SearchConfig
+  -> Bool
   -> Maybe (HashSet s)
   -> CompiledLabeledSearches
   -> DupeMap s
@@ -105,33 +106,33 @@ addTreeToDupeMap'
   -> HashTree a
   -> ST s ()
 
-addTreeToDupeMap' _ _ _ dt dir _ (Err {}) = return () -- TODO anything better to do with Errs?
+addTreeToDupeMap' _ _ _ _ dt dir _ (Err {}) = return () -- TODO anything better to do with Errs?
 
 -- Links can be "good" or "broken" based on whether their content should be in
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg mrSet cle dt dir _ l@(Link {}) = do
-  keepNode <- dupesKeepNode cfg mrSet cle (op2ns dir) l
+addTreeToDupeMap' cfg v mrSet cle dt dir _ l@(Link {}) = do
+  keepNode <- dupesKeepNode cfg v mrSet cle (op2ns dir) l
   when keepNode $
     insertDupeSet cfg dt (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
 
 addTreeToDupeMap'
-  cfg mrSet cle dt dir _
+  cfg v mrSet cle dt dir _
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
-    keepNode <- dupesKeepNode cfg mrSet cle (op2ns dir) f
+    keepNode <- dupesKeepNode cfg v mrSet cle (op2ns dir) f
     when keepNode $
       insertDupeSet cfg dt h (1, F, S.singleton $ dir </> n)
 
 addTreeToDupeMap'
-  cfg mrSet cle dt dir depth
+  cfg v mrSet cle dt dir depth
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
-    keepNode <- dupesKeepNode cfg mrSet cle (op2ns dir) d
+    keepNode <- dupesKeepNode cfg v mrSet cle (op2ns dir) d
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ do
       insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
       -- TODO is there any situation where we want to NOT keep the current node, but still recurse?
-      when recurse  $ mapM_ (addTreeToDupeMap' cfg mrSet cle dt (dir </> n) (depth+1)) cs
+      when recurse  $ mapM_ (addTreeToDupeMap' cfg v mrSet cle dt (dir </> n) (depth+1)) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
@@ -275,22 +276,23 @@ explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
-dupesKeepNode :: SearchConfig -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> HashTree a -> ST s Bool
-dupesKeepNode _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
-dupesKeepNode cfg mrSet cle ns t = do
+-- TODO move to util module, or replace with something better thought out
+traceV :: Bool -> String -> b -> b
+traceV verbose msg b = if verbose then trace msg b else b
+
+dupesKeepNode :: SearchConfig -> Bool -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> HashTree a -> ST s Bool
+dupesKeepNode _ _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
+dupesKeepNode cfg verbose mrSet cle ns t = do
   includeHash <- case mrSet of
                    Nothing -> return True
                    Just rSet -> setContainsHash rSet $ treeHash t
 
-  -- findLabelNode :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
-  -- let mExcludeLabel = trace ("running findLabelNode") $ findLabelNode cle (reverse ns) t -- TODO why doesn't this work? debug a bit further...
   let mExcludeLabel = findLabelNode cle (reverse ns) t -- TODO why doesn't this work? debug a bit further...
 
   -- TODO last thing is to print this to stderr only when --debug flag given
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
   let excludeMsg l = "dupes exclude " ++ l ++ ": '" ++ B8.unpack wholeName ++ "'"
 
-  -- trace ("ns: " ++ show ns ++ ", mExcludeLabel: " ++ show mExcludeLabel) $ return $ and
   return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
@@ -300,7 +302,7 @@ dupesKeepNode cfg mrSet cle ns t = do
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
     -- works: , isNothing mExcludeLabel
-    , maybe True (\l -> trace (excludeMsg l) False) mExcludeLabel
+    , maybe True (\l -> traceV verbose (excludeMsg l) False) mExcludeLabel
     , includeHash
     ]
 
