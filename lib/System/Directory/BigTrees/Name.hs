@@ -40,6 +40,7 @@ module System.Directory.BigTrees.Name
   , n2bs
   , bs2n
   , breadcrumbs2bs
+  , op2breadcrumbs
   , joinNames
   , names2bs
   , os2ns
@@ -218,6 +219,9 @@ type NamesRev = [Name]
 -- TODO rename?
 breadcrumbs2bs :: NamesRev -> B8.ByteString
 breadcrumbs2bs = joinNames . reverse
+
+op2breadcrumbs :: SOP.OsPath -> NamesRev
+op2breadcrumbs = reverse . op2ns
 
 -- TODO was this needed for anything else?
 -- TODO can it be done better via SOP.joinPath?
