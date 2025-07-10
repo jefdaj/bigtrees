@@ -260,9 +260,9 @@ explainDupesSelf md ls = mapM explainGroup ls <&> B8.unlines
     header :: TreeType -> Int -> Int -> B8.ByteString
     header E _ _ = "" -- TODO is that a good idea?
     header D n ds = B8.intercalate " "
-      [ "# deleting", B8.pack (show $ ds - 1), "of these" , B8.pack (show ds)
-      , "duplicate directories would save", B8.pack (show n)
-      , B8.append "files" (disclaimer md)
+      [ "# you could save", B8.pack (show n)
+      , "files by deleting", B8.pack (show $ ds - 1), "of these" , B8.pack (show ds)
+      , B8.append "duplicate directories" (disclaimer md)
       ]
     header F n fs = B8.intercalate " "
       [ "# you could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
