@@ -50,6 +50,12 @@ import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath, (</>), splitDirectories, decodeFS)
 import System.Directory.BigTrees.HashSet (HashSet, readHashList, hashSetFromList, emptyHashSet, setContainsHash)
 
+import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
+                                                  SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
+
+import System.Directory.BigTrees.HashTree.Find (findLabelNode)
+import Data.Maybe (isNothing)
+
 -- TODO be able to serialize dupemaps for debugging
 -- TODO can Foldable or Traversable simplify these?
 
@@ -109,19 +115,19 @@ addTreeToDupeMap' cfg mrSet cle dt dir _ l@(Link {}) = do
     insertDupeSet cfg dt (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
 
 addTreeToDupeMap'
-  cfg mrSet dt dir _
+  cfg mrSet cle dt dir _
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
-    keepNode <- dupesKeepNode cfg mrSet f
+    keepNode <- dupesKeepNode cfg mrSet cle f
     when keepNode $
       insertDupeSet cfg dt h (1, F, S.singleton $ dir </> n)
 
 addTreeToDupeMap'
-  cfg mrSet dt dir depth
+  cfg mrSet cle dt dir depth
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
-    keepNode <- dupesKeepNode cfg mrSet d
+    keepNode <- dupesKeepNode cfg mrSet cle d
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
-    when recurse  $ mapM_ (addTreeToDupeMap' cfg mrSet dt (dir </> n) (depth+1)) cs
+    when recurse  $ mapM_ (addTreeToDupeMap' cfg mrSet cle dt (dir </> n) (depth+1)) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
@@ -272,7 +278,8 @@ dupesKeepNode cfg mrSet cle t = do
                    Nothing -> return True
                    Just rSet -> setContainsHash rSet $ treeHash t
   -- findLabelNode :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
-  let mExcludeLabel = findLabelNode cle ns t
+  let ns = undefined :: [Name]
+  let mExcludeLabel = findLabelNode cle ns t -- TODO display the label if debugging!
   return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
@@ -281,7 +288,7 @@ dupesKeepNode cfg mrSet cle t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
-    , maybe True isNothing mExcludeLabel -- did not match any exclude search
+    , maybe True (const False) mExcludeLabel -- TODO is this at all right?
     , includeHash
     ]
 

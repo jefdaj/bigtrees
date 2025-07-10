@@ -17,7 +17,12 @@ import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.HashTree.Base
 
+import Text.Regex.TDFA
+import Text.Regex.TDFA.ByteString
+
 import qualified Data.ByteString.Char8 as B8
+
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
 
 -- import Debug.Trace
 
@@ -101,7 +106,7 @@ type LabeledSearches = [(SearchLabel, [Search])]
 parseLabeledSearches :: FilePath -> IO (Either String LabeledSearches)
 parseLabeledSearches = eitherDecodeFileStrict
 
- -------------------
+-------------------
 -- search a tree --
 -------------------
 
@@ -126,3 +131,41 @@ treeContainsHash (File {nodeData=nd1}) h2 = hash nd1 == h2
 treeContainsHash (Dir  {nodeData=nd1, dirContents=cs}) h2
   | hash nd1 == h2 = True
   | otherwise = any (`treeContainsHash` h2) cs
+
+----------------------
+-- compile searches --
+----------------------
+
+-- | These are optimized for speed at the cost of not supporting capture groups.
+-- They haven't been tested enough for me to be confident that's necessary though.
+-- TODO would case sensitive be a better default? it does NOT seem faster so far
+compileRegex :: String -> Regex
+compileRegex = makeRegexOpts cOpt eOpt
+  where
+    cOpt = defaultCompOpt { caseSensitive = False, lastStarGreedy = False }
+    eOpt = defaultExecOpt { captureGroups = False }
+
+data CompiledSearch = CompiledSearch
+  { cDirContainsPath       :: Maybe [Name]
+  , cBaseNameMatchesRegex  :: Maybe Regex
+  , cWholeNameMatchesRegex :: Maybe Regex
+  }
+
+type CompiledLabeledSearches = [(SearchLabel, [CompiledSearch])]
+
+compileLabeledSearches :: LabeledSearches -> IO CompiledLabeledSearches
+compileLabeledSearches [] = return []
+compileLabeledSearches ((l, ss):lss) = do
+  cs  <- mapM compile ss
+  css <- compileLabeledSearches lss
+  return $ (l, cs) : css
+  where
+    compile s = do
+      ns <- case dirContainsPath s of
+              Nothing -> return Nothing
+              Just p  -> Just <$> fp2ns p
+      return $ CompiledSearch
+        { cDirContainsPath       = ns
+        , cBaseNameMatchesRegex  = compileRegex <$> baseNameMatchesRegex s
+        , cWholeNameMatchesRegex = compileRegex <$> wholeNameMatchesRegex s
+        }
