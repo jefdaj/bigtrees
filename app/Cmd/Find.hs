@@ -32,7 +32,7 @@ import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
 cmdFind :: AppConfig -> OsPath -> IO ()
 cmdFind cfg path = do
   tree <- readOrBuildTree (searchCfg cfg) (verbose cfg) path
-  let fmt   = fromMaybe "" $ outFormat cfg
+  let fmt   = fromMaybe "" $ findOutFormat cfg
 
   -- I think hashes have to be removed here rather than above in the read/build
   -- step (when building, not reading), because we don't want to alter the dir hashes.

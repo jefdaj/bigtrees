@@ -24,8 +24,22 @@ import Control.Exception (bracket)
 import Control.Monad (forM)
 import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.HashTable.Class as H
+import Data.Maybe (fromMaybe, fromJust)
 
 -- import Debug.Trace
+
+-- defined in DupeMap.hs for now:
+-- TODO rename DupesRenderFn
+-- type ExplainFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
+
+renderDupesRsyncExclude :: BT.ExplainFn
+renderDupesRsyncExclude = undefined
+
+dupesRenderFunctions :: [(String, BT.ExplainFn)]
+dupesRenderFunctions =
+  [ ("suggestions", BT.renderDupesSuggestions)
+  , ("rsync-exclude-file", renderDupesRsyncExclude)
+  ]
 
 cmdDupes :: AppConfig -> OsPath -> IO ()
 cmdDupes cfg path = bracket open close write
@@ -56,8 +70,17 @@ cmdDupes cfg path = bracket open close write
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
             BT.dupesByNegScore scoreFn ht
 
-      let explainFn = if null rList then BT.explainDupesSelf else BT.explainDupesRef
-      BT.hWriteDupes (searchCfg cfg) explainFn hdl ds
+      -- TODO pull default from docopt instead of duplicating that here
+      let fmt = fromMaybe "comments" $ dupesOutFormat cfg
+
+      let renderFn = fromJust $ lookup fmt dupesRenderFunctions
+
+      -- normally, we want to be sure not to delete all copies of a file!
+      -- but in the special case of dupes vs a reference set, it should be ok
+      -- TODO any good way to warn the user if their ref set looks like it's inside the dupes?
+      let keepOneDupe = null rList
+
+      BT.hWriteDupes (searchCfg cfg) renderFn keepOneDupe hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?

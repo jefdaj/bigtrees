@@ -98,7 +98,8 @@ main = do
 
   let cfg = defaultAppConfig
         { outFile   = oPath
-        , outFormat = optLong "out-fmt"
+        , findOutFormat = optLong "find-out-fmt"
+        , dupesOutFormat = optLong "dupes-out-fmt"
         , verbose   = flag "verbose"
         , searchCfg = defaultSearchConfig
           { minBytes   = NBytes  <$> optRead "min-size"
