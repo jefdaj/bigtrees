@@ -125,6 +125,7 @@ module System.Directory.BigTrees
   , scoreSetSelf
   , scoreSets
   , renderDupesSuggestions
+  , renderDupesRsyncExclude
   )
   where
 
@@ -133,7 +134,7 @@ import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prett
 import System.Directory.BigTrees.DupeMap (DupeSet, DupeMap, dupesByNegScore,
                                           mergeDupeSets, pathsByHash, scoreSets, scoreSetSelf, scoreSetRef,
                                           hWriteDupes, addTreeToDupeMap, renderDupesSuggestions,
-                                          ExplainFn)
+                                          renderDupesRsyncExclude, ExplainFn)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),
                                            NNodes (..), TreeType (..), linesP)

@@ -17,6 +17,7 @@ module System.Directory.BigTrees.DupeMap
   , addTreeToDupeMap
   , dupesByNegScore
   , renderDupesSuggestions
+  , renderDupesRsyncExclude
   , hWriteDupes
   , insertDupeSet
   , mergeDupeSets
@@ -249,6 +250,63 @@ renderDupesSuggestions keepOne md ls = do
       [ "# You could save", B8.pack (show n)
       , "files by deleting all but one of these", B8.pack (show ds)
       , B8.append "duplicate directories" (depthWarning md)
+      ]
+    groupHeader F n fs = B8.intercalate " "
+      [ "# You could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
+      , "duplicate files", depthWarning md
+      ]
+    groupHeader _ n ls = B8.intercalate " "
+      [ "# You could delete", B8.pack (show $ ls - 1), "of these"  , B8.pack   (show ls)
+      , "duplicate links", depthWarning md
+      ]
+
+renderDupesRsyncExclude :: ExplainFn
+renderDupesRsyncExclude keepOne md ls = do
+  body <- mapM groupDupes ls
+  return $ B8.unlines $ fileHeader : body
+  where
+
+    fileHeader = B8.pack $
+      "# This is the 'rsync-exclude-file' output format.\n\
+      \# You can use it to tell rsync all the files *not* to copy.\n\
+      \# Example rsync command:\n\
+      \#\n\
+      \# rsync -arv SRCDIR/ DSTDIR/ --exclude-from=THISFILE\n\
+      \#\n\
+      \# Where SRCDIR is your originally scanned folder with duplicates,\n\
+      \# DSTDIR is the new, non-duplicated copy you'll be making,\n\
+      \# and THISFILE is where you saved the output of this command.\n"
+      ++ (if keepOne then "" else
+      "#\n\
+      \# Since you're deduping vs a reference set, ALL dupes will be listed\n\
+      \# in the exclude file. The assumption is that you already have another copy\n\
+      \# saved somewhere else, and that was used to generate the reference set.\n")
+      ++
+      "#\n\
+      \# Note that the trailing slashes in the rsync command above and the\n\
+      \# leading slashes in each filename below are important.\n\
+      \#\n\
+      \# You might want to try the command with --dry-run at the end first\n\
+      \# to make sure it does what you expected!\n"
+
+    depthWarning Nothing  = ""
+    depthWarning (Just (Depth d)) =
+      " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
+
+    groupDupes :: DupeList -> IO B8.ByteString
+    groupDupes (n, t, paths) = do
+      paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
+      return $ B8.unlines
+             $ groupHeader t n (length paths)
+             : sort (map (\p -> B8.pack $ '/':p) paths')
+
+    -- TODO is n the number *saved*, or total number of dupes?
+    groupHeader :: TreeType -> Int -> Int -> B8.ByteString
+    groupHeader E _ _ = "" -- TODO is that a good idea?
+    groupHeader D n ds = B8.intercalate " "
+      [ "# Skipping these", B8.pack (show ds)
+      , B8.append "duplicate directories" (depthWarning md)
+      , "will save", B8.pack (show n), "files"
       ]
     groupHeader F n fs = B8.intercalate " "
       [ "# You could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
