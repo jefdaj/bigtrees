@@ -56,7 +56,7 @@ import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), 
 import System.Directory.BigTrees.HashTree.Find (findLabelNode)
 import Data.Maybe (isNothing)
 
-import Debug.Trace
+-- import Debug.Trace
 
 -- TODO be able to serialize dupemaps for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -281,9 +281,11 @@ dupesKeepNode cfg mrSet cle ns t = do
                    Just rSet -> setContainsHash rSet $ treeHash t
 
   -- findLabelNode :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
+  -- let mExcludeLabel = trace ("running findLabelNode") $ findLabelNode cle (reverse ns) t -- TODO why doesn't this work? debug a bit further...
   let mExcludeLabel = findLabelNode cle (reverse ns) t -- TODO why doesn't this work? debug a bit further...
 
-  trace ("ns: " ++ show ns ++ ", mExcludeLabel: " ++ show mExcludeLabel) $ return $ and
+  -- trace ("ns: " ++ show ns ++ ", mExcludeLabel: " ++ show mExcludeLabel) $ return $ and
+  return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
     , maybe True (sumNodes    t >=) $ minFiles cfg

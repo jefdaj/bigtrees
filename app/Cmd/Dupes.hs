@@ -25,6 +25,8 @@ import Control.Monad (forM)
 import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.HashTable.Class as H
 
+-- import Debug.Trace
+
 cmdDupes :: AppConfig -> OsPath -> IO ()
 cmdDupes cfg path = bracket open close write
   where
@@ -40,6 +42,7 @@ cmdDupes cfg path = bracket open close write
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList
       -- log cfg $ "loaded rList with " ++ show (length rList) ++ " paths"
 
+      -- cle <- BT.compileLabeledSearches $ dupesExcludeSearches $ trace ("searchCfg: " ++ show (searchCfg cfg)) $ searchCfg cfg
       cle <- BT.compileLabeledSearches $ dupesExcludeSearches $ searchCfg cfg
 
       -- TODO should this all be one function exported from DupeMap?

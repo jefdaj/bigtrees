@@ -125,10 +125,12 @@ pathLine fmtFn d ml ns t = separate $ filter (not . B8.null) [meta, path]
 
 findLabelNode :: CompiledLabeledSearches -> [Name] -> HashTree a -> Maybe SearchLabel
 findLabelNode []            _  _ = Nothing
+-- findLabelNode ((l, cs):css) ns t = trace ("looking for label '" ++ l ++ "'") $ if anySearchMatches then Just l else findLabelNode css ns t
 findLabelNode ((l, cs):css) ns t = if anySearchMatches then Just l else findLabelNode css ns t
   where
     baseName  = n2bs $ treeName t
     wholeName = breadcrumbs2bs $ treeName t : ns
+    -- wholeName' = trace ("wholeName: " ++ B8.unpack wholeName) wholeName
     anySearchMatches = any searchMatches cs
     searchMatches c = and
       [ fromMaybe True $ (treeContainsPath t      ) <$> cDirContainsPath c
