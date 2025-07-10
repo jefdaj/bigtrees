@@ -32,13 +32,10 @@ import Data.Maybe (fromMaybe, fromJust)
 -- TODO rename DupesRenderFn
 -- type ExplainFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
-renderDupesRsyncExclude :: BT.ExplainFn
-renderDupesRsyncExclude = undefined
-
 dupesRenderFunctions :: [(String, BT.ExplainFn)]
 dupesRenderFunctions =
   [ ("suggestions", BT.renderDupesSuggestions)
-  , ("rsync-exclude-file", renderDupesRsyncExclude)
+  , ("rsync-exclude-file", BT.renderDupesRsyncExclude)
   ]
 
 cmdDupes :: AppConfig -> OsPath -> IO ()
