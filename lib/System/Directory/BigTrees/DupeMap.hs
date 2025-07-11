@@ -269,17 +269,17 @@ renderDupesSuggestions keepOne md ls = do
     -- TODO is n the number *saved*, or total number of dupes?
     groupHeader :: TreeType -> Int -> Int -> B8.ByteString
     groupHeader E _ _ = "" -- TODO is that a good idea?
-    groupHeader D n ds = B8.intercalate " "
-      [ "# You could save", B8.pack (show n)
-      , "files by deleting all but one of these", B8.pack (show ds)
+    groupHeader D nSaved nDirs = B8.intercalate " "
+      [ "# You could save", B8.pack (show nSaved)
+      , "inodes by deleting all but one of these", B8.pack (show nDirs)
       , B8.append "duplicate directories" (depthWarning md)
       ]
-    groupHeader F n fs = B8.intercalate " "
-      [ "# You could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
+    groupHeader F nSaved nFiles = B8.intercalate " "
+      [ "# You could delete", B8.pack (show $ nFiles - 1), "of these", B8.pack (show nFiles)
       , "duplicate files", depthWarning md
       ]
-    groupHeader _ n ls = B8.intercalate " "
-      [ "# You could delete", B8.pack (show $ ls - 1), "of these"  , B8.pack   (show ls)
+    groupHeader _ nSaved nLinks = B8.intercalate " "
+      [ "# You could delete", B8.pack (show $ nLinks - 1), "of these"  , B8.pack (show nLinks)
       , "duplicate links", depthWarning md
       ]
 
@@ -335,13 +335,22 @@ renderDupesRsyncExclude keepOne md ls = do
                    if ds > 2 then "exclude all but one of"
                      else "exclude one of"
 
+    plural :: Int -> B8.ByteString -> B8.ByteString
+    plural n thing = if n > 1 then thing `B8.append` "s" else thing
+
+    explain :: Int -> Int -> B8.ByteString -> B8.ByteString
+    explain nSaved nThings thing = B8.intercalate " "
+      [ "#", exclude nThings , "these", B8.pack $ show nThings , "duplicate"
+      , thing `B8.append` "s," , "saving", B8.pack $ show nSaved
+      , (plural nSaved "inode") `B8.append` ":"
+      ]
+
     -- TODO is n the number *saved*, or total number of dupes?
     groupHeader :: TreeType -> Int -> Int -> B8.ByteString
     groupHeader E _ _  = "" -- TODO is that a good idea?
-    groupHeader D n ds = B8.intercalate " " [ "#", exclude ds, "these", B8.pack $ show ds, "duplicate dirs:" ]
-    groupHeader F n xs = B8.intercalate " " [ "#", exclude xs, "these", B8.pack $ show xs, "duplicate files:" ]
-    groupHeader L n xs = B8.intercalate " " [ "#", exclude xs, "these", B8.pack $ show xs, "duplicate links:" ]
-    groupHeader B n xs = B8.intercalate " " [ "#", exclude xs, "these", B8.pack $ show xs, "duplicate broken links:" ]
+    groupHeader D nSaved nDirs  = explain nSaved nDirs "folder"
+    groupHeader F nSaved nFiles = explain nSaved nFiles "file"
+    groupHeader _ nSaved nLinks = explain nSaved nLinks "link"
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
