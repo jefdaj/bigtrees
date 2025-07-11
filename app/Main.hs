@@ -119,7 +119,7 @@ main = do
           }
         }
 
-  -- log cfg cfg
+  log cfg cfg
 
   if cmd "diff" then do
     old <- reqPathArg "OLD"
