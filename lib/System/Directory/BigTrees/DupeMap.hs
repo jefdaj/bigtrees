@@ -183,22 +183,28 @@ simplifyDupes (d@(_,_,fs):ds) = d : (simplifyDupes $ filter (not . redundantSet)
 
 ---------------------------- pick which dupe to keep --------------------------
 
--- TODO clean this up, and maybe improve the logic to match intuition
 -- TODO move to a util module
 
-countComponents :: String -> Int
-countComponents path = length (LS.splitOn "/" path)
-
+-- Compare paths according to my (idiosyncratic) intuition so far:
+-- 1. non-hidden files first
+-- 2. fewer path components first
+-- 3. shorter names first
+-- 4. alphabetically as usual
 comparePaths :: String -> String -> Ordering
 comparePaths a b =
+
   let startsWithDot x = not (null x) && head x == '.'
       isHiddenPath p = any startsWithDot $ LS.splitOn "/" p
-  in case comparing countComponents a b of
-    EQ -> case (isHiddenPath a, isHiddenPath b) of
-      (True, False) -> GT
-      (False, True) -> LT
-      _ -> compare a b
-    ord -> ord
+      countComponents path = length (LS.splitOn "/" path)
+
+  in case (isHiddenPath a, isHiddenPath b) of
+       (True, False) -> GT
+       (False, True) -> LT
+       _ -> case comparing countComponents a b of
+              EQ -> case comparing length a b of
+                      EQ  -> compare a b
+                      ord -> ord
+              ord -> ord
 
 sortPaths :: [String] -> [String]
 sortPaths = L.sortBy comparePaths
