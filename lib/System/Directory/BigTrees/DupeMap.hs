@@ -180,6 +180,11 @@ simplifyDupes (d@(_,_,fs):ds) = d : (simplifyDupes $ filter (not . redundantSet)
                        splitDirectories e' | e <- fs]
 
 
+---------------------------- pick which dupe to keep --------------------------
+
+-- TODO something more clever here? see what makes intuitive sense later
+-- dupeTokeep :: 
+
 -------------------------- score sets for quicksorting ------------------------
 
 {- This does a few things:
@@ -219,7 +224,7 @@ type ExplainFn = Bool -> Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
 renderDupesSuggestions :: ExplainFn
 renderDupesSuggestions keepOne md ls = do
-  body <- mapM groupDupes ls
+  body <- mapM excludeLines ls
   return $ B8.unlines $ fileHeader : body
   where
 
@@ -236,8 +241,8 @@ renderDupesSuggestions keepOne md ls = do
     depthWarning (Just (Depth d)) =
       " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
 
-    groupDupes :: DupeList -> IO B8.ByteString
-    groupDupes (n, t, paths) = do
+    excludeLines :: DupeList -> IO B8.ByteString
+    excludeLines (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
              $ groupHeader t n (length paths)
@@ -296,26 +301,19 @@ renderDupesRsyncExclude keepOne md ls = do
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      return $ B8.unlines
-             $ groupHeader t n (length paths)
-             : sort (map (\p -> B8.pack $ '/':p) paths')
+      let paths''  = sort $ map (\p -> '/':p) paths'
+          paths''' = if not keepOne then paths'' else ("# and only copy this one: " ++ head paths''):(tail paths'')
+      return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths'''
+
+    nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
 
     -- TODO is n the number *saved*, or total number of dupes?
     groupHeader :: TreeType -> Int -> Int -> B8.ByteString
-    groupHeader E _ _ = "" -- TODO is that a good idea?
-    groupHeader D n ds = B8.intercalate " "
-      [ "# Skipping these", B8.pack (show ds)
-      , B8.append "duplicate directories" (depthWarning md)
-      , "will save", B8.pack (show n), "files"
-      ]
-    groupHeader F n fs = B8.intercalate " "
-      [ "# You could delete", B8.pack (show $ fs - 1), "of these", B8.pack   (show fs)
-      , "duplicate files", depthWarning md
-      ]
-    groupHeader _ n ls = B8.intercalate " "
-      [ "# You could delete", B8.pack (show $ ls - 1), "of these"  , B8.pack   (show ls)
-      , "duplicate links", depthWarning md
-      ]
+    groupHeader E _ _  = "" -- TODO is that a good idea?
+    groupHeader D n ds = B8.intercalate " " [ "#", "skip", nSkip ds, "duplicate dirs" ]
+    groupHeader F n xs = B8.intercalate " " [ "#", "skip", nSkip xs, "duplicate files" ]
+    groupHeader L n xs = B8.intercalate " " [ "#", "skip", nSkip xs, "duplicate links" ]
+    groupHeader B n xs = B8.intercalate " " [ "#", "skip", nSkip xs, "duplicate broken links" ]
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
