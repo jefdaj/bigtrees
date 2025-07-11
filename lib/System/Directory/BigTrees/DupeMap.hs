@@ -321,18 +321,22 @@ renderDupesRsyncExclude keepOne md ls = do
     groupDupes (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       let paths''  = sortPaths $ map (\p -> '/':p) paths'
-          paths''' = if not keepOne then paths'' else ("# copy only this one: " ++ head paths''):(tail paths'')
+          paths''' = if not keepOne then paths'' else ("# " ++ head paths''):(tail paths'')
       return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths'''
 
     nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
 
+    exclude ds = if not keepOne then "exclude" else
+                   if ds > 2 then "exclude all but one of"
+                     else "exclude one of"
+
     -- TODO is n the number *saved*, or total number of dupes?
     groupHeader :: TreeType -> Int -> Int -> B8.ByteString
     groupHeader E _ _  = "" -- TODO is that a good idea?
-    groupHeader D n ds = B8.intercalate " " [ "#", "skip", nSkip ds, "duplicate dirs" ]
-    groupHeader F n xs = B8.intercalate " " [ "#", "skip", nSkip xs, "duplicate files" ]
-    groupHeader L n xs = B8.intercalate " " [ "#", "skip", nSkip xs, "duplicate links" ]
-    groupHeader B n xs = B8.intercalate " " [ "#", "skip", nSkip xs, "duplicate broken links" ]
+    groupHeader D n ds = B8.intercalate " " [ "#", exclude ds, "these", B8.pack $ show ds, "duplicate dirs:" ]
+    groupHeader F n xs = B8.intercalate " " [ "#", exclude xs, "these", B8.pack $ show xs, "duplicate files:" ]
+    groupHeader L n xs = B8.intercalate " " [ "#", exclude xs, "these", B8.pack $ show xs, "duplicate links:" ]
+    groupHeader B n xs = B8.intercalate " " [ "#", exclude xs, "these", B8.pack $ show xs, "duplicate broken links:" ]
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
