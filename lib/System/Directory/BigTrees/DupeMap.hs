@@ -36,8 +36,10 @@ import Data.Functor ((<&>))
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
-import Data.List (isPrefixOf, sort)
+import Data.List (isPrefixOf, sort, sortBy)
+import Data.Ord (comparing)
 import qualified Data.List as L
+import Data.List.Split (splitOn)
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs)
@@ -182,8 +184,25 @@ simplifyDupes (d@(_,_,fs):ds) = d : (simplifyDupes $ filter (not . redundantSet)
 
 ---------------------------- pick which dupe to keep --------------------------
 
--- TODO something more clever here? see what makes intuitive sense later
--- dupeTokeep :: 
+-- TODO clean this up, and maybe improve the logic to match intuition
+-- TODO move to a util module
+
+countComponents :: String -> Int
+countComponents path = length (splitOn "/" path)
+
+comparePaths :: String -> String -> Ordering
+comparePaths a b =
+  let startsWithDot x = not (null x) && head x == '.'
+      isHiddenPath p = any startsWithDot $ splitOn "/" p
+  in case comparing countComponents a b of
+    EQ -> case (isHiddenPath a, isHiddenPath b) of
+      (True, False) -> GT
+      (False, True) -> LT
+      _ -> compare a b
+    ord -> ord
+
+sortPaths :: [String] -> [String]
+sortPaths = sortBy comparePaths
 
 -------------------------- score sets for quicksorting ------------------------
 
@@ -246,7 +265,7 @@ renderDupesSuggestions keepOne md ls = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
              $ groupHeader t n (length paths)
-             : sort (map B8.pack paths')
+             : (map B8.pack $ sortPaths paths')
 
     -- TODO is n the number *saved*, or total number of dupes?
     groupHeader :: TreeType -> Int -> Int -> B8.ByteString
@@ -301,8 +320,8 @@ renderDupesRsyncExclude keepOne md ls = do
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      let paths''  = sort $ map (\p -> '/':p) paths'
-          paths''' = if not keepOne then paths'' else ("# and only copy this one: " ++ head paths''):(tail paths'')
+      let paths''  = sortPaths $ map (\p -> '/':p) paths'
+          paths''' = if not keepOne then paths'' else ("# copy only this one: " ++ head paths''):(tail paths'')
       return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths'''
 
     nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
