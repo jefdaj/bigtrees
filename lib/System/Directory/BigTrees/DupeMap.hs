@@ -36,10 +36,9 @@ import Data.Functor ((<&>))
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
-import Data.List (isPrefixOf, sort, sortBy)
 import Data.Ord (comparing)
 import qualified Data.List as L
-import Data.List.Split (splitOn)
+import qualified Data.List.Split as LS
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs)
@@ -50,7 +49,7 @@ import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
 import System.IO (Handle, IOMode (..))
 import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
-import System.OsPath (OsPath, (</>), splitDirectories, decodeFS)
+import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
 import System.Directory.BigTrees.HashSet (HashSet, readHashList, hashSetFromList, emptyHashSet, setContainsHash)
 
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
@@ -178,7 +177,7 @@ simplifyDupes (d@(_,_,fs):ds) = d : (simplifyDupes $ filter (not . redundantSet)
   where
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
-                       `isPrefixOf`
+                       `L.isPrefixOf`
                        splitDirectories e' | e <- fs]
 
 
@@ -188,12 +187,12 @@ simplifyDupes (d@(_,_,fs):ds) = d : (simplifyDupes $ filter (not . redundantSet)
 -- TODO move to a util module
 
 countComponents :: String -> Int
-countComponents path = length (splitOn "/" path)
+countComponents path = length (LS.splitOn "/" path)
 
 comparePaths :: String -> String -> Ordering
 comparePaths a b =
   let startsWithDot x = not (null x) && head x == '.'
-      isHiddenPath p = any startsWithDot $ splitOn "/" p
+      isHiddenPath p = any startsWithDot $ LS.splitOn "/" p
   in case comparing countComponents a b of
     EQ -> case (isHiddenPath a, isHiddenPath b) of
       (True, False) -> GT
@@ -202,7 +201,7 @@ comparePaths a b =
     ord -> ord
 
 sortPaths :: [String] -> [String]
-sortPaths = sortBy comparePaths
+sortPaths = L.sortBy comparePaths
 
 -------------------------- score sets for quicksorting ------------------------
 
@@ -284,6 +283,12 @@ renderDupesSuggestions keepOne md ls = do
       , "duplicate links", depthWarning md
       ]
 
+replaceTopDirWithSlash :: String -> String
+replaceTopDirWithSlash path = '/' : L.intercalate "/" pathTail
+  where
+    comps = LS.splitOn "/" path
+    pathTail = if null comps then [] else tail comps
+
 renderDupesRsyncExclude :: ExplainFn
 renderDupesRsyncExclude keepOne md ls = do
   body <- mapM groupDupes ls
@@ -320,7 +325,7 @@ renderDupesRsyncExclude keepOne md ls = do
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      let paths''  = sortPaths $ map (\p -> '/':p) paths'
+      let paths''  = sortPaths $ map replaceTopDirWithSlash paths'
           paths''' = if not keepOne then paths'' else ("# " ++ head paths''):(tail paths'')
       return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths'''
 
