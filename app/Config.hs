@@ -16,7 +16,9 @@ import Prelude hiding (log)
 import System.Directory.BigTrees (LabeledSearches, SearchConfig (..), SearchLabel,
                                   defaultSearchConfig, parseLabeledSearches)
 import System.OsPath (OsPath)
-import Text.Pretty.Simple (pPrint)
+import qualified Data.Text.Lazy as TL
+import Text.Pretty.Simple (pShow)
+import System.IO (stderr, hPutStrLn)
 
 -- TODO derive To/FromJSON for the AppConfig so it can go in Headers?
 --      or just the exclude and maxdepth values for now
@@ -55,4 +57,4 @@ defaultAppConfig = AppConfig
 
 -- TODO remove this from Util
 log :: Show a => AppConfig -> a -> IO ()
-log cfg msg = when (verbose cfg) (pPrint msg)
+log cfg msg = when (verbose cfg) (hPutStrLn stderr $ TL.unpack $ pShow msg)
