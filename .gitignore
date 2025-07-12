@@ -16,3 +16,5 @@ result*
 # linting
 .lint/*.log
 .lint/*.html
+
+*.log
