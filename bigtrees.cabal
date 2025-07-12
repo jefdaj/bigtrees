@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -55,6 +55,7 @@ library
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
@@ -127,6 +128,7 @@ executable bigtrees
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
@@ -202,6 +204,7 @@ test-suite test-app
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
@@ -285,6 +288,7 @@ test-suite test-lib
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
@@ -379,6 +383,7 @@ benchmark test-bench
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
