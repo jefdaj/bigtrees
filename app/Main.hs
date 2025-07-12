@@ -27,6 +27,15 @@ import Paths_bigtrees (version)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
 -- import Text.Pretty.Simple (pPrint)
+import System.Log.FastLogger
+
+-- Function to create a logger
+createLogger :: FilePath -> IO LoggerSet
+createLogger logFilePath = newFileLoggerSet defaultBufSize logFilePath
+
+-- Function to log messages
+logMessage :: LoggerSet -> String -> IO ()
+logMessage loggerSet msg = pushLogStrLn loggerSet (toLogStr msg)
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -37,6 +46,9 @@ main = do
   -- TODO which is/are really needed?
   setEnv "LANG" "en_US.UTF-8"
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
+
+  loggerSet <- createLogger "bigtrees.log"
+  logMessage loggerSet "created loggerSet"
 
   let ptns = [D.docoptFile|app/usage.txt|]
   args <- D.parseArgsOrExit ptns =<< getArgs
@@ -153,3 +165,5 @@ main = do
 
   -- docopt should prevent this by aborting + printing usage
   else error "probably a CLI parsing error"
+
+  flushLogStr loggerSet
