@@ -26,7 +26,8 @@ import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
--- import Text.Pretty.Simple (pPrint)
+import Text.Pretty.Simple (pShow)
+import qualified Data.Text.Lazy as TL
 import System.Log.FastLogger
 
 -- Function to create a logger
@@ -48,7 +49,9 @@ main = do
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
 
   loggerSet <- createLogger "bigtrees.log"
-  logMessage loggerSet "created loggerSet"
+  let log = logMessage loggerSet
+      logS msg x = log $ msg ++ ":\n" ++ (TL.unpack $ pShow x) ++ "\n"
+  log "created loggerSet"
 
   let ptns = [D.docoptFile|app/usage.txt|]
   args <- D.parseArgsOrExit ptns =<< getArgs
@@ -69,6 +72,7 @@ main = do
   herList <- case optLong "hash-exclude-regexes-from" of
                Nothing -> return $ hashExcludeRegexes defaultSearchConfig
                Just f  -> readFile f <&> lines -- TODO more detailed parsing?
+  logS "herList" herList
 
   desList <- case optLong "dupes-exclude-searches" of
 
@@ -79,6 +83,7 @@ main = do
                case parsed of
                  Left  msg -> error $ show msg -- parse failure
                  Right lrs -> return lrs
+  logS "desList" desList
 
   sList <- case optLong "searches-json" of
 
@@ -103,6 +108,7 @@ main = do
 
                -- no search file given; use default (empty) search list
                Nothing -> return $ searches defaultSearchConfig
+  logS "sList" sList
 
   oPath <- case optLong "output" of
              Nothing -> return Nothing
@@ -131,7 +137,7 @@ main = do
           }
         }
 
-  log cfg cfg
+  logS "cfg" cfg
 
   if cmd "diff" then do
     old <- reqPathArg "OLD"

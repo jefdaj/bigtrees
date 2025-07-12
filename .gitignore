@@ -19,3 +19,6 @@ result*
 
 # hakyll
 .hakyll-cache/
+
+# misc logfiles
+*.log
