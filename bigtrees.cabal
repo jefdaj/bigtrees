@@ -60,6 +60,7 @@ library
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
@@ -132,6 +133,7 @@ executable bigtrees
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
@@ -270,6 +272,7 @@ test-suite test-app
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
@@ -353,6 +356,7 @@ test-suite test-lib
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring
@@ -447,6 +451,7 @@ benchmark test-bench
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring

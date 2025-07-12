@@ -26,6 +26,7 @@ dependencies:
 - directory-tree
 - docopt
   # - doctest-parallel
+- fast-logger
 - file-io
 - filepath
 - filepath-bytestring
