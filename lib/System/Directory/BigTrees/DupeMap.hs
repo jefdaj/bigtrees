@@ -294,6 +294,15 @@ replaceTopDirWithSlash path = '/' : L.intercalate "/" pathTail
     comps = LS.splitOn "/" path
     pathTail = if null comps then [] else tail comps
 
+-- TODO test this!
+escapeRsyncExcludeSpecialChars :: String -> String
+escapeRsyncExcludeSpecialChars input = concatMap escapeChar input
+  where
+    specialChars = "*?[]#\\ !{}()" :: String
+    escapeChar c
+      | c `L.elem` specialChars = '\\' : [c]
+      | otherwise  = [c]
+
 renderDupesRsyncExclude :: ExplainFn
 renderDupesRsyncExclude keepOne md ls = do
   body <- mapM groupDupes ls
@@ -330,7 +339,7 @@ renderDupesRsyncExclude keepOne md ls = do
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      let paths''  = sortPaths $ map replaceTopDirWithSlash paths'
+      let paths''  = sortPaths $ map (escapeRsyncExcludeSpecialChars . replaceTopDirWithSlash) paths'
           paths''' = if not keepOne then paths'' else ("# " ++ head paths''):(tail paths'')
       return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths'''
 
