@@ -298,7 +298,7 @@ replaceTopDirWithSlash path = '/' : L.intercalate "/" pathTail
 escapeRsyncExcludeSpecialChars :: String -> String
 escapeRsyncExcludeSpecialChars input = concatMap escapeChar input
   where
-    specialChars = "*?[]#\\ !{}()" :: String
+    specialChars = "*?#\\!()" :: String
     escapeChar c
       | c `L.elem` specialChars = '\\' : [c]
       | otherwise  = [c]
