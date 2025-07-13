@@ -17,16 +17,15 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
 import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList, readHashList,
                                           setContainsHash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeHash,
-                                                treeModTime, treeNBytes, treeName, treeType)
+                                                treeModTime, treeNBytes, treeName, treeType, treeName)
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
+import System.Directory.BigTrees.Util (traceV)
 import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
-
--- import Debug.Trace
 
 ----------------
 -- list paths --
@@ -37,8 +36,8 @@ import Text.Regex.TDFA.ByteString
  - that `bigtrees find <path>` always matches `find <path>`.
  - TODO also consider hashExcludeRegexes here? Or should they have been handled already?
  -}
-listTreePaths :: SearchConfig -> String -> HashTree a -> IO [B8.ByteString]
-listTreePaths cfg fmt tree = do
+listTreePaths :: SearchConfig -> Bool -> String -> HashTree a -> IO [B8.ByteString]
+listTreePaths cfg verbose fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
   eLists <- forM (excludeSetPaths cfg) $ \fp -> encodeFS fp >>= readHashList
@@ -46,33 +45,34 @@ listTreePaths cfg fmt tree = do
     (Left  errMsg) -> error errMsg -- TODO anything to do besides die?
     (Right fmtFn ) -> runST $ do
       eSet <- hashSetFromList $ concat eLists -- TODO is there a better way than concat?
-      listTreePaths' cfg cls eSet fmtFn (Depth 0) [] tree
+      listTreePaths' cfg verbose cls eSet fmtFn (Depth 0) [] tree
 
 {- Recursively render paths, passing a list of breadcrumbs.
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
  - TODO implement this via Foldable or Traversable instead?
  -}
 listTreePaths'
-  :: SearchConfig  -- ^ Main search config
+  :: SearchConfig            -- ^ Main search config
+  -> Bool                    -- ^ Verbose
   -> CompiledLabeledSearches -- ^ labeled searches
-  -> HashSet s -- ^ Hashes to exclude (may be empty)
+  -> HashSet s               -- ^ Hashes to exclude (may be empty)
   -> FmtFn                   -- ^ Path formatting function
   -> Depth                   -- ^ Depth of the tree for filtering min/max
   -> [Name]                  -- ^ Breadcrummbs/anchor to prefix paths with
   -> HashTree a              -- ^ The tree to list paths from
   -> ST s [B8.ByteString]
-listTreePaths' cfg cls eSet fmtFn (Depth d) ns t = do
+listTreePaths' cfg verbose cls eSet fmtFn (Depth d) ns t = do
   let ns' = treeName t:ns
 
   recPaths <- case t of
 
         (Dir {}) ->
           fmap concat $ forM (dirContents t) $ \t' ->
-            listTreePaths' cfg cls eSet fmtFn (Depth $ d+1) ns' t'
+            listTreePaths' cfg verbose cls eSet fmtFn (Depth $ d+1) ns' t'
 
         _        -> return []
 
-  keepNode <- findKeepNode cfg eSet (Depth d) t
+  keepNode <- findKeepNode cfg verbose eSet (Depth d) t
 
   return $
      -- If no regexes, list everything.
@@ -90,10 +90,17 @@ listTreePaths' cfg cls eSet fmtFn (Depth d) ns t = do
      -- If there are regexes but they don't match, keep looking.
      else recPaths
 
-findKeepNode :: SearchConfig -> HashSet s -> Depth -> HashTree a -> ST s Bool
-findKeepNode _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
-findKeepNode cfg eSet d t = do
+findKeepNode :: SearchConfig -> Bool -> HashSet s -> Depth -> HashTree a -> ST s Bool
+findKeepNode _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
+findKeepNode cfg verbose eSet d t = do
   excludeHash <- setContainsHash eSet $ treeHash t
+  let excludeHash' = if excludeHash
+                       then traceV
+                              verbose
+                              ("find exclude hash " ++ (B8.unpack $ prettyHash $ treeHash t) ++
+                               ": " ++ (B8.unpack $ n2bs $ treeName t))
+                              excludeHash
+                       else excludeHash
   return $ and
     [ maybe True (d >=) $ minDepth cfg
     , maybe True (d <=) $ maxDepth cfg
@@ -104,7 +111,7 @@ findKeepNode cfg eSet d t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg -- no need to save Dirs this time
-    , not excludeHash
+    , not excludeHash'
     -- TODO finish regex conditions here?
     ]
 

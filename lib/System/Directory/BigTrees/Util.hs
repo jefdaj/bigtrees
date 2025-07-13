@@ -32,6 +32,8 @@ module System.Directory.BigTrees.Util
 
   , hTakePrevUntil
   , getBlockSize
+
+  , traceV
   )
   where
 
@@ -61,6 +63,14 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
+import Debug.Trace
+
+--- logging ---
+
+-- TODO move to util module, or replace with something better thought out
+traceV :: Bool -> String -> b -> b
+traceV verbose msg b = if verbose then trace msg b else b
+
 
 -- describe "Util" $ do
 --   describe "absolute" $ do
