@@ -56,9 +56,8 @@ import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), 
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 
 import System.Directory.BigTrees.HashTree.Find (findLabelNode)
+import System.Directory.BigTrees.Util (traceV)
 import Data.Maybe (isNothing)
-
-import Debug.Trace
 
 -- TODO be able to serialize dupemaps for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -359,10 +358,6 @@ renderDupesRsyncExclude keepOne md ls = do
     groupHeader _ nSaved nLinks = explain nSaved nLinks "link"
 
 ------------------- filter which nodes are added to dupemaps ------------------
-
--- TODO move to util module, or replace with something better thought out
-traceV :: Bool -> String -> b -> b
-traceV verbose msg b = if verbose then trace msg b else b
 
 dupesKeepNode :: SearchConfig -> Bool -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> HashTree a -> ST s Bool
 dupesKeepNode _ _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
