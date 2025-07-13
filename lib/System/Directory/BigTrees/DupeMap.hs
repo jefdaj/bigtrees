@@ -294,14 +294,36 @@ replaceTopDirWithSlash path = '/' : L.intercalate "/" pathTail
     comps = LS.splitOn "/" path
     pathTail = if null comps then [] else tail comps
 
--- TODO test this!
-escapeRsyncExcludeSpecialChars :: String -> String
-escapeRsyncExcludeSpecialChars input = concatMap escapeChar input
+-- escapeRsyncExcludeSpecialChars :: String -> String
+-- escapeRsyncExcludeSpecialChars input = concatMap escapeChar input
+--   where
+--     specialChars = "*?#\!()" :: String
+--     escapeChar c
+--       | c `L.elem` specialChars = '\\' : [c]
+--       | otherwise  = [c]
+
+escapeRsyncExcludeFromPath2 :: String -> String
+escapeRsyncExcludeFromPath2 path = if wildcardMode then escaped else path
   where
-    specialChars = "*?#\\!()" :: String
+
+    -- and if the path starts with # that needs to be escaped to prevent being
+    -- treated as a comment
+    -- TODO but that never happens here because we prepend /, right?
+
+    -- if path has one of these, rsync will treat it as a pattern;
+    -- if not, everything is matched literally and \ etc will break it!
+    wildcardMode = any (`L.elem` path) wildcardTriggerChars
+    wildcardTriggerChars = "*?[" :: String
+
+    -- Once wildcard mode is triggered, these chars need escaping:
+    -- TODO verify each one!
+    escaped = concatMap escapeChar path
+    -- specialChars = "*?#\\!()" :: String
+    specialChars = "*?[\\" :: String
     escapeChar c
       | c `L.elem` specialChars = '\\' : [c]
       | otherwise  = [c]
+
 
 renderDupesRsyncExclude :: ExplainFn
 renderDupesRsyncExclude keepOne md ls = do
@@ -339,8 +361,10 @@ renderDupesRsyncExclude keepOne md ls = do
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      let paths''  = sortPaths $ map (escapeRsyncExcludeSpecialChars . replaceTopDirWithSlash) paths'
-          paths''' = if not keepOne then paths'' else ("# " ++ head paths''):(tail paths'')
+      let paths''  = sortPaths $ map (escapeRsyncExcludeFromPath2 . replaceTopDirWithSlash) paths'
+          paths''' = if not keepOne
+                       then map ("-" ++) $ paths''
+                       else ("+" ++ head paths''):(map ("-" ++) $ tail paths'')
       return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths'''
 
     nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
