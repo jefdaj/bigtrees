@@ -343,6 +343,7 @@ renderDupesRsyncExclude keepOne md ls = do
       \# and THISFILE is where you saved the output of this command.\n"
       ++ (if keepOne then "" else
       "#\n\
+      \# WARNING!\n\
       \# Since you're deduping vs a reference set, ALL dupes will be listed\n\
       \# in the exclude file. The assumption is that you already have another copy\n\
       \# saved somewhere else, and that was used to generate the reference set.\n")
