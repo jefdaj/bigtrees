@@ -1,6 +1,4 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
@@ -19,12 +17,10 @@ import Data.Functor ((<&>))
 import Prelude hiding (log)
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
-                                  TreeType (..))
+                                  TreeType (..), LogLevel(..), LogContext, log, createLogger)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
-import qualified Data.List as L
-import Data.Char (toUpper)
 import Data.Maybe (fromJust)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
@@ -32,49 +28,6 @@ import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
 import Text.Pretty.Simple (pShow)
 import qualified Data.Text.Lazy as TL
-import System.Log.FastLogger
-
-createLogger :: FilePath -> IO (TimedFastLogger, IO ())
-createLogger logFilePath = do
-
-  -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
-  -- ignores them. Maybe that's good for efficiency?
-  -- TODO can we at least get milliseconds?
-  -- TODO if not, consider newTimedFastLogger1 to force sequential ordering
-  timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
-
-  newTimedFastLogger timeCache (LogFileNoRotate logFilePath defaultBufSize)
-
--- logWithContext :: LoggerSet -> String -> String -> IO ()
--- logWithContext logger context message = do
-  -- pushLogStr logger $ "[" ++ context ++ "] " ++ message
-
--- logMessage :: LoggerSet -> String -> IO ()
--- logMessage loggerSet msg = pushLogStrLn loggerSet (toLogStr msg)
-
--- joinLogFields :: ToLogStr a => [a] -> LogStr
--- joinLogFields [] = "" -- TODO is this right?
--- joinLogFields fields = mconcat $ toLogStr (head fields) : (map (\f -> toLogStr (" | " :: String) <> toLogStr f) $ tail fields)
-
-type LogContext = String
-type LogFn a = ToLogStr a => LogLevel -> LogContext -> a -> IO ()
-
-log :: ToLogStr a => TimedFastLogger -> LogFn a
-log logger level context msg = logger $ \ft -> toLogStr (msgWithContext ft) <> "\n"
-  where
-    sep = toLogStr (" | " :: String)
-    msgWithContext timestamp = mconcat $ L.intersperse sep
-      [ toLogStr timestamp
-      , toLogStr level
-      , toLogStr context
-      , toLogStr msg
-      ]
-
-data LogLevel = DebugL | InfoL | WarningL | ErrorL
-  deriving (Read, Show)
-
-instance ToLogStr LogLevel where
-  toLogStr = toLogStr . map toUpper . init . show
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version

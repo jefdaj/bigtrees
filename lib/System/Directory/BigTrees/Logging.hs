@@ -1,10 +1,51 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+
 module System.Directory.BigTrees.Logging
   ( traceV
+  , LogLevel (..)
+  , LogContext
+  , LogFn
+  , log
+  , createLogger
   )
   where
 
+import Prelude hiding (log)
 import Debug.Trace (trace)
+import System.Log.FastLogger
+import qualified Data.List as L
+import Data.Char (toUpper)
 
 -- TODO replace with better logging
 traceV :: Bool -> String -> b -> b
 traceV verbose msg b = if verbose then trace msg b else b
+
+type LogContext = String
+type LogFn a = ToLogStr a => LogLevel -> LogContext -> a -> IO ()
+
+data LogLevel = DebugL | InfoL | WarningL | ErrorL
+  deriving (Read, Show)
+
+instance ToLogStr LogLevel where
+  toLogStr = toLogStr . map toUpper . init . show
+
+createLogger :: FilePath -> IO (TimedFastLogger, IO ())
+createLogger logFilePath = do
+  -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
+  -- ignores them. Maybe that's good for efficiency?
+  -- TODO can we at least get milliseconds?
+  -- TODO if not, consider newTimedFastLogger1 to force sequential ordering
+  timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
+  newTimedFastLogger timeCache (LogFileNoRotate logFilePath defaultBufSize)
+
+log :: ToLogStr a => TimedFastLogger -> LogFn a
+log logger level context msg = logger $ \ft -> toLogStr (msgWithContext ft) <> "\n"
+  where
+    sep = toLogStr (" | " :: String)
+    msgWithContext timestamp = mconcat $ L.intersperse sep
+      [ toLogStr timestamp
+      , toLogStr level
+      , toLogStr context
+      , toLogStr msg
+      ]
