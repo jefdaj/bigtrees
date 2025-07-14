@@ -362,11 +362,12 @@ renderDupesRsyncExclude keepOne md ls = do
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      let paths''  = sortPaths $ map (escapeRsyncExcludeFromPath2 . replaceTopDirWithSlash) paths'
-          paths''' = if not keepOne
-                       then map ("- " ++) $ paths''
-                       else ("+ " ++ head paths''):(map ("- " ++) $ tail paths'')
-      return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths'''
+      let paths''   = sortPaths $ map (escapeRsyncExcludeFromPath2 . replaceTopDirWithSlash) paths'
+          paths'''  = if t == D then map (++ "/") paths'' else paths''
+          paths'''' = if not keepOne
+                       then map ("- " ++) $ paths'''
+                       else ("+ " ++ head paths'''):(map ("- " ++) $ tail paths''')
+      return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths''''
 
     nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
 
