@@ -16,13 +16,19 @@ import Debug.Trace (trace)
 import System.Log.FastLogger
 import qualified Data.List as L
 import Data.Char (toUpper)
+import qualified Data.ByteString.Char8 as B8
 
 -- TODO replace with better logging
 traceV :: Bool -> String -> b -> b
 traceV verbose msg b = if verbose then trace msg b else b
 
 type LogContext = String
-type LogFn a = ToLogStr a => LogLevel -> LogContext -> a -> IO ()
+
+-- TODO would it make sense to use B8.ByteString rather than String here?
+-- TODO use String here instead of B8.ByteString?
+-- TODO or leave the original ToLogStr and specify in each module?
+-- type LogFn a = ToLogStr a => LogLevel -> LogContext -> a -> IO ()
+type LogFn = LogLevel -> LogContext -> B8.ByteString -> IO ()
 
 data LogLevel = DebugL | InfoL | WarningL | ErrorL
   deriving (Read, Show)
@@ -39,7 +45,8 @@ createLogger logFilePath = do
   timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
   newTimedFastLogger timeCache (LogFileNoRotate logFilePath defaultBufSize)
 
-log :: ToLogStr a => TimedFastLogger -> LogFn a
+-- log :: ToLogStr a => TimedFastLogger -> LogFn a
+log :: TimedFastLogger -> LogFn
 log logger level context msg = logger $ \ft -> toLogStr (msgWithContext ft) <> "\n"
   where
     sep = toLogStr (" | " :: String)

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Main where
@@ -28,6 +29,7 @@ import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
 import Text.Pretty.Simple (pShow)
 import qualified Data.Text.Lazy as TL
+import qualified Data.ByteString.Char8 as B8
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -42,10 +44,10 @@ main = do
   -- TODO withTimedLogger rather than manual cleanup at the end?
   let logPath = "bigtrees.log"
   (logger, cleanupLogger) <- createLogger logPath
-  let info  msg = log logger InfoL  "main" (msg :: String)
-      debug msg = log logger DebugL "main" (msg :: String)
+  let info  = log logger InfoL  "main"
+      debug = log logger DebugL "main"
 
-  debug $ "bigtrees version " ++ showVersion version
+  debug $ B8.pack $ "bigtrees version " ++ showVersion version
 
   debug $ "parsing usage patterns"
   let ptns = [D.docoptFile|app/usage.txt|]
@@ -144,7 +146,7 @@ main = do
   else if cmd "dupes" then do
     debug "running dupes command"
     path <- reqPathArg "PATH"
-    cmdDupes cfg path
+    cmdDupes cfg (Just $ log logger) path
 
   else if cmd "set-add" then do
     debug "running set-add command"

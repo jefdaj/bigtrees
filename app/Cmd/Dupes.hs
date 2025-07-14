@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Cmd.Dupes where
 
 -- TODO guess and check hashes
@@ -9,7 +11,6 @@ import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
 import qualified System.Directory.BigTrees as BT
-import qualified System.Directory.BigTrees (SearchConfig(..))
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -25,6 +26,8 @@ import Control.Monad (forM)
 import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.HashTable.Class as H
 import Data.Maybe (fromMaybe, fromJust)
+import qualified Data.ByteString.Char8 as B8
+import System.IO.Unsafe (unsafePerformIO)
 
 -- import Debug.Trace
 
@@ -38,9 +41,18 @@ dupesRenderFunctions =
   , ("rsync-exclude-file", BT.renderDupesRsyncExclude)
   ]
 
-cmdDupes :: AppConfig -> OsPath -> IO ()
-cmdDupes cfg path = bracket open close write
+cmdDupes :: AppConfig -> Maybe BT.LogFn -> OsPath -> IO ()
+cmdDupes cfg mLog path = bracket open close write
   where
+
+    debug :: B8.ByteString -> IO ()
+    debug msg = case mLog of
+      Nothing  -> return ()
+      Just log -> log BT.DebugL "cmdDupes" msg
+
+    debugST :: B8.ByteString -> ST s ()
+    debugST msg = debug msg `seq` return ()
+
     open = case outFile cfg of
              Nothing -> return stdout
              Just op -> SFO.openBinaryFile op WriteMode
@@ -51,7 +63,7 @@ cmdDupes cfg path = bracket open close write
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList
-      -- log cfg $ "loaded rList with " ++ show (length rList) ++ " paths"
+      debug $ "loaded rList with " <> B8.pack (show (length rList)) <> " paths"
 
       cle <- BT.compileLabeledSearches $ dupesExcludeSearches $ searchCfg cfg
 
@@ -62,7 +74,7 @@ cmdDupes cfg path = bracket open close write
                        else fmap Just $ BT.hashSetFromList rList
             let size = maximum [length rList, 1000] -- TODO better defaults?
             ht <- H.newSized size
-            -- log cfg $ "created hashtable sized " ++ show size
+            debugST $ "created hashtable sized " <> B8.pack (show size)
             BT.addTreeToDupeMap (searchCfg cfg) (verbose cfg) mrSet cle ht tree
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
             BT.dupesByNegScore scoreFn ht
@@ -97,7 +109,7 @@ dupesTarXz xz1 = do
     d1' <- encodeFS d1
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultAppConfig d1'
+    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultAppConfig Nothing d1'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 
