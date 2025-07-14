@@ -3,7 +3,7 @@ module Cmd.Dupes where
 -- TODO guess and check hashes
 
 import Prelude hiding (log)
-import Config (AppConfig (..), SearchConfig(..), defaultAppConfig, log)
+import Config (AppConfig (..), SearchConfig(..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU

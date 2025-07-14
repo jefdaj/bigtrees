@@ -1,6 +1,6 @@
 module Cmd.SetAdd (cmdSetAdd) where
 
-import Config (AppConfig (..), log)
+import Config (AppConfig (..))
 import Control.DeepSeq (force)
 import Control.Monad (foldM, forM, forM_)
 import Data.Attoparsec.ByteString.Char8 (char, parseOnly)
@@ -23,12 +23,12 @@ readTreeHashList :: AppConfig -> Maybe Note -> OsPath -> IO HashList
 readTreeHashList cfg mn path = do
   ls <- readTreeLines path
   let hl = mapMaybe (hashSetDataFromLine mn) ls
-  log cfg $ "adding hashes from " ++ show path
+  -- log cfg $ "adding hashes from " ++ show path
   return hl
 
 readHashListIO :: AppConfig -> OsPath -> IO HashList
 readHashListIO cfg path = do
-  log cfg $ "adding hashes from " ++ show path
+  -- log cfg $ "adding hashes from " ++ show path
   readHashList path
 
 cmdSetAdd :: AppConfig -> OsPath -> Maybe String -> [OsPath] -> IO ()
@@ -40,22 +40,22 @@ cmdSetAdd cfg setPath mNoteStr treePaths = do
   before <- if exists
               then do
                 hl <- readHashListIO cfg setPath
-                log cfg $
-                  "initial " ++ show setPath ++
-                  " contains " ++ show (length hl) ++
-                  " hashes"
+                -- log cfg $
+                --   "initial " ++ show setPath ++
+                --   " contains " ++ show (length hl) ++
+                --   " hashes"
                 return hl
               else do
-                log cfg $ show setPath ++ " does not exist yet"
+                -- log cfg $ show setPath ++ " does not exist yet"
                 return []
 
   -- the actual set should be smaller (assuming some dupes),
   -- but this will prevent having to do any resizing
   maxSetSize <- (sum . catMaybes) <$> mapM getTreeSize treePaths
   let maxSetSize' = maxSetSize + length before
-  log cfg $ "max expected set size: " ++ show maxSetSize'
+  -- log cfg $ "max expected set size: " ++ show maxSetSize'
 
-  log cfg $ "note: " ++ show mNoteStr
+  -- log cfg $ "note: " ++ show mNoteStr
   let mNote = s2note <$> mNoteStr
 
   -- create empty hashset and fold over the trees to add elements
@@ -66,4 +66,4 @@ cmdSetAdd cfg setPath mNoteStr treePaths = do
                  return s
 
   writeHashList setPath afterL
-  log cfg $ "final " ++ show setPath ++ " contains " ++ show (length afterL) ++ " hashes"
+  -- log cfg $ "final " ++ show setPath ++ " contains " ++ show (length afterL) ++ " hashes"
