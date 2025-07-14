@@ -332,11 +332,11 @@ renderDupesRsyncExclude keepOne md ls = do
   where
 
     fileHeader = B8.pack $
-      "# This is the 'rsync-exclude-file' output format.\n\
+      "# This is the 'rsync-filter-file' output format.\n\
       \# You can use it to tell rsync all the files *not* to copy.\n\
       \# Example rsync command:\n\
       \#\n\
-      \# rsync -arv SRCDIR/ DSTDIR/ --exclude-from=THISFILE\n\
+      \# rsync -arv SRCDIR/ DSTDIR/ --filter 'merge THISFILE'\n\
       \#\n\
       \# Where SRCDIR is your originally scanned folder with duplicates,\n\
       \# DSTDIR is the new, non-duplicated copy you'll be making,\n\
@@ -363,8 +363,8 @@ renderDupesRsyncExclude keepOne md ls = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       let paths''  = sortPaths $ map (escapeRsyncExcludeFromPath2 . replaceTopDirWithSlash) paths'
           paths''' = if not keepOne
-                       then paths''
-                       else ("# " ++ head paths''):(tail paths'')
+                       then map ("- " ++) $ paths''
+                       else ("+ " ++ head paths''):(map ("- " ++) $ tail paths'')
       return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths'''
 
     nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
