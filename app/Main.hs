@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
@@ -11,7 +12,7 @@ import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
-import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig, log,
+import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
                parseLabeledSearches)
 import Data.Functor ((<&>))
 import Prelude hiding (log)
@@ -21,6 +22,8 @@ import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes 
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
+import qualified Data.List as L
+import Data.Char (toUpper)
 import Data.Maybe (fromJust)
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
@@ -30,11 +33,43 @@ import Text.Pretty.Simple (pShow)
 import qualified Data.Text.Lazy as TL
 import System.Log.FastLogger
 
-createLogger :: FilePath -> IO LoggerSet
-createLogger logFilePath = newFileLoggerSet defaultBufSize logFilePath
+createLogger :: FilePath -> IO (TimedFastLogger, IO ())
+createLogger logFilePath = do
 
-logMessage :: LoggerSet -> String -> IO ()
-logMessage loggerSet msg = pushLogStrLn loggerSet (toLogStr msg)
+  -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
+  -- ignores them. Maybe that's good for efficiency?
+  timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
+
+  newTimedFastLogger timeCache (LogStderr defaultBufSize)
+
+-- logWithContext :: LoggerSet -> String -> String -> IO ()
+-- logWithContext logger context message = do
+  -- pushLogStr logger $ "[" ++ context ++ "] " ++ message
+
+-- logMessage :: LoggerSet -> String -> IO ()
+-- logMessage loggerSet msg = pushLogStrLn loggerSet (toLogStr msg)
+
+-- joinLogFields :: ToLogStr a => [a] -> LogStr
+-- joinLogFields [] = "" -- TODO is this right?
+-- joinLogFields fields = mconcat $ toLogStr (head fields) : (map (\f -> toLogStr (" | " :: String) <> toLogStr f) $ tail fields)
+
+-- TODO use something besides String here?
+log :: ToLogStr msg => TimedFastLogger -> msg -> IO ()
+log logger msg = logger $ \ft -> toLogStr ft <> toLogStr (" | " :: String) <> toLogStr msg <> "\n"
+
+data LogLevel = DebugL | InfoL | WarningL | ErrorL
+  deriving (Read, Show)
+
+instance ToLogStr LogLevel where
+  toLogStr = toLogStr . map toUpper . init . show
+
+logWithContext :: ToLogStr a => TimedFastLogger -> LogLevel -> a -> a -> IO ()
+logWithContext logger level context msg =
+  log logger $ mconcat $ L.intersperse (toLogStr (" | " :: String))
+    [ toLogStr level
+    , toLogStr context
+    , toLogStr msg
+    ]
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -46,10 +81,17 @@ main = do
   setEnv "LANG" "en_US.UTF-8"
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
 
-  loggerSet <- createLogger "bigtrees.log"
-  let log = logMessage loggerSet
-      logS msg x = log $ msg ++ ":\n" ++ (TL.unpack $ pShow x) ++ "\n"
-  log "created loggerSet"
+  -- TODO withTimedLogger rather than manual cleanup?
+  (logger, cleanupLogger) <- createLogger "bigtrees.log"
+  -- let log' = log logger
+  --     logS msg x = log $ msg ++ ":\n" ++ (TL.unpack $ pShow x) ++ "\n"
+
+  logWithContext logger InfoL "main" ("created loggerSet" :: String)
+  logWithContext logger InfoL "main" ("created loggerSet" :: String)
+  logWithContext logger InfoL "main" ("created loggerSet" :: String)
+  logWithContext logger InfoL "main" ("created loggerSet" :: String)
+  logWithContext logger InfoL "main" ("created loggerSet" :: String)
+  logWithContext logger InfoL "main" ("created loggerSet" :: String)
 
   let ptns = [D.docoptFile|app/usage.txt|]
   args <- D.parseArgsOrExit ptns =<< getArgs
@@ -70,7 +112,7 @@ main = do
   herList <- case optLong "hash-exclude-regexes-from" of
                Nothing -> return $ hashExcludeRegexes defaultSearchConfig
                Just f  -> readFile f <&> lines -- TODO more detailed parsing?
-  logS "herList" herList
+  -- logS "herList" herList
 
   desList <- case optLong "dupes-exclude-searches" of
 
@@ -81,7 +123,7 @@ main = do
                case parsed of
                  Left  msg -> error $ show msg -- parse failure
                  Right lrs -> return lrs
-  logS "desList" desList
+  -- logS "desList" desList
 
   sList <- case optLong "searches-json" of
 
@@ -106,7 +148,7 @@ main = do
 
                -- no search file given; use default (empty) search list
                Nothing -> return $ searches defaultSearchConfig
-  logS "sList" sList
+  -- logS "sList" sList
 
   oPath <- case optLong "output" of
              Nothing -> return Nothing
@@ -135,7 +177,7 @@ main = do
           }
         }
 
-  logS "cfg" cfg
+  -- logS "cfg" cfg
 
   if cmd "diff" then do
     old <- reqPathArg "OLD"
@@ -170,4 +212,5 @@ main = do
   -- docopt should prevent this by aborting + printing usage
   else error "probably a CLI parsing error"
 
-  flushLogStr loggerSet
+  -- flushLogStr loggerSet
+  cleanupLogger

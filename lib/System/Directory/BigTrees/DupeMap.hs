@@ -378,6 +378,7 @@ renderDupesRsyncExclude keepOne md ls = do
     plural :: Int -> B8.ByteString -> B8.ByteString
     plural n thing = if n > 1 then thing `B8.append` "s" else thing
 
+    -- TODO don't mention inodes unless it's a dir, so separate fn for that
     explain :: Int -> Int -> B8.ByteString -> B8.ByteString
     explain nSaved nThings thing = B8.intercalate " "
       [ "#", exclude nThings , "these", B8.pack $ show nThings , "duplicate"

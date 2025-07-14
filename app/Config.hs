@@ -7,7 +7,7 @@ module Config
   , LabeledSearches
   , parseLabeledSearches
   , defaultSearchConfig
-  , log
+  -- , log
   )
   where
 
@@ -56,5 +56,5 @@ defaultAppConfig = AppConfig
   }
 
 -- TODO remove this from Util
-log :: Show a => AppConfig -> a -> IO ()
-log cfg msg = when (verbose cfg) (hPutStrLn stderr $ TL.unpack $ pShow msg)
+-- log :: Show a => AppConfig -> a -> IO ()
+-- log cfg msg = when (verbose cfg) (hPutStrLn stderr $ TL.unpack $ pShow msg)
