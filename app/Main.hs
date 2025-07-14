@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
@@ -38,9 +39,11 @@ createLogger logFilePath = do
 
   -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
   -- ignores them. Maybe that's good for efficiency?
+  -- TODO can we at least get milliseconds?
+  -- TODO if not, consider newTimedFastLogger1 to force sequential ordering
   timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
 
-  newTimedFastLogger timeCache (LogStderr defaultBufSize)
+  newTimedFastLogger timeCache (LogFileNoRotate logFilePath defaultBufSize)
 
 -- logWithContext :: LoggerSet -> String -> String -> IO ()
 -- logWithContext logger context message = do
@@ -53,23 +56,25 @@ createLogger logFilePath = do
 -- joinLogFields [] = "" -- TODO is this right?
 -- joinLogFields fields = mconcat $ toLogStr (head fields) : (map (\f -> toLogStr (" | " :: String) <> toLogStr f) $ tail fields)
 
--- TODO use something besides String here?
-log :: ToLogStr msg => TimedFastLogger -> msg -> IO ()
-log logger msg = logger $ \ft -> toLogStr ft <> toLogStr (" | " :: String) <> toLogStr msg <> "\n"
+type LogContext = String
+type LogFn a = ToLogStr a => LogLevel -> LogContext -> a -> IO ()
+
+log :: ToLogStr a => TimedFastLogger -> LogFn a
+log logger level context msg = logger $ \ft -> toLogStr (msgWithContext ft) <> "\n"
+  where
+    sep = toLogStr (" | " :: String)
+    msgWithContext timestamp = mconcat $ L.intersperse sep
+      [ toLogStr timestamp
+      , toLogStr level
+      , toLogStr context
+      , toLogStr msg
+      ]
 
 data LogLevel = DebugL | InfoL | WarningL | ErrorL
   deriving (Read, Show)
 
 instance ToLogStr LogLevel where
   toLogStr = toLogStr . map toUpper . init . show
-
-logWithContext :: ToLogStr a => TimedFastLogger -> LogLevel -> a -> a -> IO ()
-logWithContext logger level context msg =
-  log logger $ mconcat $ L.intersperse (toLogStr (" | " :: String))
-    [ toLogStr level
-    , toLogStr context
-    , toLogStr msg
-    ]
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -81,19 +86,17 @@ main = do
   setEnv "LANG" "en_US.UTF-8"
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
 
-  -- TODO withTimedLogger rather than manual cleanup?
-  (logger, cleanupLogger) <- createLogger "bigtrees.log"
-  -- let log' = log logger
-  --     logS msg x = log $ msg ++ ":\n" ++ (TL.unpack $ pShow x) ++ "\n"
+  -- TODO withTimedLogger rather than manual cleanup at the end?
+  let logPath = "bigtrees.log"
+  (logger, cleanupLogger) <- createLogger logPath
+  let info  msg = log logger InfoL  "main" (msg :: String)
+      debug msg = log logger DebugL "main" (msg :: String)
 
-  logWithContext logger InfoL "main" ("created loggerSet" :: String)
-  logWithContext logger InfoL "main" ("created loggerSet" :: String)
-  logWithContext logger InfoL "main" ("created loggerSet" :: String)
-  logWithContext logger InfoL "main" ("created loggerSet" :: String)
-  logWithContext logger InfoL "main" ("created loggerSet" :: String)
-  logWithContext logger InfoL "main" ("created loggerSet" :: String)
+  debug $ "bigtrees version " ++ showVersion version
 
+  debug $ "parsing usage patterns"
   let ptns = [D.docoptFile|app/usage.txt|]
+  debug $ "parsing cli args"
   args <- D.parseArgsOrExit ptns =<< getArgs
 
   let cmd     n = D.isPresent  args $ D.command n
@@ -180,37 +183,46 @@ main = do
   -- logS "cfg" cfg
 
   if cmd "diff" then do
+    debug "running diff command"
     old <- reqPathArg "OLD"
     new <- reqPathArg "NEW"
     cmdDiff cfg old new
 
   else if cmd "dupes" then do
+    debug "running dupes command"
     path <- reqPathArg "PATH"
     cmdDupes cfg path
 
   else if cmd "set-add" then do
+    debug "running set-add command"
     set  <- reqPathOpt "set"
     let note = optLong "note"
     paths <- mapM encodeFS $ lstArg "PATH"
     cmdSetAdd cfg set note paths
 
   else if cmd "find" then do
+    debug "running find command"
     path <- reqPathArg "PATH" -- TODO multiple paths?
     cmdFind cfg path
 
   else if cmd "hash" then do
-     path <- reqPathArg "PATH"
-     cmdHash cfg path
+    debug "running hash command"
+    path <- reqPathArg "PATH"
+    cmdHash cfg path
 
-  else if cmd "info" then do
+  else if cmd "debug" then do
+    -- TODO remove this command?
+    debug "running debug command"
     path <- reqPathArg "PATH"
     cmdInfo cfg path
 
-  else if cmd "version" then
+  else if cmd "version" then do
+    debug "running version command"
     printVersion
 
   -- docopt should prevent this by aborting + printing usage
-  else error "probably a CLI parsing error"
+  else do
+    debug "no valid command specified"
+    error "probably a CLI parsing error"
 
-  -- flushLogStr loggerSet
   cleanupLogger
