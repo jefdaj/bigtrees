@@ -416,6 +416,8 @@ dupesKeepNode cfg verbose mrSet cle ns t = do
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
     -- works: , isNothing mExcludeLabel
+    -- TODO next, confirm logging also works here
+    -- TODO i guess you have to take the (Maybe LogFn) and re-customize it for this module?
     , maybe True (\l -> traceV verbose (excludeMsg l) False) mExcludeLabel
     , includeHash
     ]
