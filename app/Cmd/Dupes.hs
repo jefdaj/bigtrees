@@ -50,8 +50,9 @@ cmdDupes cfg mLog path = bracket open close write
       Nothing  -> return ()
       Just log -> log BT.DebugL "cmdDupes" msg
 
-    debugST :: B8.ByteString -> ST s ()
-    debugST msg = debug msg `seq` return ()
+    -- TODO would unsafeInterleaveIO help here?
+    debugST :: B8.ByteString -> ST s B8.ByteString
+    debugST msg = unsafePerformIO (debug msg) `seq` return msg
 
     open = case outFile cfg of
              Nothing -> return stdout
@@ -62,22 +63,30 @@ cmdDupes cfg mLog path = bracket open close write
 
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
+      debug $ "loading rList from " <> B8.pack (show (length rListPaths)) <> " paths"
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList
-      debug $ "loaded rList with " <> B8.pack (show (length rList)) <> " paths"
 
+      debug "compiling labeled searches"
       cle <- BT.compileLabeledSearches $ dupesExcludeSearches $ searchCfg cfg
 
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
+	    debugST "runST starting"
             mrSet <- if null rList
                        then return Nothing
                        else fmap Just $ BT.hashSetFromList rList
             let size = maximum [length rList, 1000] -- TODO better defaults?
+                sizeB = B8.pack $ show size
+            debugST $ "creating DupeMap sized " <> B8.pack (show size)
             ht <- H.newSized size
-            debugST $ "created hashtable sized " <> B8.pack (show size)
+	    -- debugST $ "adding " <> sizeB <> " tree nodes to DupeMap"
             BT.addTreeToDupeMap (searchCfg cfg) (verbose cfg) mrSet cle ht tree
+	    -- debugST $ "added all " <> sizeB <> " tree nodes to DupeMap"
+	    if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
-            BT.dupesByNegScore scoreFn ht
+            res <- BT.dupesByNegScore scoreFn ht
+	    -- debugST $ "finished scoring " <> sizeB <> " DupeSets" -- TODO but is this time ordered?
+            return res
 
       -- TODO pull default from docopt instead of duplicating that here
       let fmt = fromMaybe "comments" $ dupesOutFormat cfg
@@ -89,6 +98,7 @@ cmdDupes cfg mLog path = bracket open close write
       -- TODO any good way to warn the user if their ref set looks like it's inside the dupes?
       let keepOneDupe = null rList
 
+      debug $ "writing " <> B8.pack (show $ length ds) <> " DupeSets"
       BT.hWriteDupes (searchCfg cfg) renderFn keepOneDupe hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
