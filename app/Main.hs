@@ -30,11 +30,9 @@ import Text.Pretty.Simple (pShow)
 import qualified Data.Text.Lazy as TL
 import System.Log.FastLogger
 
--- Function to create a logger
 createLogger :: FilePath -> IO LoggerSet
 createLogger logFilePath = newFileLoggerSet defaultBufSize logFilePath
 
--- Function to log messages
 logMessage :: LoggerSet -> String -> IO ()
 logMessage loggerSet msg = pushLogStrLn loggerSet (toLogStr msg)
 
