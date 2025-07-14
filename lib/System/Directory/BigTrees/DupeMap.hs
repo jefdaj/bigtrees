@@ -172,7 +172,7 @@ dupesByNegScore scoreFn ht = do
  -}
 simplifyDupes :: SortedDupeLists -> SortedDupeLists
 simplifyDupes [] = []
-simplifyDupes (d@(_,_,fs):ds) = d : (simplifyDupes $ filter (not . redundantSet) ds)
+simplifyDupes (d@(_,_,fs):ds) = (d:) $ simplifyDupes $ filter (not . redundantSet) ds
   where
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
@@ -400,9 +400,8 @@ dupesKeepNode cfg verbose mrSet cle ns t = do
                    Nothing -> return True
                    Just rSet -> setContainsHash rSet $ treeHash t
 
-  let mExcludeLabel = findLabelNode cle (reverse ns) t -- TODO why doesn't this work? debug a bit further...
+  let mExcludeLabel = findLabelNode cle (reverse ns) t
 
-  -- TODO last thing is to print this to stderr only when --debug flag given
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
   let excludeMsg l = "dupes exclude " ++ l ++ ": '" ++ B8.unpack wholeName ++ "'"
 

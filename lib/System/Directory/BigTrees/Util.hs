@@ -65,8 +65,6 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
 import Debug.Trace
 
---- logging ---
-
 -- TODO move to util module, or replace with something better thought out
 traceV :: Bool -> String -> b -> b
 traceV verbose msg b = if verbose then trace msg b else b
@@ -294,9 +292,7 @@ getBlockSize path = do
   stat <- getFileStatus =<< decodeFS path
   return $ maybe 4096 toInteger (fileBlockSize stat)
 
---------------
--- old code --
---------------
+--- old code ---
 
 -- userSaysYes :: String -> IO Bool
 -- userSaysYes question = do
