@@ -126,8 +126,18 @@ module System.Directory.BigTrees
   , scoreSets
   , renderDupesSuggestions
   , renderDupesRsyncExclude
+
+  -- logging
+  , traceV
+  , LogContext
+  , LogLevel (..)
+  , LogFn
+  , log
+  , createLogger
   )
   where
+
+import Prelude hiding (log)
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
@@ -163,3 +173,5 @@ import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumb
                                        sbs2n)
 
 import System.Directory.BigTrees.HeadFoot (headerP)
+
+import System.Directory.BigTrees.Logging (traceV, LogContext, LogLevel (..), LogFn, log, createLogger)
