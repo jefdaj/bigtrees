@@ -40,6 +40,7 @@ library
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
+      System.Directory.BigTrees.Logging
       Paths_bigtrees
   hs-source-dirs:
       lib
@@ -332,6 +333,7 @@ test-suite test-lib
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.HeadFoot
+      System.Directory.BigTrees.Logging
       System.Directory.BigTrees.Name
       System.Directory.BigTrees.Util
       Paths_bigtrees
@@ -416,6 +418,7 @@ benchmark test-bench
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
       System.Directory.BigTrees.HeadFoot
+      System.Directory.BigTrees.Logging
       System.Directory.BigTrees.Name
       System.Directory.BigTrees.Util
       Cmd

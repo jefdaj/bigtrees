@@ -56,7 +56,7 @@ import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), 
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 
 import System.Directory.BigTrees.HashTree.Find (findLabelNode)
-import System.Directory.BigTrees.Util (traceV)
+import System.Directory.BigTrees.Logging (traceV)
 import Data.Maybe (isNothing)
 
 -- TODO be able to serialize dupemaps for debugging
