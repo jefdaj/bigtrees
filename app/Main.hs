@@ -180,4 +180,5 @@ main = do
     debug "no valid command specified"
     error "probably a CLI parsing error"
 
+  debug "cleaning up"
   cleanupLogger
