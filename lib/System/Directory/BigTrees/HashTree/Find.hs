@@ -21,7 +21,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), su
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.Directory.BigTrees.Util (traceV)
+import System.Directory.BigTrees.Logging (traceV)
 import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
 import Text.Regex.TDFA
