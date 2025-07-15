@@ -37,6 +37,10 @@ allow-newer-deps:
   # - unix
 
 flags:
+  # Disable building the docs site by default, because it messes with the nix build.
+  # It can still be done manually of course.
+  bigtrees:
+    build-docs-site: false
   unix:
     os-string: true
   file-io:

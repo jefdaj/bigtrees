@@ -5,6 +5,12 @@ author:              jefdaj
 maintainer:          jefdaj@users.noreply.github.com
 copyright:           "AGPL-3.0-only"
 
+flags:
+  build-docs-site:
+    default: false
+    manual: true
+    description: "Build the bigtrees website in the docs directory"
+
 # TODO separate them out again?
 dependencies:
 - aeson
@@ -102,7 +108,10 @@ executables:
     dependencies:
     - bigtrees
 
-  bigtrees-docs:
+  bigtrees-docs-site:
+    # Disable building the docs site by default, because it messes with the nix build.
+    # It can still be done manually of course.
+    if: flag(build-docs-site)
     main: site.hs
     source-dirs: "docs/src"
     dependencies:

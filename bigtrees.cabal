@@ -14,6 +14,11 @@ license:        AGPL-3
 license-file:   LICENSE
 build-type:     Simple
 
+flag build-docs-site
+  description: Build the bigtrees website in the docs directory
+  manual: True
+  default: False
+
 library
   exposed-modules:
       System.Directory.BigTrees
@@ -166,7 +171,7 @@ executable bigtrees
     , utf8-string
   default-language: Haskell2010
 
-executable bigtrees-docs
+executable bigtrees-docs-site
   main-is: site.hs
   other-modules:
       Paths_bigtrees
