@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {- Other than for printing and writing output to files, this module shouldn't
  - need any IO. That also means it shouldn't deal with encoding or decoding
@@ -14,6 +15,7 @@ module System.Directory.BigTrees.DupeMap
   , SortedDupeLists
   , SortedDupeSets
   , ExplainFn
+  , AddTreeProgress
   , addTreeToDupeMap
   , dupesByNegScore
   , renderDupesSuggestions
@@ -74,6 +76,17 @@ type DupeMap s = C.HashTable s Hash DupeSet
 type SortedDupeSets  = [DupeSet]
 type SortedDupeLists = [DupeList]
 
+-- For logging progress in addTreeToDupeMap
+-- N nodes added so far out of N total
+-- TODO another Int for N total?
+-- TODO does it impact performance significantly?
+newtype AddTreeProgress = AddTreeProgress Int
+  deriving (Eq, Ord, Num, Read, Show)
+
+-- TODO implement logging
+-- TODO and think/rethink about the ST type
+-- incTreeProgress :: Maybe LogFn -> AddTreeProgress -> ST s AddTreeProgress
+-- incTreeProgress mLog (AddTreeProgress nSoFar nTotal) = AddTreeProgress (nSoFar + 1) nTotal
 
 ------------------------------- create dupemaps -------------------------------
 
@@ -98,8 +111,8 @@ pathsByHash cfg mLog mrSet cle tree = do
 addTreeToDupeMap
   :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches
   -> DupeMap s -> HashTree a -> ST s ()
-addTreeToDupeMap    cfg mLog mrSet cle dt =
-  addTreeToDupeMap' cfg mLog mrSet cle dt mempty (Depth 0)
+addTreeToDupeMap    cfg mLog mrSet cle dm =
+  addTreeToDupeMap' cfg mLog mrSet cle dm mempty (Depth 0) (AddTreeProgress 0)
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
@@ -111,42 +124,44 @@ addTreeToDupeMap'
   -> DupeMap s
   -> OsPath
   -> Depth
+  -> AddTreeProgress
   -> HashTree a
   -> ST s ()
 
 -- TODO log errors here?
-addTreeToDupeMap' _ _ _ _ dt dir _ (Err {}) = return ()
+addTreeToDupeMap' _ _ _ _ dm dir _ _ (Err {}) = return ()
 
 -- Links can be "good" or "broken" based on whether their content should be in
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg mLog mrSet cle dt dir _ l@(Link {}) = do
+addTreeToDupeMap' cfg mLog mrSet cle dm dir _ tp l@(Link {}) = do
   keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) l
   when keepNode $
-    insertDupeSet cfg dt (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l))
+    insertDupeSet cfg dm (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l)) tp
 
 addTreeToDupeMap'
-  cfg mLog mrSet cle dt dir _
+  cfg mLog mrSet cle dm dir _ tp
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
     keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) f
     when keepNode $
-      insertDupeSet cfg dt h (1, F, S.singleton $ dir </> n)
+      insertDupeSet cfg dm h (1, F, S.singleton $ dir </> n) tp
 
 addTreeToDupeMap'
-  cfg mLog mrSet cle dt dir depth
+  cfg mLog mrSet cle dm dir depth tp
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
     keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) d
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ do
-      insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
+      insertDupeSet cfg dm h (fs, D, S.singleton $ dir </> n) tp
       -- TODO is there any situation where we want to NOT keep the current node, but still recurse?
-      when recurse $ mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dt (dir </> n) (depth+1)) cs
+      when recurse $
+        mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dm (dir </> n) (depth+1) tp) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
-insertDupeSet :: SearchConfig -> DupeMap s -> Hash -> DupeSet -> ST s ()
-insertDupeSet cfg dm h d2 = do
+insertDupeSet :: SearchConfig -> DupeMap s -> Hash -> DupeSet -> AddTreeProgress -> ST s ()
+insertDupeSet cfg dm h d2 _ = do
   existing <- H.lookup dm h
   case existing of
     Nothing -> H.insert dm h d2
