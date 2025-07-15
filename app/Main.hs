@@ -137,16 +137,21 @@ main = do
 
   -- logS "cfg" cfg
 
+  -- Pass LogFn to the rest of the program, wrapped in Maybe to allow it to be
+  -- disabled for tests or other contexts where someone doesn't want to bother
+  -- with my logging system.
+  let mLog = Just $ log logger
+
   if cmd "diff" then do
     debug "running diff command"
     old <- reqPathArg "OLD"
     new <- reqPathArg "NEW"
-    cmdDiff cfg old new
+    cmdDiff cfg mLog old new
 
   else if cmd "dupes" then do
     debug "running dupes command"
     path <- reqPathArg "PATH"
-    cmdDupes cfg (Just $ log logger) path
+    cmdDupes cfg mLog path
 
   else if cmd "set-add" then do
     debug "running set-add command"
@@ -158,12 +163,12 @@ main = do
   else if cmd "find" then do
     debug "running find command"
     path <- reqPathArg "PATH" -- TODO multiple paths?
-    cmdFind cfg path
+    cmdFind cfg mLog path
 
   else if cmd "hash" then do
     debug "running hash command"
     path <- reqPathArg "PATH"
-    cmdHash cfg path
+    cmdHash cfg mLog path
 
   else if cmd "debug" then do
     -- TODO remove this command?

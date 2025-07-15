@@ -128,12 +128,13 @@ module System.Directory.BigTrees
   , renderDupesRsyncExclude
 
   -- logging
-  , traceV
   , LogContext
   , LogLevel (..)
   , LogFn
-  , log
   , createLogger
+  , log
+  , logMaybe
+  , logMaybeUnsafe
   )
   where
 
@@ -174,4 +175,4 @@ import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumb
 
 import System.Directory.BigTrees.HeadFoot (headerP)
 
-import System.Directory.BigTrees.Logging (traceV, LogContext, LogLevel (..), LogFn, log, createLogger)
+import System.Directory.BigTrees.Logging (LogContext, LogLevel (..), LogFn, createLogger, log, logMaybe, logMaybeUnsafe)

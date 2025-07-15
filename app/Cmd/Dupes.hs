@@ -59,7 +59,7 @@ cmdDupes cfg mLog path = bracket open close write
              Just op -> SFO.openBinaryFile op WriteMode
 
     write hdl = do
-      tree <- BT.readOrBuildTree (searchCfg cfg) (verbose cfg) path
+      tree <- BT.readOrBuildTree (searchCfg cfg) mLog path
 
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
@@ -80,7 +80,7 @@ cmdDupes cfg mLog path = bracket open close write
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
 	    -- debugST $ "adding " <> initB <> " tree nodes to DupeMap"
-            BT.addTreeToDupeMap (searchCfg cfg) (verbose cfg) mrSet cle ht tree
+            BT.addTreeToDupeMap (searchCfg cfg) mLog mrSet cle ht tree
 	    -- debugST $ "added all " <> initB <> " tree nodes to DupeMap"
 	    if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef

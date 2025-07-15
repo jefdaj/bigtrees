@@ -33,6 +33,7 @@ import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
+import System.Directory.BigTrees.Logging (LogFn)
 
 -- import Debug.Trace
 
@@ -212,7 +213,7 @@ partitionChildrenSiblings i cs = (children, others)
     children = takeWhile (\(Depth i2, _) -> i2 > i) cs
     others   = drop (length children) cs
 
-readTestTree :: SearchConfig -> Bool -> OsPath -> IO TestTree
+readTestTree :: SearchConfig -> Maybe LogFn -> OsPath -> IO TestTree
 readTestTree cfg = buildTree cfg SFO.readFile'
 
 --- attoparsec parsers ---
