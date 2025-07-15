@@ -23,6 +23,7 @@ import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
 import Control.Exception (bracket)
 import Control.Monad (forM)
+import Data.STRef (STRef(..), newSTRef, readSTRef, writeSTRef)
 import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.HashTable.Class as H
 import Data.Maybe (fromMaybe, fromJust)
@@ -40,6 +41,14 @@ dupesRenderFunctions =
   [ ("suggestions", BT.renderDupesSuggestions)
   , ("rsync-exclude-file", BT.renderDupesRsyncExclude)
   ]
+
+-- TODO move to logging module?
+incLogProgressST :: Maybe BT.LogFn -> BT.LogContext -> STRef s Int -> ST s ()
+incLogProgressST mLog ctx intRef = do
+  n <- readSTRef intRef
+  let n' = n + 1
+  BT.logMaybeUnsafe mLog BT.InfoL ctx ("increment stref to " <> B8.pack (show n')) $
+    writeSTRef intRef n'
 
 cmdDupes :: AppConfig -> Maybe BT.LogFn -> OsPath -> IO ()
 cmdDupes cfg mLog path = bracket open close write
@@ -65,6 +74,7 @@ cmdDupes cfg mLog path = bracket open close write
 
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
+	    -- TODO move this inside addTreeToDupeMap progRef <- newSTRef 0
 	    debugST "runST starting"
             mrSet <- if null rList
                        then return Nothing
