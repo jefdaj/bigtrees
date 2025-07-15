@@ -46,6 +46,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
                                            ProdTree, treeType, treeHash, treeModTime, sumNodes, treeNBytes,
                                            treeName, SearchConfig (..))
+import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), LogContext, logMaybeUnsafe)
 import System.IO (Handle, IOMode (..))
 import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
@@ -155,14 +156,16 @@ type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
 -- The negate here undoes the one in scoreSets below, leaving a positive score.
 -- TODO is that the cleanest way to do it, or should both negates be in this fn?
-dupesByNegScore :: ScoreFn -> DupeMap s -> ST s SortedDupeLists
-dupesByNegScore scoreFn ht = do
-  sets <- scoreSets scoreFn ht -- TODO separate scoring for ref set than within same tree
-  let unsorted = A.fromList A.Par sets :: DupeSetVec
-      sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
-      sortedL  = A.toList sorted
+dupesByNegScore :: Maybe LogFn -> ScoreFn -> DupeMap s -> ST s SortedDupeLists
+dupesByNegScore mLog scoreFn ht = do
+  let debug = logMaybeUnsafe mLog DebugL "dupesByNegScore"
+  sets <- debug "scoring sets" <$> scoreSets scoreFn ht -- TODO separate scoring for ref set than within same tree
+  let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par sets :: DupeSetVec
+      sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute unsorted :: DupeSetVec
+      sortedL  = debug "converting DupeSetVec back to list" $ A.toList sorted
       fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
-  return $ simplifyDupes $ Prelude.map fixElem sortedL
+      simple = debug "simplifying dupes" $ simplifyDupes $ Prelude.map fixElem sortedL
+  return simple
 
 {- Assumes a pre-sorted list of lists.
  - Removes lists whose elements are all inside elements of the first list.
