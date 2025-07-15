@@ -178,13 +178,13 @@ simplifyDupes _ _ [ ] = [ ]
 simplifyDupes _ _ [d] = [d]
 
 simplifyDupes i mLog (d@(_,D,fs):ds) =
-  debug ("removed " <> B8.pack (show nSaved) <>
+  info ("removed " <> B8.pack (show nSaved) <>
          " DupeSets redundant with set #" <> B8.pack (show i)) $
   (d:) $ simplifyDupes (i+1) mLog $ ds'
   where
     ds' = filter (not . redundantSet) ds
     nSaved = length ds - length ds'
-    debug = logMaybeUnsafe mLog DebugL "simplifyDupes"
+    info = logMaybeUnsafe mLog InfoL "simplifyDupes"
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
                        `L.isPrefixOf`
@@ -418,8 +418,8 @@ dupesKeepNode cfg mLog mrSet cle ns t = do
   let mExcludeLabel = B8.pack <$> findLabelNode cle (reverse ns) t
 
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
-  let excludeMsg l = "dupes exclude " <> l <> ": '" <> wholeName <> "'"
-  let debug = logMaybeUnsafe mLog DebugL "dupesKeepNode"
+  let excludeMsg l = "exclude node labeled '" <> l <> "' : '" <> wholeName <> "'"
+  let info = logMaybeUnsafe mLog InfoL "dupesKeepNode"
 
   return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
@@ -431,7 +431,7 @@ dupesKeepNode cfg mLog mrSet cle ns t = do
     , maybe True (treeType t `elem`) $ treeTypes cfg
     -- works: , isNothing mExcludeLabel
     -- works: , maybe True (\l -> traceV verbose (excludeMsg l) False) mExcludeLabel
-    , maybe True (\l -> debug (excludeMsg l) False) mExcludeLabel
+    , maybe True (\l -> info (excludeMsg l) False) mExcludeLabel
     ]
 
 -- | When adding a tree to a dupemap, whether to recurse into the tree's children.
