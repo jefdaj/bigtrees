@@ -10,6 +10,7 @@ module System.Directory.BigTrees.Logging
   , log
   , logMaybe
   , logMaybeUnsafe
+  , incLogProgressST
   )
   where
 
@@ -20,6 +21,8 @@ import qualified Data.List as L
 import Data.Char (toUpper)
 import qualified Data.ByteString.Char8 as B8
 import System.IO.Unsafe (unsafePerformIO)
+import Data.STRef (STRef(..), newSTRef, readSTRef, writeSTRef)
+import Control.Monad.ST.Strict (ST)
 
 -- TODO replace with better logging
 traceV :: Bool -> String -> b -> b
@@ -70,3 +73,11 @@ logMaybeUnsafe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> a ->
 logMaybeUnsafe mLog level context msg rtn = case mLog of
   Nothing -> rtn
   Just fn -> unsafePerformIO (fn level context msg) `seq` rtn
+
+-- TODO move to logging module?
+incLogProgressST :: Maybe LogFn -> LogContext -> STRef s Int -> ST s ()
+incLogProgressST mLog ctx intRef = do
+  n <- readSTRef intRef
+  let n' = n + 1
+  logMaybeUnsafe mLog InfoL ctx ("increment stref to " <> B8.pack (show n')) $
+    writeSTRef intRef n'
