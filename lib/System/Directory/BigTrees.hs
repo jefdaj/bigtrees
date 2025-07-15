@@ -116,6 +116,7 @@ module System.Directory.BigTrees
   , DupeMap
   , DupeSet
   , ExplainFn
+  , AddTreeProgress
   , addTreeToDupeMap
   , dupesByNegScore
   , hWriteDupes
@@ -142,7 +143,7 @@ import Prelude hiding (log)
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
-import System.Directory.BigTrees.DupeMap (DupeSet, DupeMap, dupesByNegScore,
+import System.Directory.BigTrees.DupeMap (DupeSet, DupeMap, AddTreeProgress, dupesByNegScore,
                                           mergeDupeSets, pathsByHash, scoreSets, scoreSetSelf, scoreSetRef,
                                           hWriteDupes, addTreeToDupeMap, renderDupesSuggestions,
                                           renderDupesRsyncExclude, ExplainFn)
