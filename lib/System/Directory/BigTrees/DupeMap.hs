@@ -222,11 +222,13 @@ simplifyDupes _ _ [d] = [d]
 
 simplifyDupes i mLog (d@(_,D,fs):ds) =
   info ("removed " <> B8.pack (show nSaved) <>
-         " DupeSets redundant with set #" <> B8.pack (show i)) $
+        " DupeSets redundant with set #" <> B8.pack (show i) <>
+	"; " <> B8.pack (show nRemain) <> " sets remain to process") $
   (d:) $ simplifyDupes (i+1) mLog $ ds'
   where
     ds' = filter (not . redundantSet) ds
-    nSaved = length ds - length ds'
+    nRemain = length ds'
+    nSaved = length ds - nRemain
     info msg x = if nSaved > 0 then logMaybeUnsafe mLog InfoL "simplifyDupes" msg x else x
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
