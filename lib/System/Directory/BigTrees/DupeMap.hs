@@ -78,12 +78,13 @@ type SortedDupeLists = [DupeList]
 
 -- For logging progress in addTreeToDupeMap
 -- N nodes added so far out of N total
--- TODO another Int for N total?
+-- TODO more general STProgress or similar?
+-- TODO another Int for N total? only if possible without forcing evaluation
 -- TODO does it impact performance significantly?
 newtype AddTreeProgress = AddTreeProgress Int
   deriving (Eq, Ord, Num, Read, Show)
 
--- TODO implement logging
+-- Update tree adding progress and log it if appropriate
 -- TODO and think/rethink about the ST type
 -- incTreeProgress :: Maybe LogFn -> AddTreeProgress -> ST s AddTreeProgress
 -- incTreeProgress mLog (AddTreeProgress nSoFar nTotal) = AddTreeProgress (nSoFar + 1) nTotal
@@ -96,10 +97,10 @@ pathsByHash
   :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches
   -> HashTree a -> ST s (DupeMap s)
 pathsByHash cfg mLog mrSet cle tree = do
-  let (NNodes n) = treeNNodes tree
+  -- let (NNodes n) = treeNNodes tree TODO does this force evaluation??
       -- info msg = logMaybeUnsafe mLog InfoL "pathsByHash" msg $ return ()
   -- TODO is it more wasteful to allocate it too large like this, or to expand it?
-  dm <- H.newSized n
+  dm <- H.newSized 1000 -- n
   -- info $ "adding " <> B8.pack (show n) <> " nodes to hashmap" -- TODO inside addTreeToDupeMap?
   addTreeToDupeMap cfg mLog mrSet cle dm tree
   -- TODO try putting it back and compare overall speed
