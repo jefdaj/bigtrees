@@ -164,7 +164,7 @@ dupesByNegScore mLog scoreFn ht = do
       sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute unsorted :: DupeSetVec
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList sorted
       fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
-      simple = debug "simplifying dupes" $ simplifyDupes $ Prelude.map fixElem sortedL
+      simple = debug "simplifying dupes" $ simplifyDupes 0 mLog $ Prelude.map fixElem sortedL
   return simple
 
 {- Assumes a pre-sorted list of lists.
@@ -173,10 +173,13 @@ dupesByNegScore mLog scoreFn ht = do
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
  - ... then the second set is redundant and confusing to show.
  -}
-simplifyDupes :: SortedDupeLists -> SortedDupeLists
-simplifyDupes [] = []
-simplifyDupes (d@(_,_,fs):ds) = (d:) $ simplifyDupes $ filter (not . redundantSet) ds
+simplifyDupes :: Int -> Maybe LogFn -> SortedDupeLists -> SortedDupeLists
+simplifyDupes _ _ [] = []
+simplifyDupes i mLog (d@(_,_,fs):ds) =
+  debug ("iteration " <> B8.pack (show i)) $
+  (d:) $ simplifyDupes (i+1) mLog $ filter (not . redundantSet) ds
   where
+    debug = logMaybeUnsafe mLog DebugL "simplifyDupes"
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
                        `L.isPrefixOf`
