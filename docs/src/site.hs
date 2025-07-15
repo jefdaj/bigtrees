@@ -5,9 +5,9 @@ import           Hakyll
 
 config :: Configuration
 config = defaultConfiguration
-  { destinationDirectory = "docs"
-  , providerDirectory = "docs-src"
-  , storeDirectory = "docs-src/.hakyll-cache"
+  { destinationDirectory = ".."
+  , providerDirectory = "."
+  , storeDirectory = ".hakyll-cache"
   , inMemoryCache = True
   }
 

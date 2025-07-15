@@ -102,9 +102,9 @@ executables:
     dependencies:
     - bigtrees
 
-  docs-site:
+  bigtrees-docs:
     main: site.hs
-    source-dirs: "docs-src"
+    source-dirs: "docs/src"
     dependencies:
     - hakyll
 

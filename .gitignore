@@ -18,4 +18,4 @@ result*
 .lint/*.html
 
 # hakyll
-docs-src/.hakyll-cache/
+.hakyll-cache/
