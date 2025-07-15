@@ -72,6 +72,7 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.Knob as K
 import Data.List (isInfixOf)
+import System.Directory.BigTrees.Logging (LogFn)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 dropFileData, isErr, renameRoot, sumNodes,
                                                 treeEqIgnoringModTime, treeHash, treeModTime,
@@ -98,12 +99,12 @@ import qualified Test.HUnit as HU
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
 -- TODO don't assume??
-readOrBuildTree :: SearchConfig -> Bool -> OsPath -> IO ProdTree
-readOrBuildTree cfg verbose path = do
+readOrBuildTree :: SearchConfig -> Maybe LogFn -> OsPath -> IO ProdTree
+readOrBuildTree cfg mLog path = do
   isDir  <- SDO.doesDirectoryExist path
   isFile <- SDO.doesFileExist      path
   if      isFile then readTree cfg path
-  else if isDir then buildProdTree cfg verbose path
+  else if isDir then buildProdTree cfg mLog path
   else error $ "No such file: " ++ show path
 
 -- TODO test tree in haskell
@@ -180,7 +181,7 @@ roundtripTestTreeToTmpdir t =
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
     let treeRootDir = tmpDir' </> unName (treeName t)
-    readTestTree emptySearchConfig False treeRootDir
+    readTestTree emptySearchConfig Nothing treeRootDir
     -- parent <- readTestTree Nothing False [] tmpDir'
     -- return $ head $ dirContents parent
 
@@ -201,7 +202,7 @@ unit_tree_from_bad_path_is_Err =
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
     let badPath = tmpDir' </> [osp|doesnotexist|]
-    tree <- buildProdTree emptySearchConfig False badPath
+    tree <- buildProdTree emptySearchConfig Nothing badPath
     HU.assertBool "tree built from non-existent path should be Err" $ isErr tree
 
 unit_roundtrip_Err_to_bigtree_file :: HU.Assertion
@@ -209,7 +210,7 @@ unit_roundtrip_Err_to_bigtree_file = do
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
     let badPath = tmpDir' </> [osp|doesnotexist|]
-    t1 <- buildProdTree emptySearchConfig False badPath
+    t1 <- buildProdTree emptySearchConfig Nothing badPath
     t2 <- roundtripProdTreeToBigtreeFile t1
     -- TODO is there a good way to communicate the name to the parser?
     let t2' = renameRoot (Name [osp|doesnotexist|]) t2
@@ -223,7 +224,7 @@ unit_buildProdTree_catches_permission_error = do
     badPath' <- encodeFS badPath
     _ <- readCreateProcess ((proc "touch" [badPath]      ) {cwd = Just tmpDir}) ""
     _ <- readCreateProcess ((proc "chmod" ["-r", badPath]) {cwd = Just tmpDir}) ""
-    t1 <- buildProdTree emptySearchConfig False badPath'
+    t1 <- buildProdTree emptySearchConfig Nothing badPath'
     HU.assertBool "Err looks right" $ errLooksRight t1
   where
     badName = "file-without-read-permission.txt"

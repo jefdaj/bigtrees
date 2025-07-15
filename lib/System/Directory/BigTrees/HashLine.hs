@@ -161,6 +161,7 @@ sanitizeErrMsg = filter $ \c ->
   || c `elem` ("/:()[]._-" :: String)
 
 -- | Cut the (redundant) filepath off the beginning of most IO-related error messages.
+-- TODO bytestring?
 simplifyErrMsg :: String -> String
 simplifyErrMsg s = if length sSplit < 2 then s' else intercalate ": " $ tail sSplit
   where

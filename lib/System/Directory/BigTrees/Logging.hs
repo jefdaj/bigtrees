@@ -8,6 +8,7 @@ module System.Directory.BigTrees.Logging
   , LogFn
   , createLogger
   , log
+  , logMaybe
   , logMaybeUnsafe
   )
   where
@@ -58,6 +59,12 @@ log logger level context msg = logger $ \ft -> toLogStr (msgWithContext ft) <> "
       , toLogStr context
       , toLogStr msg
       ]
+
+-- TODO does this work?
+logMaybe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> IO ()
+logMaybe mLog level context msg = case mLog of
+  Nothing -> return ()
+  Just fn -> fn level context msg
 
 logMaybeUnsafe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> a -> a
 logMaybeUnsafe mLog level context msg rtn = case mLog of

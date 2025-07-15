@@ -22,6 +22,7 @@ library
       System.Directory.BigTrees.HashSet
       System.Directory.BigTrees.HeadFoot
       System.Directory.BigTrees.HashLine
+      System.Directory.BigTrees.Logging
       System.Directory.BigTrees.Name
       System.Directory.BigTrees.Util
       System.Directory.BigTrees.Hash
@@ -35,7 +36,6 @@ library
       System.Directory.BigTrees.HashTree.Read
       System.Directory.BigTrees.HashTree.Search
       System.Directory.BigTrees.HashTree.Write
-      System.Directory.BigTrees.Logging
       Paths_bigtrees
   hs-source-dirs:
       lib
