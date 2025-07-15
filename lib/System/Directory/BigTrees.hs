@@ -62,7 +62,7 @@ module System.Directory.BigTrees
   , treeName
   , treeHash
   , treeNBytes
-  , sumNodes -- TODO rename treeNNodes?
+  , treeNNodes
   , readLastHashLineAndFooter
   , readTreeLines
   , getTreeSize
@@ -156,7 +156,7 @@ import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData 
                                           setContainsHash, toSortedList, writeHashList)
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
-                                                hashContents, renameRoot, sumNodes, treeHash,
+                                                hashContents, renameRoot, treeNNodes, treeHash,
                                                 treeModTime, treeNBytes, treeName, zeroModTime)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)

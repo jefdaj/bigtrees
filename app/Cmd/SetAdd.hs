@@ -12,7 +12,7 @@ import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToH
                                   addTreeToHashSet, getTreeSize, hashSetDataFromLine,
                                   hashSetFromList, headerP, linesP, readHashList,
                                   readLastHashLineAndFooter, readOrBuildTree, readTreeLines, s2note,
-                                  sumNodes, toSortedList, writeHashList)
+                                  treeNNodes, toSortedList, writeHashList)
 import System.Directory.BigTrees.HashSet (emptyHashSet)
 import qualified System.Directory.OsPath as SDO
 import System.IO (IOMode (..), withFile)

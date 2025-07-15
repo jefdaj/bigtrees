@@ -17,7 +17,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
                                            TreeType (..), sepChar)
 import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList, readHashList,
                                           setContainsHash)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sumNodes, treeHash,
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), treeNNodes, treeHash,
                                                 treeModTime, treeNBytes, treeName, treeType, treeName)
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
@@ -106,8 +106,8 @@ findKeepNode cfg mLog eSet d t = do
     , maybe True (d <=) $ maxDepth cfg
     , maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
-    , maybe True (sumNodes    t >=) $ minFiles cfg
-    , maybe True (sumNodes    t <=) $ maxFiles cfg
+    , maybe True (treeNNodes  t >=) $ minFiles cfg
+    , maybe True (treeNNodes  t <=) $ maxFiles cfg
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg -- no need to save Dirs this time
@@ -167,7 +167,7 @@ allFmtFns =
   , ('d', \(Depth i) _ _ -> B8.pack $ show i)
   , ('m', \_ _ t -> B8.pack $ show $ (\(ModTime n) -> n) $ modTime $ nodeData t)
   , ('b', \_ _ t -> B8.pack $ show $ (\(NBytes n ) -> n) $ nBytes $ nodeData t)
-  , ('f', \_ _ t -> B8.pack $ show $ (\(NNodes n ) -> n) $ sumNodes t) -- f for "files"
+  , ('f', \_ _ t -> B8.pack $ show $ (\(NNodes n ) -> n) $ treeNNodes t) -- f for "files"
   , ('l', \_ mLabel _ -> case mLabel of
                        Nothing    -> error "no search label given, but it was specified in out-fmt"
                        Just label -> B8.pack label) -- TODO any sanitizing needed?

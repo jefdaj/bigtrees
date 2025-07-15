@@ -47,12 +47,11 @@ duplicateNames = if os == "darwin" then macDupes else unixDupes
                 == CI.mk (n2bs $ treeName b)
 
 -- TODO Integer? not sure how big it could get
--- TODO rename treeNNodes for consistency
-sumNodes :: HashTree a -> NNodes
-sumNodes (Err  {})        = NNodes 1 -- TODO is this right?
-sumNodes (File {})        = NNodes 1
-sumNodes (Link {})        = NNodes 1 -- TODO is this right?
-sumNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
+treeNNodes :: HashTree a -> NNodes
+treeNNodes (Err  {})        = NNodes 1 -- TODO is this right?
+treeNNodes (File {})        = NNodes 1
+treeNNodes (Link {})        = NNodes 1 -- TODO is this right?
+treeNNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 
 -- TODO is this needed, or will the fields be total?
 -- TODO size unit
@@ -227,7 +226,7 @@ prop_arbitraryContents_length_matches_nNodes :: Gen Bool
 prop_arbitraryContents_length_matches_nNodes =
   sized $ \arbsize -> do
     cs <- arbitraryContents arbsize
-    let (NNodes total) = sum $ map sumNodes cs
+    let (NNodes total) = sum $ map treeNNodes cs
         res = total == arbsize
     -- This verifies that it gets called with the full range of sizes:
     -- return $ traceShow ((size, sumFiles)) res
@@ -273,7 +272,7 @@ arbitraryDirSized arbsize = do
   -- TODO assert that nNodes == s here?
   return $ Dir
     { dirContents = cs
-    , nNodes = sum $ (NNodes 1) : map sumNodes cs
+    , nNodes = sum $ (NNodes 1) : map treeNNodes cs
     , nodeData = NodeData
       { name     = n
       , hash     = hashContents cs
@@ -314,7 +313,7 @@ instance Arbitrary TestTree where
       newNames = map (\n -> d { nodeData = nd { name = n } }) (shrink $ name nd)
       newContents = map (\cs -> d { dirContents = cs
                                   , nodeData = nd {hash = hashContents cs}
-                                  , nNodes = sum $ 1 : map sumNodes cs}) -- TODO factor out
+                                  , nNodes = sum $ 1 : map treeNNodes cs}) -- TODO factor out
                         (shrink $ dirContents d)
 
 -- TODO rename the actual function file -> fileData to match future dirData

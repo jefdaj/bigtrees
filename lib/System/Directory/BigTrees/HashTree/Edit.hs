@@ -11,7 +11,7 @@ import Data.Function (on)
 import Data.List (delete, find, sortBy)
 import System.Directory.BigTrees.HashLine (NBytes (..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), hashContents,
-                                                sumNodes, treeModTime, treeNBytes, treeName)
+                                                treeNNodes, treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Name (Name, fp2n)
@@ -28,7 +28,7 @@ import System.OsPath (OsPath, joinPath, splitPath)
 wrapInEmptyDir :: Name -> HashTree a -> HashTree a
 wrapInEmptyDir n t = Dir
   { dirContents = cs
-  , nNodes  = sumNodes t + 1
+  , nNodes  = treeNNodes t + 1
   , nodeData = NodeData
     { name     = n
     , hash     = h
@@ -63,7 +63,7 @@ addSubTree main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNodes = 
                filter
                  (\c -> treeName c /= n)
                  ((dirContents main) ++ [newSub])
-    n'     = sumNodes main + sumNodes newSub - maybe 0 sumNodes oldSub
+    n'     = treeNNodes main + treeNNodes newSub - maybe 0 treeNNodes oldSub
     s'     = treeNBytes main + treeNBytes newSub - (maybe 0 treeNBytes oldSub)
     mt'    = maximum $ map treeModTime [main, newSub]
     sub'   = sub { nodeData=(nodeData sub) {name = n}}
@@ -91,7 +91,7 @@ rmSubTree (File {}) ns = Left $ "no such subtree: " ++ show ns
 rmSubTree d@(Dir {dirContents=cs, nNodes=nn}) (n:ns) = case dropTo d ns of
   Nothing -> Left $ "no such subtree: " ++ show (n:ns)
   Just t -> Right $ if t `elem` cs
-    then d { dirContents = delete t cs, nNodes = nn - sumNodes t }
+    then d { dirContents = delete t cs, nNodes = nn - treeNNodes t }
     else d { dirContents = map (\c -> fromRight c $ rmSubTree c ns) cs
-           , nNodes = nn - sumNodes t
+           , nNodes = nn - treeNNodes t
            }
