@@ -44,7 +44,7 @@ import System.Directory.BigTrees.Hash (Hash)
 import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
-                                           ProdTree, treeType, treeHash, treeModTime, sumNodes, treeNBytes,
+                                           ProdTree, treeType, treeHash, treeModTime, treeNNodes, treeNBytes,
                                            treeName, SearchConfig (..))
 import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), LogContext, logMaybeUnsafe)
 import System.IO (Handle, IOMode (..))
@@ -68,8 +68,6 @@ import Data.Maybe (isNothing)
 type DupeSet  = (Int, TreeType, S.HashSet OsPath)
 type DupeList = (Int, TreeType, [OsPath])
 
--- TODO remove DupeMap type?
--- type DupeMap     = M.HashMap Hash DupeSet
 type DupeMap s = C.HashTable s Hash DupeSet
 
 -- TODO newtypes?
@@ -81,18 +79,27 @@ type SortedDupeLists = [DupeList]
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches -> HashTree a -> ST s (DupeMap s)
+pathsByHash
+  :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches
+  -> HashTree a -> ST s (DupeMap s)
 pathsByHash cfg mLog mrSet cle tree = do
-  ht <- H.newSized 1 -- TODO size from top node of tree or from reference hashset
-  addTreeToDupeMap cfg mLog mrSet cle ht tree
+  let (NNodes n) = treeNNodes tree
+      -- info msg = logMaybeUnsafe mLog InfoL "pathsByHash" msg $ return ()
+  -- TODO is it more wasteful to allocate it too large like this, or to expand it?
+  dm <- H.newSized n
+  -- info $ "adding " <> B8.pack (show n) <> " nodes to hashmap" -- TODO inside addTreeToDupeMap?
+  addTreeToDupeMap cfg mLog mrSet cle dm tree
   -- TODO try putting it back and compare overall speed
-  -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
-  return ht
+  -- H.mapM_ (\(k,_) -> H.mutate dm k removeNonDupes) dm
+  return dm
 
 -- inserts all nodes from a tree into an existing dupemap
 -- TODO The empty string (mempty) behaves right, right? (disappears)
-addTreeToDupeMap :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches -> DupeMap s -> HashTree a -> ST s ()
-addTreeToDupeMap cfg mLog mrSet cle dt = addTreeToDupeMap' cfg mLog mrSet cle dt mempty (Depth 0)
+addTreeToDupeMap
+  :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches
+  -> DupeMap s -> HashTree a -> ST s ()
+addTreeToDupeMap    cfg mLog mrSet cle dt =
+  addTreeToDupeMap' cfg mLog mrSet cle dt mempty (Depth 0)
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
@@ -107,7 +114,8 @@ addTreeToDupeMap'
   -> HashTree a
   -> ST s ()
 
-addTreeToDupeMap' _ _ _ _ dt dir _ (Err {}) = return () -- TODO anything better to do with Errs?
+-- TODO log errors here?
+addTreeToDupeMap' _ _ _ _ dt dir _ (Err {}) = return ()
 
 -- Links can be "good" or "broken" based on whether their content should be in
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
@@ -133,16 +141,16 @@ addTreeToDupeMap'
     when keepNode $ do
       insertDupeSet cfg dt h (fs, D, S.singleton $ dir </> n)
       -- TODO is there any situation where we want to NOT keep the current node, but still recurse?
-      when recurse  $ mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dt (dir </> n) (depth+1)) cs
+      when recurse $ mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dt (dir </> n) (depth+1)) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
 insertDupeSet :: SearchConfig -> DupeMap s -> Hash -> DupeSet -> ST s ()
-insertDupeSet cfg ht h d2 = do
-  existing <- H.lookup ht h
+insertDupeSet cfg dm h d2 = do
+  existing <- H.lookup dm h
   case existing of
-    Nothing -> H.insert ht h d2
-    Just d1 -> H.insert ht h $ mergeDupeSets d1 d2
+    Nothing -> H.insert dm h d2
+    Just d1 -> H.insert dm h $ mergeDupeSets d1 d2
 
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
 mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
@@ -156,9 +164,9 @@ type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 -- The negate here undoes the one in scoreSets below, leaving a positive score.
 -- TODO is that the cleanest way to do it, or should both negates be in this fn?
 dupesByNegScore :: Maybe LogFn -> ScoreFn -> DupeMap s -> ST s SortedDupeLists
-dupesByNegScore mLog scoreFn ht = do
+dupesByNegScore mLog scoreFn dm = do
   let debug = logMaybeUnsafe mLog DebugL "dupesByNegScore"
-  sets <- debug "scoring sets" <$> scoreSets scoreFn ht -- TODO separate scoring for ref set than within same tree
+  sets <- debug "scoring sets" <$> scoreSets scoreFn dm -- TODO separate scoring for ref set than within same tree
   let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par sets :: DupeSetVec
       sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute unsorted :: DupeSetVec
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList sorted
@@ -424,8 +432,8 @@ dupesKeepNode cfg mLog mrSet cle ns t = do
   return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
-    , maybe True (sumNodes    t >=) $ minFiles cfg
-    , maybe True (sumNodes    t <=) $ maxFiles cfg
+    , maybe True (treeNNodes  t >=) $ minFiles cfg
+    , maybe True (treeNNodes  t <=) $ maxFiles cfg
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
@@ -440,7 +448,7 @@ dupesRecurseChildren :: SearchConfig -> Depth -> HashTree a -> Bool
 dupesRecurseChildren cfg d t = and
   [ maybe True (d <) $ maxDepth cfg
   , maybe True (treeNBytes  t > ) $ minBytes cfg
-  , maybe True (sumNodes    t > ) $ minFiles cfg
+  , maybe True (treeNNodes    t > ) $ minFiles cfg
   , maybe True (treeModTime t >=) $ minModtime cfg
   ]
 

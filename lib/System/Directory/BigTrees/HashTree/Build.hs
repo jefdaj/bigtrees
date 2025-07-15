@@ -23,7 +23,7 @@ import System.Directory.BigTrees.Hash (hashFile, hashFromAnnexPath, hashSymlinkL
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..), NBytes (..),
                                            simplifyErrMsg)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
-                                                hashContents, sortContentsByName, sumNodes,
+                                                hashContents, sortContentsByName, treeNNodes,
                                                 treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name
@@ -283,7 +283,7 @@ buildTree' cfg readFileFn mLog depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
 
   return $ Dir
             { dirContents = subTrees
-            , nNodes  = sum $ 1 : map sumNodes subTrees
+            , nNodes  = sum $ 1 : map treeNNodes subTrees
             , nodeData = NodeData
               { name     = Name n
               , modTime  = maximum $ mt : map treeModTime subTrees

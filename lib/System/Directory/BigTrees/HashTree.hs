@@ -33,7 +33,7 @@ module System.Directory.BigTrees.HashTree
   , treeModTime
   , treeType
   , readLastHashLineAndFooter
-  , sumNodes
+  , treeNNodes
   , treeEqIgnoringModTime
 
   -- for testing
@@ -74,7 +74,7 @@ import qualified Data.Knob as K
 import Data.List (isInfixOf)
 import System.Directory.BigTrees.Logging (LogFn)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
-                                                dropFileData, isErr, renameRoot, sumNodes,
+                                                dropFileData, isErr, renameRoot, treeNNodes,
                                                 treeEqIgnoringModTime, treeHash, treeModTime,
                                                 treeNBytes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)

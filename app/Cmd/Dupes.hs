@@ -73,7 +73,6 @@ cmdDupes cfg mLog path = bracket open close write
                 initB = B8.pack $ show init
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
-	    -- debugST $ "adding " <> initB <> " tree nodes to DupeMap"
             BT.addTreeToDupeMap (searchCfg cfg) mLog mrSet cle ht tree
 	    -- debugST $ "added all " <> initB <> " tree nodes to DupeMap"
 	    if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"

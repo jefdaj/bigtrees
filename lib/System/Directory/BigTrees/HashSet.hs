@@ -80,7 +80,7 @@ import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, joinCols,
                                            nfilesP, sizeP)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
-                                                TestTree (..), sumNodes, treeHash, treeNBytes,
+                                                TestTree (..), treeNNodes, treeHash, treeNBytes,
                                                 treeName)
 import System.Directory.BigTrees.Name (Name (..), bs2op)
 import qualified System.File.OsPath as SFO
@@ -138,7 +138,7 @@ emptyHashSet = H.newSized
 -- TODO can this be done with other hashtrees generically, or have to drop data first?
 hashSetFromTree :: ProdTree -> ST s (HashSet s)
 hashSetFromTree t = do
-  -- let (NNodes n) = 1000 -- sumNodes t -- TODO leak here? would force evaluation
+  -- let (NNodes n) = 1000 -- treeNNodes t -- TODO leak here? would force evaluation
   h <- H.newSized 1000
   addTreeToHashSet Nothing h t
   return h
@@ -167,7 +167,7 @@ setDataFromNode mn tree =
   in SetData
        { sdNote  = fromMaybe (Note n) mn
        , sdBytes = treeNBytes tree
-       , sdNodes = sumNodes tree
+       , sdNodes = treeNNodes tree
        }
 
 -- inserts one node into an existing dupemap in ST s,
