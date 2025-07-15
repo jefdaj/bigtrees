@@ -5,8 +5,8 @@ import           Hakyll
 
 config :: Configuration
 config = defaultConfiguration
-  { destinationDirectory = ".."
-  , providerDirectory = "."
+  { destinationDirectory = "docs" -- TODO is it too unsafe to have this contain src?
+  , providerDirectory = "docs/src"
   , storeDirectory = ".hakyll-cache"
   , inMemoryCache = True
   }
