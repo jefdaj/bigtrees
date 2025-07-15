@@ -60,6 +60,7 @@ import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), 
 
 import System.Directory.BigTrees.HashTree.Find (findLabelNode)
 import Data.Maybe (isNothing)
+import Data.STRef (STRef(..), newSTRef, readSTRef, writeSTRef)
 
 -- TODO be able to serialize dupemaps for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -91,6 +92,15 @@ newtype AddTreeProgress = AddTreeProgress Int
 
 ------------------------------- create dupemaps -------------------------------
 
+-- TODO unify with incLogProgressST in Logging
+incAddTreeProgress :: Maybe LogFn -> STRef s AddTreeProgress -> ST s ()
+incAddTreeProgress mLog progressRef = do
+  n <- readSTRef progressRef
+  let n' = n + 1
+      msg = "added " <> B8.pack (show n') <> " nodes to dupemap"
+  logMaybeUnsafe mLog InfoL "addTreeToDupeMap" msg $
+    writeSTRef progressRef n'
+
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
 pathsByHash
@@ -112,8 +122,9 @@ pathsByHash cfg mLog mrSet cle tree = do
 addTreeToDupeMap
   :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches
   -> DupeMap s -> HashTree a -> ST s ()
-addTreeToDupeMap    cfg mLog mrSet cle dm =
-  addTreeToDupeMap' cfg mLog mrSet cle dm mempty (Depth 0) (AddTreeProgress 0)
+addTreeToDupeMap cfg mLog mrSet cle dm t = do
+  pRef <- newSTRef $ AddTreeProgress 0
+  addTreeToDupeMap' cfg mLog mrSet cle dm mempty (Depth 0) pRef t
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
@@ -125,7 +136,7 @@ addTreeToDupeMap'
   -> DupeMap s
   -> OsPath
   -> Depth
-  -> AddTreeProgress
+  -> STRef s AddTreeProgress
   -> HashTree a
   -> ST s ()
 
@@ -161,7 +172,7 @@ addTreeToDupeMap'
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
-insertDupeSet :: SearchConfig -> DupeMap s -> Hash -> DupeSet -> AddTreeProgress -> ST s ()
+insertDupeSet :: SearchConfig -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
 insertDupeSet cfg dm h d2 _ = do
   existing <- H.lookup dm h
   case existing of
