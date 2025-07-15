@@ -45,14 +45,8 @@ cmdDupes :: AppConfig -> Maybe BT.LogFn -> OsPath -> IO ()
 cmdDupes cfg mLog path = bracket open close write
   where
 
-    debug :: B8.ByteString -> IO ()
-    debug msg = case mLog of
-      Nothing  -> return ()
-      Just log -> log BT.DebugL "cmdDupes" msg
-
-    -- TODO would unsafeInterleaveIO help here?
-    debugST :: B8.ByteString -> ST s B8.ByteString
-    debugST msg = unsafePerformIO (debug msg) `seq` return msg
+    debug = BT.logMaybe mLog BT.DebugL "cmdDupes"
+    debugST msg = BT.logMaybeUnsafe mLog BT.DebugL "cmdDupes" msg (return ())
 
     open = case outFile cfg of
              Nothing -> return stdout
