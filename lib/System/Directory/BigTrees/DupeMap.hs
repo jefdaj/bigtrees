@@ -31,6 +31,7 @@ module System.Directory.BigTrees.DupeMap
   )
   where
 
+import Control.DeepSeq (deepseq)
 import Control.Monad.ST (ST)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
@@ -96,10 +97,15 @@ newtype AddTreeProgress = AddTreeProgress Int
 incAddTreeProgress :: Maybe LogFn -> STRef s AddTreeProgress -> ST s ()
 incAddTreeProgress mLog progressRef = do
   n <- readSTRef progressRef
-  let n' = n + 1
-      msg = "added " <> B8.pack (show n') <> " nodes to dupemap"
-  logMaybeUnsafe mLog InfoL "addTreeToDupeMap" msg $
-    writeSTRef progressRef n'
+  let n'@(AddTreeProgress nNodes) = n + 1
+      msg = "added " <> B8.pack (show nNodes) <> " nodes"
+      action = writeSTRef progressRef n'
+  -- log only every 1000 nodes
+  -- TODO make this configurable or auto-adjust?
+  if nNodes `mod` 1000 == 0
+     then logMaybeUnsafe mLog InfoL "addTreeToDupeMap" msg action
+     else action
+    
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
@@ -147,37 +153,38 @@ addTreeToDupeMap' _ _ _ _ dm dir _ _ (Err {}) = return ()
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg mLog mrSet cle dm dir _ tp l@(Link {}) = do
+addTreeToDupeMap' cfg mLog mrSet cle dm dir _ pr l@(Link {}) = do
   keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) l
   when keepNode $
-    insertDupeSet cfg dm (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l)) tp
+    insertDupeSet cfg mLog dm (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l)) pr
 
 addTreeToDupeMap'
-  cfg mLog mrSet cle dm dir _ tp
+  cfg mLog mrSet cle dm dir _ pr
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
     keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) f
     when keepNode $
-      insertDupeSet cfg dm h (1, F, S.singleton $ dir </> n) tp
+      insertDupeSet cfg mLog dm h (1, F, S.singleton $ dir </> n) pr
 
 addTreeToDupeMap'
-  cfg mLog mrSet cle dm dir depth tp
+  cfg mLog mrSet cle dm dir depth pr
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
     keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) d
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ do
-      insertDupeSet cfg dm h (fs, D, S.singleton $ dir </> n) tp
+      insertDupeSet cfg mLog dm h (fs, D, S.singleton $ dir </> n) pr
       -- TODO is there any situation where we want to NOT keep the current node, but still recurse?
       when recurse $
-        mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dm (dir </> n) (depth+1) tp) cs
+        mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dm (dir </> n) (depth+1) pr) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
-insertDupeSet :: SearchConfig -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
-insertDupeSet cfg dm h d2 _ = do
+insertDupeSet :: SearchConfig -> Maybe LogFn -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
+insertDupeSet cfg mLog dm h d2 pRef = do
   existing <- H.lookup dm h
   case existing of
     Nothing -> H.insert dm h d2
     Just d1 -> H.insert dm h $ mergeDupeSets d1 d2
+  incAddTreeProgress mLog pRef
 
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
 mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
@@ -194,11 +201,12 @@ dupesByNegScore :: Maybe LogFn -> ScoreFn -> DupeMap s -> ST s SortedDupeLists
 dupesByNegScore mLog scoreFn dm = do
   let debug = logMaybeUnsafe mLog DebugL "dupesByNegScore"
   sets <- debug "scoring sets" <$> scoreSets scoreFn dm -- TODO separate scoring for ref set than within same tree
-  let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par sets :: DupeSetVec
-      sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute unsorted :: DupeSetVec
-      sortedL  = debug "converting DupeSetVec back to list" $ A.toList sorted
+  let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par $ deepseq sets sets :: DupeSetVec
+      sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute $ deepseq unsorted unsorted :: DupeSetVec
+      sortedL  = debug "converting DupeSetVec back to list" $ A.toList $ deepseq sorted sorted
       fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
-      simple = debug "simplifying dupes" $ simplifyDupes 1 mLog $ Prelude.map fixElem sortedL
+      fixed    = Prelude.map fixElem $ deepseq sortedL sortedL
+      simple = debug "simplifying dupes" $ simplifyDupes 1 mLog $ deepseq fixed fixed -- TODO helps?
   return simple
 
 {- Assumes a pre-sorted list of lists.
@@ -219,7 +227,7 @@ simplifyDupes i mLog (d@(_,D,fs):ds) =
   where
     ds' = filter (not . redundantSet) ds
     nSaved = length ds - length ds'
-    info = logMaybeUnsafe mLog InfoL "simplifyDupes"
+    info msg x = if nSaved > 0 then logMaybeUnsafe mLog InfoL "simplifyDupes" msg x else x
     redundantSet (_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
                        `L.isPrefixOf`
