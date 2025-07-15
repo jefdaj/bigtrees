@@ -75,17 +75,17 @@ cmdDupes cfg mLog path = bracket open close write
             mrSet <- if null rList
                        then return Nothing
                        else fmap Just $ BT.hashSetFromList rList
-            let size = maximum [length rList, 1000] -- TODO better defaults?
-                sizeB = B8.pack $ show size
-            debugST $ "creating DupeMap sized " <> B8.pack (show size)
-            ht <- H.newSized size
-	    -- debugST $ "adding " <> sizeB <> " tree nodes to DupeMap"
+            let init  = maximum [length mrSet, 1000] -- TODO better defaults?
+                initB = B8.pack $ show init
+            debugST $ "creating DupeMap sized " <> initB
+            ht <- H.newSized init
+	    -- debugST $ "adding " <> initB <> " tree nodes to DupeMap"
             BT.addTreeToDupeMap (searchCfg cfg) (verbose cfg) mrSet cle ht tree
-	    -- debugST $ "added all " <> sizeB <> " tree nodes to DupeMap"
+	    -- debugST $ "added all " <> initB <> " tree nodes to DupeMap"
 	    if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
-            res <- BT.dupesByNegScore scoreFn ht
-	    -- debugST $ "finished scoring " <> sizeB <> " DupeSets" -- TODO but is this time ordered?
+            res <- BT.dupesByNegScore mLog scoreFn ht
+	    -- debugST $ "finished scoring " <> initB <> " DupeSets" -- TODO but is this time ordered?
             return res
 
       -- TODO pull default from docopt instead of duplicating that here

@@ -6,8 +6,9 @@ module System.Directory.BigTrees.Logging
   , LogLevel (..)
   , LogContext
   , LogFn
-  , log
   , createLogger
+  , log
+  , logMaybeUnsafe
   )
   where
 
@@ -17,6 +18,7 @@ import System.Log.FastLogger
 import qualified Data.List as L
 import Data.Char (toUpper)
 import qualified Data.ByteString.Char8 as B8
+import System.IO.Unsafe (unsafePerformIO)
 
 -- TODO replace with better logging
 traceV :: Bool -> String -> b -> b
@@ -56,3 +58,8 @@ log logger level context msg = logger $ \ft -> toLogStr (msgWithContext ft) <> "
       , toLogStr context
       , toLogStr msg
       ]
+
+logMaybeUnsafe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> a -> a
+logMaybeUnsafe mLog level context msg rtn = case mLog of
+  Nothing -> rtn
+  Just fn -> unsafePerformIO (fn level context msg) `seq` rtn
