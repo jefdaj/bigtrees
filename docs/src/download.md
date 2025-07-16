@@ -15,8 +15,8 @@ give it e<b>x</b>ecute permission, and move it somewhere on your `PATH`.
 For example:
 
 ```.sh
-chmod +x ~/Downloads/bigtrees
-mv ~/Downloads/bigtrees ~/.local/bin/
+chmod +x ~/Downloads/bigtrees-x86_64-linux
+mv ~/Downloads/bigtrees-x86_64-linux ~/.local/bin/bigtrees
 which bigtrees
 ```
 
