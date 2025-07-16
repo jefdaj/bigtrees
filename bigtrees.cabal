@@ -197,6 +197,7 @@ executable bigtrees-docs-site
     , directory
     , directory-tree
     , docopt
+    , fast-logger
     , file-io
     , filepath
     , filepath-bytestring

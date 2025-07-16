@@ -40,7 +40,8 @@ ldd result/bin/bigtrees # should say "not a dynamic executable"
 
 ```.sh
 # update the website
-stack run docs-site build
+stack build --flag bigtrees:build-docs-site
+stack exec bigtrees-docs-site build
 ```
 
 ``` .sh
