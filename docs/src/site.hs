@@ -28,36 +28,36 @@ main = hakyllWith config $ do
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
-    match "usecases/*" $ do
+    match "examples/*" $ do
         route $ setExtension "html"
         compile $ pandocCompiler
-            >>= loadAndApplyTemplate "templates/usecase.html" usecaseCtx
-            >>= loadAndApplyTemplate "templates/default.html" usecaseCtx
+            >>= loadAndApplyTemplate "templates/example.html" exampleCtx
+            >>= loadAndApplyTemplate "templates/default.html" exampleCtx
             >>= relativizeUrls
 
-    create ["usecases.html"] $ do
+    create ["examples.html"] $ do
         route idRoute
         compile $ do
-            usecases <- fmap reverse . recentFirst =<< loadAll "usecases/*"
-            let usecasesCtx =
-                    listField "usecases" usecaseCtx (return usecases) `mappend`
-                    constField "title" "Use Cases" `mappend`
+            examples <- fmap reverse . recentFirst =<< loadAll "examples/*"
+            let examplesCtx =
+                    listField "examples" exampleCtx (return examples) `mappend`
+                    constField "title" "Examples" `mappend`
                     defaultContext
 
             makeItem ""
-                >>= loadAndApplyTemplate "templates/usecases.html" usecasesCtx
-                >>= loadAndApplyTemplate "templates/default.html" usecasesCtx
+                >>= loadAndApplyTemplate "templates/examples.html" examplesCtx
+                >>= loadAndApplyTemplate "templates/default.html" examplesCtx
                 >>= relativizeUrls
 
 
     match "index.html" $ do
-	-- TODO replace usecases here with a short pitch + pretty picture?
+	-- TODO replace examples here with a short pitch + pretty picture?
 	-- TODO or maybe one basic asciinema demo that autoplays
         route idRoute
         compile $ do
-            -- usecases <- fmap (take 3 .reverse) . recentFirst =<< loadAll "usecases/*"
+            -- examples <- fmap (take 3 .reverse) . recentFirst =<< loadAll "examples/*"
             let indexCtx =
-                    -- listField "usecases" usecaseCtx (return usecases) `mappend`
+                    -- listField "examples" exampleCtx (return examples) `mappend`
                     constField "title" ""                `mappend`
                     defaultContext
 
@@ -70,8 +70,8 @@ main = hakyllWith config $ do
 
 
 --------------------------------------------------------------------------------
-usecaseCtx :: Context String
-usecaseCtx =
+exampleCtx :: Context String
+exampleCtx =
     dateField "date" "%B %e, %Y" `mappend`
     defaultContext
 
