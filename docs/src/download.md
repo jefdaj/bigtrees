@@ -22,4 +22,4 @@ which bigtrees
 
 You can `echo $PATH` to see the options first,
 and use `bigtrees version` after to check that you got it working.
-If so, you should be good to try any of the [examples](/examples.html).
+If so, you should be good to try any of the [examples](/usecases.html).

@@ -155,8 +155,8 @@ div.info {
 
     div#content {
         margin-top: 3.5em;
-	margin-left: 10px;
-	margin-right: 10px;
+        margin-left: 10px;
+        margin-right: 10px;
         padding-left: 0;
         padding-right: 0;
     }
@@ -184,7 +184,8 @@ div.info {
     */
 
     p > code, .sourceCode {
-            font-size: 10pt;
+        font-size: 10pt;
+        line-height: 1.2em;
     }
 
 }
