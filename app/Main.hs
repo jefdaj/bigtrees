@@ -18,7 +18,7 @@ import Data.Functor ((<&>))
 import Prelude hiding (log)
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
-                                  TreeType (..), LogLevel(..), LogContext, log, createLogger)
+                                  TreeType (..), LogLevel(..), LogContext, log, createStderrLogger)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
@@ -42,8 +42,7 @@ main = do
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
 
   -- TODO withTimedLogger rather than manual cleanup at the end?
-  let logPath = "bigtrees.log"
-  (logger, cleanupLogger) <- createLogger logPath
+  (logger, cleanupLogger) <- createStderrLogger
   let info  = log logger InfoL  "main"
       debug = log logger DebugL "main"
 

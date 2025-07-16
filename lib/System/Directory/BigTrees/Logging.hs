@@ -6,7 +6,7 @@ module System.Directory.BigTrees.Logging
   , LogLevel (..)
   , LogContext
   , LogFn
-  , createLogger
+  , createStderrLogger
   , log
   , logMaybe
   , logMaybeUnsafe
@@ -42,14 +42,15 @@ data LogLevel = DebugL | InfoL | WarningL | ErrorL
 instance ToLogStr LogLevel where
   toLogStr = toLogStr . map toUpper . init . show
 
-createLogger :: FilePath -> IO (TimedFastLogger, IO ())
-createLogger logFilePath = do
+createStderrLogger :: IO (TimedFastLogger, IO ())
+createStderrLogger = do
   -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
   -- ignores them. Maybe that's good for efficiency?
   -- TODO can we at least get milliseconds?
   -- TODO if not, consider newTimedFastLogger1 to force sequential ordering
   timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
-  newTimedFastLogger timeCache (LogFileNoRotate logFilePath defaultBufSize)
+  -- newTimedFastLogger timeCache (LogFileNoRotate logFilePath defaultBufSize)
+  newTimedFastLogger timeCache (LogStderr defaultBufSize)
 
 -- log :: ToLogStr a => TimedFastLogger -> LogFn a
 log :: TimedFastLogger -> LogFn
