@@ -15,10 +15,9 @@ import Cmd.SetAdd (cmdSetAdd)
 import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
                parseLabeledSearches)
 import Data.Functor ((<&>))
-import Prelude hiding (log)
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
-                                  TreeType (..), LogLevel(..), LogContext, log, createStderrLogger)
+                                  TreeType (..), LogLevel(..), LogContext, logMaybe, createStderrLogger)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
@@ -41,16 +40,7 @@ main = do
   setEnv "LANG" "en_US.UTF-8"
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
 
-  -- TODO withTimedLogger rather than manual cleanup at the end?
-  (logger, cleanupLogger) <- createStderrLogger
-  let info  = log logger InfoL  "main"
-      debug = log logger DebugL "main"
-
-  debug $ B8.pack $ "bigtrees version " ++ showVersion version
-
-  debug $ "parsing usage patterns"
   let ptns = [D.docoptFile|app/usage.txt|]
-  debug $ "parsing cli args"
   args <- D.parseArgsOrExit ptns =<< getArgs
 
   let cmd     n = D.isPresent  args $ D.command n
@@ -62,14 +52,10 @@ main = do
       optLongs n = D.getAllArgs args $ D.longOption n
       optRead  n = read <$> optLong n
 
-  -- can't use log here because cfg hasn't been parsed yet
-  -- when (flag "verbose") $ pPrint args
-
   -- TODO should the main command determine which config field this goes in?
   herList <- case optLong "hash-exclude-regexes-from" of
                Nothing -> return $ hashExcludeRegexes defaultSearchConfig
                Just f  -> readFile f <&> lines -- TODO more detailed parsing?
-  -- logS "herList" herList
 
   desList <- case optLong "dupes-exclude-searches" of
 
@@ -80,7 +66,6 @@ main = do
                case parsed of
                  Left  msg -> error $ show msg -- parse failure
                  Right lrs -> return lrs
-  -- logS "desList" desList
 
   sList <- case optLong "searches-json" of
 
@@ -105,7 +90,6 @@ main = do
 
                -- no search file given; use default (empty) search list
                Nothing -> return $ searches defaultSearchConfig
-  -- logS "sList" sList
 
   oPath <- case optLong "output" of
              Nothing -> return Nothing
@@ -134,12 +118,12 @@ main = do
           }
         }
 
-  -- logS "cfg" cfg
+  (logger, cleanupLogger) <- createStderrLogger
+  let mLog  = if (verbose cfg) then Just logger else Nothing
+      info  = logMaybe mLog InfoL  "main"
+      debug = logMaybe mLog DebugL "main"
 
-  -- Pass LogFn to the rest of the program, wrapped in Maybe to allow it to be
-  -- disabled for tests or other contexts where someone doesn't want to bother
-  -- with my logging system.
-  let mLog = Just $ log logger
+  debug $ B8.pack $ "bigtrees version " ++ showVersion version
 
   if cmd "diff" then do
     debug "running diff command"

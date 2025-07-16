@@ -42,12 +42,13 @@ data LogLevel = DebugL | InfoL | WarningL | ErrorL
 instance ToLogStr LogLevel where
   toLogStr = toLogStr . map toUpper . init . show
 
-createStderrLogger :: IO (TimedFastLogger, IO ())
+createStderrLogger :: IO (LogFn, IO ())
 createStderrLogger = do
   -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
   -- ignores them. Maybe that's good for efficiency?
   timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
-  newTimedFastLogger timeCache (LogStderr defaultBufSize)
+  (logger, cleanupLogger) <- newTimedFastLogger timeCache (LogStderr defaultBufSize)
+  return (log logger, cleanupLogger)
 
 -- log :: ToLogStr a => TimedFastLogger -> LogFn a
 log :: TimedFastLogger -> LogFn
