@@ -13,9 +13,10 @@ import System.Directory.BigTrees.HashTree (HashTree (..), readLastHashLineAndFoo
 import System.Directory.BigTrees.HeadFoot (Footer, Header (..), readHeader, scanSeconds)
 -- import qualified Data.ByteString.Short as BS
 import System.OsPath (OsPath, encodeFS)
+import System.Directory.BigTrees.Logging (LogFn)
 
-cmdInfo :: AppConfig -> OsPath -> IO ()
-cmdInfo cfg path = do
+cmdInfo :: AppConfig -> Maybe LogFn -> OsPath -> IO ()
+cmdInfo cfg mLog path = do
   mH  <- readHeader path
   mLF <- readLastHashLineAndFooter path
   case (mH, mLF) of

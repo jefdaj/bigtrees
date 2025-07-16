@@ -125,7 +125,12 @@ main = do
 
   debug $ B8.pack $ "bigtrees version " ++ showVersion version
 
-  if cmd "diff" then do
+  if cmd "info" then do
+    debug "running info command"
+    path <- reqPathArg "PATH"
+    cmdInfo cfg mLog path
+
+  else if cmd "diff" then do
     debug "running diff command"
     old <- reqPathArg "OLD"
     new <- reqPathArg "NEW"
@@ -152,12 +157,6 @@ main = do
     debug "running hash command"
     path <- reqPathArg "PATH"
     cmdHash cfg mLog path
-
-  else if cmd "debug" then do
-    -- TODO remove this command?
-    debug "running debug command"
-    path <- reqPathArg "PATH"
-    cmdInfo cfg path
 
   else if cmd "version" then do
     debug "running version command"
