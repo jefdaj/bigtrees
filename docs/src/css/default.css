@@ -132,12 +132,16 @@ div.info {
         top: 0;
         display: inline-block;
         width: 100%;
-        height: auto;
-        text-align: center;
+        height: 3em;
+        text-align: left;
+        overflow: hidden;
     }
 
     div#nav ul {
         margin: 0;
+        float: left;
+        text-align: left;
+        max-width: 60%;
         margin-left: 1em;
         margin-right: 1em;
     }
@@ -161,7 +165,19 @@ div.info {
         padding-right: 0;
     }
 
-    div#logo a {
+    #logo {
+        float: right;
+        padding: 0;
+        margin: 0;
+        line-height: 0;
+        position: relative;
+        max-width: 30%;
+        overflow: hidden;
+        top: -70%;
+        left: -10px;
+    }
+
+    div#nav a {
         color: black;
         float: left;
         font-size: 18px;
@@ -169,8 +185,7 @@ div.info {
         text-decoration: none;
     }
 
-    #logo {
-        display: none;
+    div#nav ul {
     }
 
     /*
