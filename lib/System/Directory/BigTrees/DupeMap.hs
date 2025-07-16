@@ -19,7 +19,7 @@ module System.Directory.BigTrees.DupeMap
   , addTreeToDupeMap
   , dupesByNegScore
   , renderDupesSuggestions
-  , renderDupesRsyncExclude
+  , renderDupesRsyncFilter
   , hWriteDupes
   , insertDupeSet
   , mergeDupeSets
@@ -383,8 +383,8 @@ escapeRsyncExcludeFromPath2 path = if wildcardMode then escaped else path
       | otherwise  = [c]
 
 
-renderDupesRsyncExclude :: ExplainFn
-renderDupesRsyncExclude keepOne md ls = do
+renderDupesRsyncFilter :: ExplainFn
+renderDupesRsyncFilter keepOne md ls = do
   body <- mapM groupDupes ls
   return $ B8.unlines $ fileHeader : body
   where

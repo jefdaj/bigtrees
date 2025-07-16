@@ -38,7 +38,7 @@ import System.IO.Unsafe (unsafePerformIO)
 dupesRenderFunctions :: [(String, BT.ExplainFn)]
 dupesRenderFunctions =
   [ ("suggestions", BT.renderDupesSuggestions)
-  , ("rsync-exclude-file", BT.renderDupesRsyncExclude)
+  , ("rsync-filter-file", BT.renderDupesRsyncFilter)
   ]
 
 cmdDupes :: AppConfig -> Maybe BT.LogFn -> OsPath -> IO ()

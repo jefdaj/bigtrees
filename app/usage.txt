@@ -36,7 +36,7 @@ Options:
                          TODO add regex search labels here
                          TODO caps should also work
 
-  --dupes-out-fmt FORMAT  Dupes output format. Options are "suggestions", "rsync-exclude-file". [default: suggestions]
+  --dupes-out-fmt FORMAT  Dupes output format. Options are "suggestions", "rsync-filter-file". [default: suggestions]
                           TODO write "rm-script"
 
   --search-regex REGEX   Single regular expression to test filtering.
