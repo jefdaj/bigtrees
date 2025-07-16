@@ -46,10 +46,7 @@ createStderrLogger :: IO (TimedFastLogger, IO ())
 createStderrLogger = do
   -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
   -- ignores them. Maybe that's good for efficiency?
-  -- TODO can we at least get milliseconds?
-  -- TODO if not, consider newTimedFastLogger1 to force sequential ordering
   timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
-  -- newTimedFastLogger timeCache (LogFileNoRotate logFilePath defaultBufSize)
   newTimedFastLogger timeCache (LogStderr defaultBufSize)
 
 -- log :: ToLogStr a => TimedFastLogger -> LogFn a
@@ -64,7 +61,6 @@ log logger level context msg = logger $ \ft -> toLogStr (msgWithContext ft) <> "
       , toLogStr msg
       ]
 
--- TODO does this work?
 logMaybe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> IO ()
 logMaybe mLog level context msg = case mLog of
   Nothing -> return ()
@@ -75,7 +71,7 @@ logMaybeUnsafe mLog level context msg rtn = case mLog of
   Nothing -> rtn
   Just fn -> unsafePerformIO (fn level context msg) `seq` rtn
 
--- TODO move to logging module?
+-- TODO remove, or unify with DupeMap.incAddTreeProgress
 incLogProgressST :: Maybe LogFn -> LogContext -> STRef s Int -> ST s ()
 incLogProgressST mLog ctx intRef = do
   n <- readSTRef intRef
