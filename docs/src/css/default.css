@@ -115,6 +115,7 @@ div.info {
     position: fixed;
     left: -38px;
     background: transparent;
+    max-width: 35%;
 }
 
 
@@ -130,7 +131,8 @@ div.info {
         position: fixed;
         left: 0;
         top: 0;
-        display: inline-block;
+        display: flex;
+        align-items: center;
         width: 100%;
         height: 3em;
         text-align: left;
@@ -142,7 +144,12 @@ div.info {
         float: left;
         text-align: left;
         width: 65%;
-        margin-left: 1em;
+        margin-left: 10px;
+        line-height: 1.1em;
+    }
+
+    div#nav a {
+        font-size: 14pt;
     }
 
     div#nav li {
@@ -172,14 +179,13 @@ div.info {
         position: relative;
         width: 25%;
         overflow: hidden;
-        top: -70%;
-        left: -10px;
+        top: calc(min(130%, 300px));
+        left: 10px;
     }
 
     div#nav a {
         color: black;
         float: left;
-        font-size: 18px;
         font-weight: bold;
         text-decoration: none;
     }
@@ -204,8 +210,26 @@ div.info {
 
 }
 
+@media (max-width: 600px) {
+    div#nav a {
+        font-size: 12pt;
+    }
+}
+
 /* hack to avoid dynamically taller header nav */
-@media (max-width: 500px) {
+@media (max-width: 450px) {
+
+    div#nav {
+        height: 2.5em;
+    }
+
+    div#nav ul {
+        line-height: .9em;
+    }
+
+    div#nav a {
+        font-size: 10pt;
+    }
 
     div#content {
         margin-top: 4.5em;
