@@ -155,6 +155,10 @@ div.info {
 
     div#content {
         margin-top: 3.5em;
+	margin-left: 10px;
+	margin-right: 10px;
+        padding-left: 0;
+        padding-right: 0;
     }
 
     div#logo a {
