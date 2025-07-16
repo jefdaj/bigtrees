@@ -177,13 +177,19 @@ addTreeToDupeMap'
         mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dm (dir </> n) (depth+1) pr) cs
 
 -- inserts one node into an existing dupemap
+-- TODO hide debugs here behind a higher verbosity level
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
 insertDupeSet :: SearchConfig -> Maybe LogFn -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
 insertDupeSet cfg mLog dm h d2 pRef = do
+  let debug = logMaybeUnsafe mLog DebugL "insertDupeSet"
   existing <- H.lookup dm h
   case existing of
-    Nothing -> H.insert dm h d2
-    Just d1 -> H.insert dm h $ mergeDupeSets d1 d2
+    Nothing ->
+      debug (B8.pack $ "create h: " ++ show h ++ " d2: " ++ show d2) $
+      H.insert dm h d2
+    Just d1 -> 
+      debug (B8.pack $ "insert h: " ++ show h ++ " d2: " ++ show d2 ++ " d1: " ++ show d1) $ H.insert dm h $
+      mergeDupeSets d1 d2
   incAddTreeProgress mLog pRef
 
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
