@@ -40,6 +40,7 @@ ldd result/bin/bigtrees # should say "not a dynamic executable"
 
 ```.sh
 # update the website
+# uncomment the bigtrees-doc-site target in package.yaml first
 stack build --flag bigtrees:build-docs-site
 stack exec bigtrees-docs-site build
 ```
