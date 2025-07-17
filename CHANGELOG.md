@@ -6,7 +6,6 @@
 
 ### Changed
 
-- Bumped .bigtree format version to reflect the breaking hash change.
 - Added hashes to dupes output comments for easier debugging.
 - Added custom comments for the hashes of empty dirs, files, links, etc in dupes output.
 - Added --verbose logging of dropped sets in `simplifyDupes`
@@ -21,10 +20,11 @@
 files, which seems risky. Fixed by prepending a letter for tree type (`D`, `L`,
 ...) to the content hashed in every case except `F` (file), so that files
 maintain their same hashes but the rest will change.
-- Made it an error to attempt to merge two dupesets with different N files or tree types.
 
 ### Changed
 
+- Made it an error to attempt to merge two dupesets with different N files or tree types.
+- Bumped .bigtree format version to reflect the breaking hash change.
 - Improved logging functions.
 - Added --verbose logging of all `insertDupeSet` calls.
 - Added `Hash`es to `DupeSet`s
