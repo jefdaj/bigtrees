@@ -67,7 +67,7 @@ logLine level context msg timestamp =
        , toLogStr msg
        ]
 
--- Crash the program, making sure to log the error properly first
+-- TODO see if passing the cleanup fn via config solves this not printing
 -- die :: Maybe LogFn -> LogContext -> B8.ByteString -> a
 -- die mLog context msg =
 --   case mLog of
@@ -77,6 +77,7 @@ logLine level context msg timestamp =
 --   where
 --     msg' = B8.unpack msg
 
+-- Crash the program, making sure to log the error properly first
 die :: Maybe LogFn -> LogContext -> B8.ByteString -> a
 die mLog context msg =
   let date  = B8.pack $ "XXXX-XX-XX XX:XX:XX" -- TODO how to get date here?

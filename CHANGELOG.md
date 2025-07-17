@@ -12,9 +12,11 @@ maintain their same hashes but the rest will change.
 
 ### Changed
 
+- Improved logging functions.
 - Bumped .bigtree format version to reflect the breaking hash change.
 - Added hashes to DupeSets and dupes output comments for easier debugging.
 - Added custom comments for the hashes of empty dirs, files, links, etc in dupes output.
 - Added --verbose logging of all `insertDupeSet` calls.
 - Added --verbose logging of dropped sets in `simplifyDupes`
 - Added a header with format version to .bigset files like the .bigtree ones.
+- Factored dupes render functions out of `DupeMap` into `Cmd.Dupes`
