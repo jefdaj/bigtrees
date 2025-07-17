@@ -179,7 +179,6 @@ addTreeToDupeMap'
         mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dm (dir </> n) (depth+1) pr) cs
 
 -- inserts one node into an existing dupemap
--- TODO hide debugs here behind a higher verbosity level
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
 insertDupeSet :: SearchConfig -> Maybe LogFn -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
 insertDupeSet cfg mLog dm h d2 pRef = do
@@ -189,11 +188,11 @@ insertDupeSet cfg mLog dm h d2 pRef = do
   existing <- H.lookup dm h
   case existing of
     Nothing ->
-      let msg = "create h: " <> showH <> " d2: " <> showD2
+      let msg = showH <> " init with " <> showD2
       in debug msg $ H.insert dm h d2
     Just d1@(_,_,ps) ->
       let n   = B8.pack $ show $ length ps
-          msg = "insert h: " <> showH <> " n so far: " <> n <> " d2: " <> showD2
+          msg = showH <> " size " <> n <> " add " <> showD2
       in debug msg $ H.insert dm h $ mergeDupeSets d1 d2
   incAddTreeProgress mLog pRef
 
@@ -232,7 +231,7 @@ simplifyDupes _ _ [ ] = [ ]
 simplifyDupes _ _ [d] = [d]
 
 simplifyDupes i mLog (d@(_,D,fs):ds) =
-  info ("removed " <> B8.pack (show nSaved) <>
+  info ("drop " <> B8.pack (show nSaved) <>
         " DupeSets redundant with set #" <> B8.pack (show i) <>
 	"; " <> B8.pack (show nRemain) <> " sets remain to process") $
   (d:) $ simplifyDupes (i+1) mLog $ ds'
