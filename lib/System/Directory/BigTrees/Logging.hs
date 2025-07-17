@@ -8,6 +8,7 @@ module System.Directory.BigTrees.Logging
   , LogFn
   , createStderrLogger
   , log
+  , die
   , logMaybe
   , logMaybeUnsafe
   , incLogProgressST
@@ -23,6 +24,8 @@ import qualified Data.ByteString.Char8 as B8
 import System.IO.Unsafe (unsafePerformIO)
 import Data.STRef (STRef(..), newSTRef, readSTRef, writeSTRef)
 import Control.Monad.ST.Strict (ST)
+import Control.DeepSeq (deepseq)
+import System.IO (stderr, hPutStrLn, hFlush)
 
 -- TODO replace with better logging
 traceV :: Bool -> String -> b -> b
@@ -52,19 +55,35 @@ createStderrLogger = do
 
 -- log :: ToLogStr a => TimedFastLogger -> LogFn a
 log :: TimedFastLogger -> LogFn
-log logger level context msg =
-  case level of
-    ErrorL -> log' `seq` error $ B8.unpack msg
-    _ -> log'
-  where
-    log' = logger $ \ft -> toLogStr (msgWithContext ft) <> "\n"
-    sep = toLogStr (" | " :: String)
-    msgWithContext timestamp = mconcat $ L.intersperse sep
-      [ toLogStr timestamp
-      , toLogStr level
-      , toLogStr context
-      , toLogStr msg
-      ]
+log logger level context msg = logger $ \ft -> toLogStr (logLine level context msg ft) <> "\n"
+
+logLine :: LogLevel -> LogContext -> B8.ByteString -> FormattedTime -> LogStr
+logLine level context msg timestamp =
+  let sep = toLogStr (" | " :: String)
+  in mconcat $ L.intersperse sep
+       [ toLogStr timestamp
+       , toLogStr level
+       , toLogStr context
+       , toLogStr msg
+       ]
+
+-- Crash the program, making sure to log the error properly first
+-- die :: Maybe LogFn -> LogContext -> B8.ByteString -> a
+-- die mLog context msg =
+--   case mLog of
+--     Nothing -> error msg'
+--     Just fn -> let msg'' = unsafePerformIO (fn ErrorL context msg >> hFlush stderr >> return msg')
+--                in error msg''
+--   where
+--     msg' = B8.unpack msg
+
+die :: Maybe LogFn -> LogContext -> B8.ByteString -> a
+die mLog context msg =
+  let line = logLine ErrorL context msg "date unknown" -- TODO possible to add date?
+      line' = B8.unpack $ fromLogStr line
+  in case mLog of
+       Nothing -> error $ show line
+       Just fn -> error $ unsafePerformIO $ hPutStrLn stderr line' >> hFlush stderr >> return line'
 
 logMaybe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> IO ()
 logMaybe mLog level context msg = case mLog of

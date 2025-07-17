@@ -134,6 +134,7 @@ module System.Directory.BigTrees
   , LogFn
   , createStderrLogger
   , log
+  , die
   , logMaybe
   , logMaybeUnsafe
   , incLogProgressST
@@ -177,4 +178,4 @@ import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumb
 
 import System.Directory.BigTrees.HeadFoot (headerP)
 
-import System.Directory.BigTrees.Logging (LogContext, LogLevel (..), LogFn, createStderrLogger, log, logMaybe, logMaybeUnsafe, incLogProgressST)
+import System.Directory.BigTrees.Logging (LogContext, LogLevel (..), LogFn, createStderrLogger, log, die, logMaybe, logMaybeUnsafe, incLogProgressST)

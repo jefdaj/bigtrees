@@ -49,7 +49,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
                                            ProdTree, treeType, treeHash, treeModTime, treeNNodes, treeNBytes,
                                            treeName, SearchConfig (..))
-import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), LogContext, logMaybeUnsafe)
+import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), LogContext, logMaybeUnsafe, die)
 import System.IO (Handle, IOMode (..))
 import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
@@ -193,19 +193,22 @@ insertDupeSet cfg mLog dm h d2 pRef = do
     Just d1@(_,_,_,ps) ->
       let n   = B8.pack $ show $ length ps
           msg = showH <> " size " <> n <> " add " <> showD2
-      in debug msg $ H.insert dm h $ mergeDupeSets d1 d2
+      in debug msg $ H.insert dm h $ mergeDupeSets mLog d1 d2
   incAddTreeProgress mLog pRef
 
 -- TODO is DupeSet a Monoid? or not, because there are some you can't merge?
-mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
-mergeDupeSets (n1, h1, t1, l1) (n2, h2, t2, l2) = (n1 + n2, h, t, S.union l1 l2)
+mergeDupeSets :: Maybe LogFn -> DupeSet -> DupeSet -> DupeSet
+mergeDupeSets mLog (n1, h1, t1, l1) d2@(n2, h2, t2, l2) = (n1 + n2, h, t, S.union l1 l2)
   where
-    h = if h1 == h2 then h1 else error $ "mergeDupeSets " ++ showH1 ++ " /= " ++ showH2
-    t = if t1 == t2 then t1 else error $ "mergeDupeSets " ++ show h ++ " " ++ showT1 ++ " /= " ++ showT2
-    showH1 = show $ unHash h1
-    showH2 = show $ unHash h2
-    showT1 = show t1
-    showT2 = show t2
+    die' = die mLog "mergeDupeSets"
+    h = if h1 == h2 then h1 else die' $ showH1 <> " /= " <> showH2
+    t = if t1 == t2 then t1 else die' $ showH <> " " <> showT1 <> " /= " <> showT2 <> " " <> showD2
+    showH1 = sbs2b8 $ unHash h1
+    showH2 = sbs2b8 $ unHash h2
+    showH  = sbs2b8 $ unHash h
+    showT1 = B8.pack $ show t1
+    showT2 = B8.pack $ show t2
+    showD2 = B8.pack $ show d2
 
 
 -------------------------- quicksort dupetables by score ----------------------
