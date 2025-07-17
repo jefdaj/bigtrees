@@ -71,8 +71,8 @@ import System.Directory.BigTrees.Util (sbs2b8)
 -- TODO is DupeSet a Monoid?
 -- TODO store paths as NamesFwd/NamesRev instead of OsPath?
 -- TODO newtypes here? or strict data?
-type DupeSet  = (Int, TreeType, S.HashSet OsPath)
-type DupeList = (Int, TreeType, [OsPath])
+type DupeSet  = (Int, Hash, TreeType, S.HashSet OsPath) -- TODO remove hash here?
+type DupeList = (Int, Hash, TreeType, [OsPath])
 
 type DupeMap s = C.HashTable s Hash DupeSet
 
@@ -155,17 +155,17 @@ addTreeToDupeMap' _ _ _ _ dm dir _ _ (Err {}) = return ()
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg mLog mrSet cle dm dir _ pr l@(Link {}) = do
+addTreeToDupeMap' cfg mLog mrSet cle dm dir _ pr l@(Link {nodeData=NodeData {hash=h}}) = do
   keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) l
   when keepNode $
-    insertDupeSet cfg mLog dm (treeHash l) (1, treeType l, S.singleton $ dir </> n2op (treeName l)) pr
+    insertDupeSet cfg mLog dm (treeHash l) (1, h, treeType l, S.singleton $ dir </> n2op (treeName l)) pr
 
 addTreeToDupeMap'
   cfg mLog mrSet cle dm dir _ pr
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
     keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) f
     when keepNode $
-      insertDupeSet cfg mLog dm h (1, F, S.singleton $ dir </> n) pr
+      insertDupeSet cfg mLog dm h (1, h, F, S.singleton $ dir </> n) pr
 
 addTreeToDupeMap'
   cfg mLog mrSet cle dm dir depth pr
@@ -173,7 +173,7 @@ addTreeToDupeMap'
     keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) d
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ do
-      insertDupeSet cfg mLog dm h (fs, D, S.singleton $ dir </> n) pr
+      insertDupeSet cfg mLog dm h (fs, h, D, S.singleton $ dir </> n) pr
       -- TODO is there any situation where we want to NOT keep the current node, but still recurse?
       when recurse $
         mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dm (dir </> n) (depth+1) pr) cs
@@ -190,15 +190,22 @@ insertDupeSet cfg mLog dm h d2 pRef = do
     Nothing ->
       let msg = showH <> " init with " <> showD2
       in debug msg $ H.insert dm h d2
-    Just d1@(_,_,ps) ->
+    Just d1@(_,_,_,ps) ->
       let n   = B8.pack $ show $ length ps
           msg = showH <> " size " <> n <> " add " <> showD2
       in debug msg $ H.insert dm h $ mergeDupeSets d1 d2
   incAddTreeProgress mLog pRef
 
--- TODO if DupeSet is a Monoid, should this be the implemention of <>?
+-- TODO is DupeSet a Monoid? or not, because there are some you can't merge?
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
-mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
+mergeDupeSets (n1, h1, t1, l1) (n2, h2, t2, l2) = (n1 + n2, h, t, S.union l1 l2)
+  where
+    h = if h1 == h2 then h1 else error $ "mergeDupeSets " ++ showH1 ++ " /= " ++ showH2
+    t = if t1 == t2 then t1 else error $ "mergeDupeSets " ++ show h ++ " " ++ showT1 ++ " /= " ++ showT2
+    showH1 = show $ unHash h1
+    showH2 = show $ unHash h2
+    showT1 = show t1
+    showT2 = show t2
 
 
 -------------------------- quicksort dupetables by score ----------------------
@@ -215,7 +222,7 @@ dupesByNegScore mLog scoreFn dm = do
   let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par $ deepseq sets sets :: DupeSetVec
       sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute $ deepseq unsorted unsorted :: DupeSetVec
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList $ deepseq sorted sorted
-      fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
+      fixElem (n, h, t, fs) = (negate n, h, t, L.sort $ S.toList fs) -- TODO n before h?
       fixed    = Prelude.map fixElem $ deepseq sortedL sortedL
       simple = debug "simplifying dupes" $ simplifyDupes 1 mLog $ deepseq fixed fixed -- TODO helps?
   return simple
@@ -231,23 +238,27 @@ simplifyDupes :: Int -> Maybe LogFn -> SortedDupeLists -> SortedDupeLists
 simplifyDupes _ _ [ ] = [ ]
 simplifyDupes _ _ [d] = [d]
 
-simplifyDupes i mLog (d@(_,D,fs):ds) =
-  info ("drop " <> B8.pack (show nSaved) <>
-        " DupeSets redundant with set #" <> B8.pack (show i) <>
-	"; " <> B8.pack (show nRemain) <> " sets remain to process") $
-  (d:) $ simplifyDupes (i+1) mLog $ ds'
+simplifyDupes i mLog (d@(n,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) mLog $ ds'
   where
+    showH = sbs2b8 $ unHash h
+    showI = B8.pack $ show i
+    showN = B8.pack $ show n
+    showR = B8.pack $ show nRemain
+    msg = "iteration " <> showI <>
+          " drop " <> showN <>
+          " sets redundant with " <> showH <> "; " <> showR <>
+	  " sets remain to process"
     ds' = filter (not . redundantSet) ds
     nRemain = length ds'
     nSaved = length ds - nRemain
     info msg x = if nSaved > 0 then logMaybeUnsafe mLog InfoL "simplifyDupes" msg x else x
-    redundantSet (_,_,fs') = all redundant fs'
+    redundantSet (_,_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
                        `L.isPrefixOf`
                        splitDirectories e' | e <- fs]
 
 -- TODO double check that these can't have redundancies
-simplifyDupes i mLog (d@(_,_,_):ds) = (d:) $ simplifyDupes (i+1) mLog $ ds
+simplifyDupes i mLog (d:ds) = (d:) $ simplifyDupes (i+1) mLog $ ds
 
 ---------------------------- pick which dupe to keep --------------------------
 
@@ -286,22 +297,22 @@ sortPaths = L.sortBy comparePaths
  - TODO should length-1 sets not be rejected?
  -}
 scoreSets :: ScoreFn -> C.HashTable s Hash DupeSet -> ST s SortedDupeSets 
-scoreSets scoreFn = H.foldM (\vs (_, v@(_,t,fs)) ->
-  return $ if length fs > 1 then (negate $ scoreFn v,t,fs):vs else vs) []
+scoreSets scoreFn = H.foldM (\vs (_, v@(_,h,t,fs)) ->
+  return $ if length fs > 1 then (negate $ scoreFn v,h,t,fs):vs else vs) []
 
 type ScoreFn = DupeSet -> Int
 
 -- | This version is for dupes vs a reference set. It's simpler because there's
 -- no need to leave out one canonical version from each dupe set.
 scoreSetRef :: ScoreFn
-scoreSetRef (n, _, _) = n -- TODO is that all? lol
+scoreSetRef (n, _, _, _) = n -- TODO is that all? lol
 
 -- | This version is for dupes within the tree itself, which is a little more
 -- complicated because we want to save (not delete) one copy from each dupe
 -- group.
 scoreSetSelf :: ScoreFn
-scoreSetSelf (n, D, fs) = n - n `div` length fs
-scoreSetSelf (n, _, _ ) = n - 1 -- TODO is this right?
+scoreSetSelf (n, _, D, fs) = n - n `div` length fs
+scoreSetSelf (n, _, _, _ ) = n - 1 -- TODO is this right?
 
 
 -------------------------------- write output ---------------------------------
@@ -334,7 +345,7 @@ renderDupesSuggestions keepOne md ls = do
       " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
 
     excludeLines :: DupeList -> IO B8.ByteString
-    excludeLines (n, t, paths) = do
+    excludeLines (n, _, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
              $ groupHeader t n (length paths)
@@ -429,7 +440,7 @@ renderDupesRsyncFilter keepOne md ls = do
       " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
 
     groupDupes :: DupeList -> IO B8.ByteString
-    groupDupes (n, t, paths) = do
+    groupDupes (n, _, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       let paths''   = sortPaths $ map (escapeRsyncExcludeFromPath2 . replaceTopDirWithSlash) paths'
           paths'''  = if t == D then map (++ "/") paths'' else paths''
