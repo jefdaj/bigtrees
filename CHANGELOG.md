@@ -18,3 +18,4 @@ maintain their same hashes but the rest will change.
 - Added --verbose logging of all `insertDupeSet` calls.
 - Added --verbose logging of dropped sets in `simplifyDupes`
 - Added a header with format version to .bigset files like the .bigtree ones.
+- DupeSets are probably Monoids, and `mergeDupeSets` is the implementation of `<>`.
