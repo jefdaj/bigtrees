@@ -33,6 +33,8 @@ module System.Directory.BigTrees.Util
   , hTakePrevUntil
   , getBlockSize
 
+  , sbs2b8
+
   )
   where
 
@@ -63,6 +65,7 @@ import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
 import Debug.Trace
+import qualified Data.ByteString.Short as SBS
 
 -- describe "Util" $ do
 --   describe "absolute" $ do
@@ -297,3 +300,9 @@ getBlockSize path = do
 --   case lookup answer answers of
 --     Nothing -> userSaysYes question
 --     Just b  -> return b
+
+--- misc small utilities ---
+
+-- TODO does this make sense?
+sbs2b8 :: SBS.ShortByteString -> B.ByteString
+sbs2b8 = B.pack . map (toEnum . fromIntegral) . SBS.unpack

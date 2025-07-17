@@ -43,7 +43,7 @@ import Data.Ord (comparing)
 import qualified Data.List as L
 import qualified Data.List.Split as LS
 import qualified Data.Massiv.Array as A
-import System.Directory.BigTrees.Hash (Hash)
+import System.Directory.BigTrees.Hash (Hash, unHash)
 import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
@@ -62,6 +62,8 @@ import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), 
 import System.Directory.BigTrees.HashTree.Find (findLabelNode)
 import Data.Maybe (isNothing)
 import Data.STRef (STRef(..), newSTRef, readSTRef, writeSTRef)
+import qualified Data.ByteString.Short as SBS
+import System.Directory.BigTrees.Util (sbs2b8)
 
 -- TODO be able to serialize dupemaps for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -181,15 +183,18 @@ addTreeToDupeMap'
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
 insertDupeSet :: SearchConfig -> Maybe LogFn -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
 insertDupeSet cfg mLog dm h d2 pRef = do
-  let debug = logMaybeUnsafe mLog DebugL "insertDupeSet"
+  let debug  = logMaybeUnsafe mLog DebugL "insertDupeSet"
+      showH  = sbs2b8 $ unHash h
+      showD2 = B8.pack $ show d2
   existing <- H.lookup dm h
   case existing of
     Nothing ->
-      debug (B8.pack $ "create h: " ++ show h ++ " d2: " ++ show d2) $
-      H.insert dm h d2
-    Just d1 -> 
-      debug (B8.pack $ "insert h: " ++ show h ++ " d2: " ++ show d2 ++ " d1: " ++ show d1) $ H.insert dm h $
-      mergeDupeSets d1 d2
+      let msg = "create h: " <> showH <> " d2: " <> showD2
+      in debug msg $ H.insert dm h d2
+    Just d1@(_,_,ps) ->
+      let n   = B8.pack $ show $ length ps
+          msg = "insert h: " <> showH <> " n so far: " <> n <> " d2: " <> showD2
+      in debug msg $ H.insert dm h $ mergeDupeSets d1 d2
   incAddTreeProgress mLog pRef
 
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
