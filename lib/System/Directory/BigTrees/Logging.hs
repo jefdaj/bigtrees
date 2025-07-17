@@ -52,8 +52,12 @@ createStderrLogger = do
 
 -- log :: ToLogStr a => TimedFastLogger -> LogFn a
 log :: TimedFastLogger -> LogFn
-log logger level context msg = logger $ \ft -> toLogStr (msgWithContext ft) <> "\n"
+log logger level context msg =
+  case level of
+    ErrorL -> log' `seq` error $ B8.unpack msg
+    _ -> log'
   where
+    log' = logger $ \ft -> toLogStr (msgWithContext ft) <> "\n"
     sep = toLogStr (" | " :: String)
     msgWithContext timestamp = mconcat $ L.intersperse sep
       [ toLogStr timestamp
