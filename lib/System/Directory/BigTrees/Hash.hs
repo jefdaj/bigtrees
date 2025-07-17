@@ -136,13 +136,15 @@ hashSymlinkLiteral :: OsPath -> IO Hash
 hashSymlinkLiteral path = do
   op <- SDO.getSymbolicLinkTarget path
   op' <- decodeFS op
-  return $ hashString op'
+  let op'' = 'L' : op' -- distinguish symlink from file, dir, etc.
+  return $ hashString op''
 
 -- Hashes target file contents.
 -- TODO will it work recursively?
 -- TODO guard against this pointing outside the tree being scanned;
 --      we want to treat that as a broken link instead
 -- TODO fails on dirs?
+-- TODO should this be prepended by "L" as in the literal case, or is it more like a file?
 hashSymlinkTarget :: OsPath -> IO Hash
 hashSymlinkTarget path = do
   target <- SDO.getSymbolicLinkTarget path
