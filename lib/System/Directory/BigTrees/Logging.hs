@@ -79,11 +79,13 @@ logLine level context msg timestamp =
 
 die :: Maybe LogFn -> LogContext -> B8.ByteString -> a
 die mLog context msg =
-  let line = logLine ErrorL context msg "date unknown" -- TODO possible to add date?
+  let date  = B8.pack $ "XXXX-XX-XX XX:XX:XX" -- TODO how to get date here?
+      line  = logLine ErrorL context msg date
       line' = B8.unpack $ fromLogStr line
+      line'' = drop 22 $ show line'
   in case mLog of
-       Nothing -> error $ show line
-       Just fn -> error $ unsafePerformIO $ hPutStrLn stderr line' >> hFlush stderr >> return line'
+       Nothing -> error line''
+       Just _  -> error $ unsafePerformIO $ hPutStrLn stderr line' >> hFlush stderr >> return line''
 
 logMaybe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> IO ()
 logMaybe mLog level context msg = case mLog of
