@@ -66,7 +66,10 @@ treeNNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 
 -- TODO handle Err case
 hashContents :: [HashTree a] -> Hash
-hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . treeHash)
+hashContents = hashBytes . B8.unlines . markDir . sort . map (BS.fromShort . unHash . treeHash)
+  where
+    showD = B8.pack $ show D
+    markDir hs = showD : hs -- distinguish an empty or one-hash dir from corresponding files
 
 -- TODO separate module for NodeData
 
