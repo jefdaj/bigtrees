@@ -196,6 +196,7 @@ insertDupeSet cfg mLog dm h d2 pRef = do
       in debug msg $ H.insert dm h $ mergeDupeSets d1 d2
   incAddTreeProgress mLog pRef
 
+-- TODO if DupeSet is a Monoid, should this be the implemention of <>?
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
 mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 
