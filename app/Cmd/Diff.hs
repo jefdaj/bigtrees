@@ -24,7 +24,7 @@ cmdDiff :: AppConfig -> LogCfg -> OsPath -> OsPath -> IO ()
 cmdDiff cfg lCfg old new = do
   tree1 <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (searchCfg cfg) lCfg old
   tree2 <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (searchCfg cfg) lCfg new
-  printDeltas $ diff tree1 tree2
+  printDeltas $ diff lCfg tree1 tree2
 
 -----------
 -- tests --

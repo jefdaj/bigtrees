@@ -30,6 +30,8 @@ import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTre
 import System.Directory.BigTrees.Name (Name (..), op2ns)
 import qualified System.OsPath as SOP
 import System.OsPath (OsPath, decodeFS, (</>))
+import System.Directory.BigTrees.Logging (LogCfg (..), die, addLogContext)
+import qualified Data.ByteString.Char8 as B8
 
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
@@ -58,26 +60,26 @@ prettyDelta (Mv   f1 f2) = do
 printDeltas :: Show a => [Delta a] -> IO ()
 printDeltas ds = mapM prettyDelta ds >>= mapM_ B.putStrLn
 
-diff :: (Eq a, Show a) => HashTree a -> HashTree a -> [Delta a]
-diff = diff' mempty
+diff :: (Eq a, Show a) => LogCfg -> HashTree a -> HashTree a -> [Delta a]
+diff lCfg = diff' lCfg mempty
 
 -- TODO fix non-exhaustive patterns
-diff' :: (Eq a, Show a) => OsPath -> HashTree a -> HashTree a -> [Delta a]
-diff' a t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
+diff' :: (Eq a, Show a) => LogCfg -> OsPath -> HashTree a -> HashTree a -> [Delta a]
+diff' lCfg a t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (a </> f1) (a </> f2)]
   | f1 == f2 && h1 /= h2 = [Edit (if a == f1 then f1 else a </> f1) t1 t2]
-  | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
-diff' a (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm a, Add (a </> d) t2]
+  | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ "error in diff': " ++ show t1 ++ " " ++ show t2
+diff' _ a (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm a, Add (a </> d) t2]
 -- TODO wait is this a Mv?
-diff' a (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (a </> d), Add (a </> d) t2]
-diff' a t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
+diff' _ a (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (a </> d), Add (a </> d) t2]
+diff' lCfg a t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where
     adds  = [Add (a </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
     rms   = [Rm  (a </> unName (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
-    edits = concat [diff' (a </> unName (treeName o)) o n | o <- os, n <- ns,
+    edits = concat [diff' lCfg (a </> unName (treeName o)) o n | o <- os, n <- ns,
                                                o /= n, treeName o == treeName n]
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
@@ -139,9 +141,9 @@ simDeltas = foldM simDelta
 
 -- TODO be clearer on before/after and or expected/actual here
 -- assertSameTrees :: OsPath -> HashTree -> HashTree -> IO ()
-assertSameTrees :: (String, ProdTree) -> (String, ProdTree) -> IO ()
-assertSameTrees (msg1, tree1) (msg2, tree2) = do
-  let wrong = diff tree1 tree2
+assertSameTrees :: LogCfg -> (String, ProdTree) -> (String, ProdTree) -> IO ()
+assertSameTrees lCfg (msg1, tree1) (msg2, tree2) = do
+  let wrong = diff lCfg tree1 tree2
   unless (null wrong) $ do
     putStrLn $ unwords ["error!", msg1, "and", msg2, "should be identical, but aren't:"]
     printDeltas wrong
