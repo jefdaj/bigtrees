@@ -32,7 +32,7 @@ cmdHash cfg lCfg path = bracket open close write
 
     write hdl = do
       tree <- buildProdTree (searchCfg cfg) lCfg path
-      hWriteTree (searchCfg cfg) hdl tree -- TODO logging here too
+      hWriteTree (searchCfg cfg) lCfg hdl tree -- TODO logging here too
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?

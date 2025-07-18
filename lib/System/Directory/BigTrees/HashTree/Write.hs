@@ -21,12 +21,12 @@ import System.OsPath (OsPath, decodeFS, splitPath, (</>))
 -- TODO need to handle unicode here?
 -- TODO does map evaluation influence memory usage?
 -- TODO create a single ByteString rather than a list for compression?
-serializeTree :: HashTree a -> [B8.ByteString]
-serializeTree = map (prettyLine Nothing) . flattenTree
+serializeTree :: LogCfg -> HashTree a -> [B8.ByteString]
+serializeTree lCfg = map (prettyLine Nothing) . flattenTree lCfg
 
 -- TODO remove and make this a special case of WriteTree? or vice versa?
-printTree :: HashTree a -> IO ()
-printTree = mapM_ printLine . flattenTree
+printTree :: LogCfg -> HashTree a -> IO ()
+printTree lCfg = mapM_ printLine . flattenTree lCfg
   where
     -- TODO don't flush every line
     printLine l = putStrLn (B8.unpack $ prettyLine Nothing l) >> hFlush stdout
@@ -34,42 +34,42 @@ printTree = mapM_ printLine . flattenTree
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
 -- TODO how much of the config should live in the library vs the app, if we're writing it?
-writeTree :: SearchConfig -> OsPath -> HashTree a -> IO ()
-writeTree cfg path tree = SFO.withFile path WriteMode $ \h -> hWriteTree cfg h tree
+writeTree :: SearchConfig -> LogCfg -> OsPath -> HashTree a -> IO ()
+writeTree cfg lCfg path tree = SFO.withFile path WriteMode $ \h -> hWriteTree cfg lCfg h tree
 
 -- TODO excludes type alias?
 -- TODO how often to actuall flush?
-hWriteTree :: SearchConfig -> Handle -> HashTree a -> IO ()
-hWriteTree cfg h tree = do
+hWriteTree :: SearchConfig -> LogCfg -> Handle -> HashTree a -> IO ()
+hWriteTree cfg lCfg h tree = do
   hWriteHeader   h $ hashExcludeRegexes cfg
-  hWriteTreeBody h tree
+  hWriteTreeBody lCfg h tree
   hWriteFooter   h
 
 -- TODO how often to actually flush?
-hWriteTreeBody :: Handle -> HashTree a -> IO ()
-hWriteTreeBody h tree = mapM_ (\l -> B8.hPutStrLn h l >> hFlush h) (serializeTree tree)
+hWriteTreeBody :: LogCfg -> Handle -> HashTree a -> IO ()
+hWriteTreeBody lCfg h tree = mapM_ (\l -> B8.hPutStrLn h l >> hFlush h) (serializeTree lCfg tree)
 
 -- This is the only official way to construct a `HashLine`, because they don't
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its
 -- dirContents to reconstruct the tree structure.
-flattenTree :: HashTree a -> [HashLine]
-flattenTree = flattenTree' (Depth 0)
+flattenTree :: LogCfg -> HashTree a -> [HashLine]
+flattenTree lCfg = flattenTree' lCfg (Depth 0)
 
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
-flattenTree' :: Depth -> HashTree a -> [HashLine]
-flattenTree' (Depth d) _ | d < 0 = error "tried to call flattenTree' with negative depth"
-flattenTree' d (Err {errName=n, errMsg=m}) = [ErrLine (d, m, n)]
-flattenTree' d (File {nodeData=nd})
+flattenTree' :: LogCfg -> Depth -> HashTree a -> [HashLine]
+flattenTree' lCfg (Depth d) _ | d < 0 = die (addLogContext lCfg "flattenTree'") "called with negative depth"
+flattenTree' _ d (Err {errName=n, errMsg=m}) = [ErrLine (d, m, n)]
+flattenTree' _ d (File {nodeData=nd})
   = [HashLine (F, d, hash nd, modTime nd, nBytes nd, 1, name nd, Nothing)]
-flattenTree' d (Link {linkData=ld, nodeData=nd, linkTarget=lt}) =
+flattenTree' _ d (Link {linkData=ld, nodeData=nd, linkTarget=lt}) =
   let tt = if isNothing ld then B else L
   in [HashLine (tt, d, hash nd, modTime nd, nBytes nd, 1, name nd, Just lt)]
-flattenTree' (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
+flattenTree' lCfg (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
     n = name nd
-    subtrees = concatMap (flattenTree' $ Depth $ d+1) cs
+    subtrees = concatMap (flattenTree' lCfg $ Depth $ d+1) cs
     wholeDir = HashLine (D, Depth d, hash nd, modTime nd, nBytes nd, f, n, Nothing)
 
 -- this is to catch the case where it tries to write the same file twice

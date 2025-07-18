@@ -132,7 +132,7 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   knob <- K.newKnob mempty
   (t1 :: ProdTree) <- pick arbitrary
   let cfg = emptySearchConfig
-  K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree cfg h t1 -- TODO hClose?
+  K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree cfg NoLog h t1 -- TODO hClose?
   t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg NoLog 4096
   assert $ t2 == t1
 
@@ -150,7 +150,7 @@ roundtripProdTreeToBigtreeFile t =
     path' <- encodeFS path
     hClose hdl
     let cfg = emptySearchConfig
-    writeTree cfg path' t -- TODO exclude defaultConfig?
+    writeTree cfg NoLog path' t -- TODO exclude defaultConfig?
     readTree cfg NoLog path'
 
 prop_roundtrip_ProdTree_to_bigtree_file :: Property
