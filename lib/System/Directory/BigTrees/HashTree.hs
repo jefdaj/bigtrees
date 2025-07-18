@@ -72,7 +72,7 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.Knob as K
 import Data.List (isInfixOf)
-import System.Directory.BigTrees.Logging (LogCfg (..))
+import System.Directory.BigTrees.Logging (LogCfg (..), die, addLogContext)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
                                                 dropFileData, isErr, renameRoot, treeNNodes,
                                                 treeEqIgnoringModTime, treeHash, treeModTime,
@@ -105,7 +105,7 @@ readOrBuildTree cfg lCfg path = do
   isFile <- SDO.doesFileExist      path
   if      isFile then readTree cfg lCfg path
   else if isDir then buildProdTree cfg lCfg path
-  else error $ "No such file: " ++ show path
+  else die (addLogContext lCfg "readOrBuildTree") $ B8.pack $ "No such file: " ++ show path
 
 -- TODO test tree in haskell
 -- TODO test dir
