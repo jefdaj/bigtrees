@@ -627,4 +627,4 @@ hParseTreeFileRev lCfg blksize h = do
   let hls = lazyListOfStrictParsedChunks chunks
 
   -- for now, return parsed HashLines directly and error if any of the parses fail
-  fmap concat $ forM hls $ either (error . show) return
+  fmap concat $ forM hls $ either (die (addLogContext lCfg "hParseTreeFileRev") . B8.pack . show) return

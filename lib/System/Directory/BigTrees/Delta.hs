@@ -69,7 +69,7 @@ diff' lCfg a t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {n
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (a </> f1) (a </> f2)]
   | f1 == f2 && h1 /= h2 = [Edit (if a == f1 then f1 else a </> f1) t1 t2]
-  | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ "error in diff': " ++ show t1 ++ " " ++ show t2
+  | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ show t1 ++ " " ++ show t2
 diff' _ a (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm a, Add (a </> d) t2]
 -- TODO wait is this a Mv?
 diff' _ a (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (a </> d), Add (a </> d) t2]
@@ -127,7 +127,7 @@ fixMoves lCfg t (d:ds) = d : fixMoves lCfg t ds
 
 -- TODO think through how to report results more!
 simDelta :: (Eq a, Show a) => LogCfg -> HashTree a -> Delta a -> Either String (HashTree a)
-simDelta lCfg t (Rm   p    ) = rmSubTree t $ op2ns p
+simDelta _ t (Rm   p    ) = rmSubTree t $ op2ns p
 simDelta lCfg t (Add  p   t2) = Right $ addSubTree lCfg t t2 $ op2ns p
 simDelta lCfg t (Edit p _ t2) = Right $ addSubTree lCfg t t2 $ op2ns p -- TODO duplicate final name in path?
 simDelta lCfg t (Mv   p1 p2) = case simDelta lCfg t (Rm p1) of
