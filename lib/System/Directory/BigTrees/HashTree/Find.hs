@@ -22,7 +22,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), tr
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), logUnsafe, addLogContext)
+import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), logUnsafe, addLogContext, die)
 import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
 import Text.Regex.TDFA
@@ -42,7 +42,7 @@ listTreePaths cfg lCfg fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
   eLists <- forM (excludeSetPaths cfg) $ \fp -> encodeFS fp >>= readHashList lCfg
-  return $ case mkLineMetaFormatter fmt of
+  return $ case mkLineMetaFormatter lCfg fmt of
     (Left  errMsg) -> error errMsg -- TODO log here, THEN die
     (Right fmtFn ) -> runST $ do
       eSet <- hashSetFromList $ concat eLists -- TODO is there a better way than concat?
@@ -150,8 +150,8 @@ findLabelNode ((l, cs):css) ns t = if anySearchMatches then Just l else findLabe
 type FmtFn = forall a. Depth -> Maybe SearchLabel -> HashTree a -> B8.ByteString
 
 -- TODO complain if nub is needed rather than silently fixing it?
-matchingFmtFns :: String -> [FmtFn]
-matchingFmtFns = mapMaybe (\c -> lookup c allFmtFns) . nub
+matchingFmtFns :: LogCfg -> String -> [FmtFn]
+matchingFmtFns lCfg = mapMaybe (\c -> lookup c $ allFmtFns lCfg) . nub
 
 -- TODO tabs instead of single spaces?
 separate :: [B8.ByteString] -> B8.ByteString
@@ -160,8 +160,8 @@ separate = B8.intercalate $ B8.singleton sepChar
 combineFmtFns :: [FmtFn] -> FmtFn
 combineFmtFns fs d l t = separate $ map (\f -> f d l t) fs
 
-allFmtFns :: [(Char, FmtFn)]
-allFmtFns =
+allFmtFns :: LogCfg -> [(Char, FmtFn)]
+allFmtFns lCfg =
   [ ('t', \_ _ t -> B8.pack $ show $ treeType t)
   , ('h', \_ _ t -> prettyHash $ hash $ nodeData t)
   , ('d', \(Depth i) _ _ -> B8.pack $ show i)
@@ -169,21 +169,21 @@ allFmtFns =
   , ('b', \_ _ t -> B8.pack $ show $ (\(NBytes n ) -> n) $ nBytes $ nodeData t)
   , ('f', \_ _ t -> B8.pack $ show $ (\(NNodes n ) -> n) $ treeNNodes t) -- f for "files"
   , ('l', \_ mLabel _ -> case mLabel of
-                       Nothing    -> error "no search label given, but it was specified in out-fmt"
+                       Nothing    -> die (addLogContext lCfg "allFmtFns") "no search label given, but it was specified in out-fmt"
                        Just label -> B8.pack label) -- TODO any sanitizing needed?
   ]
 
-validFmtChars :: String
-validFmtChars = map fst allFmtFns
+validFmtChars :: LogCfg -> String
+validFmtChars lCfg = map fst $ allFmtFns lCfg
 
 {- | The overall "make formatter" function. Takes the metafmt description and
  - returns an error if it's invalid, or a function for formatting the metadata.
  - TODO return a list of bytestrings and let the caller handle intercalating?
  - TODO test that it throws exceptions on invalid formats
  -}
-mkLineMetaFormatter :: String -> Either String FmtFn
-mkLineMetaFormatter cs =
-  let bad = filter (not . flip elem validFmtChars) cs
+mkLineMetaFormatter :: LogCfg -> String -> Either String FmtFn
+mkLineMetaFormatter lCfg cs =
+  let bad = filter (not . flip elem (validFmtChars lCfg)) cs
   in if not (null bad)
        then Left  $ "Invalid metadata format char '" ++ bad ++ "' in " ++ show cs
-       else Right $ combineFmtFns $ matchingFmtFns cs
+       else Right $ combineFmtFns $ matchingFmtFns lCfg cs
