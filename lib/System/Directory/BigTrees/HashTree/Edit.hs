@@ -50,7 +50,7 @@ wrapInEmptyDirs (n:ns) t = wrapInEmptyDir n $ wrapInEmptyDirs ns t
 addSubTree :: LogCfg -> HashTree a -> HashTree a -> [Name] -> HashTree a
 addSubTree _    (Err  {}) sub [] = sub -- TODO is this right?
 addSubTree lCfg (File {}) _ _ = die (addLogContext lCfg "addSubTree") "attempt to insert tree into a file"
-addSubTree _ _ _ [] = error "can't insert tree at null path"
+addSubTree lCfg _ _ [] = die (addLogContext lCfg "addSubTree") "can't insert tree at null path"
 addSubTree lCfg main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNodes = n' }
   where
     -- comps  = pathComponents path
