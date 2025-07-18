@@ -8,6 +8,7 @@ module System.Directory.BigTrees.Logging
   , LogContext
   , LogCfg (..)
   , initLogger
+  , cleanupLogger
   , addLogContext
   , log
   , die
@@ -19,6 +20,7 @@ module System.Directory.BigTrees.Logging
 import Prelude hiding (log)
 import Debug.Trace (trace)
 import System.Log.FastLogger
+import System.Log.FastLogger.LoggerSet (rmLoggerSet)
 import qualified Data.List as L
 import Data.Char (toUpper)
 import qualified Data.ByteString.Char8 as B8
@@ -60,6 +62,10 @@ initLogger initialContext minLogLevel = do
     , lcLogger  = loggerSet
     , lcTime    = timeCache
     }
+
+cleanupLogger :: LogCfg -> IO ()
+cleanupLogger NoLog = return () 
+cleanupLogger cfg = rmLoggerSet $ lcLogger cfg
 
 log :: LogCfg -> LogLevel -> B8.ByteString -> IO ()
 log NoLog _ _ = return ()

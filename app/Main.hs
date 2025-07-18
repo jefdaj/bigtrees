@@ -6,6 +6,7 @@ module Main where
 -- TODO sort by how many links deduping would save: files per dupe * (dupes - 1)
 -- TODO figure out how to read files + compute hashes in parallel
 
+import Prelude hiding (log)
 import Cmd.Diff (cmdDiff)
 import Cmd.Dupes (cmdDupes)
 import Cmd.Find (cmdFind)
@@ -17,7 +18,7 @@ import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearc
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
-                                  TreeType (..), LogLevel(..), LogContext, logMaybe, initLogger)
+                                  TreeType (..), LogLevel(..), LogContext, log, initLogger, cleanupLogger)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
@@ -118,10 +119,10 @@ main = do
           }
         }
 
-  (logger, cleanupLogger) <- initLogger
+  lCfg <- initLogger "main" $ if (verbose cfg) then DebugL else InfoL
   let mLog  = if (verbose cfg) then Just logger else Nothing
-      info  = logMaybe mLog InfoL  "main"
-      debug = logMaybe mLog DebugL "main"
+      info  = log lCfg InfoL
+      debug = log lCfg DebugL
 
   debug $ B8.pack $ "bigtrees version " ++ showVersion version
 
@@ -168,4 +169,4 @@ main = do
     error "probably a CLI parsing error"
 
   debug "cleaning up"
-  cleanupLogger
+  cleanupLogger lCfg

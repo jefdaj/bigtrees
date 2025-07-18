@@ -28,18 +28,18 @@ import Data.Maybe (fromMaybe)
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
-import System.Directory.BigTrees.Logging (LogFn)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), log, logUnsafe, addLogContext)
 
-cmdFind :: AppConfig -> Maybe LogFn -> OsPath -> IO ()
-cmdFind cfg mLog path = do
-  tree <- readOrBuildTree (searchCfg cfg) mLog path
+cmdFind :: AppConfig -> LogCfg -> OsPath -> IO ()
+cmdFind cfg lCfg path = do
+  tree <- readOrBuildTree (searchCfg cfg) lCfg path
   let fmt   = fromMaybe "" $ findOutFormat cfg
 
   -- I think hashes have to be removed here rather than above in the read/build
   -- step (when building, not reading), because we don't want to alter the dir hashes.
   -- TODO should the exclude regexes also not be done at first? Think about pros/cons
   -- TODO is this a reason to separate read from build more definitively?
-  paths <- listTreePaths (searchCfg cfg) mLog fmt tree
+  paths <- listTreePaths (searchCfg cfg) lCfg fmt tree
 
   case outFile cfg of
     Nothing -> mapM_ B8.putStrLn paths
@@ -65,7 +65,7 @@ cmdFindUnixFind t =
     writeTestTreeDir treeDir' t
 
     let cfg = defaultAppConfig { outFile = Just myFindOut' }
-    cmdFind cfg Nothing treeDir'
+    cmdFind cfg NoLog treeDir'
 
     -- Unix find will print whole absolute paths here, so we need to invoke it
     -- by relative path from the parent of the tmpdir to match my relative style.

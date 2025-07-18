@@ -13,7 +13,7 @@ import System.Directory.BigTrees.HashTree (HashTree (..), readLastHashLineAndFoo
 import System.Directory.BigTrees.HeadFoot (Footer, Header (..), readHeader, scanSeconds)
 -- import qualified Data.ByteString.Short as BS
 import System.OsPath (OsPath, encodeFS)
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), logMaybe, addLogContext)
+import System.Directory.BigTrees.Logging (LogCfg (..))
 
 cmdInfo :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdInfo cfg lCfg path = do

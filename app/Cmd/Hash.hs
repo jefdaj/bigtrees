@@ -19,19 +19,19 @@ import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
-import System.Directory.BigTrees.Logging (LogFn)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), log, logUnsafe, addLogContext)
 
 --import Debug.Trace
 
-cmdHash :: AppConfig -> Maybe LogFn -> OsPath -> IO ()
-cmdHash cfg mLog path = bracket open close write
+cmdHash :: AppConfig -> LogCfg -> OsPath -> IO ()
+cmdHash cfg lCfg path = bracket open close write
   where
     open = case outFile cfg of
              Nothing -> return stdout
              Just p  -> SFO.openBinaryFile p WriteMode
 
     write hdl = do
-      tree <- buildProdTree (searchCfg cfg) mLog path
+      tree <- buildProdTree (searchCfg cfg) lCfg path
       hWriteTree (searchCfg cfg) hdl tree -- TODO logging here too
 
     -- TODO why is this required? shouldn't hClose be OK?
@@ -54,7 +54,7 @@ hashTarXzAction cfg xzPath = do
     dPath' <- encodeFS dPath
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xzPath]) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdHash cfg Nothing dPath'
+    (out, ()) <- hCapture [stdout, stderr] $ cmdHash cfg NoLog dPath'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString $ stripComments out
 
