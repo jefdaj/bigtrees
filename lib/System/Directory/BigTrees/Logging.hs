@@ -62,14 +62,6 @@ initLogger2 = do
   loggerSet :: LoggerSet <- newStderrLoggerSet defaultBufSize
   return (loggerSet, timeCache)
 
--- initLogger3 :: IO (LogFn, IO ())
-initLogger3 = do
-  -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
-  -- ignores them. Maybe that's good for efficiency?
-  timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
-  (logger, cleanupLogger) <- newTimedFastLogger timeCache (LogStderr defaultBufSize)
-  return (logger, cleanupLogger)
-
 -- attempt at getting flushing to work properly in die,
 -- and then if so to add back the timestamp? or both at once
 log2 lSet level context msg date = do
@@ -88,9 +80,14 @@ testLogger2 = do
   log2 loggerSet ErrorL   "testLogger2" "this is a test" =<< timeCache
   error "does it flush first?"
 
+initLogger3 = do
+  timeCache :: IO FormattedTime <- newTimeCache "%Y-%m-%d %H:%M:%S"
+  loggerSet :: LoggerSet <- newStderrLoggerSet defaultBufSize
+  return loggerSet
+
 testLogger3 :: IO ()
 testLogger3 = do
-  (logger :: TimedFastLogger, cleanupLogger) <- initLogger3
+  logger :: LoggerSet <- initLogger3
   return ()
 
 logLine :: LogLevel -> LogContext -> B8.ByteString -> FormattedTime -> LogStr
