@@ -2,17 +2,17 @@
 {-# LANGUAGE RankNTypes #-}
 
 module System.Directory.BigTrees.Logging
-  ( traceV
-  , LogLevel (..)
-  , LogContext
-  , LogFn
-  , initLogger
-  , log
-  , die
-  , logMaybe
-  , logMaybeUnsafe
-  , incLogProgressST
-  )
+  -- ( traceV
+  -- , LogLevel (..)
+  -- , LogContext
+  -- , LogFn
+  -- , initLogger
+  -- , log
+  -- , die
+  -- , logMaybe
+  -- , logMaybeUnsafe
+  -- , incLogProgressST
+  -- )
   where
 
 import Prelude hiding (log)
@@ -56,6 +56,25 @@ initLogger = do
 -- log :: ToLogStr a => TimedFastLogger -> LogFn a
 log :: TimedFastLogger -> LogFn
 log logger level context msg = logger $ \ft -> toLogStr (logLine level context msg ft) <> "\n"
+
+initLogger2 = do
+  timeCache :: IO FormattedTime <- newTimeCache "%Y-%m-%d %H:%M:%S"
+  loggerSet :: LoggerSet <- newStderrLoggerSet defaultBufSize
+  return loggerSet
+
+-- attempt at getting flushing to work properly in die,
+-- and then if so to add back the timestamp? or both at once
+log2 lSet level context msg = do
+  let date = B8.pack $ "XXXX-XX-XX XX:XX:XX" -- TODO how to get date here?
+      lStr = logLine level context msg date
+  pushLogStrLn lSet lStr
+  flushLogStr lSet
+  error "does it flush first?"
+
+testLogger2 :: IO ()
+testLogger2 = do
+  loggerSet <- initLogger2
+  log2 loggerSet DebugL "testLogger2" "this is a test"
 
 logLine :: LogLevel -> LogContext -> B8.ByteString -> FormattedTime -> LogStr
 logLine level context msg timestamp =
