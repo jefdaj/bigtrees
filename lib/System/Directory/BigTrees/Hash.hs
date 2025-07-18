@@ -69,7 +69,7 @@ import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, s
 import Test.QuickCheck.Instances.ByteString ()
 import Text.Regex.TDFA ((=~))
 import TH.Derive (Deriving, derive)
-import System.Directory.BigTrees.Logging (LogFn)
+import System.Directory.BigTrees.Logging (LogCfg (..))
 
 
 {- Checksum (sha256sum?) of a file or folder.
@@ -185,7 +185,7 @@ hashFileContentsStreaming path = SFO.readFile path >>= hashBytesStreaming
 -- Note that this can only print file hashes, not the whole streaming trees format
 -- TODO remove the unused verbose flag?
 -- TODO handle case where the file is itself a git-annex content file!
-hashFile :: Maybe LogFn -> OsPath -> IO Hash
+hashFile :: LogCfg -> OsPath -> IO Hash
 hashFile _ path = hashFileContentsStreaming path
 
 -- note: no need to explicitly match against sha256sum because the manual examples cover that
@@ -203,7 +203,7 @@ unit_hash_empty_file :: Assertion
 unit_hash_empty_file = do
   f <- emptySystemTempFile "empty"
   f' <- encodeFS f
-  h <- hashFile Nothing f'
+  h <- hashFile NoLog f'
   SDO.removePathForcibly f'
   unHash h @=? "ZTNiMGM0NDI5OGZjMWMx"
 
@@ -214,14 +214,14 @@ unit_hash_file_contents = do
   -- (and also that the hash algo is still working properly)
   f <- writeSystemTempFile "bigtrees" "file contents should be hashed"
   f' <- encodeFS f
-  h <- hashFile Nothing f'
+  h <- hashFile NoLog f'
   SDO.removePathForcibly f'
   unHash h @=? "MTVjMzcwNmJjODQzYTg0"
 
 -- TODO should the source code really be used this way?
 unit_hash_image :: Assertion
 unit_hash_image = do
-  h <- hashFile Nothing [OSP.osp|bigtrees.png|]
+  h <- hashFile NoLog [OSP.osp|bigtrees.png|]
   unHash h @=? "NzdkN2M0OGYxZGViOTY5"
 
 -- TODO unit_hash_dir

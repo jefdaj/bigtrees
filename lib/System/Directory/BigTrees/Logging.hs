@@ -8,6 +8,7 @@ module System.Directory.BigTrees.Logging
   , LogContext
   , LogCfg (..)
   , initLogger
+  , addLogContext
   , log
   , die
   , logUnsafe
