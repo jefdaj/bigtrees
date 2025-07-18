@@ -33,7 +33,7 @@ import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
-import System.Directory.BigTrees.Logging (LogCfg)
+import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext)
 
 -- import Debug.Trace
 
@@ -126,14 +126,15 @@ readTreeLines path = do
 
 --- read the main tree ---
 
-readTree :: SearchConfig -> OsPath -> IO ProdTree
-readTree cfg f = SFO.withFile f ReadMode $ \h -> do
+readTree :: SearchConfig -> LogCfg -> OsPath -> IO ProdTree
+readTree cfg lCfg f = SFO.withFile f ReadMode $ \h -> do
   blksize <- getBlockSize f
-  hReadTree cfg blksize h
+  hReadTree cfg lCfg blksize h
 
-hReadTree :: SearchConfig -> Integer -> Handle -> IO ProdTree
-hReadTree cfg blksize hdl = do
-  hls <- hParseTreeFileRev blksize hdl
+-- TODO log an error in case of Err here?
+hReadTree :: SearchConfig -> LogCfg -> Integer -> Handle -> IO ProdTree
+hReadTree cfg lCfg blksize hdl = do
+  hls <- hParseTreeFileRev lCfg blksize hdl
   return $ case foldr (accTrees cfg) [] hls of
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
     ((_, tree):_) -> tree

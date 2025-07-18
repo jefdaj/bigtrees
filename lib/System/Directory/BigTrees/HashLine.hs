@@ -74,7 +74,7 @@ import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, bs2n, bs2op, n2bs,
                                        nameP, op2bs, sbs2op)
 import System.Directory.BigTrees.Util (getBlockSize)
-import System.Directory.BigTrees.Logging (LogCfg (..), die)
+import System.Directory.BigTrees.Logging (LogCfg (..), die, addLogContext)
 import qualified System.OsPath as OSP
 import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, generate, resize, suchThat)
 import TH.Derive ()
@@ -516,15 +516,15 @@ endofprevP = fmap B8.pack $ manyTill anyChar (lookAhead breakPNC) <* nullBreakP
 -- create list of data chunks, backwards in order through the file
 -- based on https://stackoverflow.com/a/33853796
 -- but i fixed a couple bugs(?)
-makeReverseChunks :: Int -> Handle -> Int -> IO [Chunk]
-makeReverseChunks blksize h end
+makeReverseChunks :: LogCfg -> Int -> Handle -> Int -> IO [Chunk]
+makeReverseChunks lCfg blksize h end
   | end == 0 = return []
-  | end < 0  = error "negative file index"
+  | end < 0  = die (addLogContext lCfg "makeReverseChunks") "negative file index"
   | otherwise   = do
         let start = max (end - fromIntegral blksize) 0
         hSeek h AbsoluteSeek (fromIntegral start)
         blk <- B8.hGet h blksize
-        rest <- makeReverseChunks blksize h start
+        rest <- makeReverseChunks lCfg blksize h start
         -- return $ (trace ("blk " ++ show start ++ "-" ++ show end ++ ":" ++ show blk) blk) : rest
         return $ blk : rest
 
@@ -600,18 +600,18 @@ lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkPa
 -- TODO SFO.readFile instead
 -- TODO how to properly encapsulate parse errors? maybe MonadThrow/Catch?
 -- (for now, fatal error if parsing a chunk fails)
-parseTreeFileRev :: OsPath -> IO [HashLine]
-parseTreeFileRev f = SFO.withFile f ReadMode $ \h -> do
+parseTreeFileRev :: LogCfg -> OsPath -> IO [HashLine]
+parseTreeFileRev lCfg f = SFO.withFile f ReadMode $ \h -> do
 
   -- Find a good block size (how many bytes to a chunk) and calculate where to
   -- start seeking (slightly back from the end at a multiple of the block size
   -- so they line up nicely)
   blksize <- getBlockSize f
 
-  hParseTreeFileRev blksize h
+  hParseTreeFileRev lCfg blksize h
 
-hParseTreeFileRev :: Integer -> Handle -> IO [HashLine]
-hParseTreeFileRev blksize h = do
+hParseTreeFileRev :: LogCfg -> Integer -> Handle -> IO [HashLine]
+hParseTreeFileRev lCfg blksize h = do
   fileSizeBytes <- hFileSize h
   -- size rounded up to the next block:
   let fileSizeBytesCeiling =
@@ -619,7 +619,7 @@ hParseTreeFileRev blksize h = do
 
   -- read file in block-sized chunks starting from the end
   -- (the first chunk will be shorter than the others; seems not to matter)
-  chunks <- makeReverseChunks (fromIntegral blksize) h (fromInteger fileSizeBytesCeiling)
+  chunks <- makeReverseChunks lCfg (fromIntegral blksize) h (fromInteger fileSizeBytesCeiling)
   -- putStrLn $ "n chunks: " ++ show (length chunks)
 
   -- parse chunks lazily, starting from the end, so they can be streamed into a

@@ -103,7 +103,7 @@ readOrBuildTree :: SearchConfig -> LogCfg -> OsPath -> IO ProdTree
 readOrBuildTree cfg lCfg path = do
   isDir  <- SDO.doesDirectoryExist path
   isFile <- SDO.doesFileExist      path
-  if      isFile then readTree cfg path
+  if      isFile then readTree cfg lCfg path
   else if isDir then buildProdTree cfg lCfg path
   else error $ "No such file: " ++ show path
 
@@ -133,7 +133,7 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   (t1 :: ProdTree) <- pick arbitrary
   let cfg = emptySearchConfig
   K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree cfg h t1 -- TODO hClose?
-  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg 4096
+  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg NoLog 4096
   assert $ t2 == t1
 
 bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()
@@ -151,7 +151,7 @@ roundtripProdTreeToBigtreeFile t =
     hClose hdl
     let cfg = emptySearchConfig
     writeTree cfg path' t -- TODO exclude defaultConfig?
-    readTree cfg path'
+    readTree cfg NoLog path'
 
 prop_roundtrip_ProdTree_to_bigtree_file :: Property
 prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
