@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
@@ -18,7 +19,7 @@ import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearc
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
-                                  TreeType (..), LogLevel(..), LogContext, log, initLogger, cleanupLogger)
+                                  TreeType (..), LogLevel(..), LogCfg (..), LogContext, log, initLogger, cleanupLogger)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
@@ -119,9 +120,8 @@ main = do
           }
         }
 
-  lCfg <- initLogger "main" $ if (verbose cfg) then DebugL else InfoL
-  let mLog  = if (verbose cfg) then Just logger else Nothing
-      info  = log lCfg InfoL
+  lCfg :: LogCfg <- initLogger "main" $ if (verbose cfg) then DebugL else InfoL
+  let info  = log lCfg InfoL
       debug = log lCfg DebugL
 
   debug $ B8.pack $ "bigtrees version " ++ showVersion version
@@ -129,18 +129,18 @@ main = do
   if cmd "info" then do
     debug "running info command"
     path <- reqPathArg "PATH"
-    cmdInfo cfg mLog path
+    cmdInfo cfg lCfg path
 
   else if cmd "diff" then do
     debug "running diff command"
     old <- reqPathArg "OLD"
     new <- reqPathArg "NEW"
-    cmdDiff cfg mLog old new
+    cmdDiff cfg lCfg old new
 
   else if cmd "dupes" then do
     debug "running dupes command"
     path <- reqPathArg "PATH"
-    cmdDupes cfg mLog path
+    cmdDupes cfg lCfg path
 
   else if cmd "set-add" then do
     debug "running set-add command"
@@ -152,12 +152,12 @@ main = do
   else if cmd "find" then do
     debug "running find command"
     path <- reqPathArg "PATH" -- TODO multiple paths?
-    cmdFind cfg mLog path
+    cmdFind cfg lCfg path
 
   else if cmd "hash" then do
     debug "running hash command"
     path <- reqPathArg "PATH"
-    cmdHash cfg mLog path
+    cmdHash cfg lCfg path
 
   else if cmd "version" then do
     debug "running version command"

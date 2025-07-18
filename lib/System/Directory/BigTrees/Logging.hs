@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module System.Directory.BigTrees.Logging
   ( LogLevel (..)
