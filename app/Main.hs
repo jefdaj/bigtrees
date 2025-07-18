@@ -147,7 +147,7 @@ main = do
     set  <- reqPathOpt "set"
     let note = optLong "note"
     paths <- mapM encodeFS $ lstArg "PATH"
-    cmdSetAdd cfg set note paths
+    cmdSetAdd cfg lCfg set note paths
 
   else if cmd "find" then do
     debug "running find command"

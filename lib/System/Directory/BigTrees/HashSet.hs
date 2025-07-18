@@ -83,6 +83,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 TestTree (..), treeNNodes, treeHash, treeNBytes,
                                                 treeName)
 import System.Directory.BigTrees.Name (Name (..), bs2op)
+import System.Directory.BigTrees.Logging (LogCfg (..), die, addLogContext)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..))
 import System.OsPath (OsPath)
@@ -297,16 +298,16 @@ parseHashList bs = parseHashSetLines bs <&> map f
     f (HashSetLine (h, nn, nb, n)) = (h, SetData nn nb n)
 
 -- TODO any reason to pass on the Either rather than making it an error?
-readHashList :: OsPath -> IO HashList
-readHashList path = do
+readHashList :: LogCfg -> OsPath -> IO HashList
+readHashList lCfg path = do
   eHL <- SFO.readFile' path <&> parseHashList
   case eHL of
-    Left msg -> error $ "failed to read hashset: " ++ msg
+    Left msg -> die (addLogContext lCfg "readHashList") $ B8.pack $ "failed to read hashset: " ++ msg
     Right hl -> return hl
 
 -- TODO is this the beginning of a transformer stack?
-readHashSet :: OsPath -> IO (ST s (HashSet s))
-readHashSet path = readHashList path <&> hashSetFromList
+readHashSet :: LogCfg -> OsPath -> IO (ST s (HashSet s))
+readHashSet lCfg path = readHashList lCfg path <&> hashSetFromList
 
 --- round-trip tests ---
 

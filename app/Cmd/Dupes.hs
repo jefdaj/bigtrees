@@ -59,7 +59,7 @@ cmdDupes cfg lCfg path = bracket open close write
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
       debug $ "loading rList from " <> B8.pack (show (length rListPaths)) <> " paths"
-      rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList
+      rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList lCfg
 
       debug "compiling labeled searches"
       cle <- BT.compileLabeledSearches $ dupesExcludeSearches $ searchCfg cfg

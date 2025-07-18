@@ -41,7 +41,7 @@ listTreePaths :: SearchConfig -> LogCfg -> String -> HashTree a -> IO [B8.ByteSt
 listTreePaths cfg lCfg fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
-  eLists <- forM (excludeSetPaths cfg) $ \fp -> encodeFS fp >>= readHashList
+  eLists <- forM (excludeSetPaths cfg) $ \fp -> encodeFS fp >>= readHashList lCfg
   return $ case mkLineMetaFormatter fmt of
     (Left  errMsg) -> error errMsg -- TODO log here, THEN die
     (Right fmtFn ) -> runST $ do

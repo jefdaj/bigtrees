@@ -14,6 +14,7 @@ import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToH
                                   readLastHashLineAndFooter, readOrBuildTree, readTreeLines, s2note,
                                   treeNNodes, toSortedList, writeHashList)
 import System.Directory.BigTrees.HashSet (emptyHashSet)
+import System.Directory.BigTrees.Logging (LogCfg)
 import qualified System.Directory.OsPath as SDO
 import System.IO (IOMode (..), withFile)
 import System.OsPath (OsPath)
@@ -26,20 +27,20 @@ readTreeHashList cfg mn path = do
   -- log cfg $ "adding hashes from " ++ show path
   return hl
 
-readHashListIO :: AppConfig -> OsPath -> IO HashList
-readHashListIO cfg path = do
+readHashListIO :: AppConfig -> LogCfg -> OsPath -> IO HashList
+readHashListIO cfg lCfg path = do
   -- log cfg $ "adding hashes from " ++ show path
-  readHashList path
+  readHashList lCfg path
 
-cmdSetAdd :: AppConfig -> OsPath -> Maybe String -> [OsPath] -> IO ()
-cmdSetAdd _ _ _ [] = return () -- Docopt should prevent this, but just in case
-cmdSetAdd cfg setPath mNoteStr treePaths = do
+cmdSetAdd :: AppConfig -> LogCfg -> OsPath -> Maybe String -> [OsPath] -> IO ()
+cmdSetAdd _ _ _ _ [] = return () -- Docopt should prevent this, but just in case
+cmdSetAdd cfg lCfg setPath mNoteStr treePaths = do
 
   -- TODO can this conflict with writing the file later? (length should force it)
   exists <- SDO.doesPathExist setPath
   before <- if exists
               then do
-                hl <- readHashListIO cfg setPath
+                hl <- readHashListIO cfg lCfg setPath
                 -- log cfg $
                 --   "initial " ++ show setPath ++
                 --   " contains " ++ show (length hl) ++
