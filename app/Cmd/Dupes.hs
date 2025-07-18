@@ -28,6 +28,7 @@ import qualified Data.HashTable.Class as H
 import Data.Maybe (fromMaybe, fromJust)
 import qualified Data.ByteString.Char8 as B8
 import System.IO.Unsafe (unsafePerformIO)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), log, logUnsafe, addLogContext)
 
 -- import Debug.Trace
 
@@ -41,19 +42,19 @@ dupesRenderFunctions =
   , ("rsync-filter-file", BT.renderDupesRsyncFilter)
   ]
 
-cmdDupes :: AppConfig -> Maybe BT.LogFn -> OsPath -> IO ()
-cmdDupes cfg mLog path = bracket open close write
+cmdDupes :: AppConfig -> LogCfg -> OsPath -> IO ()
+cmdDupes cfg lCfg path = bracket open close write
   where
 
-    debug = BT.logMaybe mLog BT.DebugL "cmdDupes"
-    debugST msg = BT.logUnsafe mLog BT.DebugL "cmdDupes" msg (return ())
+    debug = log (addLogContext lCfg "cmdDupes") DebugL
+    debugST msg = logUnsafe (addLogContext lCfg "cmdDupes") DebugL msg (return ())
 
     open = case outFile cfg of
              Nothing -> return stdout
              Just op -> SFO.openBinaryFile op WriteMode
 
     write hdl = do
-      tree <- BT.readOrBuildTree (searchCfg cfg) mLog path
+      tree <- BT.readOrBuildTree (searchCfg cfg) lCfg path
 
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
@@ -74,11 +75,11 @@ cmdDupes cfg mLog path = bracket open close write
                 initB = B8.pack $ show init
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
-            BT.addTreeToDupeMap (searchCfg cfg) mLog mrSet cle ht tree
+            BT.addTreeToDupeMap (searchCfg cfg) lCfg mrSet cle ht tree
 	    -- debugST $ "added all " <> initB <> " tree nodes to DupeMap"
 	    if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
-            res <- BT.dupesByNegScore mLog scoreFn ht
+            res <- BT.dupesByNegScore lCfg scoreFn ht
 	    -- debugST $ "finished scoring " <> initB <> " DupeSets" -- TODO but is this time ordered?
             return res
 
@@ -113,7 +114,7 @@ dupesTarXz xz1 = do
     d1' <- encodeFS d1
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultAppConfig Nothing d1'
+    (out, ()) <- hCapture [stdout, stderr] $ cmdDupes defaultAppConfig NoLog d1'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 

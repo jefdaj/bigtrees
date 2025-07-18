@@ -131,11 +131,10 @@ module System.Directory.BigTrees
   -- logging
   , LogContext
   , LogLevel (..)
-  , LogFn
+  , LogCfg (..)
   , initLogger
   , log
   , die
-  , logMaybe
   , logUnsafe
   , incLogProgressST
   )
@@ -178,4 +177,4 @@ import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumb
 
 import System.Directory.BigTrees.HeadFoot (headerP)
 
-import System.Directory.BigTrees.Logging (LogContext, LogLevel (..), LogFn, initLogger, log, die, logMaybe, logUnsafe, incLogProgressST)
+import System.Directory.BigTrees.Logging (LogContext, LogLevel (..), LogCfg (..), initLogger, log, die, logUnsafe, incLogProgressST, addLogContext)

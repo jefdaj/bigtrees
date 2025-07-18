@@ -16,14 +16,14 @@ import System.OsPath (OsPath, encodeFS, osp)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
-import System.Directory.BigTrees.Logging (LogFn)
+import System.Directory.BigTrees.Logging (LogCfg (..))
 
 -- TODO make --output work here rather than always printing to stdout
 
-cmdDiff :: AppConfig -> Maybe LogFn -> OsPath -> OsPath -> IO ()
-cmdDiff cfg mLog old new = do
-  tree1 <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (searchCfg cfg) mLog old
-  tree2 <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (searchCfg cfg) mLog new
+cmdDiff :: AppConfig -> LogCfg -> OsPath -> OsPath -> IO ()
+cmdDiff cfg lCfg old new = do
+  tree1 <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (searchCfg cfg) lCfg old
+  tree2 <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (searchCfg cfg) lCfg new
   printDeltas $ diff tree1 tree2
 
 -----------
@@ -42,7 +42,7 @@ diffTarXz xz1 xz2 = do
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     _ <- readCreateProcess ((proc "tar" ["-xf", xz1']) {cwd = Just tmpDir}) ""
     _ <- readCreateProcess ((proc "tar" ["-xf", xz2']) {cwd = Just tmpDir}) ""
-    (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultAppConfig Nothing d1' d2'
+    (out, ()) <- hCapture [stdout, stderr] $ cmdDiff defaultAppConfig NoLog d1' d2'
     D.delay 100000 -- wait 0.1 second so we don't capture output from tasty
     return $ BLU.fromString out
 
