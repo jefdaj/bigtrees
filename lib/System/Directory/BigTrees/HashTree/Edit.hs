@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module System.Directory.BigTrees.HashTree.Edit
   ( addSubTree
   , rmSubTree

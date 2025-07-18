@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module System.Directory.BigTrees.HashTree.Write where
 
 import Control.Monad (unless, when)
