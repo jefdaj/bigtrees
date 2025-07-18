@@ -60,43 +60,20 @@ initLogger = do
 log :: TimedFastLogger -> LogFn
 log logger level context msg = logger $ \ft -> toLogStr (logLine level context msg ft) <> "\n"
 
-initLogger2 = do
-  timeCache :: IO FormattedTime <- newTimeCache "%Y-%m-%d %H:%M:%S"
-  loggerSet :: LoggerSet <- newStderrLoggerSet defaultBufSize
-  return (loggerSet, timeCache)
-
--- attempt at getting flushing to work properly in die,
--- and then if so to add back the timestamp? or both at once
-log2 lSet level context msg date = do
-  -- let date = B8.pack $ "XXXX-XX-XX XX:XX:XX" -- TODO how to get date here?
-  let lStr = logLine level context msg date
-  pushLogStrLn lSet lStr
-  flushLogStr lSet
-
--- works! just needs better UX and probably to adjust all the Maybe LogFn types
-testLogger2 :: IO ()
-testLogger2 = do
-  (loggerSet, timeCache) <- initLogger2
-  log2 loggerSet DebugL   "testLogger2" "this is a test" =<< timeCache
-  log2 loggerSet InfoL    "testLogger2" "this is a test" =<< timeCache
-  log2 loggerSet WarningL "testLogger2" "this is a test" =<< timeCache
-  log2 loggerSet ErrorL   "testLogger2" "this is a test" =<< timeCache
-  error "does it flush first?"
-
-data LogCfg3 = NoLog | LogCfg
+data LogCfg = NoLog | LogCfg
   { lcContext :: LogContext       -- ^ a string like "main.mymodule.mycmd"
   , lcLevel   :: LogLevel         -- ^ minimum level that will be logged
-  , lcLogger  :: LoggerSet        -- ^ fast-logger LoggerSet
+  , lcLogger  :: LoggerSet        -- ^ fast-logger LoggerSet for stderr
   , lcTime    :: IO FormattedTime -- ^ fast-logger time cache
   }
 
-addLogContext :: LogCfg3 -> String -> LogCfg3
+addLogContext :: LogCfg -> String -> LogCfg
 addLogContext NoLog _ = NoLog
 addLogContext cfg@(LogCfg {}) ctx = cfg { lcContext = lcContext cfg ++ "." ++ ctx }
 
 -- TODO setLogLevel?
 
-initLogger3 :: String -> LogLevel -> IO LogCfg3
+initLogger3 :: String -> LogLevel -> IO LogCfg
 initLogger3 initialContext minLogLevel = do
   loggerSet <- newStderrLoggerSet defaultBufSize
   timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
@@ -107,14 +84,16 @@ initLogger3 initialContext minLogLevel = do
     , lcTime    = timeCache
     }
 
-log3 :: LogCfg3 -> LogLevel -> B8.ByteString -> IO ()
+log3 :: LogCfg -> LogLevel -> B8.ByteString -> IO ()
 log3 NoLog _ _ = return ()
-log3 (LogCfg {..}) level msg =
-  when (level >= lcLevel) $
-    log2 lcLogger level lcContext msg =<< lcTime
+log3 (LogCfg {..}) level msg = do
+  when (level < lcLevel) $ return ()
+  time <- lcTime
+  let lStr = logLine level lcContext msg time
+  pushLogStrLn lcLogger lStr
 
 -- log an error and then crash the program
-die3 :: LogCfg3 -> B8.ByteString -> a
+die3 :: LogCfg -> B8.ByteString -> a
 die3 NoLog msg = error $ B8.unpack $ "ERROR: " <> msg
 die3 cfg@(LogCfg {..}) msg =
   (unsafePerformIO $ do
@@ -125,12 +104,15 @@ die3 cfg@(LogCfg {..}) msg =
 
 testLogger3 :: IO ()
 testLogger3 = do
-  cfg :: LogCfg3 <- initLogger3 "testLogger3" InfoL
+  cfg :: LogCfg <- initLogger3 "testLogger3" DebugL
   log3 cfg   DebugL   "testing log3 with DebugL"
   log3 cfg   InfoL   "testing log3 with InfoL"
   log3 (addLogContext cfg "moreContext") DebugL   "testing log3 with DebugL"
   log3 NoLog DebugL   "testing log3 with DebugL and NoLog"
   log3 cfg   WarningL "testing log3 with WarningL"
+  die3 cfg "testing die3"
+  die3 cfg "testing die3"
+  die3 cfg "testing die3"
   die3 cfg "testing die3"
   log3 cfg   ErrorL   "testing log3 with ErrorL"
   return ()
