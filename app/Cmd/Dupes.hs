@@ -46,7 +46,7 @@ cmdDupes cfg mLog path = bracket open close write
   where
 
     debug = BT.logMaybe mLog BT.DebugL "cmdDupes"
-    debugST msg = BT.logMaybeUnsafe mLog BT.DebugL "cmdDupes" msg (return ())
+    debugST msg = BT.logUnsafe mLog BT.DebugL "cmdDupes" msg (return ())
 
     open = case outFile cfg of
              Nothing -> return stdout

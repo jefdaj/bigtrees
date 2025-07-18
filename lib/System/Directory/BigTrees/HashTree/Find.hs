@@ -22,7 +22,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), tr
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), logMaybeUnsafe)
+import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), logUnsafe)
 import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
 import Text.Regex.TDFA
@@ -96,7 +96,7 @@ findKeepNode _ _ _ _ (Err {}) = return False -- TODO is this how we should handl
 findKeepNode cfg mLog eSet d t = do
   excludeHash <- setContainsHash eSet $ treeHash t
   let excludeHash' = if excludeHash
-                       then logMaybeUnsafe mLog DebugL "findKeepNode"
+                       then logUnsafe mLog DebugL "findKeepNode"
                               ("find exclude hash " <> (prettyHash $ treeHash t) <>
                                ": " <> (n2bs $ treeName t))
                               excludeHash

@@ -4,17 +4,15 @@
 {-# LANGUAGE DerivingStrategies #-}
 
 module System.Directory.BigTrees.Logging
-  -- ( traceV
-  -- , LogLevel (..)
-  -- , LogContext
-  -- , LogFn
-  -- , initLogger
-  -- , log
-  -- , die
-  -- , logMaybe
-  -- , logMaybeUnsafe
-  -- , incLogProgressST
-  -- )
+  ( LogLevel (..)
+  , LogContext
+  , LogCfg (..)
+  , initLogger
+  , log
+  , die
+  , logUnsafe
+  , incLogProgressST
+  )
   where
 
 import Prelude hiding (log)
@@ -30,35 +28,13 @@ import Control.Monad.ST.Strict (ST)
 import Control.DeepSeq (deepseq)
 import System.IO (stderr, hPutStrLn, hFlush)
 
--- TODO replace with better logging
-traceV :: Bool -> String -> b -> b
-traceV verbose msg b = if verbose then trace msg b else b
-
 type LogContext = String
-
--- TODO would it make sense to use B8.ByteString rather than String here?
--- TODO use String here instead of B8.ByteString?
--- TODO or leave the original ToLogStr and specify in each module?
--- type LogFn a = ToLogStr a => LogLevel -> LogContext -> a -> IO ()
-type LogFn = LogLevel -> LogContext -> B8.ByteString -> IO ()
 
 data LogLevel = DebugL | InfoL | WarningL | ErrorL
   deriving stock (Read, Show, Eq, Ord)
 
 instance ToLogStr LogLevel where
   toLogStr = toLogStr . map toUpper . init . show
-
-initLogger :: IO (LogFn, IO ())
-initLogger = do
-  -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
-  -- ignores them. Maybe that's good for efficiency?
-  timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
-  (logger, cleanupLogger) <- newTimedFastLogger timeCache (LogStderr defaultBufSize)
-  return (log logger, cleanupLogger)
-
--- log :: ToLogStr a => TimedFastLogger -> LogFn a
-log :: TimedFastLogger -> LogFn
-log logger level context msg = logger $ \ft -> toLogStr (logLine level context msg ft) <> "\n"
 
 data LogCfg = NoLog | LogCfg
   { lcContext :: LogContext       -- ^ a string like "main.mymodule.mycmd"
@@ -73,8 +49,8 @@ addLogContext cfg@(LogCfg {}) ctx = cfg { lcContext = lcContext cfg ++ "." ++ ct
 
 -- TODO setLogLevel?
 
-initLogger3 :: String -> LogLevel -> IO LogCfg
-initLogger3 initialContext minLogLevel = do
+initLogger :: String -> LogLevel -> IO LogCfg
+initLogger initialContext minLogLevel = do
   loggerSet <- newStderrLoggerSet defaultBufSize
   timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
   return $ LogCfg
@@ -84,41 +60,42 @@ initLogger3 initialContext minLogLevel = do
     , lcTime    = timeCache
     }
 
-log3 :: LogCfg -> LogLevel -> B8.ByteString -> IO ()
-log3 NoLog _ _ = return ()
-log3 (LogCfg {..}) level msg = do
+log :: LogCfg -> LogLevel -> B8.ByteString -> IO ()
+log NoLog _ _ = return ()
+log (LogCfg {..}) level msg = do
   when (level < lcLevel) $ return ()
   time <- lcTime
-  let lStr = logLine level lcContext msg time
+  let lStr = formatLogLine level lcContext msg time
   pushLogStrLn lcLogger lStr
 
 -- log an error and then crash the program
-die3 :: LogCfg -> B8.ByteString -> a
-die3 NoLog msg = error $ B8.unpack $ "ERROR: " <> msg
-die3 cfg@(LogCfg {..}) msg =
+die :: LogCfg -> B8.ByteString -> a
+die NoLog msg = error $ B8.unpack $ "ERROR: " <> msg
+die cfg@(LogCfg {..}) msg =
   (unsafePerformIO $ do
-    log3 cfg ErrorL msg
+    log cfg ErrorL msg
     flushLogStr lcLogger)
   `seq`
     error $ lcContext ++ " " ++ B8.unpack msg
 
-testLogger3 :: IO ()
-testLogger3 = do
-  cfg :: LogCfg <- initLogger3 "testLogger3" DebugL
-  log3 cfg   DebugL   "testing log3 with DebugL"
-  log3 cfg   InfoL   "testing log3 with InfoL"
-  log3 (addLogContext cfg "moreContext") DebugL   "testing log3 with DebugL"
-  log3 NoLog DebugL   "testing log3 with DebugL and NoLog"
-  log3 cfg   WarningL "testing log3 with WarningL"
-  die3 cfg "testing die3"
-  die3 cfg "testing die3"
-  die3 cfg "testing die3"
-  die3 cfg "testing die3"
-  log3 cfg   ErrorL   "testing log3 with ErrorL"
+-- TODO remove once new logging works in the main program
+testLogger :: IO ()
+testLogger = do
+  cfg :: LogCfg <- initLogger "testLogger" DebugL
+  log cfg   DebugL   "testing log with DebugL"
+  log cfg   InfoL   "testing log with InfoL"
+  log (addLogContext cfg "moreContext") DebugL   "testing log with DebugL"
+  log NoLog DebugL   "testing log with DebugL and NoLog"
+  log cfg   WarningL "testing log with WarningL"
+  die cfg "testing die"
+  die cfg "testing die"
+  die cfg "testing die"
+  die cfg "testing die"
+  log cfg   ErrorL   "testing log with ErrorL"
   return ()
 
-logLine :: LogLevel -> LogContext -> B8.ByteString -> FormattedTime -> LogStr
-logLine level context msg timestamp =
+formatLogLine :: LogLevel -> LogContext -> B8.ByteString -> FormattedTime -> LogStr
+formatLogLine level context msg timestamp =
   let sep = toLogStr (" | " :: String)
   in mconcat $ L.intersperse sep
        [ toLogStr timestamp
@@ -127,41 +104,14 @@ logLine level context msg timestamp =
        , toLogStr msg
        ]
 
--- TODO see if passing the cleanup fn via config solves this not printing
--- die :: Maybe LogFn -> LogContext -> B8.ByteString -> a
--- die mLog context msg =
---   case mLog of
---     Nothing -> error msg'
---     Just fn -> let msg'' = unsafePerformIO (fn ErrorL context msg >> hFlush stderr >> return msg')
---                in error msg''
---   where
---     msg' = B8.unpack msg
-
--- Crash the program, making sure to log the error properly first
-die :: Maybe LogFn -> LogContext -> B8.ByteString -> a
-die mLog context msg =
-  let date  = B8.pack $ "XXXX-XX-XX XX:XX:XX" -- TODO how to get date here?
-      line  = logLine ErrorL context msg date
-      line' = B8.unpack $ fromLogStr line
-      line'' = drop 23 $ show line'
-  in case mLog of
-       Nothing -> error line''
-       Just _  -> error $ unsafePerformIO $ hPutStrLn stderr line' >> hFlush stderr >> return line''
-
-logMaybe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> IO ()
-logMaybe mLog level context msg = case mLog of
-  Nothing -> return ()
-  Just fn -> fn level context msg
-
-logMaybeUnsafe :: Maybe LogFn -> LogLevel -> LogContext -> B8.ByteString -> a -> a
-logMaybeUnsafe mLog level context msg rtn = case mLog of
-  Nothing -> rtn
-  Just fn -> unsafePerformIO (fn level context msg) `seq` rtn
+-- log from any context (pure code, ST, ...) using unsafePeformIO
+logUnsafe :: LogCfg -> LogLevel -> B8.ByteString -> a -> a
+logUnsafe cfg level msg rtn = unsafePerformIO (log cfg level msg) `seq` rtn
 
 -- TODO remove, or unify with DupeMap.incAddTreeProgress
-incLogProgressST :: Maybe LogFn -> LogContext -> STRef s Int -> ST s ()
-incLogProgressST mLog ctx intRef = do
+incLogProgressST :: LogCfg -> STRef s Int -> ST s ()
+incLogProgressST cfg intRef = do
   n <- readSTRef intRef
   let n' = n + 1
-  logMaybeUnsafe mLog InfoL ctx ("increment stref to " <> B8.pack (show n')) $
+  logUnsafe cfg InfoL ("increment stref to " <> B8.pack (show n')) $
     writeSTRef intRef n'

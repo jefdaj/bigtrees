@@ -49,7 +49,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
                                            ProdTree, treeType, treeHash, treeModTime, treeNNodes, treeNBytes,
                                            treeName, SearchConfig (..))
-import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), LogContext, logMaybeUnsafe, die)
+import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), LogContext, logUnsafe, die)
 import System.IO (Handle, IOMode (..))
 import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
@@ -105,7 +105,7 @@ incAddTreeProgress mLog progressRef = do
   -- log only every 1000 nodes
   -- TODO make this configurable or auto-adjust?
   if nNodes `mod` 1000 == 0
-     then logMaybeUnsafe mLog InfoL "addTreeToDupeMap" msg action
+     then logUnsafe mLog InfoL "addTreeToDupeMap" msg action
      else action
     
 
@@ -116,7 +116,7 @@ pathsByHash
   -> HashTree a -> ST s (DupeMap s)
 pathsByHash cfg mLog mrSet cle tree = do
   -- let (NNodes n) = treeNNodes tree TODO does this force evaluation??
-      -- info msg = logMaybeUnsafe mLog InfoL "pathsByHash" msg $ return ()
+      -- info msg = logUnsafe mLog InfoL "pathsByHash" msg $ return ()
   -- TODO is it more wasteful to allocate it too large like this, or to expand it?
   dm <- H.newSized 1000 -- n
   -- info $ "adding " <> B8.pack (show n) <> " nodes to hashmap" -- TODO inside addTreeToDupeMap?
@@ -182,7 +182,7 @@ addTreeToDupeMap'
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
 insertDupeSet :: SearchConfig -> Maybe LogFn -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
 insertDupeSet cfg mLog dm h d2 pRef = do
-  let debug  = logMaybeUnsafe mLog DebugL "insertDupeSet"
+  let debug  = logUnsafe mLog DebugL "insertDupeSet"
       showH  = sbs2b8 $ unHash h
       showD2 = B8.pack $ show d2
   existing <- H.lookup dm h
@@ -220,7 +220,7 @@ type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 -- TODO is that the cleanest way to do it, or should both negates be in this fn?
 dupesByNegScore :: Maybe LogFn -> ScoreFn -> DupeMap s -> ST s SortedDupeLists
 dupesByNegScore mLog scoreFn dm = do
-  let debug = logMaybeUnsafe mLog DebugL "dupesByNegScore"
+  let debug = logUnsafe mLog DebugL "dupesByNegScore"
   sets <- debug "scoring sets" <$> scoreSets scoreFn dm -- TODO separate scoring for ref set than within same tree
   let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par $ deepseq sets sets :: DupeSetVec
       sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute $ deepseq unsorted unsorted :: DupeSetVec
@@ -254,7 +254,7 @@ simplifyDupes i mLog (d@(n,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) m
     ds' = filter (not . redundantSet) ds
     nRemain = length ds'
     nSaved = length ds - nRemain
-    info msg x = if nSaved > 0 then logMaybeUnsafe mLog InfoL "simplifyDupes" msg x else x
+    info msg x = if nSaved > 0 then logUnsafe mLog InfoL "simplifyDupes" msg x else x
     redundantSet (_,_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
                        `L.isPrefixOf`
@@ -489,7 +489,7 @@ dupesKeepNode cfg mLog mrSet cle ns t = do
 
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
   let excludeMsg l = "exclude node labeled '" <> l <> "' : '" <> wholeName <> "'"
-  let info = logMaybeUnsafe mLog InfoL "dupesKeepNode"
+  let info = logUnsafe mLog InfoL "dupesKeepNode"
 
   return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg

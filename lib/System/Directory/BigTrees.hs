@@ -136,7 +136,7 @@ module System.Directory.BigTrees
   , log
   , die
   , logMaybe
-  , logMaybeUnsafe
+  , logUnsafe
   , incLogProgressST
   )
   where
@@ -178,4 +178,4 @@ import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumb
 
 import System.Directory.BigTrees.HeadFoot (headerP)
 
-import System.Directory.BigTrees.Logging (LogContext, LogLevel (..), LogFn, initLogger, log, die, logMaybe, logMaybeUnsafe, incLogProgressST)
+import System.Directory.BigTrees.Logging (LogContext, LogLevel (..), LogFn, initLogger, log, die, logMaybe, logUnsafe, incLogProgressST)
