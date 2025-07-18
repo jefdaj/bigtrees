@@ -19,7 +19,7 @@ import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearc
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
-                                  TreeType (..), LogLevel(..), LogCfg (..), LogContext, log, initLogger, cleanupLogger)
+                                  TreeType (..), LogLevel(..), LogCfg (..), LogContext, log, initLogger, cleanupLogger, die)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
@@ -54,6 +54,12 @@ main = do
       optLongs n = D.getAllArgs args $ D.longOption n
       optRead  n = read <$> optLong n
 
+  lCfg :: LogCfg <- initLogger "main" $ if (flag "verbose") then DebugL else InfoL
+  let info  = log lCfg InfoL
+      debug = log lCfg DebugL
+
+  debug $ B8.pack $ "bigtrees version " ++ showVersion version
+
   -- TODO should the main command determine which config field this goes in?
   herList <- case optLong "hash-exclude-regexes-from" of
                Nothing -> return $ hashExcludeRegexes defaultSearchConfig
@@ -66,7 +72,7 @@ main = do
              Just f -> do
                parsed <- parseLabeledSearches f
                case parsed of
-                 Left  msg -> error $ show msg -- parse failure
+                 Left  msg -> die lCfg $ B8.pack $ show msg -- parse failure
                  Right lrs -> return lrs
 
   sList <- case optLong "searches-json" of
@@ -75,7 +81,7 @@ main = do
              Just f -> do
                parsed <- parseLabeledSearches f
                case parsed of
-                 Left  msg -> error $ show msg -- parse failure
+                 Left  msg -> die lCfg $ B8.pack $ show msg -- parse failure
                  Right lrs -> return lrs
 
              -- if no file, look for a single search + label in cli args
@@ -120,12 +126,6 @@ main = do
           }
         }
 
-  lCfg :: LogCfg <- initLogger "main" $ if (verbose cfg) then DebugL else InfoL
-  let info  = log lCfg InfoL
-      debug = log lCfg DebugL
-
-  debug $ B8.pack $ "bigtrees version " ++ showVersion version
-
   if cmd "info" then do
     debug "running info command"
     path <- reqPathArg "PATH"
@@ -165,8 +165,7 @@ main = do
 
   -- docopt should prevent this by aborting + printing usage
   else do
-    debug "no valid command specified"
-    error "probably a CLI parsing error"
+    die lCfg "no valid command specified"
 
   debug "cleaning up"
   cleanupLogger lCfg
