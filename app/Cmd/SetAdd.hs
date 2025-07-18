@@ -20,9 +20,9 @@ import System.IO (IOMode (..), withFile)
 import System.OsPath (OsPath)
 import Text.Pretty.Simple (pPrint)
 
-readTreeHashList :: AppConfig -> Maybe Note -> OsPath -> IO HashList
-readTreeHashList cfg mn path = do
-  ls <- readTreeLines path
+readTreeHashList :: AppConfig -> LogCfg -> Maybe Note -> OsPath -> IO HashList
+readTreeHashList cfg lCfg mn path = do
+  ls <- readTreeLines lCfg path
   let hl = mapMaybe (hashSetDataFromLine mn) ls
   -- log cfg $ "adding hashes from " ++ show path
   return hl
@@ -60,7 +60,7 @@ cmdSetAdd cfg lCfg setPath mNoteStr treePaths = do
   let mNote = s2note <$> mNoteStr
 
   -- create empty hashset and fold over the trees to add elements
-  hl <- concat <$> mapM (readTreeHashList cfg mNote) treePaths
+  hl <- concat <$> mapM (readTreeHashList cfg lCfg mNote) treePaths
   let afterL = toSortedList $ do
                  s <- emptyHashSet maxSetSize'
                  forM_ (before ++ hl) $ uncurry (addNodeToHashSet s)

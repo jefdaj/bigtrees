@@ -33,7 +33,7 @@ import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
-import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext)
+import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
 
 -- import Debug.Trace
 
@@ -115,12 +115,12 @@ getTreeSize path = readLastHashLineAndFooter path <&> getN
 
 -- TODO does this stream, or does it read all the lines at once?
 -- TODO pass on the Left rather than throwing IO error here?
-readTreeLines :: OsPath -> IO [HashLine]
-readTreeLines path = do
+readTreeLines :: LogCfg -> OsPath -> IO [HashLine]
+readTreeLines lCfg path = do
   bs <- SFO.readFile' path
   let eSL = parseOnly (headerP *> linesP Nothing) bs
   case eSL of
-    Left msg -> error $ "failed to parse " ++ show path ++ ": " ++ show msg
+    Left msg -> die (addLogContext lCfg "readTreeLines") $ B8.pack $ "failed to parse " ++ show path ++ ": " ++ show msg
     Right ls -> return ls
 
 
