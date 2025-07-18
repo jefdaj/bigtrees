@@ -41,7 +41,7 @@ wrapInEmptyDir n t = Dir
     h = hashDirContents cs
 
 wrapInEmptyDirs :: [Name] -> HashTree a -> HashTree a
-wrapInEmptyDirs []     _ = error "wrapInEmptyDirs needs at least one dir"
+wrapInEmptyDirs []     t = t -- TODO any reason to throw an error instead here?
 wrapInEmptyDirs [n]    t = wrapInEmptyDir n t
 wrapInEmptyDirs (n:ns) t = wrapInEmptyDir n $ wrapInEmptyDirs ns t
 
