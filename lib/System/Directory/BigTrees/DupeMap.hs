@@ -49,7 +49,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
                                            ProdTree, treeType, treeHash, treeModTime, treeNNodes, treeNBytes,
                                            treeName, SearchConfig (..))
-import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), LogContext, logUnsafe, die)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), LogContext, logUnsafe, die, addLogContext)
 import System.IO (Handle, IOMode (..))
 import Data.Functor ((<&>))
 import qualified System.File.OsPath as SFO
@@ -90,14 +90,14 @@ newtype AddTreeProgress = AddTreeProgress Int
 
 -- Update tree adding progress and log it if appropriate
 -- TODO and think/rethink about the ST type
--- incTreeProgress :: Maybe LogFn -> AddTreeProgress -> ST s AddTreeProgress
--- incTreeProgress mLog (AddTreeProgress nSoFar nTotal) = AddTreeProgress (nSoFar + 1) nTotal
+-- incTreeProgress :: LogCfg -> AddTreeProgress -> ST s AddTreeProgress
+-- incTreeProgress lCfg (AddTreeProgress nSoFar nTotal) = AddTreeProgress (nSoFar + 1) nTotal
 
 ------------------------------- create dupemaps -------------------------------
 
 -- TODO unify with incLogProgressST in Logging
-incAddTreeProgress :: Maybe LogFn -> STRef s AddTreeProgress -> ST s ()
-incAddTreeProgress mLog progressRef = do
+incAddTreeProgress :: LogCfg -> STRef s AddTreeProgress -> ST s ()
+incAddTreeProgress lCfg progressRef = do
   n <- readSTRef progressRef
   let n'@(AddTreeProgress nNodes) = n + 1
       msg = "added " <> B8.pack (show nNodes) <> " nodes"
@@ -105,22 +105,22 @@ incAddTreeProgress mLog progressRef = do
   -- log only every 1000 nodes
   -- TODO make this configurable or auto-adjust?
   if nNodes `mod` 1000 == 0
-     then logUnsafe mLog InfoL "addTreeToDupeMap" msg action
+     then logUnsafe (addLogContext lCfg "addTreeToDupeMap") InfoL msg action
      else action
     
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
 pathsByHash
-  :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches
+  :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledSearches
   -> HashTree a -> ST s (DupeMap s)
-pathsByHash cfg mLog mrSet cle tree = do
+pathsByHash cfg lCfg mrSet cle tree = do
   -- let (NNodes n) = treeNNodes tree TODO does this force evaluation??
-      -- info msg = logUnsafe mLog InfoL "pathsByHash" msg $ return ()
+      -- info msg = logUnsafe lCfg InfoL "pathsByHash" msg $ return ()
   -- TODO is it more wasteful to allocate it too large like this, or to expand it?
   dm <- H.newSized 1000 -- n
   -- info $ "adding " <> B8.pack (show n) <> " nodes to hashmap" -- TODO inside addTreeToDupeMap?
-  addTreeToDupeMap cfg mLog mrSet cle dm tree
+  addTreeToDupeMap cfg lCfg mrSet cle dm tree
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate dm k removeNonDupes) dm
   return dm
@@ -128,17 +128,17 @@ pathsByHash cfg mLog mrSet cle tree = do
 -- inserts all nodes from a tree into an existing dupemap
 -- TODO The empty string (mempty) behaves right, right? (disappears)
 addTreeToDupeMap
-  :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches
+  :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledSearches
   -> DupeMap s -> HashTree a -> ST s ()
-addTreeToDupeMap cfg mLog mrSet cle dm t = do
+addTreeToDupeMap cfg lCfg mrSet cle dm t = do
   pRef <- newSTRef $ AddTreeProgress 0
-  addTreeToDupeMap' cfg mLog mrSet cle dm mempty (Depth 0) pRef t
+  addTreeToDupeMap' cfg lCfg mrSet cle dm mempty (Depth 0) pRef t
 
 -- same, but start from a given root path
 -- TODO NamesFwd or NamesRev instead of OsPath?
 addTreeToDupeMap'
   :: SearchConfig
-  -> Maybe LogFn
+  -> LogCfg
   -> Maybe (HashSet s)
   -> CompiledLabeledSearches
   -> DupeMap s
@@ -155,34 +155,34 @@ addTreeToDupeMap' _ _ _ _ dm dir _ _ (Err {}) = return ()
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg mLog mrSet cle dm dir _ pr l@(Link {nodeData=NodeData {hash=h}}) = do
-  keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) l
+addTreeToDupeMap' cfg lCfg mrSet cle dm dir _ pr l@(Link {nodeData=NodeData {hash=h}}) = do
+  keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) l
   when keepNode $
-    insertDupeSet cfg mLog dm (treeHash l) (1, h, treeType l, S.singleton $ dir </> n2op (treeName l)) pr
+    insertDupeSet cfg lCfg dm (treeHash l) (1, h, treeType l, S.singleton $ dir </> n2op (treeName l)) pr
 
 addTreeToDupeMap'
-  cfg mLog mrSet cle dm dir _ pr
+  cfg lCfg mrSet cle dm dir _ pr
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
-    keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) f
+    keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) f
     when keepNode $
-      insertDupeSet cfg mLog dm h (1, h, F, S.singleton $ dir </> n) pr
+      insertDupeSet cfg lCfg dm h (1, h, F, S.singleton $ dir </> n) pr
 
 addTreeToDupeMap'
-  cfg mLog mrSet cle dm dir depth pr
+  cfg lCfg mrSet cle dm dir depth pr
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
-    keepNode <- dupesKeepNode cfg mLog mrSet cle (op2ns dir) d
+    keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) d
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ do
-      insertDupeSet cfg mLog dm h (fs, h, D, S.singleton $ dir </> n) pr
+      insertDupeSet cfg lCfg dm h (fs, h, D, S.singleton $ dir </> n) pr
       -- TODO is there any situation where we want to NOT keep the current node, but still recurse?
       when recurse $
-        mapM_ (addTreeToDupeMap' cfg mLog mrSet cle dm (dir </> n) (depth+1) pr) cs
+        mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
-insertDupeSet :: SearchConfig -> Maybe LogFn -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
-insertDupeSet cfg mLog dm h d2 pRef = do
-  let debug  = logUnsafe mLog DebugL "insertDupeSet"
+insertDupeSet :: SearchConfig -> LogCfg -> DupeMap s -> Hash -> DupeSet -> STRef s AddTreeProgress -> ST s ()
+insertDupeSet cfg lCfg dm h d2 pRef = do
+  let debug  = logUnsafe (addLogContext lCfg "insertDupeSet") DebugL
       showH  = sbs2b8 $ unHash h
       showD2 = B8.pack $ show d2
   existing <- H.lookup dm h
@@ -193,14 +193,14 @@ insertDupeSet cfg mLog dm h d2 pRef = do
     Just d1@(_,_,_,ps) ->
       let n   = B8.pack $ show $ length ps
           msg = showH <> " size " <> n <> " add " <> showD2
-      in debug msg $ H.insert dm h $ mergeDupeSets mLog d1 d2
-  incAddTreeProgress mLog pRef
+      in debug msg $ H.insert dm h $ mergeDupeSets lCfg d1 d2
+  incAddTreeProgress lCfg pRef
 
 -- TODO is DupeSet a Monoid? or not, because there are some you can't merge?
-mergeDupeSets :: Maybe LogFn -> DupeSet -> DupeSet -> DupeSet
-mergeDupeSets mLog (n1, h1, t1, l1) d2@(n2, h2, t2, l2) = (n1 + n2, h, t, S.union l1 l2)
+mergeDupeSets :: LogCfg -> DupeSet -> DupeSet -> DupeSet
+mergeDupeSets lCfg (n1, h1, t1, l1) d2@(n2, h2, t2, l2) = (n1 + n2, h, t, S.union l1 l2)
   where
-    die' = die mLog "mergeDupeSets"
+    die' = die $ addLogContext lCfg "mergeDupeSets"
     h = if h1 == h2 then h1 else die' $ showH1 <> " /= " <> showH2
     t = if t1 == t2 then t1 else die' $ showH <> " " <> showT1 <> " /= " <> showT2 <> " " <> showD2
     showH1 = sbs2b8 $ unHash h1
@@ -218,16 +218,16 @@ type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
 -- The negate here undoes the one in scoreSets below, leaving a positive score.
 -- TODO is that the cleanest way to do it, or should both negates be in this fn?
-dupesByNegScore :: Maybe LogFn -> ScoreFn -> DupeMap s -> ST s SortedDupeLists
-dupesByNegScore mLog scoreFn dm = do
-  let debug = logUnsafe mLog DebugL "dupesByNegScore"
+dupesByNegScore :: LogCfg -> ScoreFn -> DupeMap s -> ST s SortedDupeLists
+dupesByNegScore lCfg scoreFn dm = do
+  let debug = logUnsafe (addLogContext lCfg "dupesByNegScore") DebugL
   sets <- debug "scoring sets" <$> scoreSets scoreFn dm -- TODO separate scoring for ref set than within same tree
   let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par $ deepseq sets sets :: DupeSetVec
       sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute $ deepseq unsorted unsorted :: DupeSetVec
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList $ deepseq sorted sorted
       fixElem (n, h, t, fs) = (negate n, h, t, L.sort $ S.toList fs) -- TODO n before h?
       fixed    = Prelude.map fixElem $ deepseq sortedL sortedL
-      simple = debug "simplifying dupes" $ simplifyDupes 1 mLog $ deepseq fixed fixed -- TODO helps?
+      simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg $ deepseq fixed fixed -- TODO helps?
   return simple
 
 {- Assumes a pre-sorted list of lists.
@@ -236,12 +236,12 @@ dupesByNegScore mLog scoreFn dm = do
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
  - ... then the second set is redundant and confusing to show.
  -}
-simplifyDupes :: Int -> Maybe LogFn -> SortedDupeLists -> SortedDupeLists
+simplifyDupes :: Int -> LogCfg -> SortedDupeLists -> SortedDupeLists
 
 simplifyDupes _ _ [ ] = [ ]
 simplifyDupes _ _ [d] = [d]
 
-simplifyDupes i mLog (d@(n,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) mLog $ ds'
+simplifyDupes i lCfg (d@(n,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) lCfg $ ds'
   where
     showH = sbs2b8 $ unHash h
     showI = B8.pack $ show i
@@ -254,14 +254,16 @@ simplifyDupes i mLog (d@(n,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) m
     ds' = filter (not . redundantSet) ds
     nRemain = length ds'
     nSaved = length ds - nRemain
-    info msg x = if nSaved > 0 then logUnsafe mLog InfoL "simplifyDupes" msg x else x
+    info msg x = if nSaved > 0
+		   then logUnsafe (addLogContext lCfg "simplifyDupes") InfoL msg x
+                   else x
     redundantSet (_,_,_,fs') = all redundant fs'
     redundant e' = or [splitDirectories e
                        `L.isPrefixOf`
                        splitDirectories e' | e <- fs]
 
 -- TODO double check that these can't have redundancies
-simplifyDupes i mLog (d:ds) = (d:) $ simplifyDupes (i+1) mLog $ ds
+simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg $ ds
 
 ---------------------------- pick which dupe to keep --------------------------
 
@@ -478,9 +480,9 @@ renderDupesRsyncFilter keepOne md ls = do
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
-dupesKeepNode :: SearchConfig -> Maybe LogFn -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> HashTree a -> ST s Bool
+dupesKeepNode :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> HashTree a -> ST s Bool
 dupesKeepNode _ _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
-dupesKeepNode cfg mLog mrSet cle ns t = do
+dupesKeepNode cfg lCfg mrSet cle ns t = do
   includeHash <- case mrSet of
                    Nothing -> return True
                    Just rSet -> setContainsHash rSet $ treeHash t
@@ -489,7 +491,7 @@ dupesKeepNode cfg mLog mrSet cle ns t = do
 
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
   let excludeMsg l = "exclude node labeled '" <> l <> "' : '" <> wholeName <> "'"
-  let info = logUnsafe mLog InfoL "dupesKeepNode"
+  let info = logUnsafe (addLogContext lCfg "dupesKeepNode") InfoL
 
   return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
