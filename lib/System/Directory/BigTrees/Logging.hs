@@ -83,7 +83,7 @@ die mLog context msg =
   let date  = B8.pack $ "XXXX-XX-XX XX:XX:XX" -- TODO how to get date here?
       line  = logLine ErrorL context msg date
       line' = B8.unpack $ fromLogStr line
-      line'' = drop 22 $ show line'
+      line'' = drop 23 $ show line'
   in case mLog of
        Nothing -> error line''
        Just _  -> error $ unsafePerformIO $ hPutStrLn stderr line' >> hFlush stderr >> return line''

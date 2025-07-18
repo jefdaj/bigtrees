@@ -45,7 +45,7 @@ module System.Directory.BigTrees
   , dropTo
   , dropFileData
   , flattenTree
-  , hashContents
+  , hashDirContents
   -- , listAllFiles
   -- , listLostFiles
   , printTree
@@ -159,7 +159,7 @@ import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData 
                                           setContainsHash, toSortedList, writeHashList)
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
-                                                hashContents, renameRoot, treeNNodes, treeHash,
+                                                hashDirContents, renameRoot, treeNNodes, treeHash,
                                                 treeModTime, treeNBytes, treeName, zeroModTime)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)

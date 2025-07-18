@@ -65,10 +65,10 @@ treeNNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
 -- totalModTime (Dir  {}) = undefined -- TODO add mod time field
 
 -- TODO handle Err case
-hashContents :: [HashTree a] -> Hash
-hashContents = hashBytes . B8.unlines . markDir . sort . map (BS.fromShort . unHash . treeHash)
+hashDirContents :: [HashTree a] -> Hash
+hashDirContents = hashBytes . B8.unlines . markDir . sort . map (BS.fromShort . unHash . treeHash)
   where
-    markDir hs = "D" : hs -- distinguish an empty or one-hash dir from corresponding files
+    markDir = ("D":) -- distinguish an empty or one-hash dir from corresponding files
 
 -- TODO separate module for NodeData
 
@@ -270,14 +270,14 @@ arbitraryDirSized arbsize = do
   -- TODO put back the nubBy part!
   !cs <- arbitraryContents $ arbsize - 1
   !mt <- arbitrary :: Gen ModTime
-  !s <- return (NBytes 4096) -- TODO does dir size vary?
+  !s <- return (NBytes 4096) -- TODO get this right on other filesystems
   -- TODO assert that nNodes == s here?
   return $ Dir
     { dirContents = cs
     , nNodes = sum $ (NNodes 1) : map treeNNodes cs
     , nodeData = NodeData
       { name     = n
-      , hash     = hashContents cs
+      , hash     = hashDirContents cs
       , modTime  = mt
       , nBytes   = sum $ s : map (nBytes .nodeData) cs
       }
@@ -314,7 +314,7 @@ instance Arbitrary TestTree where
     where
       newNames = map (\n -> d { nodeData = nd { name = n } }) (shrink $ name nd)
       newContents = map (\cs -> d { dirContents = cs
-                                  , nodeData = nd {hash = hashContents cs}
+                                  , nodeData = nd {hash = hashDirContents cs}
                                   , nNodes = sum $ 1 : map treeNNodes cs}) -- TODO factor out
                         (shrink $ dirContents d)
 

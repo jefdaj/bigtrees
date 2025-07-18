@@ -10,7 +10,7 @@ import Data.Either (fromRight)
 import Data.Function (on)
 import Data.List (delete, find, sortBy)
 import System.Directory.BigTrees.HashLine (NBytes (..))
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), hashContents,
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), hashDirContents,
                                                 treeNNodes, treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
@@ -38,7 +38,7 @@ wrapInEmptyDir n t = Dir
   }
   where
     cs = [t]
-    h = hashContents cs
+    h = hashDirContents cs
 
 wrapInEmptyDirs :: [Name] -> HashTree a -> HashTree a
 wrapInEmptyDirs []     _ = error "wrapInEmptyDirs needs at least one dir"
@@ -56,7 +56,7 @@ addSubTree main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNodes = 
     comps  = ns
     -- p1     = n
     -- path'  = joinPath comps
-    h'     = hashContents cs'
+    h'     = hashDirContents cs'
     nd'    = (nodeData main) { hash = h', modTime = mt', nBytes = s' }
     cs'    = sortBy
                (compare `on` treeName) $
