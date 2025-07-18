@@ -43,7 +43,7 @@ listTreePaths cfg lCfg fmt tree = do
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
   eLists <- forM (excludeSetPaths cfg) $ \fp -> encodeFS fp >>= readHashList lCfg
   return $ case mkLineMetaFormatter lCfg fmt of
-    (Left  errMsg) -> error errMsg -- TODO log here, THEN die
+    (Left  errMsg) -> die (addLogContext lCfg "listTreePaths") $ B8.pack errMsg
     (Right fmtFn ) -> runST $ do
       eSet <- hashSetFromList $ concat eLists -- TODO is there a better way than concat?
       listTreePaths' cfg lCfg cls eSet fmtFn (Depth 0) [] tree
