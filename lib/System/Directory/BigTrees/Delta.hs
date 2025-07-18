@@ -126,16 +126,16 @@ fixMoves lCfg t (d:ds) = d : fixMoves lCfg t ds
 -----------------------------
 
 -- TODO think through how to report results more!
-simDelta :: (Eq a, Show a) => HashTree a -> Delta a -> Either String (HashTree a)
-simDelta t (Rm   p    ) = rmSubTree t $ op2ns p
-simDelta t (Add  p   t2) = Right $ addSubTree t t2 $ op2ns p
-simDelta t (Edit p _ t2) = Right $ addSubTree t t2 $ op2ns p -- TODO duplicate final name in path?
-simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
+simDelta :: (Eq a, Show a) => LogCfg -> HashTree a -> Delta a -> Either String (HashTree a)
+simDelta lCfg t (Rm   p    ) = rmSubTree t $ op2ns p
+simDelta lCfg t (Add  p   t2) = Right $ addSubTree lCfg t t2 $ op2ns p
+simDelta lCfg t (Edit p _ t2) = Right $ addSubTree lCfg t t2 $ op2ns p -- TODO duplicate final name in path?
+simDelta lCfg t (Mv   p1 p2) = case simDelta lCfg t (Rm p1) of
   Left  e  -> Left e
-  Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t $ op2ns p1 -- TODO path error here?
+  Right t2 -> simDelta lCfg t2 $ Add p2 $ fromJust $ dropTo t $ op2ns p1 -- TODO path error here?
 
-simDeltas :: ProdTree -> [Delta ()] -> Either String ProdTree
-simDeltas = foldM simDelta
+simDeltas :: LogCfg -> ProdTree -> [Delta ()] -> Either String ProdTree
+simDeltas lCfg = foldM $ simDelta lCfg
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
 

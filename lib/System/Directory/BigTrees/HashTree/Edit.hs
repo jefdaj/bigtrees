@@ -14,6 +14,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ha
                                                 treeNNodes, treeModTime, treeNBytes, treeName)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
+import System.Directory.BigTrees.Logging (LogCfg, die, addLogContext)
 import System.Directory.BigTrees.Name (Name, fp2n)
 import System.Directory.BigTrees.Util (pathComponents)
 import System.OsPath (OsPath, joinPath, splitPath)
@@ -46,11 +47,11 @@ wrapInEmptyDirs [n]    t = wrapInEmptyDir n t
 wrapInEmptyDirs (n:ns) t = wrapInEmptyDir n $ wrapInEmptyDirs ns t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
-addSubTree :: HashTree a -> HashTree a -> [Name] -> HashTree a
-addSubTree (Err  {}) sub [] = sub -- TODO is this right?
-addSubTree (File {}) _ _ = error "attempt to insert tree into a file"
-addSubTree _ _ [] = error "can't insert tree at null path"
-addSubTree main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNodes = n' }
+addSubTree :: LogCfg -> HashTree a -> HashTree a -> [Name] -> HashTree a
+addSubTree _    (Err  {}) sub [] = sub -- TODO is this right?
+addSubTree lCfg (File {}) _ _ = die (addLogContext lCfg "addSubTree") "attempt to insert tree into a file"
+addSubTree _ _ _ [] = error "can't insert tree at null path"
+addSubTree lCfg main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNodes = n' }
   where
     -- comps  = pathComponents path
     comps  = ns
@@ -73,7 +74,7 @@ addSubTree main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNodes = 
                then sub'
                else case oldSub of
                  Nothing -> wrapInEmptyDirs ns sub'
-                 Just d  -> addSubTree d sub' ns
+                 Just d  -> addSubTree lCfg d sub' ns
 
 ----------------------
 -- remove a subtree --
