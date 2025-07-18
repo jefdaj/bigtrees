@@ -17,7 +17,7 @@ import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearc
 import Data.Functor ((<&>))
 import qualified System.Console.Docopt as D
 import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
-                                  TreeType (..), LogLevel(..), LogContext, logMaybe, createStderrLogger)
+                                  TreeType (..), LogLevel(..), LogContext, logMaybe, initLogger)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
@@ -118,7 +118,7 @@ main = do
           }
         }
 
-  (logger, cleanupLogger) <- createStderrLogger
+  (logger, cleanupLogger) <- initLogger
   let mLog  = if (verbose cfg) then Just logger else Nothing
       info  = logMaybe mLog InfoL  "main"
       debug = logMaybe mLog DebugL "main"

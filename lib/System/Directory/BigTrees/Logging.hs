@@ -6,7 +6,7 @@ module System.Directory.BigTrees.Logging
   , LogLevel (..)
   , LogContext
   , LogFn
-  , createStderrLogger
+  , initLogger
   , log
   , die
   , logMaybe
@@ -45,8 +45,8 @@ data LogLevel = DebugL | InfoL | WarningL | ErrorL
 instance ToLogStr LogLevel where
   toLogStr = toLogStr . map toUpper . init . show
 
-createStderrLogger :: IO (LogFn, IO ())
-createStderrLogger = do
+initLogger :: IO (LogFn, IO ())
+initLogger = do
   -- Microseconds might be useful here for ordering, but sadly Data.UnixTime
   -- ignores them. Maybe that's good for efficiency?
   timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
