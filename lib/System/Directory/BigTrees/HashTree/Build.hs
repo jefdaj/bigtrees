@@ -4,6 +4,7 @@
 
 module System.Directory.BigTrees.HashTree.Build where
 
+import Prelude hiding (log)
 import Control.Exception.Safe (Exception, MonadCatch, handleAny)
 -- import Control.Exception -- TODO specifics
 -- import GHC.IO.Exception -- TODO specifics
@@ -17,7 +18,7 @@ import Data.Maybe (isJust)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Foreign.C.Types (CTime (..))
 -- import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
-import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), logMaybe)
+import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), log, addLogContext)
 import System.Directory.BigTrees.Hash (hashFile, hashFromAnnexPath, hashSymlinkLiteral,
                                        hashSymlinkTarget)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..), NBytes (..),
@@ -93,29 +94,32 @@ regexFilterTrees cfg rootDir trees = filterM noExclude trees
 -- see also `buildTestTree` in the `HashTreeTest` module
 -- TODO remove this?
 -- TODO rename buildProdTreeL?
-buildProdTree :: SearchConfig -> Maybe LogFn -> OsPath -> IO ProdTree
+buildProdTree :: SearchConfig -> LogCfg -> OsPath -> IO ProdTree
 buildProdTree cfg = buildTree cfg (return . const ())
 
 -- TODO rename buildTreeL?
-buildTree :: SearchConfig -> (OsPath -> IO a) -> Maybe LogFn -> OsPath -> IO (HashTree a)
-buildTree cfg readFileFn mLog path = do
+buildTree :: SearchConfig -> (OsPath -> IO a) -> LogCfg -> OsPath -> IO (HashTree a)
+buildTree cfg readFileFn lCfg path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
   -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
   tree <- DT.readDirectoryWithL False readFileFn path -- TODO need to rename root here?
   -- putStrLn $ show tree
-  buildTree' cfg readFileFn mLog (Depth 0) tree
+  buildTree' cfg readFileFn lCfg (Depth 0) tree
 
 -- This is mainly meant as an error handler, but also works for the trivial
 -- case of re-wrapping directory-tree error nodes. Also the main "verbose"
 -- thing in the program.
-mkErrTree :: (Exception e) => Maybe LogFn -> OsPath -> DT.FileName -> e -> IO (HashTree a)
-mkErrTree mLog a n e = do
+mkErrTree :: (Exception e) => LogCfg -> OsPath -> DT.FileName -> e -> IO (HashTree a)
+mkErrTree lCfg a n e = do
   let msg = simplifyErrMsg $ show e
-  let err = logMaybe mLog ErrorL "dupesKeepNode"
-  when (isJust mLog) $ do -- TODO remove redundant conditional?
-    path <- SOP.decodeFS $ a </> n -- TODO bytestring here?
-    err $ B8.pack msg <> " " <> B8.pack path
+  let err = log (addLogContext lCfg "dupesKeepNode") ErrorL
+
+  -- TODO was the conditional necessary here to prevent path being decoded all the time?
+  -- when (isJust lCfg) $ do
+  path <- SOP.decodeFS $ a </> n -- TODO bytestring here?
+  err $ B8.pack msg <> " " <> B8.pack path
+
   return $ Err
     { errName = Name n
     , errMsg = ErrMsg msg -- TODO bytestring for these too?
@@ -148,15 +152,15 @@ pathIsInTree (Depth d) (Just path) = notAbsolute && foldHeight comps < d
 -- contents) should be strict, because we want to be able to immediately wrap
 -- any IO errors in an Err tree constructor.
 -- TODO is there a safer way to do that with lazy evaluation?
-buildTree' :: SearchConfig -> (OsPath -> IO a) -> Maybe LogFn -> Depth -> DT.AnchoredDirTree a -> IO (HashTree a)
+buildTree' :: SearchConfig -> (OsPath -> IO a) -> LogCfg -> Depth -> DT.AnchoredDirTree a -> IO (HashTree a)
 
-buildTree' _ _ mLog _  (a DT.:/ (DT.Failed n e )) = mkErrTree mLog a n e
+buildTree' _ _ lCfg _  (a DT.:/ (DT.Failed n e )) = mkErrTree lCfg a n e
 
 -- A "File" can be a real file, but also several variants of symlink.
 -- We handle them all here.
 -- Note that readFileFn and hashFile both read the file, but in practice that
 -- isn't a problem because readFileFn is a no-op in production.
-buildTree' _ readFileFn mLog depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree mLog a n) $ do
+buildTree' _ readFileFn lCfg depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree lCfg a n) $ do
   let fPath = a </> n
   fPath' <- SOP.decodeFS fPath
   -- TODO clean up this funny logic, being careful not to cause regressions
@@ -223,7 +227,7 @@ buildTree' _ readFileFn mLog depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTre
     -- TODO are there any other "non-regular" files we can do something useful with?
     -- TODO proper way to throw an exception here?
     -- TODO upstream PR for directory-tree doing something like this?
-    else if not isRegular then mkErrTree mLog a n NotARegularFile
+    else if not isRegular then mkErrTree lCfg a n NotARegularFile
 
     else do
       -- actual regular file
@@ -234,7 +238,7 @@ buildTree' _ readFileFn mLog depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTre
       tmp <- hashFromAnnexPath fPath
       !h <- case tmp of
               Just h  -> return h
-              Nothing -> unsafeInterleaveIO $ hashFile mLog fPath
+              Nothing -> unsafeInterleaveIO $ hashFile lCfg fPath
 
       !fd <- unsafeInterleaveIO $ readFileFn fPath
       -- seems not to help with memory usage?
@@ -250,7 +254,7 @@ buildTree' _ readFileFn mLog depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTre
         , fileData = fd
         }
 
-buildTree' cfg readFileFn mLog depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTree mLog a n) $ do
+buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTree lCfg a n) $ do
 
   -- TODO of course, this is forcing the whole tree! have to be lazier about it
   -- (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
@@ -262,7 +266,7 @@ buildTree' cfg readFileFn mLog depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   cs'' <- regexFilterTrees cfg a cs
   let root = a </> n
       -- bang t has no effect on memory usage
-      hashSubtree t = unsafeInterleaveIO $ buildTree' cfg readFileFn mLog (depth+1) $ root DT.:/ t
+      hashSubtree t = unsafeInterleaveIO $ buildTree' cfg readFileFn lCfg (depth+1) $ root DT.:/ t
 
   -- this works, but doesn't affect memory usage:
   -- subTrees <- (if depth > 10 then M.forM else P.forM) cs' hashSubtree

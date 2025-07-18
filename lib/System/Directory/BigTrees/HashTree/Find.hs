@@ -22,7 +22,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), tr
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.Directory.BigTrees.Logging (LogFn, LogLevel (..), logUnsafe)
+import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), logUnsafe, addLogContext)
 import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
 import Text.Regex.TDFA
@@ -37,8 +37,8 @@ import Text.Regex.TDFA.ByteString
  - that `bigtrees find <path>` always matches `find <path>`.
  - TODO also consider hashExcludeRegexes here? Or should they have been handled already?
  -}
-listTreePaths :: SearchConfig -> Maybe LogFn -> String -> HashTree a -> IO [B8.ByteString]
-listTreePaths cfg mLog fmt tree = do
+listTreePaths :: SearchConfig -> LogCfg -> String -> HashTree a -> IO [B8.ByteString]
+listTreePaths cfg lCfg fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
   eLists <- forM (excludeSetPaths cfg) $ \fp -> encodeFS fp >>= readHashList
@@ -46,7 +46,7 @@ listTreePaths cfg mLog fmt tree = do
     (Left  errMsg) -> error errMsg -- TODO log here, THEN die
     (Right fmtFn ) -> runST $ do
       eSet <- hashSetFromList $ concat eLists -- TODO is there a better way than concat?
-      listTreePaths' cfg mLog cls eSet fmtFn (Depth 0) [] tree
+      listTreePaths' cfg lCfg cls eSet fmtFn (Depth 0) [] tree
 
 {- Recursively render paths, passing a list of breadcrumbs.
  - Gotcha: breadcrumbs are in reverse order to make `cons`ing simple
@@ -54,7 +54,7 @@ listTreePaths cfg mLog fmt tree = do
  -}
 listTreePaths'
   :: SearchConfig            -- ^ Main search config
-  -> Maybe LogFn             -- ^ Maybe a logging function
+  -> LogCfg                  -- ^ logging config
   -> CompiledLabeledSearches -- ^ labeled searches
   -> HashSet s               -- ^ Hashes to exclude (may be empty)
   -> FmtFn                   -- ^ Path formatting function
@@ -62,18 +62,18 @@ listTreePaths'
   -> [Name]                  -- ^ Breadcrummbs/anchor to prefix paths with
   -> HashTree a              -- ^ The tree to list paths from
   -> ST s [B8.ByteString]
-listTreePaths' cfg mLog cls eSet fmtFn (Depth d) ns t = do
+listTreePaths' cfg lCfg cls eSet fmtFn (Depth d) ns t = do
   let ns' = treeName t:ns
 
   recPaths <- case t of
 
         (Dir {}) ->
           fmap concat $ forM (dirContents t) $ \t' ->
-            listTreePaths' cfg mLog cls eSet fmtFn (Depth $ d+1) ns' t'
+            listTreePaths' cfg lCfg cls eSet fmtFn (Depth $ d+1) ns' t'
 
         _        -> return []
 
-  keepNode <- findKeepNode cfg mLog eSet (Depth d) t
+  keepNode <- findKeepNode cfg lCfg eSet (Depth d) t
 
   return $
      -- If no regexes, list everything.
@@ -91,12 +91,12 @@ listTreePaths' cfg mLog cls eSet fmtFn (Depth d) ns t = do
      -- If there are regexes but they don't match, keep looking.
      else recPaths
 
-findKeepNode :: SearchConfig -> Maybe LogFn -> HashSet s -> Depth -> HashTree a -> ST s Bool
+findKeepNode :: SearchConfig -> LogCfg -> HashSet s -> Depth -> HashTree a -> ST s Bool
 findKeepNode _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
-findKeepNode cfg mLog eSet d t = do
+findKeepNode cfg lCfg eSet d t = do
   excludeHash <- setContainsHash eSet $ treeHash t
   let excludeHash' = if excludeHash
-                       then logUnsafe mLog DebugL "findKeepNode"
+                       then logUnsafe (addLogContext lCfg "findKeepNode") DebugL
                               ("find exclude hash " <> (prettyHash $ treeHash t) <>
                                ": " <> (n2bs $ treeName t))
                               excludeHash
