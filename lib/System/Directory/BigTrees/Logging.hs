@@ -77,12 +77,16 @@ log2 lSet level context msg date = do
   let lStr = logLine level context msg date
   pushLogStrLn lSet lStr
   flushLogStr lSet
-  error "does it flush first?"
 
+-- works! just needs better UX and probably to adjust all the Maybe LogFn types
 testLogger2 :: IO ()
 testLogger2 = do
   (loggerSet, timeCache) <- initLogger2
-  log2 loggerSet DebugL "testLogger2" "this is a test" =<< timeCache
+  log2 loggerSet DebugL   "testLogger2" "this is a test" =<< timeCache
+  log2 loggerSet InfoL    "testLogger2" "this is a test" =<< timeCache
+  log2 loggerSet WarningL "testLogger2" "this is a test" =<< timeCache
+  log2 loggerSet ErrorL   "testLogger2" "this is a test" =<< timeCache
+  error "does it flush first?"
 
 testLogger3 :: IO ()
 testLogger3 = do
