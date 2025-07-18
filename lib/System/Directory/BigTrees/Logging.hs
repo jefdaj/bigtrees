@@ -115,6 +115,14 @@ log3 (LogCfg {..}) level msg =
 
 -- TODO die3
 
+-- log an error and then crash the program
+die3 :: LogCfg3 -> B8.ByteString -> a
+die3 NoLog msg = error $ B8.unpack $ "ERROR: " <> msg
+die3 cfg@(LogCfg {..}) msg = error $ unsafePerformIO $ do
+  log3 cfg ErrorL msg
+  flushLogStr lcLogger
+  return $ B8.unpack $ "ERROR: " <> msg
+
 testLogger3 :: IO ()
 testLogger3 = do
   cfg :: LogCfg3 <- initLogger3 "testLogger3" InfoL
