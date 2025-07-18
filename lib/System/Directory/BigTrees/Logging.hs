@@ -113,15 +113,15 @@ log3 (LogCfg {..}) level msg =
   when (level >= lcLevel) $
     log2 lcLogger level lcContext msg =<< lcTime
 
--- TODO die3
-
 -- log an error and then crash the program
 die3 :: LogCfg3 -> B8.ByteString -> a
 die3 NoLog msg = error $ B8.unpack $ "ERROR: " <> msg
-die3 cfg@(LogCfg {..}) msg = error $ unsafePerformIO $ do
-  log3 cfg ErrorL msg
-  flushLogStr lcLogger
-  return $ B8.unpack $ "ERROR: " <> msg
+die3 cfg@(LogCfg {..}) msg =
+  (unsafePerformIO $ do
+    log3 cfg ErrorL msg
+    flushLogStr lcLogger)
+  `seq`
+    error $ lcContext ++ " " ++ B8.unpack msg
 
 testLogger3 :: IO ()
 testLogger3 = do
@@ -131,6 +131,7 @@ testLogger3 = do
   log3 (addLogContext cfg "moreContext") DebugL   "testing log3 with DebugL"
   log3 NoLog DebugL   "testing log3 with DebugL and NoLog"
   log3 cfg   WarningL "testing log3 with WarningL"
+  die3 cfg "testing die3"
   log3 cfg   ErrorL   "testing log3 with ErrorL"
   return ()
 
