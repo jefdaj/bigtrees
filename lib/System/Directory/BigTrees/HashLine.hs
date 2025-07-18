@@ -74,6 +74,7 @@ import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, bs2n, bs2op, n2bs,
                                        nameP, op2bs, sbs2op)
 import System.Directory.BigTrees.Util (getBlockSize)
+import System.Directory.BigTrees.Logging (LogCfg (..), die)
 import qualified System.OsPath as OSP
 import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, generate, resize, suchThat)
 import TH.Derive ()
@@ -323,7 +324,7 @@ parseHashLinesBS bs =
 bench_roundtrip_HashLines_to_ByteString :: B8.ByteString -> IO Bool
 bench_roundtrip_HashLines_to_ByteString bs = do
   case parseHashLinesBS bs of
-    Left msg -> error msg
+    Left msg -> die NoLog $ B8.pack msg
     Right ls -> do
       let bs' = B8.unlines $ map (prettyLine Nothing) ls
       return $ bs' == bs -- TODO any way to do it without asserting the prop too?
