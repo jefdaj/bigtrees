@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DerivingStrategies #-}
 
 module System.Directory.BigTrees.Logging
   -- ( traceV
@@ -23,6 +25,7 @@ import Data.Char (toUpper)
 import qualified Data.ByteString.Char8 as B8
 import System.IO.Unsafe (unsafePerformIO)
 import Data.STRef (STRef(..), newSTRef, readSTRef, writeSTRef)
+import Control.Monad (when)
 import Control.Monad.ST.Strict (ST)
 import Control.DeepSeq (deepseq)
 import System.IO (stderr, hPutStrLn, hFlush)
@@ -40,7 +43,7 @@ type LogContext = String
 type LogFn = LogLevel -> LogContext -> B8.ByteString -> IO ()
 
 data LogLevel = DebugL | InfoL | WarningL | ErrorL
-  deriving (Read, Show)
+  deriving stock (Read, Show, Eq, Ord)
 
 instance ToLogStr LogLevel where
   toLogStr = toLogStr . map toUpper . init . show
@@ -80,14 +83,47 @@ testLogger2 = do
   log2 loggerSet ErrorL   "testLogger2" "this is a test" =<< timeCache
   error "does it flush first?"
 
-initLogger3 = do
-  timeCache :: IO FormattedTime <- newTimeCache "%Y-%m-%d %H:%M:%S"
-  loggerSet :: LoggerSet <- newStderrLoggerSet defaultBufSize
-  return loggerSet
+data LogCfg3 = NoLog | LogCfg
+  { lcContext :: LogContext       -- ^ a string like "main.mymodule.mycmd"
+  , lcLevel   :: LogLevel         -- ^ minimum level that will be logged
+  , lcLogger  :: LoggerSet        -- ^ fast-logger LoggerSet
+  , lcTime    :: IO FormattedTime -- ^ fast-logger time cache
+  }
+
+addLogContext :: LogCfg3 -> String -> LogCfg3
+addLogContext NoLog _ = NoLog
+addLogContext cfg@(LogCfg {}) ctx = cfg { lcContext = lcContext cfg ++ "." ++ ctx }
+
+-- TODO setLogLevel?
+
+initLogger3 :: String -> LogLevel -> IO LogCfg3
+initLogger3 initialContext minLogLevel = do
+  loggerSet <- newStderrLoggerSet defaultBufSize
+  timeCache <- newTimeCache "%Y-%m-%d %H:%M:%S"
+  return $ LogCfg
+    { lcContext = initialContext
+    , lcLevel   = minLogLevel
+    , lcLogger  = loggerSet
+    , lcTime    = timeCache
+    }
+
+log3 :: LogCfg3 -> LogLevel -> B8.ByteString -> IO ()
+log3 NoLog _ _ = return ()
+log3 (LogCfg {..}) level msg =
+  when (level >= lcLevel) $
+    log2 lcLogger level lcContext msg =<< lcTime
+
+-- TODO die3
 
 testLogger3 :: IO ()
 testLogger3 = do
-  logger :: LoggerSet <- initLogger3
+  cfg :: LogCfg3 <- initLogger3 "testLogger3" InfoL
+  log3 cfg   DebugL   "testing log3 with DebugL"
+  log3 cfg   InfoL   "testing log3 with InfoL"
+  log3 (addLogContext cfg "moreContext") DebugL   "testing log3 with DebugL"
+  log3 NoLog DebugL   "testing log3 with DebugL and NoLog"
+  log3 cfg   WarningL "testing log3 with WarningL"
+  log3 cfg   ErrorL   "testing log3 with ErrorL"
   return ()
 
 logLine :: LogLevel -> LogContext -> B8.ByteString -> FormattedTime -> LogStr
