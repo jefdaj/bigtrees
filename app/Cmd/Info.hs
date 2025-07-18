@@ -13,7 +13,7 @@ import System.Directory.BigTrees.HashTree (HashTree (..), readLastHashLineAndFoo
 import System.Directory.BigTrees.HeadFoot (Footer, Header (..), readHeader, scanSeconds)
 -- import qualified Data.ByteString.Short as BS
 import System.OsPath (OsPath, encodeFS)
-import System.Directory.BigTrees.Logging (LogCfg (..))
+import System.Directory.BigTrees.Logging (LogCfg (..), die)
 
 cmdInfo :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdInfo cfg lCfg path = do
@@ -21,8 +21,9 @@ cmdInfo cfg lCfg path = do
   mLF <- readLastHashLineAndFooter path
   case (mH, mLF) of
     (Just h, Just (l, f)) -> printInfo path h f l
-    _                     -> error $ "failed to read info from " ++ show path
+    _                     -> die lCfg $ B8.pack $ "failed to read info from " ++ show path
 
+-- TODO log a message on ErrLine?
 printInfo :: OsPath -> Header -> Footer -> HashLine -> IO ()
 printInfo path header footer lastLine = do
   let seconds = scanSeconds (header, footer)
