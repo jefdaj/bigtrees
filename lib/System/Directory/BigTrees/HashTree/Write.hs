@@ -9,6 +9,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Te
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Name (unName)
+import System.Directory.BigTrees.Logging (LogCfg, die, addLogContext)
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hFlush, stdout)
@@ -73,50 +74,51 @@ flattenTree' (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
 
 -- this is to catch the case where it tries to write the same file twice
 -- (happened once because of macos filename case-insensitivity)
-assertNoFile :: OsPath -> IO ()
-assertNoFile path = do
+assertNoFile :: LogCfg -> OsPath -> IO ()
+assertNoFile lCfg path = do
   exists <- SDO.doesPathExist path
   when exists $ do
     path' <- decodeFS path
     -- putStrLn $ "duplicate write: " ++ show path'
-    error $ "duplicate write: " ++ show path'
+    die (addLogContext lCfg "assertNoFile") $ B8.pack $ "duplicate write: " ++ show path'
 
-assertFile :: OsPath -> IO ()
-assertFile path = do
+assertFile :: LogCfg -> OsPath -> IO ()
+assertFile lCfg path = do
   exists <- SDO.doesPathExist path
   unless exists $ do
     path' <- decodeFS path
     -- putStrLn $ "failed to write: " ++ show path'
-    error $ "failed to write: " ++ show path'
+    die (addLogContext lCfg "assertFile") $ B8.pack $ "failed to write: " ++ show path'
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
  - Note that this calls itself recursively.
  - Note also that when you call this at the top level,
  - `root` should refer to the parent dir of your tree!
  - (Yes this is confusing, and should be changed if it will be user facing)
+ - TODO should this be NoLog?
  -}
-writeTestTreeDir :: OsPath -> TestTree -> IO ()
+writeTestTreeDir :: LogCfg -> OsPath -> TestTree -> IO ()
 
-writeTestTreeDir root (Err {}) = return () -- TODO print a warning?
+writeTestTreeDir lCfg root (Err {}) = return () -- TODO print a warning?
 
-writeTestTreeDir root l@(Link {nodeData=nd}) = do
+writeTestTreeDir lCfg root l@(Link {nodeData=nd}) = do
   let path = root </> unName (name nd)
-  assertNoFile path
+  assertNoFile lCfg path
   -- Target comes first, then the file we're writing (like `ln -s`)
   SDO.createFileLink (linkTarget l) path
-  assertFile path
+  assertFile lCfg path
 
-writeTestTreeDir root (File {nodeData=nd, fileData = bs}) = do
+writeTestTreeDir lCfg root (File {nodeData=nd, fileData = bs}) = do
   -- SDO.createDirectoryIfMissing True root -- TODO remove
   let path = root </> unName (name nd)
-  assertNoFile path
+  assertNoFile lCfg path
   SFO.writeFile' path bs
-  assertFile path
+  assertFile lCfg path
 
-writeTestTreeDir root (Dir {nodeData=nd, dirContents = cs}) = do
+writeTestTreeDir lCfg root (Dir {nodeData=nd, dirContents = cs}) = do
   let root' = root </> unName (name nd)
-  assertNoFile root'
+  assertNoFile lCfg root'
   -- putStrLn $ "write test dir: " ++ show root'
   SDO.createDirectoryIfMissing True root' -- TODO true?
-  assertFile root'
-  mapM_ (writeTestTreeDir root') cs
+  assertFile lCfg root'
+  mapM_ (writeTestTreeDir lCfg root') cs

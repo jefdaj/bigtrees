@@ -175,7 +175,7 @@ roundtripTestTreeToTmpdir t =
 
     -- This is a little confusing, but the FilePath here should be the *parent*
     -- within which to write the root tree dir...
-    writeTestTreeDir tmpDir' t
+    writeTestTreeDir NoLog tmpDir' t
     D.delay 100000
 
     -- ... but then when reading it back in we need the full path including the

@@ -48,8 +48,8 @@ cmdFind cfg lCfg path = do
 readAndSortLines :: OsPath -> IO B8.ByteString
 readAndSortLines path = SFO.readFile' path <&> (B8.unlines . sort . B8.lines)
 
-cmdFindUnixFind :: TestTree -> IO (B8.ByteString, B8.ByteString)
-cmdFindUnixFind t =
+cmdFindUnixFind :: LogCfg -> TestTree -> IO (B8.ByteString, B8.ByteString)
+cmdFindUnixFind lCfg t =
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
 
     tmpDir' <- encodeFS tmpDir
@@ -62,7 +62,7 @@ cmdFindUnixFind t =
     -- we wrap it like this to make commands easier with potentially weird unicode tree names,
     -- and to avoid finding our own test txt files from above
     SDO.createDirectoryIfMissing False treeDir'
-    writeTestTreeDir treeDir' t
+    writeTestTreeDir lCfg treeDir' t
 
     let cfg = defaultAppConfig { outFile = Just myFindOut' }
     cmdFind cfg NoLog treeDir'
@@ -78,7 +78,7 @@ cmdFindUnixFind t =
 prop_cmdFind_paths_match_unix_find :: Property
 prop_cmdFind_paths_match_unix_find = monadicIO $ do
   tree <- pick arbitrary
-  (out1, out2) <- run $ cmdFindUnixFind tree
+  (out1, out2) <- run $ cmdFindUnixFind NoLog tree
   -- WARNING these will mess up your terminal
   -- liftIO $ putStrLn out1
   -- liftIO $ putStrLn out2
