@@ -75,7 +75,7 @@ diff' _ a (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm a, Add (a
 diff' _ a (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (a </> d), Add (a </> d) t2]
 diff' lCfg a t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
   | h1 == h2 = []
-  | otherwise = fixMoves t1 $ rms ++ adds ++ edits
+  | otherwise = fixMoves lCfg t1 $ rms ++ adds ++ edits
   where
     adds  = [Add (a </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
     rms   = [Rm  (a </> unName (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
@@ -94,13 +94,13 @@ findMv _ _ _ = False
 -- else, that should be displayed as a single move operation. This will never
 -- match 100% before and after actual operations, because the filesystem
 -- version might be a move followed by editing files.
-fixMoves :: (Eq a, Show a) => HashTree a -> [Delta a] -> [Delta a]
-fixMoves _ [] = []
-fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
-  Just d2@(Add f2 _) -> Mv f1 f2 : let ds' = filter (/= d2) ds in fixMoves t ds'
-  Just d2            -> error $ "findMv returned a non-add: " ++ show d2
-  Nothing            -> d1 : fixMoves t ds
-fixMoves t (d:ds) = d : fixMoves t ds
+fixMoves :: (Eq a, Show a) => LogCfg -> HashTree a -> [Delta a] -> [Delta a]
+fixMoves _ _ [] = []
+fixMoves lCfg t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
+  Just d2@(Add f2 _) -> Mv f1 f2 : let ds' = filter (/= d2) ds in fixMoves lCfg t ds'
+  Just d2            -> die (addLogContext lCfg "fixMoves") $ B8.pack $ "findMv returned a non-add: " ++ show d2
+  Nothing            -> d1 : fixMoves lCfg t ds
+fixMoves lCfg t (d:ds) = d : fixMoves lCfg t ds
 
 --------------------------------------------
 -- check if simulated operations are safe --
