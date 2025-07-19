@@ -110,6 +110,7 @@ executable bigtrees
       Cmd.Dupes.Render
       Cmd.Dupes.Render.RsyncFilter
       Cmd.Dupes.Render.Suggestions
+      Cmd.Dupes.Render.TestScript
       Cmd.Dupes.Render.Types
       Cmd.Find
       Cmd.Hash
@@ -188,6 +189,7 @@ test-suite test-app
       Cmd.Dupes.Render
       Cmd.Dupes.Render.RsyncFilter
       Cmd.Dupes.Render.Suggestions
+      Cmd.Dupes.Render.TestScript
       Cmd.Dupes.Render.Types
       Cmd.Find
       Cmd.Hash
@@ -372,6 +374,7 @@ benchmark test-bench
       Cmd.Dupes.Render
       Cmd.Dupes.Render.RsyncFilter
       Cmd.Dupes.Render.Suggestions
+      Cmd.Dupes.Render.TestScript
       Cmd.Dupes.Render.Types
       Cmd.Find
       Cmd.Hash
