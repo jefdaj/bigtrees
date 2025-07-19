@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Cmd.Dupes.Render.RsyncFilter where
 
@@ -9,7 +10,7 @@ import qualified Data.List.Split as LS
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
-import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
+import System.OsPath (OsPath, osp, (</>), joinPath, splitDirectories, decodeFS)
 
 -- escapeRsyncExcludeSpecialChars :: String -> String
 -- escapeRsyncExcludeSpecialChars input = concatMap escapeChar input
@@ -20,11 +21,17 @@ import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
 --       | otherwise  = [c]
 
 -- TODO rewrite this using Names or something too, after testing the bytes idea
-replaceTopDirWithSlash :: String -> String
-replaceTopDirWithSlash path = '/' : L.intercalate "/" pathTail
+-- replaceTopDirWithSlash :: String -> String
+-- replaceTopDirWithSlash path = '/' : L.intercalate "/" pathTail
+--   where
+--     comps = LS.splitOn "/" path
+--     pathTail = if null comps then [] else tail comps
+
+replaceTopDirWithSlash :: OsPath -> OsPath
+replaceTopDirWithSlash path = joinPath comps'
   where
-    comps = LS.splitOn "/" path
-    pathTail = if null comps then [] else tail comps
+    comps = splitDirectories path
+    comps' = if length comps < 2 then comps else [osp|/|] : tail comps -- TODO is this right?
 
 -- escapeRsyncExcludeFromPath2 :: B8.ByteString -> B8.ByteString
 -- escapeRsyncExcludeFromPath2 path = if wildcardMode then escaped else path
@@ -104,7 +111,8 @@ renderRsyncFilter keepOne md ls = do
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, h, t, paths) = do
       -- paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      let paths''   = map (escapeRsyncPathBytes . op2bs) $ sortPaths paths -- TODO replaceTopDirWithSlash too
+      let paths'    = map replaceTopDirWithSlash paths
+          paths''   = map (escapeRsyncPathBytes . op2bs) $ sortPaths paths'
           paths'''  = if t == D then map (<> "/") paths'' else paths''
           paths'''' = if not keepOne
                        then map ("- " <>) $ paths'''
