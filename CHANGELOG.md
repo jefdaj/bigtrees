@@ -12,6 +12,13 @@
 - Added a header with format version to .bigset files like the .bigtree ones.
 - Factored dupes render functions out of `DupeMap` into `Cmd.Dupes`
 
+## v0.19.1
+
+### Changed
+
+- Rewrote `Logging` code to include a `LogCfg` and pass that around rather than `Maybe LogFn`.
+- Replaced all `error` calls with `die` version that logs before crashing.
+
 ## v0.19
 
 ### Fixed
