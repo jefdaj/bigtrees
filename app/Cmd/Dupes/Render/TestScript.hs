@@ -33,7 +33,7 @@ escapePathByte b
 escapePath :: B8.ByteString -> B8.ByteString
 escapePath path = B8.concat
   [ B8.singleton '\''
-  , escapePath path
+  , B8.concatMap escapePathByte path
   , B8.singleton '\''
   ]
 
