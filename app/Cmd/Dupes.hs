@@ -29,18 +29,13 @@ import Data.Maybe (fromMaybe, fromJust)
 import qualified Data.ByteString.Char8 as B8
 import System.IO.Unsafe (unsafePerformIO)
 import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), log, logUnsafe, addLogContext)
+import Cmd.Dupes.Render (dupesRenderFunctions)
 
 -- import Debug.Trace
 
 -- defined in DupeMap.hs for now:
 -- TODO rename DupesRenderFn
 -- type ExplainFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
-
-dupesRenderFunctions :: [(String, BT.ExplainFn)]
-dupesRenderFunctions =
-  [ ("suggestions", BT.renderDupesSuggestions)
-  , ("rsync-filter-file", BT.renderDupesRsyncFilter)
-  ]
 
 cmdDupes :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdDupes cfg lCfg path = bracket open close write

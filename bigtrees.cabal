@@ -107,6 +107,9 @@ executable bigtrees
       Cmd
       Cmd.Diff
       Cmd.Dupes
+      Cmd.Dupes.Render
+      Cmd.Dupes.Render.RsyncFilter
+      Cmd.Dupes.Render.Suggestions
       Cmd.Find
       Cmd.Hash
       Cmd.Info
