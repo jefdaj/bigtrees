@@ -15,7 +15,7 @@ fileHeader = B8.pack $
   "#!/usr/bin/env bash\n\
   \\n\
   \# This is the 'test-script' output format.\n\
-  \# It's mainly for debugging.\n\
+  \# It's mainly for debugging cross-filesystem filename issues.\n\
   \\n\
   \test_X() { test $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
   \test_d() { test_X '-d' 'dir ' \"$1\"; }\n\
