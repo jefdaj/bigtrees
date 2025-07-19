@@ -115,18 +115,18 @@ module System.Directory.BigTrees
   -- dupemap
   , DupeMap
   , DupeSet
-  , ExplainFn
   , AddTreeProgress
+  , DupeList
+  , SortedDupeSets
+  , SortedDupeLists
   , addTreeToDupeMap
   , dupesByNegScore
-  , hWriteDupes
   , mergeDupeSets
   , pathsByHash
   , scoreSetRef
   , scoreSetSelf
   , scoreSets
-  , renderDupesSuggestions
-  , renderDupesRsyncFilter
+  , sortPaths
 
   -- logging
   , LogContext
@@ -145,10 +145,9 @@ import Prelude hiding (log)
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
-import System.Directory.BigTrees.DupeMap (DupeSet, DupeMap, AddTreeProgress, dupesByNegScore,
-                                          mergeDupeSets, pathsByHash, scoreSets, scoreSetSelf, scoreSetRef,
-                                          hWriteDupes, addTreeToDupeMap, renderDupesSuggestions,
-                                          renderDupesRsyncFilter, ExplainFn)
+import System.Directory.BigTrees.DupeMap (DupeSet, DupeMap, AddTreeProgress, DupeList, SortedDupeSets, SortedDupeLists, dupesByNegScore,
+                                          mergeDupeSets, pathsByHash, sortPaths, scoreSets, scoreSetSelf, scoreSetRef,
+                                          addTreeToDupeMap)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),
                                            NNodes (..), TreeType (..), linesP)

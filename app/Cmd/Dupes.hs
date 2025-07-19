@@ -29,13 +29,19 @@ import Data.Maybe (fromMaybe, fromJust)
 import qualified Data.ByteString.Char8 as B8
 import System.IO.Unsafe (unsafePerformIO)
 import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), log, logUnsafe, addLogContext)
-import Cmd.Dupes.Render (dupesRenderFunctions)
+import Cmd.Dupes.Render (DupesRenderFn, dupesRenderFunctions)
 
 -- import Debug.Trace
 
 -- defined in DupeMap.hs for now:
 -- TODO rename DupesRenderFn
--- type ExplainFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
+-- type DupesRenderFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
+
+-- TODO factor explainFn out here?
+hWriteDupes :: SearchConfig -> DupesRenderFn -> Bool -> Handle -> BT.SortedDupeLists -> IO ()
+hWriteDupes cfg explainFn keepOneDupe hdl groups = do
+  msg <- explainFn keepOneDupe (maxDepth cfg) groups
+  B8.hPutStr hdl msg
 
 cmdDupes :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdDupes cfg lCfg path = bracket open close write
@@ -89,7 +95,7 @@ cmdDupes cfg lCfg path = bracket open close write
       let keepOneDupe = null rList
 
       debug $ "writing " <> B8.pack (show $ length ds) <> " DupeSets"
-      BT.hWriteDupes (searchCfg cfg) renderFn keepOneDupe hdl ds
+      hWriteDupes (searchCfg cfg) renderFn keepOneDupe hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?

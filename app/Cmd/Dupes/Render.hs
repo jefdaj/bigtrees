@@ -1,15 +1,15 @@
 module Cmd.Dupes.Render
-  ( renderDupesFunctions
+  ( DupesRenderFn
+  , dupesRenderFunctions
   )
   where
 
-import qualified System.Directory.BigTrees as BT
+import Cmd.Dupes.Render.Types
+import Cmd.Dupes.Render.RsyncFilter
+import Cmd.Dupes.Render.Suggestions
 
-dupesRenderFunctions :: [(String, BT.ExplainFn)]
+dupesRenderFunctions :: [(String, DupesRenderFn)]
 dupesRenderFunctions =
   [ ("suggestions"      , renderDupesSuggestions)
   , ("rsync-filter-file", renderDupesRsyncFilter)
   ]
-
-import Cmd.Dupes.Render.RsyncFilter (renderDupesRsyncFilter)
-import Cmd.Dupes.Render.Suggestions (renderDupesSuggestions)
