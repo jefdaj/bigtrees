@@ -70,8 +70,7 @@ cleanupLogger cfg = rmLoggerSet $ lcLogger cfg
 
 log :: LogCfg -> LogLevel -> B8.ByteString -> IO ()
 log NoLog _ _ = return ()
-log (LogCfg {..}) level msg = do
-  when (level < lcLevel) $ return ()
+log (LogCfg {..}) level msg = when (level >= lcLevel) $ do
   time <- lcTime
   let lStr = formatLogLine level lcContext msg time
   pushLogStrLn lcLogger lStr
