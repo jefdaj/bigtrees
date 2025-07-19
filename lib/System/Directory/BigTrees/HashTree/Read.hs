@@ -3,6 +3,7 @@
 
 module System.Directory.BigTrees.HashTree.Read where
 
+import Prelude hiding (log)
 import Control.DeepSeq (deepseq)
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
@@ -33,7 +34,7 @@ import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
-import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), logUnsafe, addLogContext, die)
 
 -- import Debug.Trace
 
@@ -53,9 +54,12 @@ import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
 -- | When reading HashLines with accTrees, whether to accumulate this line or skip it.
 -- To keep the tree structure valid, should always be True when accRecurseChildren is True.
 -- TODO reorder the conditions to optimize speed
-accKeepLine :: SearchConfig -> HashLine -> Bool
-accKeepLine _ hl@(ErrLine _) = False -- TODO is this how we should handle them?
-accKeepLine cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
+accKeepLine :: SearchConfig -> LogCfg -> HashLine -> Bool
+accKeepLine _ lCfg hl@(ErrLine _) =
+  logUnsafe
+    (addLogContext lCfg "accKeepLine") WarningL (B8.pack $ show hl)
+    False
+accKeepLine cfg _ hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
   [ maybe True (s  >=) $ minBytes cfg
   , maybe True (s  <=) $ maxBytes cfg
   , maybe True (d  >=) $ minDepth cfg
@@ -69,8 +73,8 @@ accKeepLine cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
   ]
 
 -- | When reading a tree with accTrees, whether to recurse into this line's children.
-accRecurseChildren :: SearchConfig -> HashLine -> Bool
-accRecurseChildren cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
+accRecurseChildren :: SearchConfig -> LogCfg -> HashLine -> Bool
+accRecurseChildren cfg lCfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
   [ t == D -- if not a Dir, can't recurse
   , maybe True (s  > ) $ minBytes cfg
   , maybe True (d  < ) $ maxDepth cfg
@@ -78,7 +82,7 @@ accRecurseChildren cfg hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
   , maybe True (mt >=) $ minModtime cfg
   -- TODO finish regex conditions here
   ]
-accRecurseChildren _ _ = False -- not a Dir
+accRecurseChildren _ _ _ = False -- not a Dir
 
 --- read summary info from the end of the file ---
 
@@ -135,7 +139,7 @@ readTree cfg lCfg f = SFO.withFile f ReadMode $ \h -> do
 hReadTree :: SearchConfig -> LogCfg -> Integer -> Handle -> IO ProdTree
 hReadTree cfg lCfg blksize hdl = do
   hls <- hParseTreeFileRev lCfg blksize hdl
-  return $ case foldr (accTrees cfg) [] hls of
+  return $ case foldr (accTrees cfg lCfg) [] hls of
     []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
     ((_, tree):_) -> tree
 
@@ -145,14 +149,14 @@ hReadTree cfg lCfg blksize hdl = do
  - TODO error on null string/lines?
  - TODO should this return a *list* of trees? or is only one possible now that forests are gone?
  -}
-accTrees :: SearchConfig -> HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
+accTrees :: SearchConfig -> LogCfg -> HashLine -> [(Depth, ProdTree)] -> [(Depth, ProdTree)]
 
-accTrees cfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
-  if accKeepLine cfg e
+accTrees cfg lCfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
+  if accKeepLine cfg lCfg e
     then (d, Err { errMsg = m, errName = n }):cs
     else cs
 
-accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
+accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
 
   F -> let f = File
                  { fileData = ()
@@ -163,7 +167,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Fappend" #-} if accKeepLine cfg hl then (Depth i, f):cs else cs
+       in {-# SCC "Fappend" #-} if accKeepLine cfg lCfg hl then (Depth i, f):cs else cs
 
   B -> let l = Link
                  { linkData = Nothing -- TODO is this meaningully different from L?
@@ -176,7 +180,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Bappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
+       in {-# SCC "Bappend" #-} if accKeepLine cfg lCfg hl then (Depth i, l):cs else cs
 
   L -> let l = Link
                  { linkData = Just ()
@@ -189,11 +193,11 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                    , nBytes = s
                    }
                  }
-       in {-# SCC "Lappend" #-} if accKeepLine cfg hl then (Depth i, l):cs else cs
+       in {-# SCC "Lappend" #-} if accKeepLine cfg lCfg hl then (Depth i, l):cs else cs
 
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            -- childrenSorted = sortBy (compare `on` (treeName . snd)) children
-           recurse = accRecurseChildren cfg hl
+           recurse = accRecurseChildren cfg lCfg hl
            dir = Dir
                    { dirContents = {-# SCC "DdirContents" #-} if recurse then map snd children else []
                    , nNodes = nn
@@ -204,7 +208,7 @@ accTrees cfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
                      , nBytes = s
                      }
                    }
-       in {-# SCC "Dappend" #-} if recurse || accKeepLine cfg hl
+       in {-# SCC "Dappend" #-} if recurse || accKeepLine cfg lCfg hl
                                   then (Depth i, dir) : siblings
                                   else siblings
 
