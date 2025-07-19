@@ -41,15 +41,15 @@ renderSuggestions keepOne md ls = do
     groupHeader h D nSaved nDirs = B8.intercalate " "
       [ "# You could save", B8.pack (show nSaved)
       , "inodes by deleting all but one of these", B8.pack (show nDirs)
-      , "directories with hash", prettyHash h `B8.append` (depthWarning md)
+      , "duplicate directories with hash", prettyHash h `B8.append` (depthWarning md)
       ]
     groupHeader h F nSaved nFiles = B8.intercalate " "
       [ "# You could delete", B8.pack (show $ nFiles - 1)
       , "of these", B8.pack (show nFiles)
-      , "files with hash", prettyHash h `B8.append` (depthWarning md)
+      , "duplicate files with hash", prettyHash h `B8.append` (depthWarning md)
       ]
     groupHeader h _ nSaved nLinks = B8.intercalate " "
       [ "# You could delete", B8.pack (show $ nLinks - 1)
       , "of these"  , B8.pack (show nLinks)
-      , "links with hash", prettyHash h `B8.append` (depthWarning md)
+      , "duplicate links with hash", prettyHash h `B8.append` (depthWarning md)
       ]
