@@ -11,6 +11,8 @@ module System.Directory.BigTrees
   , fp2ns
   , n2bs
   , bs2n
+  , op2bs
+  , op2s
   , breadcrumbs2bs
   , joinNames
   , names2bs
@@ -173,7 +175,7 @@ import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printT
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumbs2bs, bs2n, fp2n,
                                        fp2ns, joinNames, n2bs, n2sbs, nameP, names2bs, op2ns, os2ns,
-                                       sbs2n)
+                                       sbs2n, op2bs, op2s)
 
 import System.Directory.BigTrees.HeadFoot (headerP)
 

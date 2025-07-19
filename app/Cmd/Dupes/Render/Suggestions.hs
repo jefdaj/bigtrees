@@ -30,10 +30,10 @@ renderSuggestions keepOne md ls = do
 
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
-      paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
+      -- paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : (map B8.pack $ sortPaths paths')
+             : (map op2bs $ sortPaths paths)
 
     -- TODO is n the number *saved*, or total number of dupes?
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString

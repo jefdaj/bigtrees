@@ -42,7 +42,7 @@ import qualified Data.List as L
 import qualified Data.List.Split as LS
 import qualified Data.Massiv.Array as A
 import System.Directory.BigTrees.Hash (Hash, unHash)
-import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs)
+import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs, op2s)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
                                            ProdTree, treeType, treeHash, treeModTime, treeNNodes, treeNBytes,
@@ -282,23 +282,29 @@ redundantSet lCfg h1 fs (_,h2,_,fs') =
 -- 2. fewer path components first
 -- 3. shorter names first
 -- 4. alphabetically as usual
-comparePaths :: String -> String -> Ordering
+comparePaths :: OsPath -> OsPath -> Ordering
 comparePaths a b =
+  
+  -- Compare as Strings, just because that's easier
+  let a' = op2s a
+      b' = op2s b
 
-  let startsWithDot x = not (null x) && head x == '.'
+      startsWithDot x = not (null x) && head x == '.'
       isHiddenPath p = any startsWithDot $ LS.splitOn "/" p
       countComponents path = length (LS.splitOn "/" path)
 
-  in case (isHiddenPath a, isHiddenPath b) of
+  in case (isHiddenPath a', isHiddenPath b') of
        (True, False) -> GT
        (False, True) -> LT
-       _ -> case comparing countComponents a b of
-              EQ -> case comparing length a b of
-                      EQ  -> compare a b
+       _ -> case comparing countComponents a' b' of
+              EQ -> case comparing length a' b' of
+                      EQ  -> compare a' b'
                       ord -> ord
               ord -> ord
 
-sortPaths :: [String] -> [String]
+-- TODO this probably needs to be OsPaths, right?
+--      maybe keep the original paths, but decorate with string versions for sorting?
+sortPaths :: [OsPath] -> [OsPath]
 sortPaths = L.sortBy comparePaths
 
 -------------------------- score sets for quicksorting ------------------------

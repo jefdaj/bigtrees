@@ -2,9 +2,11 @@
 
 module Cmd.Dupes.Render.RsyncFilter where
 
+import Data.Word (Word8)
 import Cmd.Dupes.Render.Types
 import qualified Data.List as L
 import qualified Data.List.Split as LS
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
 import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
@@ -17,33 +19,54 @@ import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
 --       | c `L.elem` specialChars = '\\' : [c]
 --       | otherwise  = [c]
 
+-- TODO rewrite this using Names or something too, after testing the bytes idea
 replaceTopDirWithSlash :: String -> String
 replaceTopDirWithSlash path = '/' : L.intercalate "/" pathTail
   where
     comps = LS.splitOn "/" path
     pathTail = if null comps then [] else tail comps
 
-escapeRsyncExcludeFromPath2 :: String -> String
-escapeRsyncExcludeFromPath2 path = if wildcardMode then escaped else path
-  where
+-- escapeRsyncExcludeFromPath2 :: B8.ByteString -> B8.ByteString
+-- escapeRsyncExcludeFromPath2 path = if wildcardMode then escaped else path
+--   where
+-- 
+--     -- and if the path starts with # that needs to be escaped to prevent being
+--     -- treated as a comment
+--     -- TODO but that never happens here because we prepend /, right?
+-- 
+--     -- if path has one of these, rsync will treat it as a pattern;
+--     -- if not, everything is matched literally and \ etc will break it!
+--     wildcardMode = any (`L.elem` path) wildcardTriggerChars
+--     wildcardTriggerChars = "*?[" :: B8.ByteString
+-- 
+--     -- Once wildcard mode is triggered, these chars need escaping:
+--     -- TODO verify each one!
+--     escaped = concatMap escapeChar path
+--     -- specialChars = "*?#\\!()" :: String
+--     specialChars = "*?[\\" :: B8.ByteString
+--     escapeChar c
+--       | c `L.elem` specialChars = '\\' : [c]
+--       | otherwise  = [c]
 
-    -- and if the path starts with # that needs to be escaped to prevent being
-    -- treated as a comment
-    -- TODO but that never happens here because we prepend /, right?
+-- Function to escape specific special characters directly in ByteString
+-- TODO is this all? or does it need the wildcard mode thing as before?
+escapeRsyncPathBytes :: B8.ByteString -> B8.ByteString
+escapeRsyncPathBytes bs = B8.concatMap escapeRsyncPathByte bs
 
-    -- if path has one of these, rsync will treat it as a pattern;
-    -- if not, everything is matched literally and \ etc will break it!
-    wildcardMode = any (`L.elem` path) wildcardTriggerChars
-    wildcardTriggerChars = "*?[" :: String
+-- escapeRsyncPathByte :: Word8 -> B8.ByteString
+-- escapeRsyncPathByte b
+--   | b == 0x2A = "\\*"  -- Escape '*'
+--   | b == 0x3F = "\\?"  -- Escape '?'
+--   | b == 0x5B = "\\["  -- Escape '['
+--   | otherwise = B.singleton b  -- Return the byte as is
 
-    -- Once wildcard mode is triggered, these chars need escaping:
-    -- TODO verify each one!
-    escaped = concatMap escapeChar path
-    -- specialChars = "*?#\\!()" :: String
-    specialChars = "*?[\\" :: String
-    escapeChar c
-      | c `L.elem` specialChars = '\\' : [c]
-      | otherwise  = [c]
+escapeRsyncPathByte :: Char -> B8.ByteString
+escapeRsyncPathByte b
+  | b == '*'  = B8.pack "\\*"  -- Escape '*'
+  | b == '?'  = B8.pack "\\?"  -- Escape '?'
+  | b == '['  = B8.pack "\\["  -- Escape '['
+  | otherwise = B8.singleton b  -- Return the byte as is
+
 
 renderRsyncFilter :: DupesRenderFn
 renderRsyncFilter keepOne md ls = do
@@ -81,13 +104,13 @@ renderRsyncFilter keepOne md ls = do
 
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, h, t, paths) = do
-      paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
-      let paths''   = sortPaths $ map (escapeRsyncExcludeFromPath2 . replaceTopDirWithSlash) paths'
-          paths'''  = if t == D then map (++ "/") paths'' else paths''
+      -- paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
+      let paths''   = map (escapeRsyncPathBytes . op2bs) $ sortPaths paths -- TODO replaceTopDirWithSlash too
+          paths'''  = if t == D then map (<> "/") paths'' else paths''
           paths'''' = if not keepOne
-                       then map ("- " ++) $ paths'''
-                       else ("+ " ++ head paths'''):(map ("- " ++) $ tail paths''')
-      return $ B8.unlines $ groupHeader h t n (length paths) : map B8.pack paths''''
+                       then map ("- " <>) $ paths'''
+                       else ("+ " <> head paths'''):(map ("- " <>) $ tail paths''')
+      return $ B8.unlines $ groupHeader h t n (length paths) : paths''''
 
     nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
 

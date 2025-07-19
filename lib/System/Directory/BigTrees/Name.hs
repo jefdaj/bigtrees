@@ -46,6 +46,7 @@ module System.Directory.BigTrees.Name
   , os2ns
   , op2ns
   , op2bs
+  , op2s
   , bs2op
 
   , nameP
@@ -234,6 +235,10 @@ names2bs = SBS.fromShort . SOS.getPosixString . SOS.getOsString . SOP.joinPath .
 -- TODO is this valid?
 op2bs :: OsPath -> B8.ByteString
 op2bs = SBS.fromShort . SOS.getPosixString . SOS.getOsString
+
+-- TODO is this valid?
+op2s :: OsPath -> String
+op2s = B8.unpack . op2bs
 
 -- TODO is this valid?
 bs2op :: B8.ByteString -> OsPath
