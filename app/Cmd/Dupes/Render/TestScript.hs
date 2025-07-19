@@ -3,21 +3,51 @@
 module Cmd.Dupes.Render.TestScript where
 
 import Cmd.Dupes.Render.Types
+import qualified Data.List as L
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
 import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
 
 -- type DupesRenderFn = Bool -> Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
+fileHeader :: B8.ByteString
+fileHeader = B8.pack $
+  "#!/usr/bin/env bash\n\
+  \\n\
+  \# This is the 'test-script' output format.\n\
+  \# It's mainly for debugging.\n\
+  \\n\
+  \test_X() { test $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
+  \test_d() { test_X '-d' 'dir ' \"$1\"; }\n\
+  \test_f() { test_X '-f' 'file' \"$1\"; }\n\
+  \test_l() { test_X '-L' 'link' \"$1\"; }\n"
+
+quotePath :: String -> String
+quotePath path = "'" ++ escape path ++ "'"
+  where
+    -- TODO are these necessary?
+    -- specialChars = "\\!\"#$&'()*;<>?@[]^`{|}~" :: String
+    specialChars = "" :: String
+
+    escape [] = []
+    escape ('\'':xs) = "'\"'\"'" ++ escape xs
+    escape (x:xs) 
+      | x `L.elem` specialChars = '\\' : x : escape xs
+      | otherwise = x : escape xs
+
+addTest :: TreeType -> String -> String
+addTest tt path = test tt ++ " " ++ path
+  where
+    test D = "test_d"
+    test F = "test_f"
+    test l = "test_l"
+    test _ = error $ "unexpected tree type " ++ show tt ++ " in path " ++ path
+
 renderTestScript :: DupesRenderFn
 renderTestScript keepOne md ls = do
   body <- mapM excludeLines ls
   return $ B8.unlines $ fileHeader : body
   where
-
-    fileHeader = B8.pack $
-      "# This is the 'test-script' output format.\n\
-      \# It's mainly for debugging.\n"
 
     depthWarning Nothing  = ""
     depthWarning (Just (Depth d)) =
@@ -28,7 +58,7 @@ renderTestScript keepOne md ls = do
       paths' <- mapM decodeFS paths
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : (map B8.pack $ sortPaths paths')
+             : (map (B8.pack . addTest t . quotePath) $ sortPaths paths')
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?
