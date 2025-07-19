@@ -22,26 +22,28 @@ fileHeader = B8.pack $
   \test_f() { test_X '-f' 'file' \"$1\"; }\n\
   \test_l() { test_X '-L' 'link' \"$1\"; }\n"
 
-quotePath :: String -> String
-quotePath path = "'" ++ escape path ++ "'"
-  where
-    -- TODO are these necessary?
-    -- specialChars = "\\!\"#$&'()*;<>?@[]^`{|}~" :: String
-    specialChars = "" :: String
+-- escapeRsyncPathBytes :: B8.ByteString -> B8.ByteString
+-- escapeRsyncPathBytes bs = B8.concatMap escapeRsyncPathByte bs
 
-    escape [] = []
-    escape ('\'':xs) = "'\"'\"'" ++ escape xs
-    escape (x:xs) 
-      | x `L.elem` specialChars = '\\' : x : escape xs
-      | otherwise = x : escape xs
+escapePathByte :: Char -> B8.ByteString
+escapePathByte b
+  | b == '\\' = B8.pack "\\\\"
+  | otherwise = B8.singleton b
 
-addTest :: TreeType -> String -> String
-addTest tt path = test tt ++ " " ++ path
+escapePath :: B8.ByteString -> B8.ByteString
+escapePath path = B8.concat
+  [ B8.singleton '\''
+  , escapePath path
+  , B8.singleton '\''
+  ]
+
+addTest :: TreeType -> B8.ByteString -> B8.ByteString
+addTest tt path = test tt <> " " <> path
   where
     test D = "test_d"
     test F = "test_f"
     test l = "test_l"
-    test _ = error $ "unexpected tree type " ++ show tt ++ " in path " ++ path
+    test _ = error $ "unexpected tree type " ++ show tt ++ " in path " ++ B8.unpack path
 
 renderTestScript :: DupesRenderFn
 renderTestScript keepOne md ls = do
@@ -55,10 +57,10 @@ renderTestScript keepOne md ls = do
 
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
-      paths' <- mapM decodeFS paths
+      -- paths' <- mapM decodeFS paths
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : (map (B8.pack . addTest t . quotePath) $ sortPaths paths')
+             : (map (addTest t . escapePath . op2bs) $ sortPaths paths)
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?

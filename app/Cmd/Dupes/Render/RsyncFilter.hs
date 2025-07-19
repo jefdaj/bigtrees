@@ -67,7 +67,6 @@ escapeRsyncPathByte b
   | b == '['  = B8.pack "\\["  -- Escape '['
   | otherwise = B8.singleton b  -- Return the byte as is
 
-
 renderRsyncFilter :: DupesRenderFn
 renderRsyncFilter keepOne md ls = do
   body <- mapM groupDupes ls
