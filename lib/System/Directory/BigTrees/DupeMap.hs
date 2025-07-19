@@ -251,19 +251,27 @@ simplifyDupes i lCfg (d@(n,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) l
           " drop " <> showN <>
           " sets redundant with " <> showH <> "; " <> showR <>
 	  " sets remain to process"
-    ds' = filter (not . redundantSet) ds
+    ds' = filter (not . redundantSet lCfg h fs) ds
     nRemain = length ds'
     nSaved = length ds - nRemain
     info msg x = if nSaved > 0
 		   then logUnsafe (addLogContext lCfg "simplifyDupes") InfoL msg x
                    else x
-    redundantSet (_,_,_,fs') = all redundant fs'
-    redundant e' = or [splitDirectories e
-                       `L.isPrefixOf`
-                       splitDirectories e' | e <- fs]
 
 -- TODO double check that these can't have redundancies
 simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg $ ds
+
+-- redundantSet :: LogCfg -> Hash -> [OsPath] -> DupeSet -> Bool
+redundantSet lCfg h1 fs (_,h2,_,fs') =
+  let res    = all redundant fs'
+      showH1 = sbs2b8 $ unHash h1
+      showH2 = sbs2b8 $ unHash h2
+      msg    = showH2 <> " is redundant with " <> showH1
+  in logUnsafe (addLogContext lCfg "redundantSet") DebugL msg res
+  where
+    redundant e' = or [splitDirectories e
+                       `L.isPrefixOf`
+                       splitDirectories e' | e <- fs]
 
 ---------------------------- pick which dupe to keep --------------------------
 
