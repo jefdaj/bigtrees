@@ -27,15 +27,15 @@ fileHeader = B8.pack $
 
 escapePathByte :: Char -> B8.ByteString
 escapePathByte b
-  | b == '\\' = B8.pack "\\\\"
+  -- | b == '\\' = B8.pack "\\\\"
+  | b == '\'' = B8.pack "'\\''" -- gotcha: single quote inside single-quoted path
   | otherwise = B8.singleton b
 
 escapePath :: B8.ByteString -> B8.ByteString
-escapePath path = B8.concat
-  [ B8.singleton '\''
-  , B8.concatMap escapePathByte path
-  , B8.singleton '\''
-  ]
+escapePath path = B8.concatMap escapePathByte path
+
+quotePath :: B8.ByteString -> B8.ByteString
+quotePath path =  B8.singleton '\'' <> escapePath path <> B8.singleton '\''
 
 addTest :: TreeType -> B8.ByteString -> B8.ByteString
 addTest tt path = test tt <> " " <> path
@@ -60,7 +60,7 @@ renderTestScript keepOne md ls = do
       -- paths' <- mapM decodeFS paths
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : (map (addTest t . escapePath . op2bs) $ sortPaths paths)
+             : (map (addTest t . quotePath . op2bs) $ sortPaths paths)
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?
