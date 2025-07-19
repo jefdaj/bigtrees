@@ -18,7 +18,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 treeNNodes, treeName)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
-import System.Directory.BigTrees.Name (Name (..))
+import System.Directory.BigTrees.Name (Name (..), n2bs)
 import System.Directory.BigTrees.Util (getBlockSize, hTakePrevUntil)
 -- import System.FilePath.Glob (Pattern)
 import Data.Aeson (FromJSON, ToJSON, decode)
@@ -55,10 +55,10 @@ import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), logUnsafe,
 -- To keep the tree structure valid, should always be True when accRecurseChildren is True.
 -- TODO reorder the conditions to optimize speed
 accKeepLine :: SearchConfig -> LogCfg -> HashLine -> Bool
-accKeepLine _ lCfg hl@(ErrLine _) =
-  logUnsafe
-    (addLogContext lCfg "accKeepLine") WarningL (B8.pack $ show hl)
-    False
+accKeepLine _ lCfg hl@(ErrLine (_, (ErrMsg e), name)) =
+  let msg = B8.pack e <> " '" <> n2bs name <> "'"
+      cfg = addLogContext lCfg "accKeepLine"
+  in logUnsafe cfg WarningL msg False
 accKeepLine cfg _ hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
   [ maybe True (s  >=) $ minBytes cfg
   , maybe True (s  <=) $ maxBytes cfg

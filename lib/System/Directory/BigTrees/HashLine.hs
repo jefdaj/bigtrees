@@ -68,6 +68,7 @@ import qualified Data.ByteString.Short as SBS
 import Data.Either (either, fromRight)
 import Data.Functor ((<&>))
 import Data.Maybe (catMaybes)
+import Data.String (IsString(..))
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
@@ -150,6 +151,7 @@ newtype ErrMsg = ErrMsg String
   deriving (Eq, Ord, Read, Show, Generic)
 
 instance NFData ErrMsg
+instance IsString ErrMsg
 
 -- | Hacky alternative to parsing real error messages from ErrLines for now,
 -- because quoted strings turn out to be harder than expected in Attoparsec.
