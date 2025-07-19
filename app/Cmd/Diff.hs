@@ -1,6 +1,11 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module Cmd.Diff where
+module Cmd.Diff
+  ( cmdDiff
+  , diffTarXz
+  , test_demo_diff
+  )
+  where
 
 import Config (AppConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D

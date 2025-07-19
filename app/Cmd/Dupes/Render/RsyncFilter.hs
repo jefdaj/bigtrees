@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings   #-}
+
 module Cmd.Dupes.Render.RsyncFilter where
 
 import Cmd.Dupes.Render.Types

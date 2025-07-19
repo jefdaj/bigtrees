@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings   #-}
+
 module Cmd.Dupes.Render.Suggestions where
 
 import Cmd.Dupes.Render.Types
