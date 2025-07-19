@@ -261,11 +261,13 @@ simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg $ ds
 
 -- redundantSet :: LogCfg -> Hash -> [OsPath] -> DupeSet -> Bool
 redundantSet lCfg h1 fs (_,h2,_,fs') =
-  let res    = all redundant fs'
+  let allRed = all redundant fs'
       showH1 = sbs2b8 $ unHash h1
       showH2 = sbs2b8 $ unHash h2
       msg    = showH2 <> " is redundant with " <> showH1
-  in logUnsafe (addLogContext lCfg "redundantSet") DebugL msg res
+  in if allRed
+       then logUnsafe (addLogContext lCfg "redundantSet") DebugL msg allRed
+       else allRed
   where
     redundant e' = or [splitDirectories e
                        `L.isPrefixOf`
