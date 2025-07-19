@@ -239,20 +239,20 @@ simplifyDupes :: Int -> LogCfg -> SortedDupeLists -> SortedDupeLists
 simplifyDupes _ _ [ ] = [ ]
 simplifyDupes _ _ [d] = [d]
 
-simplifyDupes i lCfg (d@(n,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) lCfg $ ds'
+simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) lCfg $ ds'
   where
     showH = sbs2b8 $ unHash h
     showI = B8.pack $ show i
-    showN = B8.pack $ show n
     showR = B8.pack $ show nRemain
+    showD = B8.pack $ show nDrop
     msg = "iteration " <> showI <>
-          " drop " <> showN <>
+          " drop " <> showD <>
           " sets redundant with " <> showH <> "; " <> showR <>
 	  " sets remain to process"
     ds' = filter (not . redundantSet lCfg h fs) ds
     nRemain = length ds'
-    nSaved = length ds - nRemain
-    info msg x = if nSaved > 0
+    nDrop = length ds - nRemain
+    info msg x = if nDrop > 0
 		   then logUnsafe (addLogContext lCfg "simplifyDupes") InfoL msg x
                    else x
 
