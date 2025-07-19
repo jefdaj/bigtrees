@@ -45,8 +45,8 @@ escapeRsyncExcludeFromPath2 path = if wildcardMode then escaped else path
       | c `L.elem` specialChars = '\\' : [c]
       | otherwise  = [c]
 
-renderDupesRsyncFilter :: DupesRenderFn
-renderDupesRsyncFilter keepOne md ls = do
+renderRsyncFilter :: DupesRenderFn
+renderRsyncFilter keepOne md ls = do
   body <- mapM groupDupes ls
   return $ B8.unlines $ fileHeader : body
   where
@@ -80,14 +80,14 @@ renderDupesRsyncFilter keepOne md ls = do
       " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
 
     groupDupes :: DupeList -> IO B8.ByteString
-    groupDupes (n, _, t, paths) = do
+    groupDupes (n, h, t, paths) = do
       paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       let paths''   = sortPaths $ map (escapeRsyncExcludeFromPath2 . replaceTopDirWithSlash) paths'
           paths'''  = if t == D then map (++ "/") paths'' else paths''
           paths'''' = if not keepOne
                        then map ("- " ++) $ paths'''
                        else ("+ " ++ head paths'''):(map ("- " ++) $ tail paths''')
-      return $ B8.unlines $ groupHeader t n (length paths) : map B8.pack paths''''
+      return $ B8.unlines $ groupHeader h t n (length paths) : map B8.pack paths''''
 
     nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
 
@@ -99,16 +99,19 @@ renderDupesRsyncFilter keepOne md ls = do
     plural n thing = if n > 1 then thing `B8.append` "s" else thing
 
     -- TODO don't mention inodes unless it's a dir, so separate fn for that
-    explain :: Int -> Int -> B8.ByteString -> B8.ByteString
-    explain nSaved nThings thing = B8.intercalate " "
-      [ "#", exclude nThings , "these", B8.pack $ show nThings , "duplicate"
-      , thing `B8.append` "s," , "saving", B8.pack $ show nSaved
-      , (plural nSaved "inode") `B8.append` ":"
+    explain :: Hash -> Int -> Int -> B8.ByteString -> B8.ByteString
+    explain h nSaved nThings thing = B8.intercalate " "
+      [ "#", exclude nThings
+      , "these", B8.pack $ show nThings
+      , "duplicate", thing `B8.append` "s"
+      , "with hash", prettyHash h <> ","
+      , "saving", B8.pack $ show nSaved
+      , (plural nSaved "inode")
       ]
 
     -- TODO is n the number *saved*, or total number of dupes?
-    groupHeader :: TreeType -> Int -> Int -> B8.ByteString
-    groupHeader E _ _  = "" -- TODO is that a good idea?
-    groupHeader D nSaved nDirs  = explain nSaved nDirs "folder"
-    groupHeader F nSaved nFiles = explain nSaved nFiles "file"
-    groupHeader _ nSaved nLinks = explain nSaved nLinks "link"
+    groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
+    groupHeader _ E _ _  = "" -- TODO is that a good idea?
+    groupHeader h D nSaved nDirs  = explain h nSaved nDirs "folder"
+    groupHeader h F nSaved nFiles = explain h nSaved nFiles "file"
+    groupHeader h _ nSaved nLinks = explain h nSaved nLinks "link"

@@ -10,6 +10,6 @@ import Cmd.Dupes.Render.Suggestions
 
 dupesRenderFunctions :: [(String, DupesRenderFn)]
 dupesRenderFunctions =
-  [ ("suggestions"      , renderDupesSuggestions)
-  , ("rsync-filter-file", renderDupesRsyncFilter)
+  [ ("suggestions"      , renderSuggestions)
+  , ("rsync-filter-file", renderRsyncFilter)
   ]

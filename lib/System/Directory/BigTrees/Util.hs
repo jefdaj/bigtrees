@@ -304,5 +304,6 @@ getBlockSize path = do
 --- misc small utilities ---
 
 -- TODO does this make sense?
+-- TODO is it the same as prettyHash?
 sbs2b8 :: SBS.ShortByteString -> B.ByteString
 sbs2b8 = B.pack . map (toEnum . fromIntegral) . SBS.unpack
