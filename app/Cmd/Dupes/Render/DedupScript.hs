@@ -3,6 +3,7 @@
 module Cmd.Dupes.Render.DedupScript where
 
 import Cmd.Dupes.Render.Types
+import Data.Word (Word8)
 import qualified Data.List as L
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
@@ -10,14 +11,21 @@ import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
 
 -- type DupesRenderFn = Bool -> Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
-fileHeader :: B8.ByteString
-fileHeader = B8.pack $
+fileHeader :: Bool -> B8.ByteString
+fileHeader keepOne =
   "#!/usr/bin/env bash\n\
   \\n\
   \# This is the 'dedup-script' output format.\n\
-  \# Be careful with this! Don't just run it without at least skimming...\n\
-  \\n\
-  \rm_X() { rm $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
+  \# Be careful with this! Don't just run it without at least skimming...\n"
+  <> (if keepOne then "" else
+  "#\n\
+  \# !!! WARNING !!!\n\
+  \# Since you're deduping vs a reference set, this script will delete ALL dupes\n\
+  \# listed below. The assumption is that you already have another copy saved\n\
+  \# somewhere else, and that copy was used to generate the reference set.\n\
+  \#\n")
+  <>
+  "rm_X() { rm $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
   \rm_d() { rm_X '-r' 'dir ' \"$1\"; }\n\
   \rm_f() { rm_X '' 'file' \"$1\"; }\n\
   \rm_l() { rm_X '' 'link' \"$1\"; }\n"
@@ -49,7 +57,7 @@ addTest tt path = rm tt <> " " <> path
 renderDedupScript :: DupesRenderFn
 renderDedupScript keepOne md ls = do
   body <- mapM excludeLines ls
-  return $ B8.unlines $ fileHeader : body
+  return $ B8.unlines $ fileHeader False : body
   where
 
     depthWarning Nothing  = ""
