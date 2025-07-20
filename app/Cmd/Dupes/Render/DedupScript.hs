@@ -17,10 +17,10 @@ fileHeader = B8.pack $
   \# This is the 'dedup-script' output format.\n\
   \# Be careful with this! Don't just run it without at least skimming...\n\
   \\n\
-  \test_X() { test $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
-  \test_d() { test_X '-d' 'dir ' \"$1\"; }\n\
-  \test_f() { test_X '-f' 'file' \"$1\"; }\n\
-  \test_l() { test_X '-L' 'link' \"$1\"; }\n"
+  \rm_X() { rm $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
+  \rm_d() { rm_X '-r' 'dir ' \"$1\"; }\n\
+  \rm_f() { rm_X '' 'file' \"$1\"; }\n\
+  \rm_l() { rm_X '' 'link' \"$1\"; }\n"
 
 -- escapeRsyncPathBytes :: B8.ByteString -> B8.ByteString
 -- escapeRsyncPathBytes bs = B8.concatMap escapeRsyncPathByte bs
@@ -38,12 +38,13 @@ quotePath :: B8.ByteString -> B8.ByteString
 quotePath path =  B8.singleton '\'' <> escapePath path <> B8.singleton '\''
 
 addTest :: TreeType -> B8.ByteString -> B8.ByteString
-addTest tt path = test tt <> " " <> path
+addTest tt path = rm tt <> " " <> path
   where
-    test D = "test_d"
-    test F = "test_f"
-    test l = "test_l"
-    test _ = error $ "unexpected tree type " ++ show tt ++ " in path " ++ B8.unpack path
+    rm D = "rm_d"
+    rm F = "rm_f"
+    rm L = "rm_l" -- TODO need anything to guard against deleting target?
+    rm B = "rm_l"
+    rm _ = error $ "unexpected tree type " ++ show tt ++ " in path " ++ B8.unpack path
 
 renderDedupScript :: DupesRenderFn
 renderDedupScript keepOne md ls = do
