@@ -12,67 +12,23 @@ import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
 import System.OsPath (OsPath, osp, (</>), joinPath, splitDirectories, decodeFS)
 
--- escapeRsyncExcludeSpecialChars :: String -> String
--- escapeRsyncExcludeSpecialChars input = concatMap escapeChar input
---   where
---     specialChars = "*?#\!()" :: String
---     escapeChar c
---       | c `L.elem` specialChars = '\\' : [c]
---       | otherwise  = [c]
-
--- TODO rewrite this using Names or something too, after testing the bytes idea
--- replaceTopDirWithSlash :: String -> String
--- replaceTopDirWithSlash path = '/' : L.intercalate "/" pathTail
---   where
---     comps = LS.splitOn "/" path
---     pathTail = if null comps then [] else tail comps
-
 replaceTopDirWithSlash :: OsPath -> OsPath
 replaceTopDirWithSlash path = joinPath comps'
   where
     comps = splitDirectories path
     comps' = if length comps < 2 then comps else [osp|/|] : tail comps -- TODO is this right?
 
--- escapeRsyncExcludeFromPath2 :: B8.ByteString -> B8.ByteString
--- escapeRsyncExcludeFromPath2 path = if wildcardMode then escaped else path
---   where
--- 
---     -- and if the path starts with # that needs to be escaped to prevent being
---     -- treated as a comment
---     -- TODO but that never happens here because we prepend /, right?
--- 
---     -- if path has one of these, rsync will treat it as a pattern;
---     -- if not, everything is matched literally and \ etc will break it!
---     wildcardMode = any (`L.elem` path) wildcardTriggerChars
---     wildcardTriggerChars = "*?[" :: B8.ByteString
--- 
---     -- Once wildcard mode is triggered, these chars need escaping:
---     -- TODO verify each one!
---     escaped = concatMap escapeChar path
---     -- specialChars = "*?#\\!()" :: String
---     specialChars = "*?[\\" :: B8.ByteString
---     escapeChar c
---       | c `L.elem` specialChars = '\\' : [c]
---       | otherwise  = [c]
-
 -- Function to escape specific special characters directly in ByteString
 -- TODO is this all? or does it need the wildcard mode thing as before?
 escapeRsyncPathBytes :: B8.ByteString -> B8.ByteString
 escapeRsyncPathBytes bs = B8.concatMap escapeRsyncPathByte bs
 
--- escapeRsyncPathByte :: Word8 -> B8.ByteString
--- escapeRsyncPathByte b
---   | b == 0x2A = "\\*"  -- Escape '*'
---   | b == 0x3F = "\\?"  -- Escape '?'
---   | b == 0x5B = "\\["  -- Escape '['
---   | otherwise = B.singleton b  -- Return the byte as is
-
 escapeRsyncPathByte :: Char -> B8.ByteString
 escapeRsyncPathByte b
-  | b == '*'  = B8.pack "\\*"  -- Escape '*'
-  | b == '?'  = B8.pack "\\?"  -- Escape '?'
-  | b == '['  = B8.pack "\\["  -- Escape '['
-  | otherwise = B8.singleton b  -- Return the byte as is
+  | b == '*'  = B8.pack "\\*"
+  | b == '?'  = B8.pack "\\?"
+  | b == '['  = B8.pack "\\["
+  | otherwise = B8.singleton b
 
 renderRsyncFilter :: DupesRenderFn
 renderRsyncFilter keepOne md ls = do
@@ -92,7 +48,7 @@ renderRsyncFilter keepOne md ls = do
       \# and THISFILE is where you saved the output of this command.\n"
       ++ (if keepOne then "" else
       "#\n\
-      \# WARNING!\n\
+      \# !!! WARNING !!!\n\
       \# Since you're deduping vs a reference set, ALL dupes will be listed\n\
       \# in the exclude file. The assumption is that you already have another copy\n\
       \# saved somewhere else, and that was used to generate the reference set.\n")
@@ -110,7 +66,6 @@ renderRsyncFilter keepOne md ls = do
 
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, h, t, paths) = do
-      -- paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       let paths'    = map replaceTopDirWithSlash paths
           paths''   = map (escapeRsyncPathBytes . op2bs) $ sortPaths paths'
           paths'''  = if t == D then map (<> "/") paths'' else paths''
@@ -139,7 +94,6 @@ renderRsyncFilter keepOne md ls = do
       , (plural nSaved "inode")
       ]
 
-    -- TODO is n the number *saved*, or total number of dupes?
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _  = "" -- TODO is that a good idea?
     groupHeader h D nSaved nDirs  = explain h nSaved nDirs "folder"

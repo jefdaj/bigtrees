@@ -8,8 +8,6 @@ import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
 import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
 
--- type DupesRenderFn = Bool -> Maybe Depth -> SortedDupeLists -> IO B8.ByteString
-
 fileHeader :: B8.ByteString
 fileHeader = B8.pack $
   "#!/usr/bin/env bash\n\
@@ -21,9 +19,6 @@ fileHeader = B8.pack $
   \test_d() { test_X '-d' 'dir ' \"$1\"; }\n\
   \test_f() { test_X '-f' 'file' \"$1\"; }\n\
   \test_l() { test_X '-L' 'link' \"$1\"; }\n"
-
--- escapeRsyncPathBytes :: B8.ByteString -> B8.ByteString
--- escapeRsyncPathBytes bs = B8.concatMap escapeRsyncPathByte bs
 
 escapePathByte :: Char -> B8.ByteString
 escapePathByte b
@@ -57,7 +52,6 @@ renderTestScript keepOne md ls = do
 
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
-      -- paths' <- mapM decodeFS paths
       return $ B8.unlines
              $ groupHeader h t n (length paths)
              : (map (addTest t . quotePath . op2bs) $ sortPaths paths)

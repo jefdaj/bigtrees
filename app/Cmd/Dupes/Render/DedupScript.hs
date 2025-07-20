@@ -9,8 +9,6 @@ import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
 import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
 
--- type DupesRenderFn = Bool -> Maybe Depth -> SortedDupeLists -> IO B8.ByteString
-
 fileHeader :: Bool -> B8.ByteString
 fileHeader keepOne =
   "#!/usr/bin/env bash\n\
@@ -36,12 +34,8 @@ fileHeader keepOne =
   \rm_f() { rm_X '' 'file' \"$1\"; }\n\
   \rm_l() { rm_X '' 'link' \"$1\"; }\n"
 
--- escapeRsyncPathBytes :: B8.ByteString -> B8.ByteString
--- escapeRsyncPathBytes bs = B8.concatMap escapeRsyncPathByte bs
-
 escapePathByte :: Char -> B8.ByteString
 escapePathByte b
-  -- | b == '\\' = B8.pack "\\\\"
   | b == '\'' = B8.pack "'\\''" -- gotcha: single quote inside single-quoted path
   | otherwise = B8.singleton b
 
@@ -72,7 +66,6 @@ renderDedupScript keepOne md ls = do
 
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
-      -- paths' <- mapM decodeFS paths
       let paths'  = map (addFnCall t . quotePath . op2bs) $ sortPaths paths
           paths'' = if keepOne
                        then ("# " <> head paths') : tail paths'

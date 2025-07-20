@@ -7,8 +7,6 @@ import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
 import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
 
--- type DupesRenderFn = Bool -> Maybe Depth -> SortedDupeLists -> IO B8.ByteString
-
 renderSuggestions :: DupesRenderFn
 renderSuggestions keepOne md ls = do
   body <- mapM excludeLines ls
@@ -30,12 +28,10 @@ renderSuggestions keepOne md ls = do
 
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
-      -- paths' <- mapM decodeFS paths -- TODO is decoding necessary, even to write a script?
       return $ B8.unlines
              $ groupHeader h t n (length paths)
              : (map op2bs $ sortPaths paths)
 
-    -- TODO is n the number *saved*, or total number of dupes?
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?
     groupHeader h D nSaved nDirs = B8.intercalate " "
