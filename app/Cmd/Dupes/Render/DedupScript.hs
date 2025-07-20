@@ -16,16 +16,22 @@ fileHeader keepOne =
   "#!/usr/bin/env bash\n\
   \\n\
   \# This is the 'dedup-script' output format.\n\
-  \# Be careful with this! Don't just run it without at least skimming...\n"
-  <> (if keepOne then "" else
-  "#\n\
-  \# !!! WARNING !!!\n\
+  \# Be careful with this! Don't just run it without at least skimming...\n\
+  \\n\
+  \# You can comment, uncomment, or delete lines in your text editor\n\
+  \# to change how specific files/dirs/links are handled.\n\
+  \\n"
+  <> (if False then
+  "# For each set of dupes, it will leave the first (commented out) one alone and\n\
+  \# delete all the others in place by default.\n"
+  else
+  "# !!! WARNING !!!\n\
   \# Since you're deduping vs a reference set, this script will delete ALL dupes\n\
   \# listed below. The assumption is that you already have another copy saved\n\
-  \# somewhere else, and that copy was used to generate the reference set.\n\
-  \#\n")
+  \# somewhere else, and that copy was used to generate the reference set.\n")
   <>
-  "rm_X() { rm $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
+  "\n\
+  \rm_X() { rm $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
   \rm_d() { rm_X '-r' 'dir ' \"$1\"; }\n\
   \rm_f() { rm_X '' 'file' \"$1\"; }\n\
   \rm_l() { rm_X '' 'link' \"$1\"; }\n"
@@ -45,8 +51,8 @@ escapePath path = B8.concatMap escapePathByte path
 quotePath :: B8.ByteString -> B8.ByteString
 quotePath path =  B8.singleton '\'' <> escapePath path <> B8.singleton '\''
 
-addTest :: TreeType -> B8.ByteString -> B8.ByteString
-addTest tt path = rm tt <> " " <> path
+addFnCall :: TreeType -> B8.ByteString -> B8.ByteString
+addFnCall tt path = rm tt <> " " <> path
   where
     rm D = "rm_d"
     rm F = "rm_f"
@@ -57,7 +63,7 @@ addTest tt path = rm tt <> " " <> path
 renderDedupScript :: DupesRenderFn
 renderDedupScript keepOne md ls = do
   body <- mapM excludeLines ls
-  return $ B8.unlines $ fileHeader False : body
+  return $ B8.unlines $ fileHeader keepOne : body
   where
 
     depthWarning Nothing  = ""
@@ -67,9 +73,13 @@ renderDedupScript keepOne md ls = do
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
       -- paths' <- mapM decodeFS paths
+      let paths'  = map (addFnCall t . quotePath . op2bs) $ sortPaths paths
+          paths'' = if keepOne
+                       then ("# " <> head paths') : tail paths'
+                       else paths'
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : (map (addTest t . quotePath . op2bs) $ sortPaths paths)
+             : paths''
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?
