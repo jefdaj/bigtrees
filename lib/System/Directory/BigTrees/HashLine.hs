@@ -112,7 +112,7 @@ import qualified System.File.OsPath as SFO
 -- for distinguishing beween files and dirs
 -- TODO is B a good notation for broken link, or should that be LB?
 -- TODO unify this with the actual constructors in HashTree.Base?
-data TreeType = D | F | L | B | E
+data TreeType = D | F | L | B | E | G
   deriving (Eq, Ord, Read, Show)
 
 instance NFData TreeType
@@ -210,6 +210,7 @@ instance Arbitrary Depth where
   shrink :: Depth -> [Depth]
   shrink _ = []
 
+-- TODO generate grafts here too?
 instance Arbitrary TreeType where
 
   --  TODO oneof
@@ -352,7 +353,7 @@ sepP = char sepChar
 
 typeP :: Parser TreeType
 typeP = do
-  t <- choice [char 'D', char 'F', char 'L', char 'B', char 'E'] <* sepP
+  t <- choice [char 'D', char 'F', char 'L', char 'B', char 'E', char 'G'] <* sepP
   return $ read [t]
 
 hashP :: Parser Hash
