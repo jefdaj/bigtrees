@@ -2,6 +2,12 @@
 
 ## Work in Progress
 
+### Changed
+
+- Add a G node type for grafting a .bigtree file onto the main tree
+
+## v0.19.6
+
 ### Fixed
 
 ### Changed
