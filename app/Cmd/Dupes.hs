@@ -76,10 +76,11 @@ cmdDupes cfg lCfg path = bracket open close write
                        else fmap Just $ BT.hashSetFromList rList
             let init  = maximum [length mrSet, 1000] -- TODO better defaults?
                 initB = B8.pack $ show init
+                treeN = B8.pack $ show $ BT.treeNNodes tree
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
             BT.addTreeToDupeMap (searchCfg cfg) lCfg mrSet cle ht tree
-	    -- debugST $ "added all " <> initB <> " tree nodes to DupeMap"
+	    debugST $ "added all " <> treeN <> " tree nodes to DupeMap"
 	    if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
             res <- BT.dupesByNegScore lCfg scoreFn ht

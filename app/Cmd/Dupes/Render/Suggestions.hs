@@ -36,7 +36,9 @@ renderSuggestions keepOne md ls = do
     groupHeader _ E _ _ = "" -- TODO is that a good idea?
     groupHeader h D nSaved nDirs = B8.intercalate " "
       [ "# You could save", B8.pack (show nSaved)
-      , "inodes by deleting all but one of these", B8.pack (show nDirs)
+      , "inodes by deleting "
+          <> (if keepOne then "all but one of " else mempty)
+          <> "these", B8.pack (show nDirs)
       , "duplicate directories with hash", prettyHash h `B8.append` (depthWarning md)
       ]
     groupHeader h F nSaved nFiles = B8.intercalate " "

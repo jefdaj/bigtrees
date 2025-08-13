@@ -45,12 +45,12 @@ main = do
   let ptns = [D.docoptFile|app/usage.txt|]
   -- args <- D.parseArgsOrExit ptns =<< getArgs
   rawArgs <- getArgs
-  putStrLn $ "rawArgs: " ++ show rawArgs
+  -- putStrLn $ "rawArgs: " ++ show rawArgs
   case D.parseArgs ptns rawArgs of
     -- TODO possible to log here, before setting up main logger?
     Left err -> putStrLn $ "Error parsing CLI args: " ++ show err
     Right args -> do
-      putStrLn $ "args: " ++ show args
+      -- putStrLn $ "args: " ++ show args
 
       let cmd     n = D.isPresent  args $ D.command n
           flag    n = D.isPresent  args $ D.longOption n
