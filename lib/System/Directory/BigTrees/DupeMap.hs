@@ -41,7 +41,7 @@ import Data.Ord (comparing)
 import qualified Data.List as L
 import qualified Data.List.Split as LS
 import qualified Data.Massiv.Array as A
-import System.Directory.BigTrees.Hash (Hash, unHash)
+import System.Directory.BigTrees.Hash (Hash, unHash, prettyHash)
 import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs, op2s)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
@@ -339,14 +339,16 @@ scoreSetSelf (n, _, _, _ ) = n - 1 -- TODO is this right?
 dupesKeepNode :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> HashTree a -> ST s Bool
 dupesKeepNode _ _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
 dupesKeepNode cfg lCfg mrSet cle ns t = do
+  let hash = treeHash t
   includeHash <- case mrSet of
-                   Nothing -> return True
-                   Just rSet -> setContainsHash rSet $ treeHash t
+                   Nothing -> return False
+                   Just rSet -> setContainsHash rSet hash
 
   let mExcludeLabel = B8.pack <$> findLabelNode cle (reverse ns) t
 
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
   let excludeMsg l = "exclude node labeled '" <> l <> "' : '" <> wholeName <> "'"
+  let includeMsg   = "include ref set hash " <> prettyHash hash <> ": '" <> wholeName <> "'"
   let info = logUnsafe (addLogContext lCfg "dupesKeepNode") InfoL
 
   return $ and
@@ -357,6 +359,7 @@ dupesKeepNode cfg lCfg mrSet cle ns t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
+    , if includeHash then info includeMsg True else False
     -- works: , isNothing mExcludeLabel
     -- works: , maybe True (\l -> traceV verbose (excludeMsg l) False) mExcludeLabel
     , maybe True (\l -> info (excludeMsg l) False) mExcludeLabel
