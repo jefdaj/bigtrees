@@ -59,11 +59,13 @@ cmdDupes cfg lCfg path = bracket open close write
 
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
-      debug $ "loading rList from " <> B8.pack (show (length rListPaths)) <> " paths"
+      debug $ "loading reference sets " <> B8.pack (show rListPaths)
       rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList lCfg
+      debug $ "loaded " <> B8.pack (show $ length rList) <> " reference hashes"
 
-      debug "compiling labeled searches"
-      cle <- BT.compileLabeledSearches $ dupesExcludeSearches $ searchCfg cfg
+      let searches = dupesExcludeSearches $ searchCfg cfg
+      debug $ "compiling " <> B8.pack (show $ length searches) <> " labeled searches "
+      cle <- BT.compileLabeledSearches searches
 
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
@@ -85,7 +87,7 @@ cmdDupes cfg lCfg path = bracket open close write
             return res
 
       -- TODO pull default from docopt instead of duplicating that here
-      let fmt = fromMaybe "comments" $ dupesOutFormat cfg
+      let fmt = fromMaybe "suggestions" $ dupesOutFormat cfg
 
       let renderFn = fromJust $ lookup fmt dupesRenderFunctions
 

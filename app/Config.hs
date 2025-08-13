@@ -45,7 +45,7 @@ defaultAppConfig :: AppConfig
 defaultAppConfig = AppConfig
   { outFile   = Nothing
   , findOutFormat = Nothing
-  , dupesOutFormat = Nothing
+  , dupesOutFormat = Just "suggestions"
   , searchCfg = defaultSearchConfig
   , verbose   = True
   -- , check    = True
