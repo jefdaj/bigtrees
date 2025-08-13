@@ -1,3 +1,16 @@
+graft subtrees:
+  read recursively
+    rename root to match the .bigtree file
+    when listing dir contents:
+      ignore .bigtree files by default? or auto-graft them?
+    auto-graft .bigtree files
+    for each .bigtree file, filter its basename out of dir contents to prevent traversing down there
+    specifically reject case where hashing/reading a single .bigtree file?
+  write recursively
+    write to the .bigtree file named by the graft root
+  display in hash output
+  display in dupes output
+
 nice set features:
   no need for quotes around comments?
   should the Notes work just like Names? \NUL terminated and all?

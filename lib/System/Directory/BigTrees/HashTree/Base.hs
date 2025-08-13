@@ -52,6 +52,7 @@ treeNNodes (Err  {})        = NNodes 1 -- TODO is this right?
 treeNNodes (File {})        = NNodes 1
 treeNNodes (Link {})        = NNodes 1 -- TODO is this right?
 treeNNodes (Dir {nNodes=n}) = n -- this includes 1 for the dir itself
+treeNNodes (Graft {graftedTree=t}) = treeNNodes t -- TODO +1?
 
 -- TODO is this needed, or will the fields be total?
 -- TODO size unit
@@ -116,8 +117,16 @@ data HashTree a
   | Dir
       { nodeData    :: NodeData
       , nNodes      :: NNodes -- TODO Integer? include in tree files
-      , dirContents :: [HashTree a] -- TODO rename dirContents?
+      , dirContents :: [HashTree a]
       }
+
+  -- TODO is the grafted .bigtree file findable by the name of the graftedTree root?
+  --      if so, have to make sure to renameRoot when reading/building
+  -- TODO is it considered to have one more node than the grafted tree, or no?
+  | Graft
+      { graftedTree :: HashTree a
+      }
+
   deriving (Eq, Ord, Show, Generic)
 
 isErr :: forall a. HashTree a -> Bool
@@ -130,27 +139,32 @@ treeType (Err  {})                   = E
 treeType (File {})                   = F
 treeType (Link {linkData = Nothing}) = B
 treeType (Link {})                   = L
+treeType (Graft {})                  = G
 
 -- TODO should this be a lens or something? going to want a setter too at some point
 -- TODO return Maybe here?
 treeName :: HashTree a -> Name
 treeName (Err  {errName =n }) = n
+treeName (Graft {graftedTree=t}) = treeName t
 treeName t                    = name $ nodeData t
 
 -- TODO is the handling of Err reasonable? think about it more
 -- TODO return Maybe here?
 treeModTime :: HashTree a -> ModTime
 treeModTime (Err {}) = ModTime 0
+treeModTime (Graft {graftedTree=t}) = treeModTime t
 treeModTime t        = modTime $ nodeData t
 
 -- TODO return Maybe here?
 treeNBytes :: HashTree a -> NBytes
 treeNBytes (Err {}) = NBytes 0
+treeNBytes (Graft {graftedTree=t}) = treeNBytes t
 treeNBytes t        = nBytes $ nodeData t
 
 -- TODO return Maybe here?
 treeHash :: HashTree a -> Hash
 treeHash (Err {}) = Hash "ERROR" -- TODO is this reasonable? we do want it to change parent hash
+treeHash (Graft {graftedTree=t}) = treeHash t
 treeHash t        = hash $ nodeData t
 
 -- We only need the file decoration for testing, so we can leave it off the production types
@@ -175,6 +189,7 @@ treeEqIgnoringModTime t1 t2 = zeroModTime t1 == zeroModTime t2
 -- TODO put this in terms of Foldable or Traversable
 zeroModTime :: HashTree a -> HashTree a
 zeroModTime e@(Err {}) = e
+zeroModTime (Graft {graftedTree=t}) = Graft {graftedTree= zeroModTime t}
 zeroModTime d@(Dir {}) = d
   { nodeData = (nodeData d) { modTime = ModTime 0 }
   , dirContents = map zeroModTime $ dirContents d
@@ -189,6 +204,7 @@ instance Functor HashTree where
   fmap fn f@(File {}) = f { fileData = fn (fileData f) }
   fmap fn d@(Dir  {}) = d { dirContents = map (fmap fn) (dirContents d) }
   fmap fn l@(Link {}) = l { linkData = fmap fn (linkData l) }
+  fmap fn g@(Graft {}) = g { graftedTree = fmap fn (graftedTree g)}
 
 -- TODO test functor identity law
 
@@ -285,6 +301,7 @@ arbitraryDirSized arbsize = do
 
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
 -- same arbitrary bytestring for the file content and its hash
+-- TODO include grafts?
 instance Arbitrary TestTree where
 
   arbitrary :: Gen TestTree
@@ -325,6 +342,7 @@ dropFileData d@(Dir {dirContents = cs}) = d {dirContents = map dropFileData cs}
 dropFileData e@(Err  {})                = Err { errName = errName e, errMsg = errMsg e }
 dropFileData f@(File {})                = f {fileData = ()}
 dropFileData l@(Link {})                = l {linkData = Just ()}
+dropFileData g@(Graft {})               = g {graftedTree = dropFileData (graftedTree g)}
 
 instance Arbitrary ProdTree where
   arbitrary :: Gen ProdTree
@@ -334,6 +352,7 @@ confirmFileHashes :: TestTree -> Bool
 confirmFileHashes (File {fileData = f, nodeData=nd}) = hashBytes f == hash nd
 confirmFileHashes (Dir {dirContents = cs})           = all confirmFileHashes cs
 confirmFileHashes (Err {})                           = True -- TODO False?
+confirmFileHashes (Graft {graftedTree=t})            = confirmFileHashes t
 confirmFileHashes (Link {linkData = l, nodeData=nd}) =
   case l of
     Nothing -> True

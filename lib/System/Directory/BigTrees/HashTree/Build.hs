@@ -254,21 +254,17 @@ buildTree' _ readFileFn lCfg depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTre
         , fileData = fd
         }
 
+-- WARN don't evaluate cs here! it'll force the entire tree structure
 buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkErrTree lCfg a n) $ do
 
-  -- TODO of course, this is forcing the whole tree! have to be lazier about it
-  -- (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
-
-  -- TODO does this break lazy evaluation? or is it ok?
-  -- (maybe it's handled by sorting in directory-tree anyway now?)
-  -- let cs' = sortBy (compare `on` DT.name) cs
-  -- TODO also do this while reading a tree, right? apply filters in a uniform way everywhere!
+  -- TODO also do this while reading a tree, right? apply filters in a uniform way everywhere
   cs'' <- regexFilterTrees cfg a cs
   let root = a </> n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' cfg readFileFn lCfg (depth+1) $ root DT.:/ t
 
   -- this works, but doesn't affect memory usage:
+  -- TODO is there some number other than 10 that would help memory usage?
   -- subTrees <- (if depth > 10 then M.forM else P.forM) cs' hashSubtree
 
   subTrees <- P.forM cs'' hashSubtree
