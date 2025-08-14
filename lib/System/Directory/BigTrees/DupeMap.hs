@@ -350,6 +350,7 @@ dupesKeepNode cfg lCfg mrSet cle ns t = do
   let excludeMsg l = "exclude node labeled '" <> l <> "' : '" <> wholeName <> "'"
   let includeMsg   = "include ref set hash " <> prettyHash hash <> ": '" <> wholeName <> "'"
   let info = logUnsafe (addLogContext lCfg "dupesKeepNode") InfoL
+  let debug = logUnsafe (addLogContext lCfg "dupesKeepNode") DebugL
 
   return $ and
     [ maybe True (treeNBytes  t >=) $ minBytes cfg
@@ -359,7 +360,7 @@ dupesKeepNode cfg lCfg mrSet cle ns t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
-    , if includeHash then info includeMsg True else False
+    , if includeHash then debug includeMsg True else False
     -- works: , isNothing mExcludeLabel
     -- works: , maybe True (\l -> traceV verbose (excludeMsg l) False) mExcludeLabel
     , maybe True (\l -> info (excludeMsg l) False) mExcludeLabel

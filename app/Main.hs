@@ -48,7 +48,7 @@ main = do
   -- putStrLn $ "rawArgs: " ++ show rawArgs
   case D.parseArgs ptns rawArgs of
     -- TODO possible to log here, before setting up main logger?
-    Left err -> putStrLn $ "Error parsing CLI args: " ++ show err
+    Left err -> D.exitWithUsageMessage ptns $ "Error parsing CLI args: " ++ show err
     Right args -> do
       -- putStrLn $ "args: " ++ show args
 
