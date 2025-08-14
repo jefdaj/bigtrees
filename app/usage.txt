@@ -1,5 +1,3 @@
-Create and manipulate hash trees representing collections of files.
-
 Usage:
   bigtrees version
   bigtrees [-v] info PATH
