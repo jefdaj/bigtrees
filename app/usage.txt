@@ -36,8 +36,9 @@ Options:
                          TODO add regex search labels here
                          TODO caps should also work
 
-  --dupes-out-fmt FORMAT  Dupes output format. Options are "suggestions", "rsync-filter-file",
-                          "dedup-script", and "test-script". [default: "suggestions"]
+  --dupes-out-fmt DFORMAT  Dupes output format. Options are "suggestions", "rsync-filter-file",
+                           "dedup-script", and "test-script".
+                           [default: suggestions]
 
   --search-regex REGEX   Single regular expression to test filtering.
   --search-label LABEL   Single label to test --out-fmt printing. Output is tab separated,

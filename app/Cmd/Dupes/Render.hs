@@ -12,7 +12,7 @@ import Cmd.Dupes.Render.TestScript
 
 dupesRenderFunctions :: [(String, DupesRenderFn)]
 dupesRenderFunctions =
-  [ ("suggestions"      , renderSuggestions)
+  [ ("suggestions"      , renderSuggestions) -- default
   , ("rsync-filter-file", renderRsyncFilter)
   , ("dedup-script"     , renderDedupScript )
   , ("test-script"      , renderTestScript )
