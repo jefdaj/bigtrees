@@ -76,7 +76,7 @@ cmdDupes cfg lCfg path = bracket open close write
                        else fmap Just $ BT.hashSetFromList rList
             let init  = maximum [length mrSet, 1000] -- TODO better defaults?
                 initB = B8.pack $ show init
-                treeN = B8.pack $ show $ BT.treeNNodes tree -- TODO why is this not an int?
+                treeN = B8.pack $ show $ (\(BT.NNodes n ) -> n) $ BT.treeNNodes tree
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
             BT.addTreeToDupeMap (searchCfg cfg) lCfg mrSet cle ht tree
