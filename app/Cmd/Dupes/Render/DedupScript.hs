@@ -19,7 +19,7 @@ fileHeader keepOne =
   \# You can comment, uncomment, or delete lines in your text editor\n\
   \# to change how specific files/dirs/links are handled.\n\
   \\n"
-  <> (if False then
+  <> (if keepOne then
   "# For each set of dupes, it will leave the first (commented out) one alone and\n\
   \# delete all the others in place by default.\n"
   else
