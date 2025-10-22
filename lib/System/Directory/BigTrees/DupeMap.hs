@@ -316,7 +316,11 @@ sortPaths = L.sortBy comparePaths
  -}
 scoreSets :: ScoreFn -> C.HashTable s Hash DupeSet -> ST s SortedDupeSets 
 scoreSets scoreFn = H.foldM (\vs (_, v@(_,h,t,fs)) ->
-  return $ if length fs > 1 then (negate $ scoreFn v,h,t,fs):vs else vs) []
+
+  -- TODO is removing singletons important for performance? could turn on when not vs ref set
+  -- return $ if length fs > 1 then (negate $ scoreFn v,h,t,fs):vs else vs) []
+
+  return $ (negate $ scoreFn v,h,t,fs):vs) []
 
 type ScoreFn = DupeSet -> Int
 
