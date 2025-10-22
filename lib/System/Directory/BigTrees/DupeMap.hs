@@ -172,9 +172,8 @@ addTreeToDupeMap'
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ do
       insertDupeSet cfg lCfg dm h (fs, h, D, S.singleton $ dir </> n) pr
-      -- TODO is there any situation where we want to NOT keep the current node, but still recurse?
-      when recurse $
-        mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
+    when recurse $
+      mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
@@ -340,6 +339,8 @@ dupesKeepNode :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledS
 dupesKeepNode _ _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
 dupesKeepNode cfg lCfg mrSet cle ns t = do
   let hash = treeHash t
+
+  -- whether to include as a dupe because hash is in ref set
   includeHash <- case mrSet of
                    Nothing -> return False
                    Just rSet -> setContainsHash rSet hash
@@ -348,7 +349,7 @@ dupesKeepNode cfg lCfg mrSet cle ns t = do
 
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
   let excludeMsg l = "exclude node labeled '" <> l <> "' : '" <> wholeName <> "'"
-  let includeMsg   = "include ref set hash " <> prettyHash hash <> ": '" <> wholeName <> "'"
+  let includeMsg   =     "dupe by ref set hash " <> prettyHash hash <> ": '" <> wholeName <> "'"
   let info = logUnsafe (addLogContext lCfg "dupesKeepNode") InfoL
   let debug = logUnsafe (addLogContext lCfg "dupesKeepNode") DebugL
 
