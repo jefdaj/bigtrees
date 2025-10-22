@@ -153,22 +153,22 @@ addTreeToDupeMap' _ _ _ _ dm dir _ _ (Err {}) = return ()
 -- the tree. But for dupes purposes, I'm not sure it matters. The hash will be
 -- of the actual target or of the link itself, and either way it will go into a
 -- corresponding dupeset.
-addTreeToDupeMap' cfg lCfg mrSet cle dm dir _ pr l@(Link {nodeData=NodeData {hash=h}}) = do
-  keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) l
+addTreeToDupeMap' cfg lCfg mrSet cle dm dir d pr l@(Link {nodeData=NodeData {hash=h}}) = do
+  keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) d l
   when keepNode $
     insertDupeSet cfg lCfg dm (treeHash l) (1, h, treeType l, S.singleton $ dir </> n2op (treeName l)) pr
 
 addTreeToDupeMap'
-  cfg lCfg mrSet cle dm dir _ pr
+  cfg lCfg mrSet cle dm dir d pr
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
-    keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) f
+    keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) d f
     when keepNode $
       insertDupeSet cfg lCfg dm h (1, h, F, S.singleton $ dir </> n) pr
 
 addTreeToDupeMap'
   cfg lCfg mrSet cle dm dir depth pr
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
-    keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) d
+    keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) depth d
     let recurse = dupesRecurseChildren cfg depth d
     when keepNode $ do
       insertDupeSet cfg lCfg dm h (fs, h, D, S.singleton $ dir </> n) pr
@@ -339,9 +339,9 @@ scoreSetSelf (n, _, _, _ ) = n - 1 -- TODO is this right?
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
-dupesKeepNode :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> HashTree a -> ST s Bool
-dupesKeepNode _ _ _ _ _ (Err {}) = return False -- TODO is this how we should handle them?
-dupesKeepNode cfg lCfg mrSet cle ns t = do
+dupesKeepNode :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> Depth -> HashTree a -> ST s Bool
+dupesKeepNode _ _ _ _ _ d (Err {}) = return False -- TODO is this how we should handle them?
+dupesKeepNode cfg lCfg mrSet cle ns d t = do
   let hash = treeHash t
 
   -- whether to include as a dupe because hash is in ref set
@@ -358,7 +358,9 @@ dupesKeepNode cfg lCfg mrSet cle ns t = do
   let debug = logUnsafe (addLogContext lCfg "dupesKeepNode") DebugL
 
   return $ and
-    [ maybe True (treeNBytes  t >=) $ minBytes cfg
+    [ maybe True (d >=) $ minDepth cfg
+    , maybe True (d <=) $ maxDepth cfg
+    , maybe True (treeNBytes  t >=) $ minBytes cfg
     , maybe True (treeNBytes  t <=) $ maxBytes cfg
     , maybe True (treeNNodes  t >=) $ minFiles cfg
     , maybe True (treeNNodes  t <=) $ maxFiles cfg
