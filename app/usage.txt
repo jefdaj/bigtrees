@@ -4,8 +4,8 @@ Usage:
   bigtrees [-v] hash PATH [--hash-exclude-regexes-from EFILE] [--output OUTFILE]
   bigtrees [-v] diff OLD NEW [--output OUTFILE]
   bigtrees [-v] set-add --set SET [--note NOTE] PATH...
-  bigtrees [-v] find PATH [--search-regex REGEX [--search-label LABEL] | --searches-json SJSON] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--find-out-fmt FORMAT] [--exclude-set ESET...]
-  bigtrees [-v] dupes PATH [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--types TYPES] [--output OUTFILE] [--reference-set RSET...] [--dupes-exclude-searches SJSON] [--dupes-out-fmt DFORMAT]
+  bigtrees [-v] find PATH [--search-regex REGEX [--search-label LABEL] | --searches-json SJSON] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--find-out-fmt FORMAT] [--exclude-set ESET]...
+  bigtrees [-v] dupes PATH [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--types TYPES] [--output OUTFILE] [--dupes-exclude-searches SJSON] [--dupes-out-fmt DFORMAT] [--reference-set RSET]...
 
 Commands:
   hash       Reads files + folders and prints/saves their hashes + metadata.
