@@ -117,6 +117,7 @@ executable bigtrees
       Cmd.Hash
       Cmd.Info
       Cmd.SetAdd
+      Cmd.TestTree
       Config
       Run
       Paths_bigtrees
@@ -197,6 +198,7 @@ test-suite test-app
       Cmd.Hash
       Cmd.Info
       Cmd.SetAdd
+      Cmd.TestTree
       Config
       Main
       Run
@@ -383,6 +385,7 @@ benchmark test-bench
       Cmd.Hash
       Cmd.Info
       Cmd.SetAdd
+      Cmd.TestTree
       Config
       Main
       Run

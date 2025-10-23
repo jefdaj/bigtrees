@@ -6,12 +6,14 @@ Usage:
   bigtrees [-v] set-add --set SET [--note NOTE] PATH...
   bigtrees [-v] find PATH [--search-regex REGEX [--search-label LABEL] | --searches-json SJSON] [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--find-out-fmt FORMAT] [--exclude-set ESET]...
   bigtrees [-v] dupes PATH [--min-files N] [--max-files N] [--min-size N] [--max-size N] [--min-modtime N] [--max-modtime N] [--min-depth N] [--max-depth N] [--types TYPES] [--output OUTFILE] [--dupes-exclude-searches SJSON] [--dupes-out-fmt DFORMAT] [--reference-set RSET]...
+  bigtrees [-v] test-tree TREEPATH DIRPATH
 
 Commands:
   hash       Reads files + folders and prints/saves their hashes + metadata.
   info       Succinct summary of a .bigtree file: stats, etc
   find       Print full paths from .bigtree file(s), and optionally filter them
   diff       Print changes in NEW relative to OLD. TODO take hashes here too!
+  test-tree  Test whether every path in the tree matches an actual file/folder/link.
 
 Options:
 

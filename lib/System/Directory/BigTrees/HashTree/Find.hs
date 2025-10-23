@@ -34,7 +34,9 @@ import Text.Regex.TDFA.ByteString
 
 {- We sort on filename here because 1) it's the only thing we can sort on
  - without keeping additional state, and 2) it makes it easy to property test
- - that `bigtrees find <path>` always matches `find <path>`.
+ - that `bigtrees find <path>` always matches `find <path>`. This is a lossy
+ - function because it decodes the paths, making them no longer necessarily
+ - comparable across systems.
  - TODO also consider hashExcludeRegexes here? Or should they have been handled already?
  -}
 listTreePaths :: SearchConfig -> LogCfg -> String -> HashTree a -> IO [B8.ByteString]
@@ -45,7 +47,7 @@ listTreePaths cfg lCfg fmt tree = do
   return $ case mkLineMetaFormatter lCfg fmt of
     (Left  errMsg) -> die (addLogContext lCfg "listTreePaths") $ B8.pack errMsg
     (Right fmtFn ) -> runST $ do
-      eSet <- hashSetFromList $ concat eLists -- TODO is there a better way than concat?
+      eSet <- hashSetFromList $ concat eLists
       listTreePaths' cfg lCfg cls eSet fmtFn (Depth 0) [] tree
 
 {- Recursively render paths, passing a list of breadcrumbs.

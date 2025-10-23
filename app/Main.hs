@@ -14,6 +14,7 @@ import Cmd.Find (cmdFind)
 import Cmd.Hash (cmdHash)
 import Cmd.Info (cmdInfo)
 import Cmd.SetAdd (cmdSetAdd)
+import Cmd.TestTree (cmdTestTree)
 import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
                parseLabeledSearches)
 import Data.Functor ((<&>))
@@ -166,6 +167,12 @@ main = do
         debug "running hash command"
         path <- reqPathArg "PATH"
         cmdHash cfg lCfg path
+
+      else if cmd "test-tree" then do
+        debug "running test-tree command"
+        treePath <- reqPathArg "TREEPATH"
+        dirPath  <- reqPathArg "DIRPATH"
+        cmdTestTree cfg lCfg treePath dirPath
 
       else if cmd "version" then do
         debug "running version command"

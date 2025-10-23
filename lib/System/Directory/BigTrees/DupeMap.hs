@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {- Other than for printing and writing output to files, this module shouldn't
@@ -168,7 +169,7 @@ addTreeToDupeMap'
   cfg lCfg mrSet cle dm dir depth pr
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
     keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) depth d
-    let recurse = dupesRecurseChildren cfg depth d
+    let recurse = dupesRecurseChildren cfg depth d -- TODO should this be depth+1?
     when keepNode $ do
       insertDupeSet cfg lCfg dm h (fs, h, D, S.singleton $ dir </> n) pr
     when recurse $
@@ -325,14 +326,14 @@ type ScoreFn = DupeSet -> Int
 -- | This version is for dupes vs a reference set. It's simpler because there's
 -- no need to leave out one canonical version from each dupe set.
 scoreSetRef :: ScoreFn
-scoreSetRef (n, _, _, _) = n -- TODO is that all? lol
+scoreSetRef (n, _, _, _) = n
 
 -- | This version is for dupes within the tree itself, which is a little more
 -- complicated because we want to save (not delete) one copy from each dupe
 -- group.
 scoreSetSelf :: ScoreFn
 scoreSetSelf (n, _, D, fs) = n - n `div` length fs
-scoreSetSelf (n, _, _, _ ) = n - 1 -- TODO is this right?
+scoreSetSelf (n, _, _, _ ) = n - 1
 
 
 ------------------- filter which nodes are added to dupemaps ------------------
