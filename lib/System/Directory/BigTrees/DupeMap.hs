@@ -308,18 +308,16 @@ sortPaths = L.sortBy comparePaths
 -------------------------- score sets for quicksorting ------------------------
 
 {- This does a few things:
- - * removes singleton sets (no duplicates)
  - * adjusts the int scores from "n files in set" to "n files saved by dedup"
  - * negates scores so quicksort will put them in descending order
  - TODO should length-1 sets not be rejected?
  -}
 scoreSets :: ScoreFn -> C.HashTable s Hash DupeSet -> ST s SortedDupeSets 
-scoreSets scoreFn = H.foldM (\vs (_, v@(_,h,t,fs)) ->
-
+scoreSets scoreFn = H.foldM (
+    \vs (_, v@(_,h,t,fs)) -> return $ (negate $ scoreFn v,h,t,fs):vs
+  ) []
   -- TODO is removing singletons important for performance? could turn on when not vs ref set
   -- return $ if length fs > 1 then (negate $ scoreFn v,h,t,fs):vs else vs) []
-
-  return $ (negate $ scoreFn v,h,t,fs):vs) []
 
 type ScoreFn = DupeSet -> Int
 

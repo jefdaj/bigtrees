@@ -54,6 +54,7 @@ cmdDupes cfg lCfg path = bracket open close write
              Nothing -> return stdout
              Just op -> SFO.openBinaryFile op WriteMode
 
+    write :: Handle -> IO ()
     write hdl = do
       tree <- BT.readOrBuildTree (searchCfg cfg) lCfg path
 
@@ -69,8 +70,7 @@ cmdDupes cfg lCfg path = bracket open close write
 
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
-	    -- TODO move this inside addTreeToDupeMap progRef <- newSTRef 0
-	    debugST "runST starting"
+            debugST "runST starting"
             mrSet <- if null rList
                        then return Nothing
                        else fmap Just $ BT.hashSetFromList rList
@@ -80,11 +80,11 @@ cmdDupes cfg lCfg path = bracket open close write
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
             BT.addTreeToDupeMap (searchCfg cfg) lCfg mrSet cle ht tree
-	    debugST $ "added all " <> treeN <> " tree nodes to DupeMap"
-	    if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
+            debugST $ "added all " <> treeN <> " tree nodes to DupeMap"
+            if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
             res <- BT.dupesByNegScore lCfg scoreFn ht
-	    -- debugST $ "finished scoring " <> initB <> " DupeSets" -- TODO but is this time ordered?
+            debugST $ "finished scoring " <> treeN <> " DupeSets" -- TODO but is this time ordered?
             return res
 
       -- TODO pull default from docopt instead of duplicating that here
