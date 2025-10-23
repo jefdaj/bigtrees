@@ -68,10 +68,16 @@ cmdDupes cfg lCfg path = bracket open close write
       debug $ "compiling " <> B8.pack (show $ length searches) <> " labeled searches "
       cle <- BT.compileLabeledSearches searches
 
+      -- normally, we want to be sure not to delete all copies of a file!
+      -- but in the special case of dupes vs a reference set, it should be ok
+      -- TODO any good way to warn the user if their ref set looks like it's inside the dupes?
+      -- TODO better name for this since it controls multiple parts of the algorithm
+      let keepOneDupe = null rList
+
       -- TODO should this all be one function exported from DupeMap?
       let ds = runST $ do
             debugST "runST starting"
-            mrSet <- if null rList
+            mrSet <- if keepOneDupe
                        then return Nothing
                        else fmap Just $ BT.hashSetFromList rList
             let init  = maximum [length mrSet, 1000] -- TODO better defaults?
@@ -82,8 +88,10 @@ cmdDupes cfg lCfg path = bracket open close write
             BT.addTreeToDupeMap (searchCfg cfg) lCfg mrSet cle ht tree
             debugST $ "added all " <> treeN <> " tree nodes to DupeMap"
             if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
-            let scoreFn = if null rList then BT.scoreSetSelf else BT.scoreSetRef
-            res <- BT.dupesByNegScore lCfg scoreFn ht
+            -- TODO DupesMode or similar type to make the null rList thing more obvious?
+            let scoreFn = if keepOneDupe then BT.scoreSetSelf else BT.scoreSetRef
+                keepSingles = not keepOneDupe
+            res <- BT.dupesByNegScore lCfg scoreFn keepSingles ht
             debugST $ "finished scoring " <> treeN <> " DupeSets" -- TODO but is this time ordered?
             return res
 
@@ -91,11 +99,6 @@ cmdDupes cfg lCfg path = bracket open close write
       let fmt = fromMaybe "suggestions" $ dupesOutFormat cfg
 
       let renderFn = fromJust $ lookup fmt dupesRenderFunctions
-
-      -- normally, we want to be sure not to delete all copies of a file!
-      -- but in the special case of dupes vs a reference set, it should be ok
-      -- TODO any good way to warn the user if their ref set looks like it's inside the dupes?
-      let keepOneDupe = null rList
 
       debug $ "writing " <> B8.pack (show $ length ds) <> " DupeSets"
       hWriteDupes (searchCfg cfg) renderFn keepOneDupe hdl ds
