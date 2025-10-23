@@ -105,7 +105,6 @@ incAddTreeProgress lCfg progressRef = do
   if nNodes `mod` 1000 == 0
      then logUnsafe (addLogContext lCfg "addTreeToDupeMap") InfoL msg action
      else action
-    
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
@@ -247,12 +246,12 @@ simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) l
     msg = "iteration " <> showI <>
           " drop " <> showD <>
           " sets redundant with " <> showH <> "; " <> showR <>
-	  " sets remain to process"
+          " sets remain to process"
     ds' = filter (not . redundantSet lCfg h fs) ds
     nRemain = length ds'
     nDrop = length ds - nRemain
     info msg x = if nDrop > 0
-		   then logUnsafe (addLogContext lCfg "simplifyDupes") InfoL msg x
+       then logUnsafe (addLogContext lCfg "simplifyDupes") InfoL msg x
                    else x
 
 -- TODO double check that these can't have redundancies
@@ -339,8 +338,34 @@ scoreSetSelf (n, _, _, _ ) = n - 1 -- TODO is this right?
 
 ------------------- filter which nodes are added to dupemaps ------------------
 
-dupesKeepNode :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledSearches -> [Name] -> Depth -> HashTree a -> ST s Bool
-dupesKeepNode _ _ _ _ _ d (Err {}) = return False -- TODO is this how we should handle them?
+dupesKeepNode
+  :: SearchConfig
+  -> LogCfg
+  -> Maybe (HashSet s)
+  -> CompiledLabeledSearches
+  -> [Name]
+  -> Depth
+  -> HashTree a
+  -> ST s Bool
+
+-- When the tree is an error, go as far as we can without inspecting it.
+-- Then if needed, print an error saying we don't know whether it should be included.
+-- (And don't include it, because it doesn't have a hash)
+dupesKeepNode cfg lCfg _ cle ns d e@(Err {}) = do
+  let info = logUnsafe (addLogContext lCfg "dupesKeepNode") InfoL
+  let err  = logUnsafe (addLogContext lCfg "dupesKeepNode") ErrorL
+  let wholeName = breadcrumbs2bs $ treeName e : (reverse ns)
+  let excludeMsg l = "exclude node labeled '" <> l <> "' : '" <> wholeName <> "'"
+  let includeMsg = "unsure whether '" <> wholeName <>
+                   "' is a dupe because of prev error '" <>
+                   B8.pack (show $ errMsg e) <> "'"
+  let mExcludeLabel = B8.pack <$> findLabelNode cle (reverse ns) e
+  return $ and
+    [ maybe True (d >=) $ minDepth cfg
+    , maybe True (d <=) $ maxDepth cfg
+    , maybe (err includeMsg False) (\l -> info (excludeMsg l) False) mExcludeLabel
+    ]
+
 dupesKeepNode cfg lCfg mrSet cle ns d t = do
   let hash = treeHash t
 

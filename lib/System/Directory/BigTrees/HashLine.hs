@@ -148,7 +148,10 @@ bsBytes :: B8.ByteString -> NBytes
 bsBytes = NBytes . toInteger . B8.length
 
 newtype ErrMsg = ErrMsg String
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Read, Generic)
+
+instance Show ErrMsg where
+  show = simplifyErrMsg . show
 
 instance NFData ErrMsg
 instance IsString ErrMsg
