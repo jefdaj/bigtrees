@@ -367,9 +367,8 @@ dupesKeepNode cfg lCfg _ cle ns d e@(Err {}) = do
 dupesKeepNode cfg lCfg mrSet cle ns d t = do
   let hash = treeHash t
 
-  -- whether to include as a dupe because hash is in ref set
   includeHash <- case mrSet of
-                   Nothing -> return False
+                   Nothing -> return True
                    Just rSet -> setContainsHash rSet hash
 
   let mExcludeLabel = B8.pack <$> findLabelNode cle (reverse ns) t
