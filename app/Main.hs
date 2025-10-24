@@ -170,9 +170,9 @@ main = do
 
       else if cmd "test-tree" then do
         debug "running test-tree command"
-        treePath <- reqPathArg "TREEPATH"
-        dirPath  <- reqPathArg "DIRPATH"
-        cmdTestTree cfg lCfg treePath dirPath
+        inPath  <- reqPathArg "INPATH"
+        outPath <- reqPathArg "OUTPATH"
+        cmdTestTree cfg lCfg inPath outPath
 
       else if cmd "version" then do
         debug "running version command"
