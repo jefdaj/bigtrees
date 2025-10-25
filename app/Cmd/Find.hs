@@ -2,8 +2,8 @@
 
 module Cmd.Find
   ( cmdFind
-  -- , cmdFindUnixFind
-  -- , prop_cmdFind_paths_match_unix_find
+  , cmdFindUnixFind
+  , prop_cmdFind_paths_match_unix_find
   )
   where
 
@@ -12,7 +12,8 @@ module Cmd.Find
 import Config (AppConfig (..), defaultAppConfig)
 import Control.Concurrent.Thread.Delay (delay)
 import Data.List (sort)
-import System.Directory.BigTrees (TestTree, listTreePaths, readOrBuildTree, treeName, unName)
+import System.Directory.BigTrees (TestTree, listTreePaths, readOrBuildTree, treeName, unName,
+                                  writeTestTreeDir)
 import System.FilePath (takeBaseName, takeDirectory)
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -47,39 +48,38 @@ cmdFind cfg lCfg path = do
 readAndSortLines :: OsPath -> IO B8.ByteString
 readAndSortLines path = SFO.readFile' path <&> (B8.unlines . sort . B8.lines)
 
--- TODO fix this
--- cmdFindUnixFind :: LogCfg -> TestTree -> IO (B8.ByteString, B8.ByteString)
--- cmdFindUnixFind lCfg t =
---   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
--- 
---     tmpDir' <- encodeFS tmpDir
---     let treeDir'     = tmpDir' </> [osp|test-tree|]
---     let myFindOut'   = tmpDir' </> [osp|my-find-output.txt|]
---     let unixFindOut' = tmpDir' </> [osp|unix-find-output.txt|]
---     unixFindOut <- decodeFS unixFindOut'
--- 
---     -- treeDir' will be the *parent* of the root tree dir.
---     -- we wrap it like this to make commands easier with potentially weird unicode tree names,
---     -- and to avoid finding our own test txt files from above
---     SDO.createDirectoryIfMissing False treeDir'
---     writeTestTreeDir lCfg treeDir' t
--- 
---     let cfg = defaultAppConfig { outFile = Just myFindOut' }
---     cmdFind cfg NoLog treeDir'
--- 
---     -- Unix find will print whole absolute paths here, so we need to invoke it
---     -- by relative path from the parent of the tmpdir to match my relative style.
---     _ <- readCreateProcess ((proc "find" ["test-tree", "-fprint", unixFindOut]) {cwd = Just tmpDir}) ""
--- 
---     out1 <- readAndSortLines myFindOut'
---     out2 <- readAndSortLines unixFindOut'
---     return (out1, out2)
--- 
--- prop_cmdFind_paths_match_unix_find :: Property
--- prop_cmdFind_paths_match_unix_find = monadicIO $ do
---   tree <- pick arbitrary
---   (out1, out2) <- run $ cmdFindUnixFind NoLog tree
---   -- WARNING these will mess up your terminal
---   -- liftIO $ putStrLn out1
---   -- liftIO $ putStrLn out2
---   assert $ out1 == out2
+cmdFindUnixFind :: LogCfg -> TestTree -> IO (B8.ByteString, B8.ByteString)
+cmdFindUnixFind lCfg t =
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+
+    tmpDir' <- encodeFS tmpDir
+    let treeDir'     = tmpDir' </> [osp|test-tree|]
+    let myFindOut'   = tmpDir' </> [osp|my-find-output.txt|]
+    let unixFindOut' = tmpDir' </> [osp|unix-find-output.txt|]
+    unixFindOut <- decodeFS unixFindOut'
+
+    -- treeDir' will be the *parent* of the root tree dir.
+    -- we wrap it like this to make commands easier with potentially weird unicode tree names,
+    -- and to avoid finding our own test txt files from above
+    SDO.createDirectoryIfMissing False treeDir'
+    writeTestTreeDir lCfg treeDir' t
+
+    let cfg = defaultAppConfig { outFile = Just myFindOut' }
+    cmdFind cfg NoLog treeDir'
+
+    -- Unix find will print whole absolute paths here, so we need to invoke it
+    -- by relative path from the parent of the tmpdir to match my relative style.
+    _ <- readCreateProcess ((proc "find" ["test-tree", "-fprint", unixFindOut]) {cwd = Just tmpDir}) ""
+
+    out1 <- readAndSortLines myFindOut'
+    out2 <- readAndSortLines unixFindOut'
+    return (out1, out2)
+
+prop_cmdFind_paths_match_unix_find :: Property
+prop_cmdFind_paths_match_unix_find = monadicIO $ do
+  tree <- pick arbitrary
+  (out1, out2) <- run $ cmdFindUnixFind NoLog tree
+  -- WARNING these will mess up your terminal
+  -- liftIO $ putStrLn out1
+  -- liftIO $ putStrLn out2
+  assert $ out1 == out2

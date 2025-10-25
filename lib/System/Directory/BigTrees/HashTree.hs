@@ -37,13 +37,13 @@ module System.Directory.BigTrees.HashTree
   , treeEqIgnoringModTime
 
   -- for testing
-  -- , roundtripTestTreeToTmpdir
+  , roundtripTestTreeToTmpdir
   , dropFileData
-  -- , writeTestTreeDir
+  , writeTestTreeDir
   , isErr
   , prop_roundtrip_ProdTree_to_ByteString
   , prop_roundtrip_ProdTree_to_bigtree_file
-  -- , prop_roundtrip_TestTree_to_tmpdir
+  , prop_roundtrip_TestTree_to_tmpdir
   , unit_tree_from_bad_path_is_Err
   , unit_roundtrip_Err_to_bigtree_file
   , unit_buildProdTree_catches_permission_error
@@ -85,7 +85,7 @@ import System.Directory.BigTrees.HashTree.Read (accTrees, hReadTree, readLastHas
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..), dropTo, emptySearchConfig,
                                                   treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,
-                                                 writeTree)
+                                                 writeTestTreeDir, writeTree)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import qualified Test.HUnit as HU
@@ -169,42 +169,40 @@ prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
 -- one round-trips to an actual directory tree on disk
 -- note that you have to drop the bytestrings from the original testtree to compare them
 -- TODO oh, have to test equality ignoring mod times, right? otherwise they'll always update
--- TODO fix this
--- roundtripTestTreeToTmpdir :: TestTree -> IO TestTree
--- roundtripTestTreeToTmpdir t =
--- 
---   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
---     tmpDir' <- encodeFS tmpDir
---     -- putStrLn $ "tmpDir': " ++ show tmpDir'
---     D.delay 100000
---     -- let tmpRoot = tmpDir </> "round-trip-tests" -- TODO use root
---     -- SD.createDirectoryIfMissing True tmpDir -- TODO False?
---     -- SD.removePathForcibly tmpDir -- TODO remove
--- 
---     -- This is a little confusing, but the FilePath here should be the *parent*
---     -- within which to write the root tree dir...
---     writeTestTreeDir NoLog tmpDir' t
---     D.delay 100000
--- 
---     -- ... but then when reading it back in we need the full path including the
---     -- root tree dir name.
---     let treeRootDir = tmpDir' </> unName (treeName t)
---     readTestTree emptySearchConfig NoLog treeRootDir
---     -- parent <- readTestTree Nothing False [] tmpDir'
---     -- return $ head $ dirContents parent
+roundtripTestTreeToTmpdir :: TestTree -> IO TestTree
+roundtripTestTreeToTmpdir t =
+
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+    tmpDir' <- encodeFS tmpDir
+    -- putStrLn $ "tmpDir': " ++ show tmpDir'
+    D.delay 100000
+    -- let tmpRoot = tmpDir </> "round-trip-tests" -- TODO use root
+    -- SD.createDirectoryIfMissing True tmpDir -- TODO False?
+    -- SD.removePathForcibly tmpDir -- TODO remove
+
+    -- This is a little confusing, but the FilePath here should be the *parent*
+    -- within which to write the root tree dir...
+    writeTestTreeDir NoLog tmpDir' t
+    D.delay 100000
+
+    -- ... but then when reading it back in we need the full path including the
+    -- root tree dir name.
+    let treeRootDir = tmpDir' </> unName (treeName t)
+    readTestTree emptySearchConfig NoLog treeRootDir
+    -- parent <- readTestTree Nothing False [] tmpDir'
+    -- return $ head $ dirContents parent
 
 -- TODO is the forcing unnecessary?
--- TODO fix this
--- prop_roundtrip_TestTree_to_tmpdir :: Property
--- prop_roundtrip_TestTree_to_tmpdir = monadicIO $ do
---   t1 <- pick arbitrary
---   run $ D.delay 100000
---   t2 <- run $ roundtripTestTreeToTmpdir t1
---   run $ D.delay 100000
---   unless (treeEqIgnoringModTime t1 t2) $ do
---     run $ print t1
---     run $ print t2
---   assert $ treeEqIgnoringModTime t1 t2
+prop_roundtrip_TestTree_to_tmpdir :: Property
+prop_roundtrip_TestTree_to_tmpdir = monadicIO $ do
+  t1 <- pick arbitrary
+  run $ D.delay 100000
+  t2 <- run $ roundtripTestTreeToTmpdir t1
+  run $ D.delay 100000
+  unless (treeEqIgnoringModTime t1 t2) $ do
+    run $ print t1
+    run $ print t2
+  assert $ treeEqIgnoringModTime t1 t2
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion
 unit_tree_from_bad_path_is_Err =
