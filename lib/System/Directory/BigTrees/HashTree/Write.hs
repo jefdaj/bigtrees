@@ -53,7 +53,7 @@ hWriteTreeBody lCfg h tree = mapM_ (\l -> B8.hPutStrLn h l >> hFlush h) (seriali
 
 -- This is the only official way to construct a `HashLine`, because they don't
 -- make sense in isolation; each `Dir` needs to be preceded in the list by its
--- dirContents to reconstruct the tree structure.
+-- contents to reconstruct the tree structure.
 flattenTree :: LogCfg -> HashTree a -> [HashLine]
 flattenTree lCfg = flattenTree' lCfg (Depth 0)
 
@@ -123,4 +123,4 @@ writeTestTreeDir lCfg root (Dir {nodeData=nd, dirContents = cs}) = do
   -- putStrLn $ "write test dir: " ++ show root'
   SDO.createDirectoryIfMissing True root' -- TODO true?
   assertFile lCfg root'
-  mapM_ (writeTestTreeDir lCfg root') cs
+  mapM_ (writeTestTreeDir lCfg root') (sortContentsByName cs)

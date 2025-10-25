@@ -276,23 +276,23 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
-  -- let cs'' = sortContentsByName subTrees
+  let subTrees' = sortContentsByName subTrees
       -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
-  -- We want the overall mod time to be the most recent of the dir + all dirContents.
-  -- If there are any dirContents at all, by definition they're newer than the dir, right?
+  -- We want the overall mod time to be the most recent of the dir + all contents.
+  -- If there are any contents at all, by definition they're newer than the dir, right?
   -- So we only need this root mod time when the dir is empty.
   mt <- getFileDirModTime root
   s  <- getFileDirNBytes root
 
   return $ Dir
-            { dirContents = subTrees
-            , nNodes  = sum $ 1 : map treeNNodes subTrees
+            { dirContents = subTrees'
+            , nNodes  = sum $ 1 : map treeNNodes subTrees'
             , nodeData = NodeData
               { name     = Name n
-              , modTime  = maximum $ mt : map treeModTime subTrees
-              , nBytes   = sum $ s : map treeNBytes subTrees
-              , hash     = hashDirContents subTrees
+              , modTime  = maximum $ mt : map treeModTime subTrees'
+              , nBytes   = sum $ s : map treeNBytes subTrees'
+              , hash     = hashDirContents subTrees'
               }
             }
 

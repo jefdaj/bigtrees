@@ -195,11 +195,13 @@ accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t o
                  }
        in {-# SCC "Lappend" #-} if accKeepLine cfg lCfg hl then (Depth i, l):cs else cs
 
+  -- TODO was the sorting here important?
+  -- TODO or is it unnecessary and slowing things down?
   D -> let (children, siblings) = partitionChildrenSiblings i cs
-           -- childrenSorted = sortBy (compare `on` (treeName . snd)) children
+           childrenSorted = sortBy (compare `on` (treeName . snd)) children
            recurse = accRecurseChildren cfg lCfg hl
            dir = Dir
-                   { dirContents = {-# SCC "DdirContents" #-} if recurse then map snd children else []
+                   { dirContents = {-# SCC "DdirContents" #-} if recurse then map snd childrenSorted else []
                    , nNodes = nn
                    , nodeData = {-# SCC "DNodeData" #-} NodeData
                      { name = p

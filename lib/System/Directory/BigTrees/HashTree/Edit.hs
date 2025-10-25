@@ -13,7 +13,7 @@ import Data.Function (on)
 import Data.List (delete, find, sortBy)
 import System.Directory.BigTrees.HashLine (NBytes (..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), hashDirContents,
-                                                treeNNodes, treeModTime, treeNBytes, treeName)
+                                                treeNNodes, treeModTime, treeNBytes, treeName, sortContentsByName)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
 import System.Directory.BigTrees.Logging (LogCfg, die, addLogContext)
@@ -61,8 +61,7 @@ addSubTree lCfg main sub (n:ns) = main { nodeData = nd', dirContents = cs', nNod
     -- path'  = joinPath comps
     h'     = hashDirContents cs'
     nd'    = (nodeData main) { hash = h', modTime = mt', nBytes = s' }
-    cs'    = sortBy
-               (compare `on` treeName) $
+    cs'    = sortContentsByName $
                filter
                  (\c -> treeName c /= n)
                  ((dirContents main) ++ [newSub])
