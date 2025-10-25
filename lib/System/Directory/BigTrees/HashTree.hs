@@ -93,7 +93,7 @@ import qualified Test.HUnit as HU
 -- import System.Directory.BigTrees.Util (absolutePath)
 
 -- import qualified Data.ByteString.Char8 as B
--- import Text.Pretty.Simple (pPrint)
+import Text.Pretty.Simple (pPrint)
 
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
@@ -134,6 +134,9 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   let cfg = emptySearchConfig
   K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree cfg NoLog h t1 -- TODO hClose?
   t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg NoLog 4096
+  unless (t1 == t2) $ do
+    run $ print t1
+    run $ print t2
   assert $ t2 == t1
 
 bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()

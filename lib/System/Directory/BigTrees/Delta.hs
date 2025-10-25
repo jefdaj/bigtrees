@@ -71,16 +71,20 @@ diff lCfg = diff' lCfg mempty
 
 -- TODO fix non-exhaustive patterns
 diff' :: (Eq a, Show a) => LogCfg -> OsPath -> HashTree a -> HashTree a -> [Delta a]
+
 diff' lCfg anchor t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (anchor </> f1) (anchor </> f2)]
   | f1 == f2 && h1 /= h2 = [Edit (if anchor == f1 then f1 else anchor </> f1) t1 t2]
   | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ show t1 ++ " " ++ show t2
+
 diff' _ anchor (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm anchor, Add (anchor </> d) t2]
+
 -- TODO wait is this a Mv?
 diff' _ anchor (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (anchor </> d), Add (anchor </> d) t2]
+
 diff' lCfg anchor t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
-  | h1 == h2 = []
+  -- | h1 == h2 = []
   | otherwise = fixMoves lCfg t1 $ rms ++ adds ++ edits
   where
     adds  = [Add (anchor </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
