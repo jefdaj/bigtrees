@@ -280,7 +280,7 @@ prettyLine breadcrumbs (ErrLine (Depth d, ErrMsg m, name)) =
   in joinCols
        [ B8.pack $ show E
        , B8.pack $ show d
-       , B8.pack $ show m -- unlike other hashline components, this should be quoted
+       , B8.pack $ show m -- TODO is this causing errors? maybe quote it explicitly instead?
        , node <> B8.singleton '\NUL'
        ]
 

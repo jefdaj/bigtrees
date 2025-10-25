@@ -64,7 +64,7 @@ import System.OsPath (OsPath, encodeFS, osp, (</>))
 -- import System.FilePath.Glob (Pattern)
 import Control.Monad (unless)
 import qualified System.FilePath as SF
-import System.IO (IOMode (..), hClose)
+import System.IO (IOMode (..), hClose, withBinaryFile)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck (Arbitrary (..), Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
@@ -133,6 +133,7 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   (t1 :: ProdTree) <- pick arbitrary
   let cfg = emptySearchConfig
   K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree cfg NoLog h t1 -- TODO hClose?
+  -- run $ withBinaryFile "/tmp/proptest1.bigtree" WriteMode $ \h -> hWriteTree cfg NoLog h t1 -- TODO hClose?
   t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg NoLog 4096
   unless (t1 == t2) $ do
     run $ print t1

@@ -161,18 +161,25 @@ isValidName s
 -- Functions for converting between `Name`s and (regular Haskell) `FilePath`s.
 -- They should work on Linux and MacOS.
 
-n2sbs :: Name -> SBS.ShortByteString
-n2sbs = SOS.getPosixString . SOS.getOsString . unName
+-- n2sbs :: Name -> SBS.ShortByteString
+-- n2sbs = SOS.unPS . SBS.unOsString . unName
 
 n2op :: Name -> SOS.OsString
 n2op = unName
 
 -- | Note this does NOT check whether it's a valid Name.
-sbs2n :: SBS.ShortByteString -> Name
-sbs2n = Name . sbs2op
+-- sbs2n :: SBS.ShortByteString -> Name
+-- sbs2n = Name . sbs2op
 
 sbs2op :: SBS.ShortByteString -> OsPath
 sbs2op = SOS.OsString . SOS.PosixString
+
+-- TODO not available until later version? n2sbs (Name (SOS.OsString ps)) = SOS.unPFP ps
+n2sbs :: Name -> SBS.ShortByteString
+n2sbs (Name (SOS.OsString (SOS.PS sbs))) = sbs
+
+sbs2n :: SBS.ShortByteString -> Name
+sbs2n sbs = Name (SOS.OsString (SOS.PS sbs))
 
 -- | Convert a `FilePath` to a `Name` using the current filesystem's encoding,
 -- or explain why the conversion failed.
