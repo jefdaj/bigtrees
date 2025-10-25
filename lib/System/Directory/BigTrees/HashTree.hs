@@ -155,6 +155,8 @@ roundtripProdTreeToBigtreeFile t =
     hClose hdl
     let cfg = emptySearchConfig
     writeTree cfg NoLog path' t -- TODO exclude defaultConfig?
+    -- TODO come up with a better way to inspect intermediate versions here
+    -- SDO.copyFile path' [osp|/tmp/roundtripfail.bigtree|]
     readTree cfg NoLog path'
 
 prop_roundtrip_ProdTree_to_bigtree_file :: Property
