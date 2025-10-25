@@ -53,7 +53,7 @@ module System.Directory.BigTrees
   , printTree
   , writeTree
   , hWriteTree
-  , writeTestTreeDir
+  -- , writeTestTreeDir
   , readOrBuildTree
   , readTree
   , renameRoot
@@ -172,7 +172,7 @@ import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), 
                                                   emptySearchConfig, parseLabeledSearches,
                                                   treeContainsHash, treeContainsPath, compileLabeledSearches)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
-                                                 writeTestTreeDir, writeTree)
+                                                 writeTree)
 import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumbs2bs, bs2n, fp2n,
                                        fp2ns, joinNames, n2bs, n2sbs, nameP, names2bs, op2ns, os2ns,
                                        sbs2n, op2bs, op2s)

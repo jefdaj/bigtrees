@@ -99,28 +99,29 @@ assertFile lCfg path = do
  - (Yes this is confusing, and should be changed if it will be user facing)
  - TODO should this be NoLog?
  -}
-writeTestTreeDir :: LogCfg -> OsPath -> TestTree -> IO ()
-
-writeTestTreeDir lCfg root (Err {}) = return () -- TODO print a warning?
-
-writeTestTreeDir lCfg root l@(Link {nodeData=nd}) = do
-  let path = root </> unName (name nd)
-  assertNoFile lCfg path
-  -- Target comes first, then the file we're writing (like `ln -s`)
-  SDO.createFileLink (linkTarget l) path
-  assertFile lCfg path
-
-writeTestTreeDir lCfg root (File {nodeData=nd, fileData = bs}) = do
-  -- SDO.createDirectoryIfMissing True root -- TODO remove
-  let path = root </> unName (name nd)
-  assertNoFile lCfg path
-  SFO.writeFile' path bs
-  assertFile lCfg path
-
-writeTestTreeDir lCfg root (Dir {nodeData=nd, dirContents = cs}) = do
-  let root' = root </> unName (name nd)
-  assertNoFile lCfg root'
-  -- putStrLn $ "write test dir: " ++ show root'
-  SDO.createDirectoryIfMissing True root'
-  assertFile lCfg root'
-  mapM_ (writeTestTreeDir lCfg root') (sortContentsByName cs) -- TODO remove sort?
+-- TODO fix this
+-- writeTestTreeDir :: LogCfg -> OsPath -> TestTree -> IO ()
+-- 
+-- writeTestTreeDir lCfg root (Err {}) = return () -- TODO print a warning?
+-- 
+-- writeTestTreeDir lCfg root l@(Link {nodeData=nd}) = do
+--   let path = root </> unName (name nd)
+--   assertNoFile lCfg path
+--   -- Target comes first, then the file we're writing (like `ln -s`)
+--   SDO.createFileLink (linkTarget l) path
+--   assertFile lCfg path
+-- 
+-- writeTestTreeDir lCfg root (File {nodeData=nd, fileData = bs}) = do
+--   -- SDO.createDirectoryIfMissing True root -- TODO remove
+--   let path = root </> unName (name nd)
+--   assertNoFile lCfg path
+--   SFO.writeFile' path bs
+--   assertFile lCfg path
+-- 
+-- writeTestTreeDir lCfg root (Dir {nodeData=nd, dirContents = cs}) = do
+--   let root' = root </> unName (name nd)
+--   assertNoFile lCfg root'
+--   -- putStrLn $ "write test dir: " ++ show root'
+--   SDO.createDirectoryIfMissing True root'
+--   assertFile lCfg root'
+--   mapM_ (writeTestTreeDir lCfg root') (sortContentsByName cs) -- TODO remove sort?
