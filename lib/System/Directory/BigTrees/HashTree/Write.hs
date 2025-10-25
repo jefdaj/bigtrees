@@ -7,7 +7,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Maybe (isNothing)
 import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
                                            prettyLine)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree, sortContentsByName)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Name (unName)
@@ -71,7 +71,7 @@ flattenTree' lCfg (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
     n = name nd
-    subtrees = concatMap (flattenTree' lCfg $ Depth $ d+1) cs
+    subtrees = concatMap (flattenTree' lCfg $ Depth $ d+1) (sortContentsByName cs)
     wholeDir = HashLine (D, Depth d, hash nd, modTime nd, nBytes nd, f, n, Nothing)
 
 -- this is to catch the case where it tries to write the same file twice

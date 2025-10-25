@@ -18,7 +18,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
 import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList, readHashList,
                                           setContainsHash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), treeNNodes, treeHash,
-                                                treeModTime, treeNBytes, treeName, treeType, treeName)
+                                                treeModTime, treeNBytes, treeName, treeType, treeName, sortContentsByName)
 import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
@@ -70,7 +70,7 @@ listTreePaths' cfg lCfg cls eSet fmtFn (Depth d) ns t = do
   recPaths <- case t of
 
         (Dir {}) ->
-          fmap concat $ forM (dirContents t) $ \t' ->
+          fmap concat $ forM (sortContentsByName $ dirContents t) $ \t' ->
             listTreePaths' cfg lCfg cls eSet fmtFn (Depth $ d+1) ns' t'
 
         _        -> return []
