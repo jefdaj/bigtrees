@@ -266,9 +266,7 @@ arbitraryFile = do
 arbitraryDirSized :: Int -> Gen TestTree
 arbitraryDirSized arbsize = do
   n  <- arbitrary :: Gen Name
-  -- !cs <- nubBy duplicateNames <$> resize (s `div` 2) (arbitrary :: Gen [TestTree])
-  -- TODO put back the nubBy part!
-  !cs <- fmap sortContentsByName $ arbitraryContents $ arbsize - 1
+  !cs <- nubBy duplicateNames <$> resize (arbsize `div` 2) (arbitrary :: Gen [TestTree])
   !mt <- arbitrary :: Gen ModTime
   !s <- return (NBytes 4096) -- TODO get this right on other filesystems
   -- TODO assert that nNodes == s here?
@@ -293,7 +291,7 @@ instance Arbitrary TestTree where
     -- TODO should `Err`s be one of the choices here?
 
     if arbsize < 2 -- TODO can it go below 1?
-      then arbitraryFile
+      then arbitraryFile -- TODO also Link, Error etc?
       else arbitraryDirSized arbsize
 
     -- n <- arbitrary :: Gen Name
@@ -303,20 +301,33 @@ instance Arbitrary TestTree where
       -- then arbitraryDirSized s
       -- else arbitraryFile
 
-  -- only shrinks the filename
   shrink :: TestTree -> [TestTree]
-  shrink f@(File {nodeData=nd}) = map (\n -> f { nodeData = nd {name = n} }) (shrink $ name nd)
-  shrink e@(Err {}) = map (\n -> e { errName = n }) (shrink $ errName e)
+  -- shrink tree = structuralShrinks ++ oldShrinks
+  shrink t = shrinkTreeStructure t ++ shrinkTreeContents t ++ shrinkTreeName t
 
-  -- shrinks either the name or the contents, and adjusts the rest to match
-  -- TODO any need to recurse manually into dirContents?
-  shrink d@(Dir {nodeData=nd}) = newContents ++ newNames
-    where
-      newNames = map (\n -> d { nodeData = nd { name = n } }) (shrink $ name nd)
-      newContents = map (\cs -> d { dirContents = cs
-                                  , nodeData = nd {hash = hashDirContents cs}
-                                  , nNodes = sum $ 1 : map treeNNodes cs}) -- TODO factor out
-                        (shrink $ dirContents d)
+-- only shrinks the filename
+shrinkTreeName :: TestTree -> [TestTree]
+shrinkTreeName e@(Err {}) = map (\n -> e { errName = n }) (shrink $ errName e)
+shrinkTreeName tree =
+  let nd = nodeData tree
+  in map (\n -> tree { nodeData = nd {name = n} }) (shrink $ name nd)
+
+-- TODO any need to recurse manually into dirContents?
+-- TODO also do file contents here and adjust hashes to match?
+-- TODO also need to shrink each subtree individually here?
+shrinkTreeContents :: TestTree -> [TestTree]
+shrinkTreeContents d@(Dir {nodeData=nd}) = map adjust $ shrink $ dirContents d
+  where
+    adjust cs = d { dirContents = cs
+                  , nodeData = nd {hash = hashDirContents cs}
+                  , nNodes = sum $ 1 : map treeNNodes cs
+		  }
+
+shrinkTreeContents t = []
+
+shrinkTreeStructure :: TestTree -> [TestTree]
+shrinkTreeStructure d@(Dir {}) = dirContents d
+shrinkTreeStructure t = []
 
 -- TODO rename the actual function file -> fileData to match future dirData
 -- TODO rewrite this in terms of a generic map/fold so it works with other types
