@@ -14,6 +14,8 @@ module System.Directory.BigTrees.Delta
   )
   where
 
+-- TODO adjust all functions to include Broke and Fixed?
+
 {- This module calculates what a HashTree should look like after doing some git
  - operations, represented as Deltas. It's dramatically faster to update the
  - hashes based on those calculations than re-hash everything from the filesystem.
@@ -41,6 +43,8 @@ data Delta a
   | Rm OsPath
   | Mv OsPath OsPath
   | Edit OsPath (HashTree a) (HashTree a) -- TODO remove in favor of subtle use of Add?
+  | Broke OsPath
+  | Fixed OsPath
   deriving (Eq, Show)
 
 ------------------------
@@ -52,6 +56,8 @@ prettyDelta :: Show a => Delta a -> IO B.ByteString
 prettyDelta (Add  f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "added '"   ++ f' ++ "'"
 prettyDelta (Rm   f    ) = decodeFS f >>= \f' -> return $ B.pack $ "removed '" ++ f' ++ "'"
 prettyDelta (Edit f _ _) = decodeFS f >>= \f' -> return $ B.pack $ "edited '"  ++ f' ++ "'"
+prettyDelta (Broke f   ) = decodeFS f >>= \f' -> return $ B.pack $ "broke '"   ++ f' ++ "'"
+prettyDelta (Fixed f   ) = decodeFS f >>= \f' -> return $ B.pack $ "fixed '"   ++ f' ++ "'"
 prettyDelta (Mv   f1 f2) = do
   f1' <- decodeFS f1
   f2' <- decodeFS f2
@@ -65,22 +71,30 @@ diff lCfg = diff' lCfg mempty
 
 -- TODO fix non-exhaustive patterns
 diff' :: (Eq a, Show a) => LogCfg -> OsPath -> HashTree a -> HashTree a -> [Delta a]
-diff' lCfg a t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
+diff' lCfg anchor t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
-  | f1 /= f2 && h1 == h2 = [Mv (a </> f1) (a </> f2)]
-  | f1 == f2 && h1 /= h2 = [Edit (if a == f1 then f1 else a </> f1) t1 t2]
+  | f1 /= f2 && h1 == h2 = [Mv (anchor </> f1) (anchor </> f2)]
+  | f1 == f2 && h1 /= h2 = [Edit (if anchor == f1 then f1 else anchor </> f1) t1 t2]
   | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ show t1 ++ " " ++ show t2
-diff' _ a (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm a, Add (a </> d) t2]
+diff' _ anchor (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm anchor, Add (anchor </> d) t2]
 -- TODO wait is this a Mv?
-diff' _ a (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (a </> d), Add (a </> d) t2]
-diff' lCfg a t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
+diff' _ anchor (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (anchor </> d), Add (anchor </> d) t2]
+diff' lCfg anchor t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
   | h1 == h2 = []
   | otherwise = fixMoves lCfg t1 $ rms ++ adds ++ edits
   where
-    adds  = [Add (a </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
-    rms   = [Rm  (a </> unName (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
-    edits = concat [diff' lCfg (a </> unName (treeName o)) o n | o <- os, n <- ns,
+    adds  = [Add (anchor </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
+    rms   = [Rm  (anchor </> unName (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
+    edits = concat [diff' lCfg (anchor </> unName (treeName o)) o n | o <- os, n <- ns,
                                                o /= n, treeName o == treeName n]
+
+diff' _ _ t1 t2 | t1 == t2 = [] -- TODO does this make sense?
+
+-- TODO is there a better way to handle when one is an error?
+diff' _ anchor e@(Err {}) t2 = [Fixed $ anchor </> unName (treeName t2)]
+diff' _ anchor t1 e@(Err {}) = [Broke $ anchor </> unName (treeName t1)]
+
+-- diff' lCfg anchor t1 t2 = error $ "unexpected diff' comparison t1: " ++ show t1 ++ " t2: " ++ show t2
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
 -- TODO need an initial tree too to check if the hashes match

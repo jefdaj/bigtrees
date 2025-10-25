@@ -76,6 +76,7 @@ log (LogCfg {..}) level msg = when (level >= lcLevel) $ do
   pushLogStrLn lcLogger lStr
 
 -- log an error and then crash the program
+-- TODO can this stack overflow?
 die :: LogCfg -> B8.ByteString -> a
 die NoLog msg = error $ B8.unpack $ "ERROR: " <> msg
 die cfg@(LogCfg {..}) msg =

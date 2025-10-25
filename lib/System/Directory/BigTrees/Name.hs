@@ -112,7 +112,7 @@ import System.OsPath (OsPath)
 -- no point using OsPath here because Windows is already unsupported.
 -- TODO why doesn't the tree link work right
 newtype Name
-  = Name { unName :: SOS.OsString } -- TODO OsPath? It's an alias without an exposed constructor
+  = Name { unName :: SOS.OsString } -- TODO OsPath? It's the exact same thing as far as I can tell
   deriving (Eq, Generic, Ord, Show)
 
 deriving instance NFData Name

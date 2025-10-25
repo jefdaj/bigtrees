@@ -168,6 +168,7 @@ roundtripTestTreeToTmpdir t =
 
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
+    -- putStrLn $ "tmpDir': " ++ show tmpDir'
     D.delay 100000
     -- let tmpRoot = tmpDir </> "round-trip-tests" -- TODO use root
     -- SD.createDirectoryIfMissing True tmpDir -- TODO False?

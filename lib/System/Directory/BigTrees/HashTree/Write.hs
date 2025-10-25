@@ -121,6 +121,6 @@ writeTestTreeDir lCfg root (Dir {nodeData=nd, dirContents = cs}) = do
   let root' = root </> unName (name nd)
   assertNoFile lCfg root'
   -- putStrLn $ "write test dir: " ++ show root'
-  SDO.createDirectoryIfMissing True root' -- TODO true?
+  SDO.createDirectoryIfMissing True root'
   assertFile lCfg root'
-  mapM_ (writeTestTreeDir lCfg root') (sortContentsByName cs)
+  mapM_ (writeTestTreeDir lCfg root') (sortContentsByName cs) -- TODO remove sort?
