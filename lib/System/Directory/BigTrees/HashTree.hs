@@ -43,7 +43,7 @@ module System.Directory.BigTrees.HashTree
   , isErr
   , prop_roundtrip_ProdTree_to_ByteString
   , prop_roundtrip_ProdTree_to_bigtree_file
-  -- , prop_roundtrip_TestTree_to_tmpdir
+  , prop_roundtrip_TestTree_to_tmpdir
   , unit_tree_from_bad_path_is_Err
   , unit_roundtrip_Err_to_bigtree_file
   , unit_buildProdTree_catches_permission_error
@@ -193,16 +193,16 @@ roundtripTestTreeToTmpdir t =
     -- return $ head $ dirContents parent
 
 -- TODO is the forcing unnecessary?
--- prop_roundtrip_TestTree_to_tmpdir :: Property
--- prop_roundtrip_TestTree_to_tmpdir = monadicIO $ do
---   t1 <- pick arbitrary
---   run $ D.delay 100000
---   t2 <- run $ roundtripTestTreeToTmpdir t1
---   run $ D.delay 100000
---   unless (treeEqIgnoringModTime t1 t2) $ do
---     run $ print t1
---     run $ print t2
---   assert $ treeEqIgnoringModTime t1 t2
+prop_roundtrip_TestTree_to_tmpdir :: Property
+prop_roundtrip_TestTree_to_tmpdir = monadicIO $ do
+  t1 <- pick arbitrary
+  run $ D.delay 100000
+  t2 <- run $ roundtripTestTreeToTmpdir t1
+  run $ D.delay 100000
+  -- unless (treeEqIgnoringModTime t1 t2) $ do
+  --   run $ print t1
+  --   run $ print t2
+  assert $ treeEqIgnoringModTime t1 t2
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion
 unit_tree_from_bad_path_is_Err =
