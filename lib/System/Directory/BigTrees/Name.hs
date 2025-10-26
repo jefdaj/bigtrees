@@ -129,7 +129,8 @@ instance Show Name where
 --
 -- ghci> :set -XOverloadedStrings
 -- ghci> :m System.Directory.BigTrees
--- ghci> let tree = <paste failing tree from Tasty output here>
+-- ghci> let t1 = <paste failing tree from Tasty output here>
+-- ghci> writeTree emptySearchConfig NoLog [osp|/tmp/t1.bigtree|] t1
 --
 b64Name :: String -> Name
 b64Name base64str = bs2n $ B64.decodeLenient $ B8.pack base64str
