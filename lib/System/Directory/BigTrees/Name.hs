@@ -50,6 +50,8 @@ module System.Directory.BigTrees.Name
   , bs2op
 
   , nameP
+  , b64Name
+  , debugName
 
   -- tests
   -- TODO document tests as a group
@@ -66,7 +68,6 @@ import Control.DeepSeq (NFData)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Short as BS
 import Data.List (isInfixOf, isPrefixOf, nub)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -87,6 +88,7 @@ import TH.Derive (Deriving, derive)
 
 -- attempt at proper new string types:
 -- import System.FilePath ((</>))
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as SBS
 import qualified System.Directory.OsPath as SDO
@@ -96,6 +98,7 @@ import qualified System.OsPath.Internal as SOPI
 import qualified System.OsString as SOS
 import qualified System.OsString.Internal.Types as SOS
 import Test.QuickCheck.Instances.ByteString
+import qualified Data.ByteString.Base64 as B64
 
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
@@ -113,9 +116,38 @@ import System.OsPath (OsPath)
 -- TODO why doesn't the tree link work right
 newtype Name
   = Name { unName :: SOS.OsString } -- TODO OsPath? It's the exact same thing as far as I can tell
-  deriving (Eq, Generic, Ord, Show)
+  deriving (Eq, Generic, Ord)
 
 deriving instance NFData Name
+
+-- A hack to get Tasty to print usable test failures without garbling the Names by `show`ing them.
+instance Show Name where
+  show name = "(b64Name \"" ++ B8.unpack (B64.encode $ n2bs name) ++ "\")"
+
+-- Helper for the Show hack.
+-- Example usage:
+--
+-- ghci> :set -XOverloadedStrings
+-- ghci> :m System.Directory.BigTrees
+-- ghci> let tree = <paste failing tree from Tasty output here>
+--
+b64Name :: String -> Name
+b64Name base64str = bs2n $ B64.decodeLenient $ B8.pack base64str
+
+-- Helper for the Show hack.
+-- Example usage:
+--
+-- ghci> debugName (b64Name "JBIHKh0+HxM/Nww=")
+-- Base64: "JBIHKh0+HxM/Nww=
+-- Chars:  "$\DC2\a*\GS>\US\DC3?7\f"
+-- Bytes:  [36,18,7,42,29,62,31,19,63,55,12]
+--
+debugName :: Name -> IO ()
+debugName name = do
+  putStrLn $ "Base64: " ++ (drop 9 $ Prelude.take (length s - 2) s)
+  putStrLn $ "Chars:  " ++ show (B8.unpack $ n2bs name) -- As characters
+  putStrLn $ "Bytes:  " ++ show (BS.unpack $ n2bs name) -- As Word8 values
+  where s = show name
 
 -- TODO does the standard instance already shrink each char?
 -- TODO does the 2nd guard for going to single Chars help?
