@@ -628,7 +628,7 @@ hParseTreeFileRev lCfg blksize h = do
   -- putStrLn $ "n chunks: " ++ show (length chunks)
 
   -- parse chunks lazily, starting from the end, so they can be streamed into a
-  -- tree structure without readnig the entire file first
+  -- tree structure without reading the entire file first
   let hls = lazyListOfStrictParsedChunks chunks
 
   -- for now, return parsed HashLines directly and error if any of the parses fail

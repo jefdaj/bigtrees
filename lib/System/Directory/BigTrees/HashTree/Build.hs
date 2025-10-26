@@ -259,11 +259,13 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   -- TODO of course, this is forcing the whole tree! have to be lazier about it
   -- (DT.Dir _ cs') <- excludeRegexes es d -- TODO was the idea to only operate on cs?
 
-  -- TODO does this break lazy evaluation? or is it ok?
-  -- (maybe it's handled by sorting in directory-tree anyway now?)
-  -- let cs' = sortBy (compare `on` DT.name) cs
+  -- sorting by hash is better in that it catches file renames,
+  -- but sorting by name is better in that it lets you stream hashes to stdout.
+  -- so we do both: name when building the tree, then hash when computing dir hashes
+  let cs' = sortBy (compare `on` DT.name) cs -- reverse seems to make no difference
+
   -- TODO also do this while reading a tree, right? apply filters in a uniform way everywhere!
-  cs'' <- regexFilterTrees cfg a cs
+  cs'' <- regexFilterTrees cfg a cs'
   let root = a </> n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' cfg readFileFn lCfg (depth+1) $ root DT.:/ t
@@ -273,26 +275,21 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
 
   subTrees <- P.forM cs'' hashSubtree
 
-  -- sorting by hash is better in that it catches file renames,
-  -- but sorting by name is better in that it lets you stream hashes to stdout.
-  -- so we do both: name when building the tree, then hash when computing dir hashes
-  let subTrees' = sortContentsByName subTrees
-      -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
+  -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
 
   -- We want the overall mod time to be the most recent of the dir + all contents.
-  -- If there are any contents at all, by definition they're newer than the dir, right?
-  -- So we only need this root mod time when the dir is empty.
+  -- TODO are any contents by definition newer than the dir?
   mt <- getFileDirModTime root
   s  <- getFileDirNBytes root
 
   return $ Dir
-            { dirContents = subTrees'
-            , nNodes  = sum $ 1 : map treeNNodes subTrees'
+            { dirContents = subTrees
+            , nNodes  = sum $ 1 : map treeNNodes subTrees
             , nodeData = NodeData
               { name     = Name n
-              , modTime  = maximum $ mt : map treeModTime subTrees'
-              , nBytes   = sum $ s : map treeNBytes subTrees'
-              , hash     = hashDirContents subTrees'
+              , modTime  = maximum $ mt : map treeModTime subTrees
+              , nBytes   = sum $ s : map treeNBytes subTrees
+              , hash     = hashDirContents subTrees
               }
             }
 
