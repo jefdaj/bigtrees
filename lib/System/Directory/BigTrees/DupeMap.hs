@@ -195,18 +195,18 @@ insertDupeSet cfg lCfg dm h d2 pRef = do
 
 -- TODO is DupeSet a Monoid? or not, because there are some you can't merge?
 mergeDupeSets :: LogCfg -> DupeSet -> DupeSet -> DupeSet
-mergeDupeSets lCfg (n1, h1, t1, l1) d2@(n2, h2, t2, l2) = (n1 + n2, h, t, S.union l1 l2)
-  where
-    die' = die $ addLogContext lCfg "mergeDupeSets"
-    h = if h1 == h2 then h1 else die' $ showH1 <> " /= " <> showH2
-    t = if t1 == t2 then t1 else die' $ showH <> " " <> showT1 <> " /= " <> showT2 <> " " <> showD2
-    showH1 = sbs2b8 $ unHash h1
-    showH2 = sbs2b8 $ unHash h2
-    showH  = sbs2b8 $ unHash h
-    showT1 = B8.pack $ show t1
-    showT2 = B8.pack $ show t2
-    showD2 = B8.pack $ show d2
+mergeDupeSets lCfg (n1, h1, t1, l1) d2@(n2, h2, t2, l2) =
+  case mergeHashAndType (h1, t1) (h2, t2) of
+    Left  errMsg -> die (addLogContext lCfg "mergeDupeSets") errMsg
+    Right (h, t) -> (n1 + n2, h, t, S.union l1 l2)
 
+mergeHashAndType :: (Hash, TreeType) -> (Hash, TreeType) -> Either B8.ByteString (Hash, TreeType)
+mergeHashAndType (h1, t1) (h2, t2)
+  | h1 /= h2 = Left $ (sbs2b8 $ unHash h1) <> " /= " <> (sbs2b8 $ unHash h2)
+  | F `elem` [t1, t2] && all (`elem` [F, L, B]) [t1, t2] = Right (h1, F) -- F + (F or L or B) = F
+  | L `elem` [t1, t2] && all (`elem` [   L, B]) [t1, t2] = Right (h1, L) -- L + (     L or B) = L
+  | t1 == t2 = Right (h1, t1)
+  | otherwise = Left $ (sbs2b8 $ unHash h1) <> " " <> (B8.pack $ show t1) <> " /= " <> (B8.pack $ show t2)
 
 -------------------------- quicksort dupetables by score ----------------------
 
