@@ -38,6 +38,7 @@ module System.Directory.BigTrees.HashTree
 
   -- for testing
   , roundtripTestTreeToTmpdir
+  , roundtripProdTreeToBigtreeFile
   , dropFileData
   , writeTestTreeDir
   , isErr
@@ -46,7 +47,7 @@ module System.Directory.BigTrees.HashTree
   -- , prop_roundtrip_ProdTree_to_bigtree_file
   -- , prop_roundtrip_TestTree_to_tmpdir
   , unit_tree_from_bad_path_is_Err
-  -- , unit_roundtrip_Err_to_bigtree_file
+  , unit_roundtrip_Err_to_bigtree_file
   , unit_buildProdTree_catches_permission_error
   , bench_roundtrip_ProdTree_to_bigtree_file
 
@@ -215,17 +216,16 @@ unit_tree_from_bad_path_is_Err =
     tree <- buildProdTree emptySearchConfig NoLog badPath
     HU.assertBool "tree built from non-existent path should be Err" $ isErr tree
 
--- TODO fix failing test
--- unit_roundtrip_Err_to_bigtree_file :: HU.Assertion
--- unit_roundtrip_Err_to_bigtree_file = do
---   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
---     tmpDir' <- encodeFS tmpDir
---     let badPath = tmpDir' </> [osp|doesnotexist|]
---     t1 <- buildProdTree emptySearchConfig NoLog badPath
---     t2 <- roundtripProdTreeToBigtreeFile t1
---     -- TODO is there a good way to communicate the name to the parser?
---     let t2' = renameRoot (Name [osp|doesnotexist|]) t2
---     HU.assert $ t2' == t1
+unit_roundtrip_Err_to_bigtree_file :: HU.Assertion
+unit_roundtrip_Err_to_bigtree_file = do
+  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+    tmpDir' <- encodeFS tmpDir
+    let badPath = tmpDir' </> [osp|doesnotexist|]
+    t1 <- buildProdTree emptySearchConfig NoLog badPath
+    t2 <- roundtripProdTreeToBigtreeFile t1
+    -- TODO is there a good way to communicate the name to the parser?
+    let t2' = renameRoot (Name [osp|doesnotexist|]) t2
+    HU.assert $ t2' == t1
 
 -- TODO rename to be more general? i imagine it should apply to any IO error
 unit_buildProdTree_catches_permission_error :: HU.Assertion

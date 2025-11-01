@@ -196,7 +196,7 @@ type LinkTarget = OsPath
 -- TODO remove the tuple part now?
 data HashLine
   = HashLine (TreeType, Depth, Hash, ModTime, NBytes, NNodes, Name, Maybe LinkTarget)
-  | ErrLine  (Depth, ErrMsg, Name)
+  | ErrLine  (Depth, ErrMsg, Name) -- TODO add modtime?
   deriving (Eq, Ord, Show, Generic)
 
 instance NFData HashLine

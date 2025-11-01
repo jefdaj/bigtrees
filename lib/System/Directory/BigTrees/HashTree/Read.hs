@@ -55,10 +55,16 @@ import System.OsString (osstr)
 -- To keep the tree structure valid, should always be True when accRecurseChildren is True.
 -- TODO reorder the conditions to optimize speed
 accKeepLine :: SearchConfig -> LogCfg -> HashLine -> Bool
-accKeepLine _ lCfg hl@(ErrLine (_, (ErrMsg e), name)) =
+
+accKeepLine cfg lCfg hl@(ErrLine (d, (ErrMsg e), name)) =
   let msg = B8.pack e <> " '" <> n2bs name <> "'"
-      cfg = addLogContext lCfg "accKeepLine"
-  in logUnsafe cfg WarningL msg False
+      lCfg' = addLogContext lCfg "accKeepLine"
+  in logUnsafe lCfg' WarningL msg $ and
+    [ maybe True (d >=) $ minDepth cfg
+    , maybe True (d <=) $ maxDepth cfg
+    , maybe True (E `elem`) $ treeTypes cfg
+    ]
+
 accKeepLine cfg _ hl@(HashLine (t, d, _, mt, s, nn, p, mlt)) = and
   [ maybe True (s  >=) $ minBytes cfg
   , maybe True (s  <=) $ maxBytes cfg
