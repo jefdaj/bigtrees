@@ -5,19 +5,6 @@
 A re-imagining of [gander](https://github.com/jefdaj/gander) that gives up on
 some aspirational "easy mode" features in favor of simplicity for power users.
 
-The core data structures and algorithms perform very well already!
-In fact I'm not aware of any open source program that's better at large-scale file deduplication.
-(Scale is mainly limited by your RAM; I've tried up to ~15 million files on my laptop which required ~30G)
-
-Now the main things left to do are:
-
-- clean up the interface
-- get all the tests passing
-- write some documentation
-
-
-#### Quick Start
-
 ``` .sh
 git clone https://github.com/jefdaj/bigtrees
 cd bigtrees
@@ -29,7 +16,10 @@ nix develop
 stack repl
 stack build
 stack exec bigtrees -- <bigtrees args>
-stack test # TODO fix failing tests
+stack test bigtrees
+
+# optionally check some more examples
+TASTY_QUICKCHECK_TESTS=1000 stack test bigtrees
 ```
 
 ``` .sh
@@ -38,7 +28,7 @@ nix build
 ldd result/bin/bigtrees # should say "not a dynamic executable"
 ```
 
-```.sh
+``` .sh
 # update the website
 # uncomment the bigtrees-doc-site target in package.yaml first
 stack build --flag bigtrees:build-docs-site
