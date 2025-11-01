@@ -150,8 +150,9 @@ bsBytes = NBytes . toInteger . B8.length
 newtype ErrMsg = ErrMsg String
   deriving (Eq, Ord, Read, Generic)
 
+-- TODO is hacking Show like this a bad idea?
 instance Show ErrMsg where
-  show = simplifyErrMsg . show
+  show (ErrMsg s) = "\"" ++ simplifyErrMsg s ++ "\""
 
 instance NFData ErrMsg
 instance IsString ErrMsg
