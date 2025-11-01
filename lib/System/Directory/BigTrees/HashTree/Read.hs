@@ -15,7 +15,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..
                                            hParseTreeFileRev, hashLineP, linesP, nullBreakP,
                                            parseHashLine, parseTreeFileRev)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
-                                                treeNNodes, treeName)
+                                                treeNNodes, treeName, sortContentsByName)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name (Name (..), n2bs)
@@ -204,10 +204,10 @@ accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t o
   -- TODO was the sorting here important?
   -- TODO or is it unnecessary and slowing things down?
   D -> let (children, siblings) = partitionChildrenSiblings i cs
-           -- childrenSorted = sortBy (compare `on` (treeName . snd)) children
+           children' = sortContentsByName $ map snd children -- TODO remove?
            recurse = accRecurseChildren cfg lCfg hl
            dir = Dir
-                   { dirContents = {-# SCC "DdirContents" #-} if recurse then map snd children else []
+                   { dirContents = {-# SCC "DdirContents" #-} if recurse then children' else []
                    , nNodes = nn
                    , nodeData = {-# SCC "DNodeData" #-} NodeData
                      { name = p

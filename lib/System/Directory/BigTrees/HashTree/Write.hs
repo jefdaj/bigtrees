@@ -72,7 +72,7 @@ flattenTree' lCfg (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
     n = name nd
-    subtrees = concatMap (flattenTree' lCfg $ Depth $ d+1) (sortContentsByName cs)
+    subtrees = concatMap (flattenTree' lCfg $ Depth $ d+1) (sortContentsByName cs) -- TODO reverse?
     wholeDir = HashLine (D, Depth d, hash nd, modTime nd, nBytes nd, f, n, Nothing)
 
 -- this is to catch the case where it tries to write the same file twice

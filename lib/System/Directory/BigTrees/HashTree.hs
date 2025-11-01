@@ -42,8 +42,9 @@ module System.Directory.BigTrees.HashTree
   , dropFileData
   , writeTestTreeDir
   , isErr
+  , treeEqIgnoringModTime
   -- TODO fix failing assertions:
-  -- , prop_roundtrip_ProdTree_to_ByteString
+  , prop_roundtrip_ProdTree_to_ByteString
   -- , prop_roundtrip_ProdTree_to_bigtree_file
   -- , prop_roundtrip_TestTree_to_tmpdir
   , unit_tree_from_bad_path_is_Err
@@ -129,18 +130,23 @@ readOrBuildTree cfg lCfg path = do
 -- TODO prop_confirm_dir_hashes too?
 
 -- TODO fix failing assertion
--- prop_roundtrip_ProdTree_to_ByteString :: Property
--- prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
---   knob <- K.newKnob mempty
---   (t1 :: ProdTree) <- pick arbitrary
---   let cfg = emptySearchConfig
---   K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree cfg NoLog h t1 -- TODO hClose?
---   -- run $ withBinaryFile "/tmp/proptest1.bigtree" WriteMode $ \h -> hWriteTree cfg NoLog h t1 -- TODO hClose?
---   t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg NoLog 4096
---   -- unless (t1 == t2) $ do
---   --   run $ print t1
---   --   run $ print t2
---   assert $ t2 == t1
+prop_roundtrip_ProdTree_to_ByteString :: Property
+prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
+  knob <- K.newKnob mempty
+  (t1 :: ProdTree) <- pick arbitrary
+  let cfg = emptySearchConfig
+  K.withFileHandle knob "knob" WriteMode $ \h -> hWriteTree cfg NoLog h t1 -- TODO hClose?
+  -- run $ withBinaryFile "/tmp/proptest1.bigtree" WriteMode $ \h -> hWriteTree cfg NoLog h t1 -- TODO hClose?
+  t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg NoLog 4096
+
+  -- TODO looks like once it's written once, it works. so issue is with Arbitrary instance?
+  unless (t1 == t2) $ do
+    run $ writeTree cfg NoLog [osp|/tmp/roundtrip-t1.bigtree|] t1
+    run $ writeTree cfg NoLog [osp|/tmp/roundtrip-t2.bigtree|] t2
+
+  --   run $ print t1
+  --   run $ print t2
+  assert $ t2 == t1
 
 bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()
 bench_roundtrip_ProdTree_to_bigtree_file n = do

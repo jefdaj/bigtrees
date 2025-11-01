@@ -267,18 +267,20 @@ arbitraryFile = do
 arbitraryDirSized :: Int -> Gen TestTree
 arbitraryDirSized arbsize = do
   n  <- arbitrary :: Gen Name
+  -- TODO does the arbsize here affect the tests more than I expected?
   !cs <- nubBy duplicateNames <$> resize (arbsize `div` 2) (arbitrary :: Gen [TestTree])
+  let cs' = sortContentsByName cs
   !mt <- arbitrary :: Gen ModTime
   !s <- return (NBytes 4096) -- TODO get this right on other filesystems
   -- TODO assert that nNodes == s here?
   return $ Dir
-    { dirContents = cs
-    , nNodes = sum $ (NNodes 1) : map treeNNodes cs
+    { dirContents = cs'
+    , nNodes = sum $ (NNodes 1) : map treeNNodes cs'
     , nodeData = NodeData
       { name     = n
-      , hash     = hashDirContents cs
+      , hash     = hashDirContents cs'
       , modTime  = mt
-      , nBytes   = sum $ s : map (nBytes .nodeData) cs
+      , nBytes   = sum $ s : map (nBytes .nodeData) cs'
       }
     }
 
@@ -319,10 +321,12 @@ shrinkTreeName tree =
 shrinkTreeContents :: TestTree -> [TestTree]
 shrinkTreeContents d@(Dir {nodeData=nd}) = map adjust $ shrink $ dirContents d
   where
-    adjust cs = d { dirContents = cs
-                  , nodeData = nd {hash = hashDirContents cs}
-                  , nNodes = sum $ 1 : map treeNNodes cs
-		  }
+    adjust cs =
+      let cs' = sortContentsByName cs
+      in d { dirContents = cs'
+           , nodeData = nd {hash = hashDirContents cs'}
+           , nNodes = sum $ (NNodes 1) : map treeNNodes cs'
+	   }
 
 shrinkTreeContents t = []
 

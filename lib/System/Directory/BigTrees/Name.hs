@@ -56,10 +56,10 @@ module System.Directory.BigTrees.Name
   -- tests
   -- TODO document tests as a group
   , isValidName
-  , roundtripNameToFileName
-  , roundtripNameToDirName
-  , prop_roundtrip_Name_to_file_name
-  , prop_roundtrip_Name_to_dir_name
+  , roundtripNameToActualFileName
+  , roundtripNameToActualDirName
+  , prop_roundtrip_Name_to_actual_file_name
+  , prop_roundtrip_Name_to_actual_dir_name
 
   )
   where
@@ -297,15 +297,15 @@ nameP = do
 -- exist. Example manual usage:
 --
 -- >>> ns <- generate (resize 99 $ arbitrary :: Gen [Name])
--- >>> fmap (all id) $ mapM_ (roundtripNameToFileName False) ns
+-- >>> fmap (all id) $ mapM_ (roundtripNameToActualFileName False) ns
 -- >>> True
 --
 -- Set verbose=True to show the paths, but beware! They might mess up your terminal.
 --
 -- TODO is there a standard variant of `all` that works like this?
 --
-roundtripNameToFileName :: Bool -> Name -> IO Bool
-roundtripNameToFileName verbose n =
+roundtripNameToActualFileName :: Bool -> Name -> IO Bool
+roundtripNameToActualFileName verbose n =
   withSystemTempDirectory "bigtrees" $ \d -> do
     d' <- SOP.encodeFS d
     let f = d' SOP.</> unName n
@@ -315,14 +315,14 @@ roundtripNameToFileName verbose n =
     txt' <- SFO.readFile f
     return $ txt == txt'
 
-prop_roundtrip_Name_to_file_name :: Property
-prop_roundtrip_Name_to_file_name = monadicIO $ do
+prop_roundtrip_Name_to_actual_file_name :: Property
+prop_roundtrip_Name_to_actual_file_name = monadicIO $ do
   n <- pick arbitrary
-  ok <- run $ roundtripNameToFileName False n
+  ok <- run $ roundtripNameToActualFileName False n
   assert ok
 
-roundtripNameToDirName :: Bool -> Name -> IO Bool
-roundtripNameToDirName verbose n =
+roundtripNameToActualDirName :: Bool -> Name -> IO Bool
+roundtripNameToActualDirName verbose n =
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- SOP.encodeFS tmpDir
     let testDir = tmpDir' SOP.</> unName n
@@ -331,8 +331,8 @@ roundtripNameToDirName verbose n =
     cs <- SDO.getDirectoryContents tmpDir'
     return $ (unName n) `elem` cs
 
-prop_roundtrip_Name_to_dir_name :: Property
-prop_roundtrip_Name_to_dir_name = monadicIO $ do
+prop_roundtrip_Name_to_actual_dir_name :: Property
+prop_roundtrip_Name_to_actual_dir_name = monadicIO $ do
   n <- pick arbitrary
-  ok <- run $ roundtripNameToDirName False n
+  ok <- run $ roundtripNameToActualDirName False n
   assert ok
