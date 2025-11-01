@@ -37,7 +37,7 @@ module System.Directory.BigTrees.HashTree
   , treeEqIgnoringModTime
 
   -- for testing
-  , roundtripTestTreeToTmpdir
+  , roundtripTestTreeToActualTmpdir
   , roundtripProdTreeToBigtreeFile
   , dropFileData
   , writeTestTreeDir
@@ -45,8 +45,8 @@ module System.Directory.BigTrees.HashTree
   , treeEqIgnoringModTime
   -- TODO fix failing assertions:
   , prop_roundtrip_ProdTree_to_ByteString
-  -- , prop_roundtrip_ProdTree_to_bigtree_file
-  -- , prop_roundtrip_TestTree_to_tmpdir
+  , prop_roundtrip_ProdTree_to_bigtree_file
+  , prop_roundtrip_TestTree_to_actual_tmpdir
   , unit_tree_from_bad_path_is_Err
   , unit_roundtrip_Err_to_bigtree_file
   , unit_buildProdTree_catches_permission_error
@@ -168,18 +168,18 @@ roundtripProdTreeToBigtreeFile t =
     readTree cfg NoLog path'
 
 -- TODO fix failing assertion
--- prop_roundtrip_ProdTree_to_bigtree_file :: Property
--- prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
---   t1 <- pick arbitrary
---   t2 <- run $ roundtripProdTreeToBigtreeFile t1
---   assert $ t2 == t1
+prop_roundtrip_ProdTree_to_bigtree_file :: Property
+prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
+  t1 <- pick arbitrary
+  t2 <- run $ roundtripProdTreeToBigtreeFile t1
+  assert $ t2 == t1
 
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk
 -- note that you have to drop the bytestrings from the original testtree to compare them
 -- TODO oh, have to test equality ignoring mod times, right? otherwise they'll always update
-roundtripTestTreeToTmpdir :: TestTree -> IO TestTree
-roundtripTestTreeToTmpdir t =
+roundtripTestTreeToActualTmpdir :: TestTree -> IO TestTree
+roundtripTestTreeToActualTmpdir t =
 
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
@@ -203,16 +203,16 @@ roundtripTestTreeToTmpdir t =
 
 -- TODO is the forcing unnecessary?
 -- TODO fix failing assertion
--- prop_roundtrip_TestTree_to_tmpdir :: Property
--- prop_roundtrip_TestTree_to_tmpdir = monadicIO $ do
---   t1 <- pick arbitrary
---   run $ D.delay 100000
---   t2 <- run $ roundtripTestTreeToTmpdir t1
---   run $ D.delay 100000
---   -- unless (treeEqIgnoringModTime t1 t2) $ do
---   --   run $ print t1
---   --   run $ print t2
---   assert $ treeEqIgnoringModTime t1 t2
+prop_roundtrip_TestTree_to_actual_tmpdir :: Property
+prop_roundtrip_TestTree_to_actual_tmpdir = monadicIO $ do
+  t1 <- pick arbitrary
+  run $ D.delay 100000
+  t2 <- run $ roundtripTestTreeToActualTmpdir t1
+  run $ D.delay 100000
+  -- unless (treeEqIgnoringModTime t1 t2) $ do
+  --   run $ print t1
+  --   run $ print t2
+  assert $ treeEqIgnoringModTime t1 t2
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion
 unit_tree_from_bad_path_is_Err =

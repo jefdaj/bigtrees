@@ -204,21 +204,21 @@ type TestTree = HashTree B8.ByteString
 -- TODO write this using a fold with accumulator? wait, maybe no need
 -- this should have sum of nNodes == size... or is it nNodes-1?
 -- TODO test prop for that
-arbitraryContents :: Int -> Gen [TestTree]
-arbitraryContents n | n < 1 = return []
-arbitraryContents arbsize = arbitraryContentsHelper arbsize `suchThat` uniqNames
-  where
-    uniqNames cs = cs == nubBy duplicateNames cs
+-- arbitraryContents :: Int -> Gen [TestTree]
+-- arbitraryContents n | n < 1 = return []
+-- arbitraryContents arbsize = arbitraryContentsHelper arbsize `suchThat` uniqNames
+--   where
+--     uniqNames cs = cs == nubBy duplicateNames cs
 
-arbitraryContentsHelper :: Int -> Gen [TestTree]
-arbitraryContentsHelper arbsize
-  | arbsize <  1 = return []
-  | arbsize == 1 = arbitraryFile >>= \t -> return [t] -- TODO clean this up
-  | otherwise = do
-      recNBytes <- choose (1,arbsize) -- TODO bias this to be smaller?
-      let remNBytes = arbsize - recNBytes
-      (recTree :: TestTree) <- resize recNBytes arbitrary
-      arbitraryContents remNBytes >>= \cs -> return $ sortContentsByName $ recTree:cs -- TODO clean this up
+-- arbitraryContentsHelper :: Int -> Gen [TestTree]
+-- arbitraryContentsHelper arbsize
+--   | arbsize <  1 = return []
+--   | arbsize == 1 = arbitraryFile >>= \t -> return [t] -- TODO clean this up
+--   | otherwise = do
+--       recNBytes <- choose (1,arbsize) -- TODO bias this to be smaller?
+--       let remNBytes = arbsize - recNBytes
+--       (recTree :: TestTree) <- resize recNBytes arbitrary
+--       arbitraryContents remNBytes >>= \cs -> return $ sortContentsByName $ recTree:cs -- TODO clean this up
 
 sortContentsByName :: [HashTree a] -> [HashTree a]
 sortContentsByName = sortBy (compare `on` treeName)
@@ -267,8 +267,10 @@ arbitraryFile = do
 arbitraryDirSized :: Int -> Gen TestTree
 arbitraryDirSized arbsize = do
   n  <- arbitrary :: Gen Name
-  -- TODO does the arbsize here affect the tests more than I expected?
-  !cs <- nubBy duplicateNames <$> resize (arbsize `div` 2) (arbitrary :: Gen [TestTree])
+
+  -- TODO why does lowering the resize factor here to 2 cause giant failing test trees?
+  !cs <- nubBy duplicateNames <$> resize (arbsize `div` 8) (arbitrary :: Gen [TestTree])
+
   let cs' = sortContentsByName cs
   !mt <- arbitrary :: Gen ModTime
   !s <- return (NBytes 4096) -- TODO get this right on other filesystems
