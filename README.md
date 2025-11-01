@@ -50,39 +50,3 @@ stack exec bigtrees-docs-site build
 # TODO still works?
 stack bench --ba --baseline=test/bench/bench.csv --timeout=60s
 ```
-
-#### Development
-
-TODO:
-
-- [x] Move `Gander.Cmd` -> `BigTrees.OldCmd`, leaving old commands functional during the rewrite
-- [x] Write a meta lint script (hlint, stan, stylish-haskell, weeder) and applied some basic suggestions
-- [x] Some initial work in progress writing haddocs
-- [x] Move tests into lib/ + app/ alongside the functions they test, wrote more of them
-- [x] Break HashTree into smaller modules by operation: Build, Write, etc
-- [x] Rewrite my old directory-tree code using a typeclass, start [a PR upstream](https://github.com/jberryman/directory-tree/pull/18)
-- [x] Write comparison of text vs binary format file sizes, realize binary is always larger, remove it
-- [x] Add mod time, size (bytes), n files (nodes) to tree data
-- [x] Add header + footer to hashes describing filters, version used, start/end time, table format
-- [x] Rename data structures: Depth, NFiles, NBytes
-- [x] Static build so it can be used offline without Nix
-- [x] "`find` mode": list full paths, filter by metadata and glob/regex
-- [ ] Rewrite command line interface
-- [ ] Add `Graft` nodes that import other tree files
-- [x] Add `Link` nodes that indicate whether their target data is present in the tree
-- [x] Add `Error` nodes to wrap errors, the same way directory-tree does it
-- [ ] Intelligent re-hashing of only the files whose mod times have changed
-- [ ] Clean up: write haddocks, hide partial constructors, etc
-- [ ] Upload to Hackage
-- [ ] Example screencasts of using the binary + data structures in repl
-
-```
-bigtrees hash   <src> [-o <tree>]
-bigtrees update <tree> [-i <src>]
-bigtrees cut    <tree> <branch> [-o <tree>]
-bigtrees rm     <tree> <branch>
-bigtrees graft  <tree> <branch> [-i <tree>]
-bigtrees mv     <tree> <oldbranch> <newbranch>
-bigtrees diff   <oldtree> <newtree>
-bigtrees dupes  <tree> [<condition>..] [-s <sortby>] [-n <nhits>] [-p <branch>] [-d <script>]
-```
