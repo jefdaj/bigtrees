@@ -12,13 +12,13 @@ module Config
   where
 
 import Control.Monad (when)
+import qualified Data.Text.Lazy as TL
 import Prelude hiding (log)
 import System.Directory.BigTrees (LabeledSearches, SearchConfig (..), SearchLabel,
                                   defaultSearchConfig, parseLabeledSearches)
+import System.IO (hPutStrLn, stderr)
 import System.OsPath (OsPath)
-import qualified Data.Text.Lazy as TL
 import Text.Pretty.Simple (pShow)
-import System.IO (stderr, hPutStrLn)
 
 -- TODO derive To/FromJSON for the AppConfig so it can go in Headers?
 --      or just the exclude and maxdepth values for now
@@ -28,11 +28,11 @@ import System.IO (stderr, hPutStrLn)
  -}
 -- TODO remove from non-Cmd modules
 data AppConfig = AppConfig
-  { outFile   :: Maybe OsPath -- TODO String so config can derive Read?
-  , findOutFormat :: Maybe String
+  { outFile        :: Maybe OsPath -- TODO String so config can derive Read?
+  , findOutFormat  :: Maybe String
   , dupesOutFormat :: Maybe String
-  , searchCfg :: SearchConfig
-  , verbose   :: Bool
+  , searchCfg      :: SearchConfig
+  , verbose        :: Bool
   -- , check    :: Bool
   -- , exclude  :: [String]
   -- , force    :: Bool

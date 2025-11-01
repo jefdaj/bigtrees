@@ -73,11 +73,10 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.Knob as K
 import Data.List (isInfixOf)
-import System.Directory.BigTrees.Logging (LogCfg (..), die, addLogContext)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
-                                                dropFileData, isErr, renameRoot, treeNNodes,
+                                                dropFileData, isErr, renameRoot,
                                                 treeEqIgnoringModTime, treeHash, treeModTime,
-                                                treeNBytes, treeName, treeType)
+                                                treeNBytes, treeNNodes, treeName, treeType)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
@@ -87,6 +86,7 @@ import System.Directory.BigTrees.HashTree.Search (SearchConfig (..), dropTo, emp
                                                   treeContainsHash, treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (hWriteTree, printTree, serializeTree,
                                                  writeTestTreeDir, writeTree)
+import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import qualified Test.HUnit as HU

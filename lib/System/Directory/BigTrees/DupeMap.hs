@@ -1,8 +1,8 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {- Other than for printing and writing output to files, this module shouldn't
@@ -31,37 +31,40 @@ module System.Directory.BigTrees.DupeMap
   where
 
 import Control.DeepSeq (deepseq)
-import Control.Monad.ST (ST)
 import Control.Monad (when)
+import Control.Monad.ST (ST)
 import qualified Data.ByteString.Char8 as B8
 import Data.Functor ((<&>))
 import qualified Data.HashSet as S
 import qualified Data.HashTable.Class as H
 import qualified Data.HashTable.ST.Cuckoo as C
-import Data.Ord (comparing)
 import qualified Data.List as L
 import qualified Data.List.Split as LS
 import qualified Data.Massiv.Array as A
-import System.Directory.BigTrees.Hash (Hash, unHash, prettyHash)
-import System.Directory.BigTrees.Name (Name (..), n2op, op2ns, breadcrumbs2bs, op2s)
+import Data.Ord (comparing)
+import System.Directory.BigTrees.Hash (Hash, prettyHash, unHash)
 import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
-import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..),
-                                           ProdTree, treeType, treeHash, treeModTime, treeNNodes, treeNBytes,
-                                           treeName, SearchConfig (..))
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), LogContext, logUnsafe, die, addLogContext)
-import System.IO (Handle, IOMode (..))
-import Data.Functor ((<&>))
+import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList, readHashList,
+                                          setContainsHash)
+import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree,
+                                           SearchConfig (..), treeHash, treeModTime, treeNBytes,
+                                           treeNNodes, treeName, treeType)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogContext, LogLevel (..), addLogContext,
+                                          die, logUnsafe)
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, n2op, op2ns, op2s)
 import qualified System.File.OsPath as SFO
-import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
-import System.Directory.BigTrees.HashSet (HashSet, readHashList, hashSetFromList, emptyHashSet, setContainsHash)
+import System.IO (Handle, IOMode (..))
+import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 
-import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
-                                                  SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
+import System.Directory.BigTrees.HashTree.Search (CompiledLabeledSearches, CompiledSearch (..),
+                                                  LabeledSearches, Search (..), SearchConfig (..),
+                                                  SearchLabel, compileLabeledSearches,
+                                                  treeContainsPath)
 
-import System.Directory.BigTrees.HashTree.Find (findLabelNode)
-import Data.Maybe (isNothing)
-import Data.STRef (STRef(..), newSTRef, readSTRef, writeSTRef)
 import qualified Data.ByteString.Short as SBS
+import Data.Maybe (isNothing)
+import Data.STRef (STRef (..), newSTRef, readSTRef, writeSTRef)
+import System.Directory.BigTrees.HashTree.Find (findLabelNode)
 import System.Directory.BigTrees.Util (sbs2b8)
 
 -- TODO be able to serialize dupemaps for debugging
@@ -202,11 +205,11 @@ mergeDupeSets lCfg (n1, h1, t1, l1) d2@(n2, h2, t2, l2) =
 
 mergeHashAndType :: (Hash, TreeType) -> (Hash, TreeType) -> Either B8.ByteString (Hash, TreeType)
 mergeHashAndType (h1, t1) (h2, t2)
-  | h1 /= h2 = Left $ (sbs2b8 $ unHash h1) <> " /= " <> (sbs2b8 $ unHash h2)
+  | h1 /= h2 = Left $ sbs2b8 (unHash h1) <> " /= " <> sbs2b8 (unHash h2)
   | F `elem` [t1, t2] && all (`elem` [F, L, B]) [t1, t2] = Right (h1, F) -- F + (F or L or B) = F
   | L `elem` [t1, t2] && all (`elem` [   L, B]) [t1, t2] = Right (h1, L) -- L + (     L or B) = L
   | t1 == t2 = Right (h1, t1)
-  | otherwise = Left $ (sbs2b8 $ unHash h1) <> " " <> (B8.pack $ show t1) <> " /= " <> (B8.pack $ show t2)
+  | otherwise = Left $ sbs2b8 (unHash h1) <> " " <> B8.pack (show t1) <> " /= " <> B8.pack (show t2)
 
 -------------------------- quicksort dupetables by score ----------------------
 
@@ -239,7 +242,7 @@ simplifyDupes :: Int -> LogCfg -> SortedDupeLists -> SortedDupeLists
 simplifyDupes _ _ [ ] = [ ]
 simplifyDupes _ _ [d] = [d]
 
-simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) lCfg $ ds'
+simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) lCfg ds'
   where
     showH = sbs2b8 $ unHash h
     showI = B8.pack $ show i
@@ -257,7 +260,7 @@ simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) l
                    else x
 
 -- TODO double check that these can't have redundancies
-simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg $ ds
+simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg ds
 
 -- redundantSet :: LogCfg -> Hash -> [OsPath] -> DupeSet -> Bool
 redundantSet lCfg h1 fs (_,h2,_,fs') =
@@ -284,7 +287,7 @@ redundantSet lCfg h1 fs (_,h2,_,fs') =
 -- 4. alphabetically as usual
 comparePaths :: OsPath -> OsPath -> Ordering
 comparePaths a b =
-  
+
   -- Compare as Strings, just because that's easier
   let a' = op2s a
       b' = op2s b
@@ -314,7 +317,7 @@ sortPaths = L.sortBy comparePaths
  - * negates scores so quicksort will put them in descending order
  - TODO should length-1 sets not be rejected?
  -}
-scoreSets :: ScoreFn -> C.HashTable s Hash DupeSet -> ST s SortedDupeSets 
+scoreSets :: ScoreFn -> C.HashTable s Hash DupeSet -> ST s SortedDupeSets
 scoreSets scoreFn = H.foldM (
     \vs (_, v@(_,h,t,fs)) -> return $ (negate $ scoreFn v,h,t,fs):vs
   ) []
@@ -360,17 +363,13 @@ dupesKeepNode cfg lCfg _ cle ns d e@(Err {}) = do
                    "' is a dupe because of prev error '" <>
                    B8.pack (show $ errMsg e) <> "'"
   let mExcludeLabel = B8.pack <$> findLabelNode cle (reverse ns) e
-  return $ and
-    [ maybe True (d >=) $ minDepth cfg
-    , maybe True (d <=) $ maxDepth cfg
-    , maybe (err includeMsg False) (\l -> info (excludeMsg l) False) mExcludeLabel
-    ]
+  return $ ((maybe True (d >=) $ minDepth cfg) && (maybe True (d <=) $ maxDepth cfg) && maybe (err includeMsg False) (\l -> info (excludeMsg l) False) mExcludeLabel)
 
 dupesKeepNode cfg lCfg mrSet cle ns d t = do
   let hash = treeHash t
 
   includeHash <- case mrSet of
-                   Nothing -> return True
+                   Nothing   -> return True
                    Just rSet -> setContainsHash rSet hash
 
   let mExcludeLabel = B8.pack <$> findLabelNode cle (reverse ns) t
@@ -391,7 +390,7 @@ dupesKeepNode cfg lCfg mrSet cle ns d t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
-    , if includeHash then debug includeMsg True else False
+    , includeHash && debug includeMsg True
     -- works: , isNothing mExcludeLabel
     -- works: , maybe True (\l -> traceV verbose (excludeMsg l) False) mExcludeLabel
     , maybe True (\l -> info (excludeMsg l) False) mExcludeLabel

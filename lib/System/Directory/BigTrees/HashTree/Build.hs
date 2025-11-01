@@ -1,11 +1,11 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes  #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 module System.Directory.BigTrees.HashTree.Build where
 
-import Prelude hiding (log)
 import Control.Exception.Safe (Exception, MonadCatch, handleAny)
+import Prelude hiding (log)
 -- import Control.Exception -- TODO specifics
 -- import GHC.IO.Exception -- TODO specifics
 import Control.Monad (filterM, unless, when)
@@ -18,15 +18,15 @@ import Data.Maybe (isJust)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Foreign.C.Types (CTime (..))
 -- import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
-import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), log, addLogContext)
 import System.Directory.BigTrees.Hash (hashFile, hashFromAnnexPath, hashSymlinkLiteral,
                                        hashSymlinkTarget)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..), NBytes (..),
                                            simplifyErrMsg)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
-                                                hashDirContents, sortContentsByName, treeNNodes,
-                                                treeModTime, treeNBytes, treeName)
+                                                hashDirContents, sortContentsByName, treeModTime,
+                                                treeNBytes, treeNNodes, treeName)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
+import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), addLogContext, log)
 import System.Directory.BigTrees.Name
 import qualified System.Directory.Internal as SDI
 import qualified System.Directory.OsPath as SDO
@@ -35,6 +35,7 @@ import qualified System.OsPath as SOP
 import System.OsPath (OsPath, decodeFS, encodeFS, takeDirectory, (</>))
 -- import System.FilePath.Glob (CompOptions (..), MatchOptions (..), Pattern, compDefault, compileWith,
 --                              matchWith)
+import qualified Data.ByteString.Char8 as B8
 import Data.Char
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafeInterleaveIO)
@@ -42,7 +43,6 @@ import System.Posix.Files (getFileStatus, isRegularFile, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
 import Text.Regex.TDFA
 import Text.Regex.TDFA.ByteString
-import qualified Data.ByteString.Char8 as B8
 
 -- import Debug.Trace
 

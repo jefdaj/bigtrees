@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
 
 module System.Directory.BigTrees.HashTree.Find where
   -- ( listTreePaths
@@ -7,7 +7,7 @@ module System.Directory.BigTrees.HashTree.Find where
   -- )
   -- where
 
-import Control.Monad (forM, when)
+import Control.Monad (forM, when, (>=>))
 import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
@@ -17,12 +17,15 @@ import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..)
                                            TreeType (..), sepChar)
 import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList, readHashList,
                                           setContainsHash)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), treeNNodes, treeHash,
-                                                treeModTime, treeNBytes, treeName, treeType, treeName, sortContentsByName)
-import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), SearchConfig (..),
-                                                  SearchLabel, CompiledSearch (..), CompiledLabeledSearches, treeContainsPath, compileLabeledSearches)
+import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sortContentsByName,
+                                                treeHash, treeModTime, treeNBytes, treeNNodes,
+                                                treeName, treeType)
+import System.Directory.BigTrees.HashTree.Search (CompiledLabeledSearches, CompiledSearch (..),
+                                                  LabeledSearches, Search (..), SearchConfig (..),
+                                                  SearchLabel, compileLabeledSearches,
+                                                  treeContainsPath)
+import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), addLogContext, die, logUnsafe)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), logUnsafe, addLogContext, die)
 import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
 import Text.Regex.TDFA
@@ -43,7 +46,7 @@ listTreePaths :: SearchConfig -> LogCfg -> String -> HashTree a -> IO [B8.ByteSt
 listTreePaths cfg lCfg fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
-  eLists <- forM (excludeSetPaths cfg) $ \fp -> encodeFS fp >>= readHashList lCfg
+  eLists <- forM (excludeSetPaths cfg) $ (encodeFS >=> readHashList lCfg)
   return $ case mkLineMetaFormatter lCfg fmt of
     (Left  errMsg) -> die (addLogContext lCfg "listTreePaths") $ B8.pack errMsg
     (Right fmtFn ) -> runST $ do
@@ -99,8 +102,8 @@ findKeepNode cfg lCfg eSet d t = do
   excludeHash <- setContainsHash eSet $ treeHash t
   let excludeHash' = if excludeHash
                        then logUnsafe (addLogContext lCfg "findKeepNode") DebugL
-                              ("find exclude hash " <> (prettyHash $ treeHash t) <>
-                               ": " <> (n2bs $ treeName t))
+                              ("find exclude hash " <> prettyHash (treeHash t) <>
+                               ": " <> n2bs (treeName t))
                               excludeHash
                        else excludeHash
   return $ and
@@ -138,11 +141,7 @@ findLabelNode ((l, cs):css) ns t = if anySearchMatches then Just l else findLabe
     baseName  = n2bs $ treeName t
     wholeName = breadcrumbs2bs $ treeName t : ns
     anySearchMatches = any searchMatches cs
-    searchMatches c = and
-      [ fromMaybe True $ (treeContainsPath t      ) <$> cDirContainsPath c
-      , fromMaybe True $ (flip matchTest baseName ) <$> cBaseNameMatchesRegex c
-      , fromMaybe True $ (flip matchTest wholeName) <$> cWholeNameMatchesRegex c
-      ]
+    searchMatches c = (fromMaybe True $ (treeContainsPath t      ) <$> cDirContainsPath c) && (fromMaybe True $ (flip matchTest baseName ) <$> cBaseNameMatchesRegex c) && (fromMaybe True $ (flip matchTest wholeName) <$> cWholeNameMatchesRegex c)
 
 
 ---------------------

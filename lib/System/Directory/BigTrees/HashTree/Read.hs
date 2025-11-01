@@ -3,8 +3,8 @@
 
 module System.Directory.BigTrees.HashTree.Read where
 
-import Prelude hiding (log)
 import Control.DeepSeq (deepseq)
+import Prelude hiding (log)
 -- import Control.Exception.Safe (catchAny)
 import qualified Data.ByteString.Char8 as B8
 import Data.Function (on)
@@ -30,11 +30,11 @@ import Data.Either (fromRight)
 import Data.Maybe (catMaybes, fromJust)
 import System.Directory.BigTrees.HeadFoot (Footer, Header, commentLineP, footerP, headerP,
                                            parseFooter)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, die, logUnsafe)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
 import System.OsString (osstr)
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), logUnsafe, addLogContext, die)
 
 -- import Debug.Trace
 

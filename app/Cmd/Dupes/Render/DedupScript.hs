@@ -1,13 +1,13 @@
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Cmd.Dupes.Render.DedupScript where
 
 import Cmd.Dupes.Render.Types
-import Data.Word (Word8)
-import qualified Data.List as L
 import qualified Data.ByteString.Char8 as B8
+import qualified Data.List as L
+import Data.Word (Word8)
 import System.Directory.BigTrees
-import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
+import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 
 fileHeader :: Bool -> B8.ByteString
 fileHeader keepOne =

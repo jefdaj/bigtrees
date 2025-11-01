@@ -4,32 +4,30 @@ module Cmd.Dupes where
 
 -- TODO guess and check hashes
 
-import Prelude hiding (log)
-import Config (AppConfig (..), SearchConfig(..), defaultAppConfig)
+import Cmd.Dupes.Render (DupesRenderFn, dupesRenderFunctions)
+import Config (AppConfig (..), SearchConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import Control.Exception (bracket)
+import Control.Monad (forM, (>=>))
+import Control.Monad.ST.Strict (ST, runST)
+import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.UTF8 as BLU
+import qualified Data.HashTable.Class as H
+import Data.Maybe (fromJust, fromMaybe)
+import Prelude hiding (log)
 import qualified System.Directory as SD
 import qualified System.Directory.BigTrees as BT
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, log, logUnsafe)
+import qualified System.File.OsPath as SFO
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
+import System.IO.Unsafe (unsafePerformIO)
 import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
-import qualified System.File.OsPath as SFO
-import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
-import Control.Exception (bracket)
-import Control.Monad (forM)
-import Control.Monad.ST.Strict (ST, runST)
-import qualified Data.HashTable.Class as H
-import Data.Maybe (fromMaybe, fromJust)
-import qualified Data.ByteString.Char8 as B8
-import System.IO.Unsafe (unsafePerformIO)
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), log, logUnsafe, addLogContext)
-import Cmd.Dupes.Render (DupesRenderFn, dupesRenderFunctions)
 
 -- import Debug.Trace
 
@@ -61,7 +59,7 @@ cmdDupes cfg lCfg path = bracket open close write
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
       debug $ "loading reference sets " <> B8.pack (show rListPaths)
-      rList <- fmap concat $ forM rListPaths $ \fp -> encodeFS fp >>= BT.readHashList lCfg
+      rList <- fmap concat $ forM rListPaths $ (encodeFS >=> BT.readHashList lCfg)
       debug $ "loaded " <> B8.pack (show $ length rList) <> " reference hashes"
 
       let searches = dupesExcludeSearches $ searchCfg cfg
@@ -79,8 +77,8 @@ cmdDupes cfg lCfg path = bracket open close write
             debugST "runST starting"
             mrSet <- if keepOneDupe
                        then return Nothing
-                       else fmap Just $ BT.hashSetFromList rList
-            let init  = maximum [length mrSet, 1000] -- TODO better defaults?
+                       else Just <$> BT.hashSetFromList rList
+            let init  = max (length mrSet) 1000 -- TODO better defaults?
                 initB = B8.pack $ show init
                 treeN = B8.pack $ show $ (\(BT.NNodes n ) -> n) $ BT.treeNNodes tree
             debugST $ "creating DupeMap sized " <> initB

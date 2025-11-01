@@ -328,7 +328,7 @@ shrinkTreeContents t = []
 
 shrinkTreeStructure :: TestTree -> [TestTree]
 shrinkTreeStructure d@(Dir {}) = dirContents d
-shrinkTreeStructure t = []
+shrinkTreeStructure t          = []
 
 -- TODO rename the actual function file -> fileData to match future dirData
 -- TODO rewrite this in terms of a generic map/fold so it works with other types

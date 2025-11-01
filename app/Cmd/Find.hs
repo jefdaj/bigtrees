@@ -25,10 +25,10 @@ import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import qualified Data.ByteString.Char8 as B8
 import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, log, logUnsafe)
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), log, logUnsafe, addLogContext)
 
 cmdFind :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdFind cfg lCfg path = do

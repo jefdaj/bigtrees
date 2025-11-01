@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingStrategies  #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module System.Directory.BigTrees.Logging
@@ -18,19 +18,19 @@ module System.Directory.BigTrees.Logging
   )
   where
 
-import Prelude hiding (log)
-import Debug.Trace (trace)
-import System.Log.FastLogger
-import System.Log.FastLogger.LoggerSet (rmLoggerSet)
-import qualified Data.List as L
-import Data.Char (toUpper)
-import qualified Data.ByteString.Char8 as B8
-import System.IO.Unsafe (unsafePerformIO)
-import Data.STRef (STRef(..), newSTRef, readSTRef, writeSTRef)
+import Control.DeepSeq (deepseq)
 import Control.Monad (when)
 import Control.Monad.ST.Strict (ST)
-import Control.DeepSeq (deepseq)
-import System.IO (stderr, hPutStrLn, hFlush)
+import qualified Data.ByteString.Char8 as B8
+import Data.Char (toUpper)
+import qualified Data.List as L
+import Data.STRef (STRef (..), newSTRef, readSTRef, writeSTRef)
+import Debug.Trace (trace)
+import Prelude hiding (log)
+import System.IO (hFlush, hPutStrLn, stderr)
+import System.IO.Unsafe (unsafePerformIO)
+import System.Log.FastLogger
+import System.Log.FastLogger.LoggerSet (rmLoggerSet)
 
 type LogContext = String
 
@@ -48,7 +48,7 @@ data LogCfg = NoLog | LogCfg
   }
 
 addLogContext :: LogCfg -> String -> LogCfg
-addLogContext NoLog _ = NoLog
+addLogContext NoLog _             = NoLog
 addLogContext cfg@(LogCfg {}) ctx = cfg { lcContext = lcContext cfg ++ "." ++ ctx }
 
 -- TODO setLogLevel?
@@ -65,8 +65,8 @@ initLogger initialContext minLogLevel = do
     }
 
 cleanupLogger :: LogCfg -> IO ()
-cleanupLogger NoLog = return () 
-cleanupLogger cfg = rmLoggerSet $ lcLogger cfg
+cleanupLogger NoLog = return ()
+cleanupLogger cfg   = rmLoggerSet $ lcLogger cfg
 
 log :: LogCfg -> LogLevel -> B8.ByteString -> IO ()
 log NoLog _ _ = return ()
@@ -80,7 +80,7 @@ log (LogCfg {..}) level msg = when (level >= lcLevel) $ do
 die :: LogCfg -> B8.ByteString -> a
 die NoLog msg = error $ B8.unpack $ "ERROR: " <> msg
 die cfg@(LogCfg {..}) msg =
-  (unsafePerformIO $ do
+  unsafePerformIO (do
     log cfg ErrorL msg
     flushLogStr lcLogger)
   `seq`

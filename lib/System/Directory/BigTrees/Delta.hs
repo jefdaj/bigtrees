@@ -25,15 +25,15 @@ module System.Directory.BigTrees.Delta
 
 import Control.Monad (foldM, unless)
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as B8
 import Data.List (find)
 import Data.Maybe (fromJust)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, addSubTree,
                                            dropTo, rmSubTree, treeName)
+import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
 import System.Directory.BigTrees.Name (Name (..), op2ns)
 import qualified System.OsPath as SOP
 import System.OsPath (OsPath, decodeFS, (</>))
-import System.Directory.BigTrees.Logging (LogCfg (..), die, addLogContext)
-import qualified Data.ByteString.Char8 as B8
 
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
@@ -85,7 +85,7 @@ diff' _ anchor (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (anc
 
 diff' lCfg anchor t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
   -- | h1 == h2 = []
-  | otherwise = fixMoves lCfg t1 $ rms ++ adds ++ edits
+   = fixMoves lCfg t1 $ rms ++ adds ++ edits
   where
     adds  = [Add (anchor </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
     rms   = [Rm  (anchor </> unName (treeName x))   | x <- os, treeName x `notElem` map treeName ns]

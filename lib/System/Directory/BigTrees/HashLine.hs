@@ -68,14 +68,14 @@ import qualified Data.ByteString.Short as SBS
 import Data.Either (either, fromRight)
 import Data.Functor ((<&>))
 import Data.Maybe (catMaybes)
-import Data.String (IsString(..))
+import Data.String (IsString (..))
 import GHC.Generics (Generic)
 import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
+import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
 import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, bs2n, bs2op, n2bs,
                                        nameP, op2bs, sbs2op)
 import System.Directory.BigTrees.Util (getBlockSize)
-import System.Directory.BigTrees.Logging (LogCfg (..), die, addLogContext)
 import qualified System.OsPath as OSP
 import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, generate, resize, suchThat)
 import TH.Derive ()

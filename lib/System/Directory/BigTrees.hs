@@ -149,9 +149,10 @@ import Prelude hiding (log)
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         simDelta, simDeltas)
-import System.Directory.BigTrees.DupeMap (DupeSet, DupeMap, AddTreeProgress, DupeList, SortedDupeSets, SortedDupeLists, dupesByNegScore,
-                                          mergeDupeSets, pathsByHash, sortPaths, scoreSets, scoreSetSelf, scoreSetRef,
-                                          addTreeToDupeMap)
+import System.Directory.BigTrees.DupeMap (AddTreeProgress, DupeList, DupeMap, DupeSet,
+                                          SortedDupeLists, SortedDupeSets, addTreeToDupeMap,
+                                          dupesByNegScore, mergeDupeSets, pathsByHash, scoreSetRef,
+                                          scoreSetSelf, scoreSets, sortPaths)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), HashLine (..), ModTime (..), NBytes (..),
                                            NNodes (..), TreeType (..), linesP)
@@ -162,23 +163,27 @@ import System.Directory.BigTrees.HashSet (HashList, HashSet, Note (..), SetData 
                                           setContainsHash, toSortedList, writeHashList)
 import System.Directory.BigTrees.HashTree (ProdTree, TestTree, readOrBuildTree)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), dropFileData,
-                                                hashDirContents, renameRoot, treeNNodes, treeHash,
-                                                treeModTime, treeNBytes, treeName, zeroModTime)
+                                                hashDirContents, renameRoot, treeHash, treeModTime,
+                                                treeNBytes, treeNNodes, treeName, zeroModTime)
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter, readTree,
                                                 readTreeLines)
-import System.Directory.BigTrees.HashTree.Search (LabeledSearches, Search (..), CompiledSearch (..), CompiledLabeledSearches, SearchConfig (..),
-                                                  SearchLabel, defaultSearchConfig, dropTo,
-                                                  emptySearchConfig, parseLabeledSearches,
-                                                  treeContainsHash, treeContainsPath, compileLabeledSearches)
+import System.Directory.BigTrees.HashTree.Search (CompiledLabeledSearches, CompiledSearch (..),
+                                                  LabeledSearches, Search (..), SearchConfig (..),
+                                                  SearchLabel, compileLabeledSearches,
+                                                  defaultSearchConfig, dropTo, emptySearchConfig,
+                                                  parseLabeledSearches, treeContainsHash,
+                                                  treeContainsPath)
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)
-import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumbs2bs, bs2n, fp2n,
-                                       fp2ns, joinNames, n2bs, n2sbs, nameP, names2bs, op2ns, os2ns,
-                                       sbs2n, op2bs, op2s, b64Name, debugName)
+import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, b64Name, breadcrumbs2bs, bs2n,
+                                       debugName, fp2n, fp2ns, joinNames, n2bs, n2sbs, nameP,
+                                       names2bs, op2bs, op2ns, op2s, os2ns, sbs2n)
 
 import System.Directory.BigTrees.HeadFoot (headerP)
 
-import System.Directory.BigTrees.Logging (LogContext, LogLevel (..), LogCfg (..), initLogger, cleanupLogger, log, die, logUnsafe, incLogProgressST, addLogContext)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogContext, LogLevel (..), addLogContext,
+                                          cleanupLogger, die, incLogProgressST, initLogger, log,
+                                          logUnsafe)

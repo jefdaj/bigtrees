@@ -9,6 +9,7 @@ import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (isPrefixOf, sort)
 import qualified System.Directory as SD
 import System.Directory.BigTrees (buildProdTree, hWriteTree, printTree)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, log, logUnsafe)
 import qualified System.File.OsPath as SFO
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.Info (os)
@@ -19,7 +20,6 @@ import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Golden (findByExtension, goldenVsString)
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), log, logUnsafe, addLogContext)
 
 --import Debug.Trace
 

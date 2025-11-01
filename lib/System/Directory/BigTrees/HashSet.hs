@@ -80,10 +80,10 @@ import System.Directory.BigTrees.Hash (Hash, prettyHash)
 import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (..), hashP, joinCols,
                                            nfilesP, sizeP)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
-                                                TestTree (..), treeNNodes, treeHash, treeNBytes,
+                                                TestTree (..), treeHash, treeNBytes, treeNNodes,
                                                 treeName)
+import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
 import System.Directory.BigTrees.Name (Name (..), bs2op)
-import System.Directory.BigTrees.Logging (LogCfg (..), die, addLogContext)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..))
 import System.OsPath (OsPath)

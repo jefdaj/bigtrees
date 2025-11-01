@@ -1,16 +1,16 @@
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 module Cmd.Dupes.Render.RsyncFilter where
 
-import Data.Word (Word8)
 import Cmd.Dupes.Render.Types
-import qualified Data.List as L
-import qualified Data.List.Split as LS
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
+import qualified Data.List as L
+import qualified Data.List.Split as LS
+import Data.Word (Word8)
 import System.Directory.BigTrees
-import System.OsPath (OsPath, osp, (</>), joinPath, splitDirectories, decodeFS)
+import System.OsPath (OsPath, decodeFS, joinPath, osp, splitDirectories, (</>))
 
 replaceTopDirWithSlash :: OsPath -> OsPath
 replaceTopDirWithSlash path = joinPath comps'
@@ -70,15 +70,16 @@ renderRsyncFilter keepOne md ls = do
           paths''   = map (escapeRsyncPathBytes . op2bs) $ sortPaths paths'
           paths'''  = if t == D then map (<> "/") paths'' else paths''
           paths'''' = if not keepOne
-                       then map ("- " <>) $ paths'''
-                       else ("+ " <> head paths'''):(map ("- " <>) $ tail paths''')
+                       then map ("- " <>) paths'''
+                       else ("+ " <> head paths'''):map ("- " <>) (tail paths''')
       return $ B8.unlines $ groupHeader h t n (length paths) : paths''''
 
     nSkip ds = B8.pack $ show $ if keepOne then ds - 1 else ds
 
-    exclude ds = if not keepOne then "exclude" else
-                   if ds > 2 then "exclude all but one of"
-                     else "exclude one of"
+    exclude ds
+      | not keepOne = "exclude"
+      | ds > 2 = "exclude all but one of"
+      | otherwise = "exclude one of"
 
     plural :: Int -> B8.ByteString -> B8.ByteString
     plural n thing = if n > 1 then thing `B8.append` "s" else thing
@@ -95,7 +96,7 @@ renderRsyncFilter keepOne md ls = do
       ]
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
-    groupHeader _ E _ _  = "" -- TODO is that a good idea?
+    groupHeader _ E _ _           = "" -- TODO is that a good idea?
     groupHeader h D nSaved nDirs  = explain h nSaved nDirs "folder"
     groupHeader h F nSaved nFiles = explain h nSaved nFiles "file"
     groupHeader h _ nSaved nLinks = explain h nSaved nLinks "link"

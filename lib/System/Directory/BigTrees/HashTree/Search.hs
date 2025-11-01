@@ -30,19 +30,19 @@ import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
 -- building a tree, reading it from a .bigtree file, finding paths in it, and
 -- making a dupe map.
 data SearchConfig = SearchConfig
-  { minBytes       :: Maybe NBytes
-  , maxBytes       :: Maybe NBytes
-  , maxDepth       :: Maybe Depth
-  , minDepth       :: Maybe Depth
-  , minFiles       :: Maybe NNodes
-  , maxFiles       :: Maybe NNodes
-  , minModtime     :: Maybe ModTime
-  , maxModtime     :: Maybe ModTime
-  , treeTypes      :: Maybe [TreeType]
-  , hashExcludeRegexes :: [String] -- TODO separate HashConfig from SearchConfig?
-  , excludeSetPaths :: [FilePath]
-  , referenceSetPaths :: [FilePath]
-  , searches       :: LabeledSearches
+  { minBytes             :: Maybe NBytes
+  , maxBytes             :: Maybe NBytes
+  , maxDepth             :: Maybe Depth
+  , minDepth             :: Maybe Depth
+  , minFiles             :: Maybe NNodes
+  , maxFiles             :: Maybe NNodes
+  , minModtime           :: Maybe ModTime
+  , maxModtime           :: Maybe ModTime
+  , treeTypes            :: Maybe [TreeType]
+  , hashExcludeRegexes   :: [String] -- TODO separate HashConfig from SearchConfig?
+  , excludeSetPaths      :: [FilePath]
+  , referenceSetPaths    :: [FilePath]
+  , searches             :: LabeledSearches
   , dupesExcludeSearches :: LabeledSearches -- TODO does this go somewhere else?
   }
   deriving (Read, Show, Generic)

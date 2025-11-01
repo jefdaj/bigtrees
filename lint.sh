@@ -5,7 +5,7 @@ set -x
 LOG="$PWD/.lint/lint.log"
 
 rm -f "$LOG"
-# rm -rf .stack-work/
+rm -rf .stack-work/
 stack clean
 
 # generates .hie files, tests that build works before any changes

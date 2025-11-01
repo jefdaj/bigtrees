@@ -12,8 +12,8 @@ import System.Directory.BigTrees.HashLine (ErrMsg (..), HashLine (..), ModTime (
 import System.Directory.BigTrees.HashTree (HashTree (..), readLastHashLineAndFooter)
 import System.Directory.BigTrees.HeadFoot (Footer, Header (..), readHeader, scanSeconds)
 -- import qualified Data.ByteString.Short as BS
-import System.OsPath (OsPath, encodeFS)
 import System.Directory.BigTrees.Logging (LogCfg (..), die)
+import System.OsPath (OsPath, encodeFS)
 
 cmdInfo :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdInfo cfg lCfg path = do

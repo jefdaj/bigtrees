@@ -1,16 +1,15 @@
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Cmd.Dupes.Render.TestScript where
 
 import Cmd.Dupes.Render.Types
-import qualified Data.List as L
 import qualified Data.ByteString.Char8 as B8
+import qualified Data.List as L
 import System.Directory.BigTrees
-import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
+import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 
 fileHeader :: B8.ByteString
-fileHeader = B8.pack $
-  "#!/usr/bin/env bash\n\
+fileHeader = B8.pack "#!/usr/bin/env bash\n\
   \\n\
   \# This is the 'test-script' output format.\n\
   \# It's mainly for debugging cross-filesystem filename issues.\n\
@@ -54,7 +53,7 @@ renderTestScript keepOne md ls = do
     excludeLines (n, h, t, paths) = do
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : (map (addTest t . quotePath . op2bs) $ sortPaths paths)
+             : map (addTest t . quotePath . op2bs) (sortPaths paths)
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?

@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
@@ -7,7 +7,6 @@ module Main where
 -- TODO sort by how many links deduping would save: files per dupe * (dupes - 1)
 -- TODO figure out how to read files + compute hashes in parallel
 
-import Prelude hiding (log)
 import Cmd.Diff (cmdDiff)
 import Cmd.Dupes (cmdDupes)
 import Cmd.Find (cmdFind)
@@ -18,20 +17,22 @@ import Cmd.TestTree (cmdTestTree)
 import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearchConfig,
                parseLabeledSearches)
 import Data.Functor ((<&>))
+import Prelude hiding (log)
 import qualified System.Console.Docopt as D
-import System.Directory.BigTrees (Depth (..), ModTime (..), NBytes (..), NNodes (..), Search (..),
-                                  TreeType (..), LogLevel(..), LogCfg (..), LogContext, log, initLogger, cleanupLogger, die)
+import System.Directory.BigTrees (Depth (..), LogCfg (..), LogContext, LogLevel (..), ModTime (..),
+                                  NBytes (..), NNodes (..), Search (..), TreeType (..),
+                                  cleanupLogger, die, initLogger, log)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
 import Control.Monad (when)
+import qualified Data.ByteString.Char8 as B8
 import Data.Maybe (fromJust, maybe)
+import qualified Data.Text.Lazy as TL
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
 import Text.Pretty.Simple (pShow)
-import qualified Data.Text.Lazy as TL
-import qualified Data.ByteString.Char8 as B8
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version

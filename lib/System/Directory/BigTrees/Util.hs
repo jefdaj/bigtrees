@@ -56,7 +56,9 @@ import qualified System.OsPath as SF
 import System.OsPath (OsPath, osp, (</>))
 import System.Path.NameManip (absolute_path, guess_dotdot)
 -- import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
+import qualified Data.ByteString.Short as SBS
 import Data.Maybe (fromMaybe)
+import Debug.Trace
 import System.OsPath (decodeFS)
 import System.Posix.Files (fileBlockSize, getFileStatus)
 import Test.HUnit (Assertion, (@=?))
@@ -64,8 +66,6 @@ import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
-import Debug.Trace
-import qualified Data.ByteString.Short as SBS
 
 -- describe "Util" $ do
 --   describe "absolute" $ do

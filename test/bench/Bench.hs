@@ -3,10 +3,11 @@ import Test.Tasty.Bench
 -- TODO get tasty-discover to pick up these bench_* functions?
 import Control.DeepSeq (deepseq)
 import Control.Monad (forM)
-import System.Directory.BigTrees.HashLine (genHashLinesBS, parseHashLinesBS, bench_roundtrip_HashLines_to_ByteString)
+import qualified Data.ByteString.Char8 as B8
+import System.Directory.BigTrees.HashLine (bench_roundtrip_HashLines_to_ByteString, genHashLinesBS,
+                                           parseHashLinesBS)
 import System.Directory.BigTrees.HashTree (bench_roundtrip_ProdTree_to_bigtree_file)
 import System.IO (hFlush, stdout)
-import qualified Data.ByteString.Char8 as B8
 
 -- range from 1 to 7481
 -- TODO either go a lot higher or be precise with expected timing
@@ -36,19 +37,19 @@ main = do
 
   Test.Tasty.Bench.defaultMain $
 
-    (for testHashLines $ \(n, bs) -> bench
+    for testHashLines (\(n, bs) -> bench
       ("parse " ++ show n ++ " size-" ++ show n ++ " HashLines")
       (nf parseHashLinesBS bs))
 
     ++
 
-    (for testHashLines $ \(n, bs) -> bench
+    for testHashLines (\(n, bs) -> bench
       ("round-trip " ++ show n ++ " size-" ++ show n ++ " HashLines to ByteString ")
       (nfIO $ bench_roundtrip_HashLines_to_ByteString bs))
 
     ++
 
-    (for testSizes $ \n -> bench
+    for testSizes (\n -> bench
       ("round-trip " ++ show n ++ "-node ProdTree to .bigtree file ")
       (nfIO $ bench_roundtrip_ProdTree_to_bigtree_file n))
 

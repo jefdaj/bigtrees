@@ -13,6 +13,7 @@ import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
 import System.Directory.BigTrees (Name (..), SearchConfig (..), diff, printDeltas, readOrBuildTree,
                                   renameRoot)
+import System.Directory.BigTrees.Logging (LogCfg (..))
 import System.FilePath (dropExtension, takeBaseName, (</>))
 import System.IO (stderr, stdout)
 import System.IO.Silently (hCapture)
@@ -21,7 +22,6 @@ import System.OsPath (OsPath, encodeFS, osp)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
-import System.Directory.BigTrees.Logging (LogCfg (..))
 
 -- TODO make --output work here rather than always printing to stdout
 

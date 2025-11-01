@@ -60,6 +60,7 @@ import System.FilePath (takeFileName)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.OsPath (decodeFS, encodeFS, takeBaseName, takeDirectory, (</>))
 -- import System.Posix.Files (readSymbolicLink)
+import System.Directory.BigTrees.Logging (LogCfg (..))
 import qualified System.File.OsPath as SFO
 import qualified System.OsPath as OSP
 import System.OsPath (OsPath)
@@ -69,7 +70,6 @@ import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, s
 import Test.QuickCheck.Instances.ByteString ()
 import Text.Regex.TDFA ((=~))
 import TH.Derive (Deriving, derive)
-import System.Directory.BigTrees.Logging (LogCfg (..))
 
 
 {- Checksum (sha256sum?) of a file or folder.

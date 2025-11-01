@@ -4,11 +4,11 @@ module Cmd.Dupes.Render
   )
   where
 
-import Cmd.Dupes.Render.Types
+import Cmd.Dupes.Render.DedupScript
 import Cmd.Dupes.Render.RsyncFilter
 import Cmd.Dupes.Render.Suggestions
-import Cmd.Dupes.Render.DedupScript
 import Cmd.Dupes.Render.TestScript
+import Cmd.Dupes.Render.Types
 
 dupesRenderFunctions :: [(String, DupesRenderFn)]
 dupesRenderFunctions =

@@ -1,11 +1,11 @@
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Cmd.Dupes.Render.Suggestions where
 
 import Cmd.Dupes.Render.Types
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees
-import System.OsPath (OsPath, (</>), joinPath, splitDirectories, decodeFS)
+import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 
 renderSuggestions :: DupesRenderFn
 renderSuggestions keepOne md ls = do
@@ -30,7 +30,7 @@ renderSuggestions keepOne md ls = do
     excludeLines (n, h, t, paths) = do
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : (map op2bs $ sortPaths paths)
+             : map op2bs (sortPaths paths)
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?

@@ -89,6 +89,7 @@ import TH.Derive (Deriving, derive)
 -- attempt at proper new string types:
 -- import System.FilePath ((</>))
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as SBS
 import qualified System.Directory.OsPath as SDO
@@ -98,7 +99,6 @@ import qualified System.OsPath.Internal as SOPI
 import qualified System.OsString as SOS
 import qualified System.OsString.Internal.Types as SOS
 import Test.QuickCheck.Instances.ByteString
-import qualified Data.ByteString.Base64 as B64
 
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
@@ -145,7 +145,7 @@ b64Name base64str = bs2n $ B64.decodeLenient $ B8.pack base64str
 --
 debugName :: Name -> IO ()
 debugName name = do
-  putStrLn $ "Base64: " ++ (drop 9 $ Prelude.take (length s - 2) s)
+  putStrLn $ "Base64: " ++ drop 9 (Prelude.take (length s - 2) s)
   putStrLn $ "Chars:  " ++ show (B8.unpack $ n2bs name) -- As characters
   putStrLn $ "Bytes:  " ++ show (BS.unpack $ n2bs name) -- As Word8 values
   where s = show name

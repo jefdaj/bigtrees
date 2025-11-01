@@ -13,10 +13,11 @@ import Data.Function (on)
 import Data.List (delete, find, sortBy)
 import System.Directory.BigTrees.HashLine (NBytes (..))
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), hashDirContents,
-                                                treeNNodes, treeModTime, treeNBytes, treeName, sortContentsByName)
+                                                sortContentsByName, treeModTime, treeNBytes,
+                                                treeNNodes, treeName)
 import System.Directory.BigTrees.HashTree.Search (dropTo)
 import System.Directory.BigTrees.HashTree.Write ()
-import System.Directory.BigTrees.Logging (LogCfg, die, addLogContext)
+import System.Directory.BigTrees.Logging (LogCfg, addLogContext, die)
 import System.Directory.BigTrees.Name (Name, fp2n)
 import System.Directory.BigTrees.Util (pathComponents)
 import System.OsPath (OsPath, joinPath, splitPath)
