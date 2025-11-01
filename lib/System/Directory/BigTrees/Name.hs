@@ -145,7 +145,7 @@ b64Name base64str = bs2n $ B64.decodeLenient $ B8.pack base64str
 --
 debugName :: Name -> IO ()
 debugName name = do
-  putStrLn $ "Base64: " ++ drop 9 (Prelude.take (length s - 2) s)
+  putStrLn $ "Base64: " ++ drop 10 (Prelude.take (length s - 2) s)
   putStrLn $ "Chars:  " ++ show (B8.unpack $ n2bs name) -- As characters
   putStrLn $ "Bytes:  " ++ show (BS.unpack $ n2bs name) -- As Word8 values
   where s = show name
