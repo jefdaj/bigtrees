@@ -57,7 +57,7 @@ module System.Directory.BigTrees.HashTree
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
-import Control.DeepSeq (deepseq)
+import Control.DeepSeq (deepseq, force)
 
 import qualified Data.ByteString.Char8 as B8
 import System.Directory.BigTrees.HashLine (ErrMsg (..))
@@ -66,6 +66,7 @@ import qualified System.Directory.OsPath as SDO
 import System.OsPath (OsPath, encodeFS, osp, (</>))
 -- import System.FilePath.Glob (Pattern)
 import Control.Monad (unless)
+import Control.Exception (evaluate)
 import Control.Exception.Safe (try, SomeException)
 import qualified System.FilePath as SF
 import System.IO (IOMode (..), hClose, withBinaryFile)
@@ -174,26 +175,22 @@ prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk
 -- note that you have to drop the bytestrings from the original testtree to compare them
--- TODO oh, have to test equality ignoring mod times, right? otherwise they'll always update
-roundtripTestTreeToActualTmpdir :: TestTree -> IO TestTree
-roundtripTestTreeToActualTmpdir tree =
+roundtripTestTreeToActualTmpdir :: LogCfg -> TestTree -> IO TestTree
+roundtripTestTreeToActualTmpdir lCfg tree =
 
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
-    -- TODO can this be done without any encode/decode steps?
-
     ospTmpDir <- encodeFS tmpDir
     let treeRootDir = ospTmpDir </> (unName . treeName) tree
-    writeTestTreeDir NoLog treeRootDir tree
-    tree' <- fmap (renameRoot $ treeName tree) $ readTestTree emptySearchConfig NoLog treeRootDir
-    return tree'
+    writeTestTreeDir lCfg treeRootDir tree
+    tree' <- fmap (renameRoot $ treeName tree) $ readTestTree emptySearchConfig lCfg treeRootDir
 
-    -- parent <- readTestTree Nothing False [] tmpDir'
-    -- return $ head $ dirContents parent
+    -- This prevents a race condition between reading the tree and cleaning up the tmpdir
+    evaluate $ force tree'
 
 prop_roundtrip_TestTree_to_actual_tmpdir :: Property
 prop_roundtrip_TestTree_to_actual_tmpdir =
   propertyWithExceptions
-    roundtripTestTreeToActualTmpdir
+    (roundtripTestTreeToActualTmpdir NoLog)
     treeEqIgnoringModTime
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion

@@ -52,7 +52,7 @@ module System.Directory.BigTrees.HashLine
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
 import Control.DeepSeq (NFData (..))
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Data.Attoparsec.ByteString (skipWhile)
 
 -- TODO are these valid? should everything come from (plain) ByteString instead?
@@ -619,6 +619,7 @@ parseTreeFileRev lCfg f = SFO.withFile f ReadMode $ \h -> do
 hParseTreeFileRev :: LogCfg -> Integer -> Handle -> IO [HashLine]
 hParseTreeFileRev lCfg blksize h = do
   fileSizeBytes <- hFileSize h
+  -- TODO does this help: when (fileSizeBytes == 0) $ return ()
   -- size rounded up to the next block:
   let fileSizeBytesCeiling =
         ceiling (fromInteger fileSizeBytes / fromInteger blksize) * (fromInteger blksize)

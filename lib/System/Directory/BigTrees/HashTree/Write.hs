@@ -99,8 +99,6 @@ writeTestTreeDir :: LogCfg -> OsPath -> TestTree -> IO ()
 writeTestTreeDir lCfg path tree = do
   let parent = takeDirectory path
       tree'  = renameRoot (Name $ takeBaseName path) tree
-  -- SDO.createDirectoryIfMissing True parent
-  -- putStrLn $ "tree': " ++ show tree'
   writeTestTreeDir' lCfg parent tree'
   assertExists lCfg path
 
@@ -115,16 +113,15 @@ writeTestTreeDir' lCfg parent l@(Link {nodeData=nd}) = do
   assertExists lCfg path
 
 writeTestTreeDir' lCfg parent (File {nodeData=nd, fileData = bs}) = do
-  -- SDO.createDirectoryIfMissing True parent -- TODO remove
+  SDO.createDirectoryIfMissing True parent
   let path = parent </> unName (name nd)
-  -- assertDoesNotExist lCfg path
+  assertDoesNotExist lCfg path
   SFO.writeFile' path bs
   assertExists lCfg path
 
 writeTestTreeDir' lCfg parent (Dir {nodeData=nd, dirContents = cs}) = do
   let root = parent </> unName (name nd)
-  -- assertDoesNotExist lCfg root
-  -- putStrLn $ "write test dir: " ++ show root
+  assertDoesNotExist lCfg root
   SDO.createDirectoryIfMissing True root
   assertExists lCfg root
   mapM_ (writeTestTreeDir' lCfg root) (sortContentsByName cs) -- TODO remove sort?
