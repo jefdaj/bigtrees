@@ -31,6 +31,8 @@ module System.Directory.BigTrees.Name
   , NamesFwd
   , NamesRev
 
+  , bytes2n
+  -- TODO n2bytes
   , n2op
   , n2sbs
   , sbs2n
@@ -64,6 +66,9 @@ module System.Directory.BigTrees.Name
   )
   where
 
+import Test.QuickCheck
+import Test.QuickCheck.Gen
+
 import Control.DeepSeq (NFData)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
@@ -80,7 +85,6 @@ import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Path.NameManip (absolute_path, guess_dotdot)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
-import Test.QuickCheck (Arbitrary (..), Gen, Property, suchThat)
 import Test.QuickCheck.Arbitrary ()
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
@@ -107,6 +111,8 @@ import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, e
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead, option, sepBy')
 import System.OsPath (OsPath)
+import Data.Word (Word8)
+
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
 -- efficiency, but what it really means is "OsPath without slashes". Based on
@@ -150,42 +156,39 @@ debugName name = do
   putStrLn $ "Bytes:  " ++ show (BS.unpack $ n2bs name) -- As Word8 values
   where s = show name
 
--- TODO does the standard instance already shrink each char?
--- TODO does the 2nd guard for going to single Chars help?
---
--- >>> filter isValidName $ myShrinkText "\US"
--- ["abcABC123 \n"]
---
--- TODO rewrite for OsPath
--- myShrinkText :: T.Text -> [T.Text]
--- myShrinkText t
---   | T.length t == 1 = map T.pack $ (\[c] -> [shrink c]) $ T.unpack t
---   | T.length t < 4 = map (\c -> T.pack [c]) $ nub $ T.unpack t
---   | otherwise = shrink t
+validFilenameBytes :: [Word8]
+validFilenameBytes = filter isValidFilenameByte [1..255]
 
--- TODO shrink weird chars to ascii when possible, so we can tell it's not an encoding error
--- TODO try https://hackage.haskell.org/package/quickcheck-unicode-1.0.1.0/docs/Test-QuickCheck-Unicode.html
+isValidFilenameByte :: Word8 -> Bool
+isValidFilenameByte b =
+  b /= 0        -- no null bytes
+  && b /= 47    -- no forward slash (/)
+  -- && b >= 32    -- avoid most control characters (TODO remove?)
+  -- && b /= 127   -- avoid DEL character (TODO remove?)
+
 instance Arbitrary Name where
-  arbitrary = Name <$> (oss `suchThat` isValidName)
-    where
-      sbs = arbitrary :: Gen SBS.ShortByteString
-      oss = (SOS.OsString . SOS.PosixString) <$> sbs
+  arbitrary = do
+    len <- chooseInt (1, 255) -- max filename length on most systems
+    bytes <- vectorOf len $ elements validFilenameBytes
+    let name = bytes2n bytes
+    if isValidName (unName name)
+      then pure name
+      else arbitrary  -- retry if we got "." or ".."
 
-  shrink :: Name -> [Name]
-  shrink = (map Name . filter isValidName) <$> (oss . n2sbs)
-    where
-      sbs = shrink :: SBS.ShortByteString -> [SBS.ShortByteString]
-      oss = map (SOS.OsString . SOS.PosixString) <$> sbs
+  shrink (Name osStr) =
+    let sbs = SOS.getPosixString (SOS.getOsString osStr) -- TODO is this == n2sbs without Name?
+        bytes = SBS.unpack sbs
+        shorterBytes = filter (not . null) $ shrink bytes
+        candidateNames = [bytes2n bs | bs <- shorterBytes]
+    in filter (isValidName . unName) candidateNames  -- filter shrunk results too
 
--- TODO use this in the arbitrary filepath instance too?
--- Checking for '/' explicitly turns out to be necessary because
--- SOP.splitDirectories will still return a length-1 list if there's a slash at
--- the end of the name. Then writeFile et al will throw "inappropriate type".
 isValidName :: SOS.OsString -> Bool
-isValidName s
-  = SOP.isValid s
-  && not ("/" `SBS.isInfixOf` SOS.getPosixString (SOS.getOsString s))
-  && notElem s [[SOS.osstr|.|], [SOS.osstr|..|]]
+isValidName osStr =
+  let sbs = SOS.getPosixString (SOS.getOsString osStr) -- TODO is this == n2sbs without Name?
+  in not (SBS.null sbs)           -- not empty
+     && sbs /= SBS.pack [46]      -- not "."
+     && sbs /= SBS.pack [46, 46]  -- not ".."
+
 
 -- * Convert paths to/from names
 --
@@ -196,6 +199,9 @@ isValidName s
 
 -- n2sbs :: Name -> SBS.ShortByteString
 -- n2sbs = SOS.unPS . SBS.unOsString . unName
+
+bytes2n :: [Word8] -> Name
+bytes2n bs = Name $ SOS.OsString $ SOS.PosixString $ SBS.pack bs
 
 n2op :: Name -> SOS.OsString
 n2op = unName
