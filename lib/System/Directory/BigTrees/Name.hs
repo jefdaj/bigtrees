@@ -163,8 +163,18 @@ isValidFilenameByte :: Word8 -> Bool
 isValidFilenameByte b =
   b /= 0        -- no null bytes
   && b /= 47    -- no forward slash (/)
-  -- && b >= 32    -- avoid most control characters (TODO remove?)
-  -- && b /= 127   -- avoid DEL character (TODO remove?)
+  && not (isProblematicByte b)
+
+{- I'm not sure how to handle these yet.
+ - They should technically be valid, but are causing errors.
+ - I could dig into improving other libraries' handling, or ignore it.
+ - TODO are the problems to do with single bytes or sequences of 2+?
+ - TODO separate list on linux vs macos? per filesystem?
+ - TODO what about: >= 32 (most control chars), 127 (DEL)
+ -}
+isProblematicByte :: Word8 -> Bool
+isProblematicByte 46 = True -- start of header (the byte displayed as . and ..?)
+isProblematicByte _  = False
 
 instance Arbitrary Name where
   arbitrary = do
