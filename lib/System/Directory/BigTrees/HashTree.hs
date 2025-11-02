@@ -69,16 +69,13 @@ import Control.Monad (unless)
 import qualified System.FilePath as SF
 import System.IO (IOMode (..), hClose, withBinaryFile)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
-import Test.QuickCheck (Arbitrary (..), Property, arbitrary, generate, resize)
+import Test.QuickCheck -- (Arbitrary (..), Property, arbitrary, generate, resize)
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.Knob as K
 import Data.List (isInfixOf)
-import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
-                                                dropFileData, isErr, renameRoot,
-                                                treeEqIgnoringModTime, treeHash, treeModTime,
-                                                treeNBytes, treeNNodes, treeName, treeType)
+import System.Directory.BigTrees.HashTree.Base
 import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
@@ -93,11 +90,10 @@ import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import qualified Test.HUnit as HU
 
--- import System.Directory.BigTrees.Util (absolutePath)
+import System.Directory.BigTrees.Util (SafeProperty(..))
 
 -- import qualified Data.ByteString.Char8 as B
 import Text.Pretty.Simple (pPrint)
-
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
@@ -193,18 +189,10 @@ roundtripTestTreeToActualTmpdir tree =
     -- parent <- readTestTree Nothing False [] tmpDir'
     -- return $ head $ dirContents parent
 
--- TODO is the forcing unnecessary?
--- TODO fix failing assertion
-prop_roundtrip_TestTree_to_actual_tmpdir :: Property
-prop_roundtrip_TestTree_to_actual_tmpdir = monadicIO $ do
-  t1 <- pick arbitrary
-  -- run $ D.delay 100000
-  t2 <- run $ roundtripTestTreeToActualTmpdir t1
-  -- run $ D.delay 100000
-  -- unless (treeEqIgnoringModTime t1 t2) $ do
-  --   run $ print t1
-  --   run $ print t2
-  assert $ treeEqIgnoringModTime t1 t2
+prop_roundtrip_TestTree_to_actual_tmpdir :: SafeProperty TestTree
+prop_roundtrip_TestTree_to_actual_tmpdir = SafeProperty $ \t1 -> do
+  t2 <- roundtripTestTreeToActualTmpdir t1
+  return $ treeEqIgnoringModTime t1 t2
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion
 unit_tree_from_bad_path_is_Err =

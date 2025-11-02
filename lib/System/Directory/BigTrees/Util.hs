@@ -35,10 +35,12 @@ module System.Directory.BigTrees.Util
 
   , sbs2b8
 
+  , SafeProperty(..)
+
   )
   where
 
-import Control.Exception.Safe (handleAnyDeep)
+import Control.Exception.Safe (handleAnyDeep, try, SomeException)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
@@ -62,10 +64,11 @@ import Debug.Trace
 import System.OsPath (decodeFS)
 import System.Posix.Files (fileBlockSize, getFileStatus)
 import Test.HUnit (Assertion, (@=?))
-import Test.QuickCheck (Arbitrary (..), Gen, Property, listOf, oneof, suchThat)
+import Test.QuickCheck (Arbitrary (..), Gen, Property, Testable, property, ioProperty, forAll, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
+
 
 -- describe "Util" $ do
 --   describe "absolute" $ do
@@ -288,6 +291,22 @@ getBlockSize :: OsPath -> IO Integer
 getBlockSize path = do
   stat <- getFileStatus =<< decodeFS path
   return $ maybe 4096 toInteger (fileBlockSize stat)
+
+--- catch exceptions during tests ---
+
+newtype SafeProperty a = SafeProperty (a -> IO Bool)
+
+instance (Show a, Arbitrary a) => Testable (SafeProperty a) where
+  property (SafeProperty action) = forAll arbitrary $ \input -> ioProperty $ do
+    result <- try (action input)
+    case result of
+      Left ex -> do
+        -- TODO can this use logging or verbosity? or just be commented out most of the time?
+        putStrLn $ "Property threw " ++ show (ex :: SomeException)
+        putStrLn $ "Input was: " ++ show input
+        return False
+      Right success -> return success
+
 
 --- old code ---
 
