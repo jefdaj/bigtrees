@@ -35,6 +35,7 @@ dependencies:
 - hashtables
 - HUnit
 - massiv
+- memory
 - MissingH
 - monad-parallel
 - os-string

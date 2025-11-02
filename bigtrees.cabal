@@ -69,6 +69,7 @@ library
     , hashtables
     , knob
     , massiv
+    , memory
     , monad-parallel
     , os-string
     , pretty-simple
@@ -149,6 +150,7 @@ executable bigtrees
     , hashtables
     , knob
     , massiv
+    , memory
     , monad-parallel
     , os-string
     , pretty-simple
@@ -232,6 +234,7 @@ test-suite test-app
     , hashtables
     , knob
     , massiv
+    , memory
     , monad-parallel
     , os-string
     , pretty-simple
@@ -317,6 +320,7 @@ test-suite test-lib
     , hashtables
     , knob
     , massiv
+    , memory
     , monad-parallel
     , os-string
     , pretty-simple
@@ -420,6 +424,7 @@ benchmark test-bench
     , hashtables
     , knob
     , massiv
+    , memory
     , monad-parallel
     , os-string
     , pretty-simple

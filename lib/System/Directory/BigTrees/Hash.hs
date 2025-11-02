@@ -70,6 +70,7 @@ import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, s
 import Test.QuickCheck.Instances.ByteString ()
 import Text.Regex.TDFA ((=~))
 import TH.Derive (Deriving, derive)
+import qualified Data.ByteArray as BA
 
 
 {- Checksum (sha256sum?) of a file or folder.
@@ -97,9 +98,9 @@ instance Arbitrary Hash where
   shrink :: Hash -> [Hash]
   shrink _ = []
 
--- TODO put this in the HashConfig/BuildConfig if/when there is one
+-- TODO do some math instead of just being conservative here
 digestLength :: Int
-digestLength = 20
+digestLength = 32
 
 -- TODO remove? looks like it might already be in the proper OsString format with unHash
 -- TODO actual Pretty instance
@@ -111,12 +112,11 @@ prettyHash = SBS.fromShort . unHash
 compress :: B.ByteString -> SBS.ShortByteString
 compress = SBS.toShort . B.take digestLength . B64.encode
 
--- TODO no need to B.copy here?
+-- Get raw bytes from digest, then Base64 encode directly
 hashBytes :: B.ByteString -> Hash
-hashBytes = Hash . compress . B.pack . show . (CH.hash :: B.ByteString -> CH.Digest CH.SHA256)
+hashBytes = Hash . compress . BA.convert . (CH.hash :: B.ByteString -> CH.Digest CH.SHA256)
 
 -- TODO would digestFromByteString be faster?
--- TODO bug! digests come out unreadable :(
 hashBytesStreaming :: BL.ByteString -> IO Hash
 hashBytesStreaming bs = do
   ctx <- hashMutableInitWith SHA256
@@ -124,7 +124,7 @@ hashBytesStreaming bs = do
       chunked = Q.toChunks $ Q.fromLazy bs
   S.mapM_ (hashMutableUpdate ctx) chunked
   final <- hashMutableFinalize ctx
-  return $ Hash $ compress $ B.pack $ show final
+  return $ Hash $ compress $ BA.convert final
 
 hashString :: String -> Hash
 hashString = hashBytes . B.pack
