@@ -50,30 +50,36 @@ readAndSortLines path = SFO.readFile' path <&> (B8.unlines . sort . B8.lines)
 
 cmdFindUnixFind :: LogCfg -> TestTree -> IO (B8.ByteString, B8.ByteString)
 cmdFindUnixFind lCfg t =
-  withSystemTempDirectory "bigtrees" $ \tmpDir -> do
+  withSystemTempDirectory "bigtrees" $ \osTmpDir -> do
+    tmpDir <- encodeFS osTmpDir
 
-    tmpDir' <- encodeFS tmpDir
-    let treeDir'     = tmpDir' </> [osp|test-tree|]
-    let treeDir''    = treeDir' </> unName (treeName t)
-    let myFindOut'   = tmpDir' </> [osp|my-find-output.txt|]
-    let unixFindOut' = tmpDir' </> [osp|unix-find-output.txt|]
-    unixFindOut <- decodeFS unixFindOut'
+    let testDir    = tmpDir </> [osp|test-tree|]
+        myOutput   = tmpDir </> [osp|my-find-output.txt|]
+        unixOutput = tmpDir </> [osp|unix-find-output.txt|]
 
-    -- treeDir' will be the *parent* of the root tree dir.
-    -- we wrap it like this to make commands easier with potentially weird unicode tree names,
-    -- and to avoid finding our own test txt files from above
-    SDO.createDirectoryIfMissing False treeDir'
-    writeTestTreeDir lCfg treeDir'' t
+    -- write the tree to a root inside the test-tree dir
+    -- TODO would a retry here prevent occasional failures? or is that something else?
+    SDO.createDirectoryIfMissing True testDir
+    let treeRootDir = testDir </> unName (treeName t)
+    writeTestTreeDir lCfg treeRootDir t
 
-    let cfg = defaultAppConfig { outFile = Just myFindOut' }
-    cmdFind cfg NoLog treeDir'
+    -- find tree paths and write them to my-find-output.txt
+    let cfg = defaultAppConfig { outFile = Just myOutput }
+    cmdFind cfg NoLog testDir
 
+    -- Unix find tree paths and write them to unix-find-output.txt
     -- Unix find will print whole absolute paths here, so we need to invoke it
     -- by relative path from the parent of the tmpdir to match my relative style.
-    _ <- readCreateProcess ((proc "find" ["test-tree", "-fprint", unixFindOut]) {cwd = Just tmpDir}) ""
+    -- TODO extra test-tree wrapper dir prevents encoding errors in the command line args?
+    osUnixOutput <- decodeFS unixOutput
+    _ <- flip readCreateProcess "" $
+	   (proc "find" ["test-tree", "-fprint", osUnixOutput])
+           {cwd = Just osTmpDir}
 
-    out1 <- readAndSortLines myFindOut'
-    out2 <- readAndSortLines unixFindOut'
+    -- return both versions for comparison
+    -- TODO would comparing them directly here make more sense?
+    out1 <- readAndSortLines myOutput
+    out2 <- readAndSortLines unixOutput
     return (out1, out2)
 
 prop_cmdFind_paths_match_unix_find :: Property

@@ -179,26 +179,17 @@ prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
 -- note that you have to drop the bytestrings from the original testtree to compare them
 -- TODO oh, have to test equality ignoring mod times, right? otherwise they'll always update
 roundtripTestTreeToActualTmpdir :: TestTree -> IO TestTree
-roundtripTestTreeToActualTmpdir t =
+roundtripTestTreeToActualTmpdir tree =
 
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
-    tmpDir' <- encodeFS tmpDir
-    let tmpDir'' = tmpDir' </> (unName . treeName) t
-    -- putStrLn $ "tmpDir': " ++ show tmpDir'
-    -- D.delay 100000
-    -- let tmpRoot = tmpDir </> "round-trip-tests" -- TODO use root
-    -- SD.createDirectoryIfMissing True tmpDir -- TODO False?
-    -- SD.removePathForcibly tmpDir -- TODO remove
+    -- TODO can this be done without any encode/decode steps?
 
-    -- This is a little confusing, but the FilePath here should be the *parent*
-    -- within which to write the root tree dir...
-    writeTestTreeDir NoLog tmpDir'' t
-    -- D.delay 100000
+    ospTmpDir <- encodeFS tmpDir
+    let treeRootDir = ospTmpDir </> (unName . treeName) tree
+    writeTestTreeDir NoLog treeRootDir tree
+    tree' <- fmap (renameRoot $ treeName tree) $ readTestTree emptySearchConfig NoLog treeRootDir
+    return tree'
 
-    -- ... but then when reading it back in we need the full path including the
-    -- root tree dir name.
-    -- let treeRootDir = tmpDir' </> unName (treeName t)
-    readTestTree emptySearchConfig NoLog tmpDir''
     -- parent <- readTestTree Nothing False [] tmpDir'
     -- return $ head $ dirContents parent
 

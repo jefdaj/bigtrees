@@ -78,24 +78,21 @@ flattenTree' lCfg (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
 
 -- this is to catch the case where it tries to write the same file twice
 -- (happened once because of macos filename case-insensitivity)
-assertNoFile :: LogCfg -> OsPath -> IO ()
-assertNoFile lCfg path = do
+assertDoesNotExist :: LogCfg -> OsPath -> IO ()
+assertDoesNotExist lCfg path = do
   exists <- SDO.doesPathExist path
   when exists $ do
     path' <- decodeFS path
-    -- putStrLn $ "duplicate write: " ++ show path'
-    die (addLogContext lCfg "assertNoFile") $ B8.pack $ "duplicate write: " ++ show path'
+    die (addLogContext lCfg "assertDoesNotExist") $ B8.pack $ "duplicate write to " ++ show path'
 
-assertFile :: LogCfg -> OsPath -> IO ()
-assertFile lCfg path = do
+assertExists :: LogCfg -> OsPath -> IO ()
+assertExists lCfg path = do
   exists <- SDO.doesPathExist path
   unless exists $ do
     path' <- decodeFS path
-    -- putStrLn $ "failed to write: " ++ show path'
-    die (addLogContext lCfg "assertFile") $ B8.pack $ "failed to write: " ++ show path'
+    die (addLogContext lCfg "assertExists") $ B8.pack $ "failed to write " ++ show path'
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
- - Note that this calls itself recursively.
  - TODO should this be NoLog?
  -}
 writeTestTreeDir :: LogCfg -> OsPath -> TestTree -> IO ()
@@ -105,28 +102,29 @@ writeTestTreeDir lCfg path tree = do
   -- SDO.createDirectoryIfMissing True parent
   -- putStrLn $ "tree': " ++ show tree'
   writeTestTreeDir' lCfg parent tree'
+  assertExists lCfg path
 
 writeTestTreeDir' :: LogCfg -> OsPath -> TestTree -> IO ()
 writeTestTreeDir' lCfg parent (Err {}) = return () -- TODO print a warning? write to the file?
 
 writeTestTreeDir' lCfg parent l@(Link {nodeData=nd}) = do
   let path = parent </> unName (name nd)
-  assertNoFile lCfg path
+  assertDoesNotExist lCfg path
   -- Target comes first, then the file we're writing (like `ln -s`)
   SDO.createFileLink (linkTarget l) path
-  assertFile lCfg path
+  assertExists lCfg path
 
 writeTestTreeDir' lCfg parent (File {nodeData=nd, fileData = bs}) = do
-  SDO.createDirectoryIfMissing True parent -- TODO remove
+  -- SDO.createDirectoryIfMissing True parent -- TODO remove
   let path = parent </> unName (name nd)
-  assertNoFile lCfg path
+  -- assertDoesNotExist lCfg path
   SFO.writeFile' path bs
-  assertFile lCfg path
+  assertExists lCfg path
 
 writeTestTreeDir' lCfg parent (Dir {nodeData=nd, dirContents = cs}) = do
   let root = parent </> unName (name nd)
-  -- assertNoFile lCfg root
+  -- assertDoesNotExist lCfg root
   -- putStrLn $ "write test dir: " ++ show root
   SDO.createDirectoryIfMissing True root
-  assertFile lCfg root
+  assertExists lCfg root
   mapM_ (writeTestTreeDir' lCfg root) (sortContentsByName cs) -- TODO remove sort?
