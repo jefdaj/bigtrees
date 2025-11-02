@@ -40,7 +40,7 @@ module System.Directory.BigTrees.Util
   )
   where
 
-import Control.Exception.Safe (handleAnyDeep, try, SomeException)
+import Control.Exception.Safe (SomeException, handleAnyDeep, try)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
@@ -64,9 +64,9 @@ import Debug.Trace
 import System.OsPath (decodeFS)
 import System.Posix.Files (fileBlockSize, getFileStatus)
 import Test.HUnit (Assertion, (@=?))
-import Test.QuickCheck -- (Arbitrary (..), Gen, Property, Testable, property, ioProperty, forAll, listOf, oneof, suchThat)
+import Test.QuickCheck (Arbitrary (..), Gen, Property, Testable, property, ioProperty, forAll, listOf, oneof, suchThat, counterexample)
 import Test.QuickCheck.Instances ()
-import Test.QuickCheck.Monadic -- (assert, monadicIO, pick, run)
+import Test.QuickCheck.Monadic (assert, monadicIO, pick, run, monitor)
 import TH.Derive (Deriving, derive)
 
 

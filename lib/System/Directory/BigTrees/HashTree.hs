@@ -65,13 +65,13 @@ import System.Directory.BigTrees.Name (Name (..))
 import qualified System.Directory.OsPath as SDO
 import System.OsPath (OsPath, encodeFS, osp, (</>))
 -- import System.FilePath.Glob (Pattern)
-import Control.Monad (unless)
 import Control.Exception (evaluate)
-import Control.Exception.Safe (try, SomeException)
+import Control.Exception.Safe (SomeException, try)
+import Control.Monad (unless)
 import qualified System.FilePath as SF
 import System.IO (IOMode (..), hClose, withBinaryFile)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
-import Test.QuickCheck -- (Arbitrary (..), Property, arbitrary, generate, resize)
+import Test.QuickCheck
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 
 import qualified Control.Concurrent.Thread.Delay as D
@@ -182,7 +182,7 @@ roundtripTestTreeToActualTmpdir lCfg tree =
     ospTmpDir <- encodeFS tmpDir
     let treeRootDir = ospTmpDir </> (unName . treeName) tree
     writeTestTreeDir lCfg treeRootDir tree
-    tree' <- fmap (renameRoot $ treeName tree) $ readTestTree emptySearchConfig lCfg treeRootDir
+    tree' <- (renameRoot $ treeName tree) <$> readTestTree emptySearchConfig lCfg treeRootDir
 
     -- This prevents a race condition between reading the tree and cleaning up the tmpdir
     evaluate $ force tree'

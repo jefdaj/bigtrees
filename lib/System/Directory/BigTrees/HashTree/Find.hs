@@ -46,7 +46,7 @@ listTreePaths :: SearchConfig -> LogCfg -> String -> HashTree a -> IO [B8.ByteSt
 listTreePaths cfg lCfg fmt tree = do
   cls <- compileLabeledSearches $ searches cfg
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
-  eLists <- forM (excludeSetPaths cfg) $ (encodeFS >=> readHashList lCfg)
+  eLists <- forM (excludeSetPaths cfg) (encodeFS >=> readHashList lCfg)
   return $ case mkLineMetaFormatter lCfg fmt of
     (Left  errMsg) -> die (addLogContext lCfg "listTreePaths") $ B8.pack errMsg
     (Right fmtFn ) -> runST $ do
@@ -141,7 +141,11 @@ findLabelNode ((l, cs):css) ns t = if anySearchMatches then Just l else findLabe
     baseName  = n2bs $ treeName t
     wholeName = breadcrumbs2bs $ treeName t : ns
     anySearchMatches = any searchMatches cs
-    searchMatches c = (fromMaybe True $ (treeContainsPath t      ) <$> cDirContainsPath c) && (fromMaybe True $ (flip matchTest baseName ) <$> cBaseNameMatchesRegex c) && (fromMaybe True $ (flip matchTest wholeName) <$> cWholeNameMatchesRegex c)
+    searchMatches c = and
+      [ fromMaybe True $ (treeContainsPath t      ) <$> cDirContainsPath c
+      , fromMaybe True $ (flip matchTest baseName ) <$> cBaseNameMatchesRegex c
+      , fromMaybe True $ (flip matchTest wholeName) <$> cWholeNameMatchesRegex c
+      ]
 
 
 ---------------------

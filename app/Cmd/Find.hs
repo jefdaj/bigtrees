@@ -26,10 +26,10 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, log, logUnsafe)
+import System.Directory.BigTrees.Util (propertyWithExceptions)
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
-import System.Directory.BigTrees.Util (propertyWithExceptions)
 
 cmdFind :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdFind cfg lCfg path = do

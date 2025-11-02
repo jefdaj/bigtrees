@@ -1,9 +1,9 @@
 {-# HLINT ignore "Use camelCase" #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs               #-}
+
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE QuasiQuotes                #-}
+
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
@@ -110,8 +110,8 @@ import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, e
                                          takeTill)
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead, option, sepBy')
-import System.OsPath (OsPath)
 import Data.Word (Word8)
+import System.OsPath (OsPath)
 
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
@@ -170,7 +170,7 @@ isValidFilenameByte b =
  - I could dig into improving other libraries' handling, or ignore it.
  - TODO are the problems to do with single bytes or sequences of 2+?
  - TODO separate list on linux vs macos? per filesystem?
- - TODO what about: >= 32 (most control chars), 127 (DEL)
+ - TODO what about: < 32 (most control chars), 127 (DEL)
  -}
 isProblematicByte :: Word8 -> Bool
 isProblematicByte 46 = True -- start of header (the byte displayed as . and ..?)

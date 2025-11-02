@@ -180,8 +180,8 @@ import System.Directory.BigTrees.HashTree.Search (CompiledLabeledSearches, Compi
 import System.Directory.BigTrees.HashTree.Write (flattenTree, hWriteTree, printTree,
                                                  writeTestTreeDir, writeTree)
 import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, b64Name, breadcrumbs2bs, bs2n,
-                                       debugName, fp2n, fp2ns, joinNames, n2bs, n2sbs, nameP,
-                                       names2bs, op2bs, op2ns, op2s, os2ns, sbs2n, bytes2n)
+                                       bytes2n, debugName, fp2n, fp2ns, joinNames, n2bs, n2sbs,
+                                       nameP, names2bs, op2bs, op2ns, op2s, os2ns, sbs2n)
 
 import System.Directory.BigTrees.HeadFoot (headerP)
 

@@ -363,7 +363,14 @@ dupesKeepNode cfg lCfg _ cle ns d e@(Err {}) = do
                    "' is a dupe because of prev error '" <>
                    B8.pack (show $ errMsg e) <> "'"
   let mExcludeLabel = B8.pack <$> findLabelNode cle (reverse ns) e
-  return $ ((maybe True (d >=) $ minDepth cfg) && (maybe True (d <=) $ maxDepth cfg) && maybe (err includeMsg False) (\l -> info (excludeMsg l) False) mExcludeLabel)
+  return $ and
+    [ maybe True (d >=) (minDepth cfg)
+    , maybe True (d <=) (maxDepth cfg)
+    , maybe
+        (err includeMsg False)
+        (\l -> info (excludeMsg l) False)
+        mExcludeLabel
+    ]
 
 dupesKeepNode cfg lCfg mrSet cle ns d t = do
   let hash = treeHash t
