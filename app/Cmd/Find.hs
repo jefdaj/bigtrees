@@ -54,6 +54,7 @@ cmdFindUnixFind lCfg t =
 
     tmpDir' <- encodeFS tmpDir
     let treeDir'     = tmpDir' </> [osp|test-tree|]
+    let treeDir''    = treeDir' </> unName (treeName t)
     let myFindOut'   = tmpDir' </> [osp|my-find-output.txt|]
     let unixFindOut' = tmpDir' </> [osp|unix-find-output.txt|]
     unixFindOut <- decodeFS unixFindOut'
@@ -62,7 +63,7 @@ cmdFindUnixFind lCfg t =
     -- we wrap it like this to make commands easier with potentially weird unicode tree names,
     -- and to avoid finding our own test txt files from above
     SDO.createDirectoryIfMissing False treeDir'
-    writeTestTreeDir lCfg treeDir' t
+    writeTestTreeDir lCfg treeDir'' t
 
     let cfg = defaultAppConfig { outFile = Just myFindOut' }
     cmdFind cfg NoLog treeDir'

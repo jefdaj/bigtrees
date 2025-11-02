@@ -30,7 +30,7 @@ import TH.Derive (Deriving, derive)
 -- import Debug.Trace
 
 -- for comparing two trees without getting hung up on different overall names
-renameRoot :: Name -> ProdTree -> ProdTree
+renameRoot :: Name -> HashTree a -> HashTree a
 renameRoot newName e@(Err {}) = e { errName = newName }
 renameRoot newName tree = tree { nodeData = nd' }
   where

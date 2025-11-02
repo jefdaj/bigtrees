@@ -8,15 +8,16 @@ import Data.Maybe (isNothing)
 import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree,
-                                                sortContentsByName)
+                                                sortContentsByName, renameRoot)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.HeadFoot (hWriteFooter, hWriteHeader)
 import System.Directory.BigTrees.Logging (LogCfg, addLogContext, die)
-import System.Directory.BigTrees.Name (unName)
+import System.Directory.BigTrees.Name (Name(..), unName)
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hFlush, stdout)
-import System.OsPath (OsPath, decodeFS, splitPath, (</>))
+import System.OsPath (OsPath, decodeFS, splitPath, takeBaseName, takeDirectory, (</>))
+import qualified Control.Concurrent.Thread.Delay as D
 
 -- import Debug.Trace
 
@@ -95,33 +96,37 @@ assertFile lCfg path = do
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
  - Note that this calls itself recursively.
- - Note also that when you call this at the top level,
- - `root` should refer to the parent dir of your tree!
- - (Yes this is confusing, and should be changed if it will be user facing)
  - TODO should this be NoLog?
  -}
 writeTestTreeDir :: LogCfg -> OsPath -> TestTree -> IO ()
+writeTestTreeDir lCfg path tree = do
+  let parent = takeDirectory path
+      tree'  = renameRoot (Name $ takeBaseName path) tree
+  -- SDO.createDirectoryIfMissing True parent
+  -- putStrLn $ "tree': " ++ show tree'
+  writeTestTreeDir' lCfg parent tree'
 
-writeTestTreeDir lCfg root (Err {}) = return () -- TODO print a warning?
+writeTestTreeDir' :: LogCfg -> OsPath -> TestTree -> IO ()
+writeTestTreeDir' lCfg parent (Err {}) = return () -- TODO print a warning? write to the file?
 
-writeTestTreeDir lCfg root l@(Link {nodeData=nd}) = do
-  let path = root </> unName (name nd)
+writeTestTreeDir' lCfg parent l@(Link {nodeData=nd}) = do
+  let path = parent </> unName (name nd)
   assertNoFile lCfg path
   -- Target comes first, then the file we're writing (like `ln -s`)
   SDO.createFileLink (linkTarget l) path
   assertFile lCfg path
 
-writeTestTreeDir lCfg root (File {nodeData=nd, fileData = bs}) = do
-  -- SDO.createDirectoryIfMissing True root -- TODO remove
-  let path = root </> unName (name nd)
+writeTestTreeDir' lCfg parent (File {nodeData=nd, fileData = bs}) = do
+  SDO.createDirectoryIfMissing True parent -- TODO remove
+  let path = parent </> unName (name nd)
   assertNoFile lCfg path
   SFO.writeFile' path bs
   assertFile lCfg path
 
-writeTestTreeDir lCfg root (Dir {nodeData=nd, dirContents = cs}) = do
-  let root' = root </> unName (name nd)
-  assertNoFile lCfg root'
-  -- putStrLn $ "write test dir: " ++ show root'
-  SDO.createDirectoryIfMissing True root'
-  assertFile lCfg root'
-  mapM_ (writeTestTreeDir lCfg root') (sortContentsByName cs) -- TODO remove sort?
+writeTestTreeDir' lCfg parent (Dir {nodeData=nd, dirContents = cs}) = do
+  let root = parent </> unName (name nd)
+  -- assertNoFile lCfg root
+  -- putStrLn $ "write test dir: " ++ show root
+  SDO.createDirectoryIfMissing True root
+  assertFile lCfg root
+  mapM_ (writeTestTreeDir' lCfg root) (sortContentsByName cs) -- TODO remove sort?

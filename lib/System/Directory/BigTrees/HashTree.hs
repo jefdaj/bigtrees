@@ -183,21 +183,22 @@ roundtripTestTreeToActualTmpdir t =
 
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- encodeFS tmpDir
+    let tmpDir'' = tmpDir' </> (unName . treeName) t
     -- putStrLn $ "tmpDir': " ++ show tmpDir'
-    D.delay 100000
+    -- D.delay 100000
     -- let tmpRoot = tmpDir </> "round-trip-tests" -- TODO use root
     -- SD.createDirectoryIfMissing True tmpDir -- TODO False?
     -- SD.removePathForcibly tmpDir -- TODO remove
 
     -- This is a little confusing, but the FilePath here should be the *parent*
     -- within which to write the root tree dir...
-    writeTestTreeDir NoLog tmpDir' t
-    D.delay 100000
+    writeTestTreeDir NoLog tmpDir'' t
+    -- D.delay 100000
 
     -- ... but then when reading it back in we need the full path including the
     -- root tree dir name.
-    let treeRootDir = tmpDir' </> unName (treeName t)
-    readTestTree emptySearchConfig NoLog treeRootDir
+    -- let treeRootDir = tmpDir' </> unName (treeName t)
+    readTestTree emptySearchConfig NoLog tmpDir''
     -- parent <- readTestTree Nothing False [] tmpDir'
     -- return $ head $ dirContents parent
 
@@ -206,9 +207,9 @@ roundtripTestTreeToActualTmpdir t =
 prop_roundtrip_TestTree_to_actual_tmpdir :: Property
 prop_roundtrip_TestTree_to_actual_tmpdir = monadicIO $ do
   t1 <- pick arbitrary
-  run $ D.delay 100000
+  -- run $ D.delay 100000
   t2 <- run $ roundtripTestTreeToActualTmpdir t1
-  run $ D.delay 100000
+  -- run $ D.delay 100000
   -- unless (treeEqIgnoringModTime t1 t2) $ do
   --   run $ print t1
   --   run $ print t2
