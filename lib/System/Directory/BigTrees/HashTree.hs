@@ -138,12 +138,10 @@ prop_roundtrip_ProdTree_to_ByteString = monadicIO $ do
   t2 <- run $ K.withFileHandle knob "knob" ReadMode $ hReadTree cfg NoLog 4096
 
   -- TODO looks like once it's written once, it works. so issue is with Arbitrary instance?
-  unless (t1 == t2) $ do
-    run $ writeTree cfg NoLog [osp|/tmp/roundtrip-t1.bigtree|] t1
-    run $ writeTree cfg NoLog [osp|/tmp/roundtrip-t2.bigtree|] t2
+  -- unless (t1 == t2) $ do
+  --   run $ writeTree cfg NoLog [osp|/tmp/roundtrip-t1.bigtree|] t1
+  --   run $ writeTree cfg NoLog [osp|/tmp/roundtrip-t2.bigtree|] t2
 
-  --   run $ print t1
-  --   run $ print t2
   assert $ t2 == t1
 
 bench_roundtrip_ProdTree_to_bigtree_file :: Int -> IO ()
@@ -163,7 +161,9 @@ roundtripProdTreeToBigtreeFile t =
     writeTree cfg NoLog path' t -- TODO exclude defaultConfig?
     -- TODO come up with a better way to inspect intermediate versions here
     -- SDO.copyFile path' [osp|/tmp/roundtripfail.bigtree|]
-    readTree cfg NoLog path'
+    tree <- readTree cfg NoLog path'
+    -- prevent race condition between reading the tree and tmpdir cleanup:
+    evaluate $ force tree
 
 -- TODO fix failing assertion
 prop_roundtrip_ProdTree_to_bigtree_file :: Property
