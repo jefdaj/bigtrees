@@ -42,6 +42,7 @@ import Control.DeepSeq (NFData)
 import qualified Crypto.Hash as CH
 import Crypto.Hash.Algorithms (SHA256 (SHA256))
 import Crypto.Hash.IO (hashMutableFinalize, hashMutableInitWith, hashMutableUpdate)
+import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Char8 as B8
@@ -151,23 +152,24 @@ hashSymlinkTarget path = do
   let p' = takeDirectory path </> target
   hashFileContentsStreaming p'
 
+annexRegex :: String
+annexRegex = "^SHA256E-[a-z0-9]{2,}--([0-9a-f]{64})(\\..*)?"
+
 -- TODO Was the .git/annex/objects prefix important?
 --      If not, don't want to make matching the actual content files any harder by adding it
 looksLikeAnnexPath :: FilePath -> Bool
-looksLikeAnnexPath p = (takeFileName p) =~ regex
-  where
-    -- TODO check that this isn't missing any variations
-    regex = "^SHA256E-[a-z0-9]{2,}--[0-9a-f]{64}(\\..*)?$" :: String
+looksLikeAnnexPath p = takeFileName p =~ annexRegex
 
--- Tests that this looks like an annex path, then returns the implied sha256sum.
--- TODO proper fmap idiom here
--- TODO extract a match from the regex rather than separately here
 hashFromAnnexPath :: OsPath -> IO (Maybe Hash)
 hashFromAnnexPath p = do
   p' <- decodeFS p
-  return $ if looksLikeAnnexPath p' then Just $ pHash p' else Nothing
+  return $ case takeFileName p' =~ annexRegex :: (String, String, String, [String]) of
+    (_, _, _, (hexHash:_)) -> hexToHash hexHash
+    _ -> Nothing
   where
-    pHash = Hash . compress . B.pack . last . splitOn "--" . head . splitOn "." . takeFileName
+    hexToHash hexStr = case B16.decode (B.pack hexStr) of
+      Right rawBytes -> Just $ Hash $ compress rawBytes
+      Left _ -> Nothing
 
 -- see: https://stackoverflow.com/a/30537010
 -- hashFileContents :: OsPath -> IO Hash
@@ -196,7 +198,7 @@ hashFile _ path = hashFileContentsStreaming path
 -----------
 
 unit_hash_ByteString :: Assertion
-unit_hash_ByteString = unHash (hashBytes "a bytestring") @=? "YTI3MDBmODFhZWE2ZjBm"
+unit_hash_ByteString = unHash (hashBytes "a bytestring") @=? "onAPga6m8Ps7d7/B4JtNgsyiXIua3ReR"
 
 -- TODO clean up tmpfile handling here
 unit_hash_empty_file :: Assertion
@@ -205,7 +207,7 @@ unit_hash_empty_file = do
   f' <- encodeFS f
   h <- hashFile NoLog f'
   SDO.removePathForcibly f'
-  unHash h @=? "ZTNiMGM0NDI5OGZjMWMx"
+  unHash h @=? "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NM"
 
 -- TODO clean up tmpfile handling here
 unit_hash_file_contents :: Assertion
@@ -216,13 +218,13 @@ unit_hash_file_contents = do
   f' <- encodeFS f
   h <- hashFile NoLog f'
   SDO.removePathForcibly f'
-  unHash h @=? "MTVjMzcwNmJjODQzYTg0"
+  unHash h @=? "FcNwa8hDqEVI6l8dN9p7yF6XH+besIn2"
 
 -- TODO should the source code really be used this way?
 unit_hash_image :: Assertion
 unit_hash_image = do
   h <- hashFile NoLog [OSP.osp|docs/src/images/bigtrees.png|]
-  unHash h @=? "NzdkN2M0OGYxZGViOTY5"
+  unHash h @=? "d9fEjx3rlpQ9pDDYJIBAFSXd0jMiZ5HS"
 
 -- TODO unit_hash_dir
 -- TODO unit_hash_dir_random_filenames

@@ -17,6 +17,7 @@ dependencies:
 - aeson-pretty
 - attoparsec
 - base
+- base16-bytestring
 - base64-bytestring
 - bytestring
 - case-insensitive

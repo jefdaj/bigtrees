@@ -53,6 +53,7 @@ library
     , aeson-pretty
     , attoparsec
     , base
+    , base16-bytestring
     , base64-bytestring
     , bytestring
     , case-insensitive
@@ -133,6 +134,7 @@ executable bigtrees
     , aeson-pretty
     , attoparsec
     , base
+    , base16-bytestring
     , base64-bytestring
     , bigtrees
     , bytestring
@@ -217,6 +219,7 @@ test-suite test-app
     , aeson-pretty
     , attoparsec
     , base
+    , base16-bytestring
     , base64-bytestring
     , bigtrees
     , bytestring
@@ -303,6 +306,7 @@ test-suite test-lib
     , aeson-pretty
     , attoparsec
     , base
+    , base16-bytestring
     , base64-bytestring
     , bigtrees
     , bytestring
@@ -407,6 +411,7 @@ benchmark test-bench
     , aeson-pretty
     , attoparsec
     , base
+    , base16-bytestring
     , base64-bytestring
     , bigtrees
     , bytestring
