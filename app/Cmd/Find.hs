@@ -29,7 +29,7 @@ import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogCont
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
-import System.Directory.BigTrees.Util (SafeProperty(..))
+import System.Directory.BigTrees.Util (propertyWithExceptions)
 
 cmdFind :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdFind cfg lCfg path = do
@@ -83,7 +83,7 @@ cmdFindUnixFind lCfg t =
     out2 <- readAndSortLines unixOutput
     return (out1, out2)
 
-prop_cmdFind_paths_match_unix_find :: SafeProperty TestTree
-prop_cmdFind_paths_match_unix_find = SafeProperty $ \tree -> do
-  (out1, out2) <- cmdFindUnixFind NoLog tree
-  return $ out1 == out2
+prop_cmdFind_paths_match_unix_find :: Property
+prop_cmdFind_paths_match_unix_find = propertyWithExceptions
+  (cmdFindUnixFind NoLog)
+  (\_ (a,b) -> a == b) -- takes input and output, compares fst and snd of output

@@ -35,7 +35,7 @@ module System.Directory.BigTrees.Util
 
   , sbs2b8
 
-  , SafeProperty(..)
+  , propertyWithExceptions
 
   )
   where
@@ -64,9 +64,9 @@ import Debug.Trace
 import System.OsPath (decodeFS)
 import System.Posix.Files (fileBlockSize, getFileStatus)
 import Test.HUnit (Assertion, (@=?))
-import Test.QuickCheck (Arbitrary (..), Gen, Property, Testable, property, ioProperty, forAll, listOf, oneof, suchThat)
+import Test.QuickCheck -- (Arbitrary (..), Gen, Property, Testable, property, ioProperty, forAll, listOf, oneof, suchThat)
 import Test.QuickCheck.Instances ()
-import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import Test.QuickCheck.Monadic -- (assert, monadicIO, pick, run)
 import TH.Derive (Deriving, derive)
 
 
@@ -292,20 +292,16 @@ getBlockSize path = do
   stat <- getFileStatus =<< decodeFS path
   return $ maybe 4096 toInteger (fileBlockSize stat)
 
---- catch exceptions during tests ---
+--- catch exceptions during tests without disrupting shrinking ---
 
-newtype SafeProperty a = SafeProperty (a -> IO Bool)
-
-instance (Show a, Arbitrary a) => Testable (SafeProperty a) where
-  property (SafeProperty action) = forAll arbitrary $ \input -> ioProperty $ do
-    result <- try (action input)
-    case result of
-      Left ex -> do
-        -- TODO can this use logging or verbosity? or just be commented out most of the time?
-        putStrLn $ "Property threw " ++ show (ex :: SomeException)
-        putStrLn $ "Input was: " ++ show input
-        return False
-      Right success -> return success
+propertyWithExceptions :: (Show a, Arbitrary a) => (a -> IO b) -> (a -> b -> Bool) -> Property
+propertyWithExceptions action predicate = property $ \input -> monadicIO $ do
+  result <- run $ try (action input)
+  case result of
+    Left ex -> do
+      monitor (counterexample $ "Exception: " ++ show (ex :: SomeException))
+      assert False
+    Right output -> assert (predicate input output)
 
 
 --- old code ---

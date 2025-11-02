@@ -51,7 +51,6 @@ module System.Directory.BigTrees.HashTree
   , unit_roundtrip_Err_to_bigtree_file
   , unit_buildProdTree_catches_permission_error
   , bench_roundtrip_ProdTree_to_bigtree_file
-  , prop_roundtrip_debug
 
   )
   where
@@ -92,7 +91,7 @@ import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
 import qualified Test.HUnit as HU
 
-import System.Directory.BigTrees.Util (SafeProperty(..))
+import System.Directory.BigTrees.Util (propertyWithExceptions)
 
 -- import qualified Data.ByteString.Char8 as B
 import Text.Pretty.Simple (pPrint)
@@ -191,10 +190,11 @@ roundtripTestTreeToActualTmpdir tree =
     -- parent <- readTestTree Nothing False [] tmpDir'
     -- return $ head $ dirContents parent
 
-prop_roundtrip_TestTree_to_actual_tmpdir :: SafeProperty TestTree
-prop_roundtrip_TestTree_to_actual_tmpdir = SafeProperty $ \t1 -> do
-  t2 <- roundtripTestTreeToActualTmpdir t1
-  return $ treeEqIgnoringModTime t1 t2
+prop_roundtrip_TestTree_to_actual_tmpdir :: Property
+prop_roundtrip_TestTree_to_actual_tmpdir =
+  propertyWithExceptions
+    roundtripTestTreeToActualTmpdir
+    treeEqIgnoringModTime
 
 unit_tree_from_bad_path_is_Err :: HU.Assertion
 unit_tree_from_bad_path_is_Err =
@@ -232,14 +232,14 @@ unit_buildProdTree_catches_permission_error = do
       = "permission denied" `isInfixOf` m -- TODO add back check for name == badName?
     errLooksRight _ = False
 
-prop_roundtrip_debug :: Property
-prop_roundtrip_debug =
-  forAllShrink arbitrary shrink $ \t1 ->
-    counterexample ("Testing with: " ++ show t1) $
-    ioProperty $ do
-      result <- try (roundtripTestTreeToActualTmpdir t1)
-      case result of
-        Left ex -> do
-          putStrLn $ "Exception: " ++ show (ex :: SomeException)
-          return False
-        Right t2 -> return $ treeEqIgnoringModTime t1 t2
+-- prop_roundtrip_debug :: Property
+-- prop_roundtrip_debug =
+--   forAllShrink arbitrary shrink $ \t1 ->
+--     counterexample ("Testing with: " ++ show t1) $
+--     ioProperty $ do
+--       result <- try (roundtripTestTreeToActualTmpdir t1)
+--       case result of
+--         Left ex -> do
+--           putStrLn $ "Exception: " ++ show (ex :: SomeException)
+--           return False
+--         Right t2 -> return $ treeEqIgnoringModTime t1 t2
