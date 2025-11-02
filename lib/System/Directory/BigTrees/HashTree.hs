@@ -51,6 +51,7 @@ module System.Directory.BigTrees.HashTree
   , unit_roundtrip_Err_to_bigtree_file
   , unit_buildProdTree_catches_permission_error
   , bench_roundtrip_ProdTree_to_bigtree_file
+  , prop_roundtrip_debug
 
   )
   where
@@ -66,6 +67,7 @@ import qualified System.Directory.OsPath as SDO
 import System.OsPath (OsPath, encodeFS, osp, (</>))
 -- import System.FilePath.Glob (Pattern)
 import Control.Monad (unless)
+import Control.Exception.Safe (try, SomeException)
 import qualified System.FilePath as SF
 import System.IO (IOMode (..), hClose, withBinaryFile)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
@@ -229,3 +231,15 @@ unit_buildProdTree_catches_permission_error = do
     errLooksRight e@(Err { errName = n, errMsg = ErrMsg m})
       = "permission denied" `isInfixOf` m -- TODO add back check for name == badName?
     errLooksRight _ = False
+
+prop_roundtrip_debug :: Property
+prop_roundtrip_debug =
+  forAllShrink arbitrary shrink $ \t1 ->
+    counterexample ("Testing with: " ++ show t1) $
+    ioProperty $ do
+      result <- try (roundtripTestTreeToActualTmpdir t1)
+      case result of
+        Left ex -> do
+          putStrLn $ "Exception: " ++ show (ex :: SomeException)
+          return False
+        Right t2 -> return $ treeEqIgnoringModTime t1 t2

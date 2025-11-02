@@ -307,8 +307,10 @@ instance Arbitrary TestTree where
       -- else arbitraryFile
 
   shrink :: TestTree -> [TestTree]
-  -- shrink tree = structuralShrinks ++ oldShrinks
   shrink t = shrinkTreeStructure t ++ shrinkTreeContents t ++ shrinkTreeName t
+  -- shrink t =
+  --   let shrunk = shrinkTreeStructure t ++ shrinkTreeContents t ++ shrinkTreeName t
+  --   in trace ("Shrinking: " ++ show (length shrunk) ++ " candidates") shrunk
 
 -- only shrinks the filename
 shrinkTreeName :: TestTree -> [TestTree]

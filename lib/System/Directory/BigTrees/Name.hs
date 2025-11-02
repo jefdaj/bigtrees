@@ -171,7 +171,7 @@ instance Arbitrary Name where
     len <- chooseInt (1, 255) -- max filename length on most systems
     bytes <- vectorOf len $ elements validFilenameBytes
     let name = bytes2n bytes
-    if isValidName (unName name)
+    if isValidName name
       then pure name
       else arbitrary  -- retry if we got "." or ".."
 
@@ -180,14 +180,17 @@ instance Arbitrary Name where
         bytes = SBS.unpack sbs
         shorterBytes = filter (not . null) $ shrink bytes
         candidateNames = [bytes2n bs | bs <- shorterBytes]
-    in filter (isValidName . unName) candidateNames  -- filter shrunk results too
+    in filter isValidName candidateNames  -- filter shrunk results too
 
-isValidName :: SOS.OsString -> Bool
-isValidName osStr =
-  let sbs = SOS.getPosixString (SOS.getOsString osStr) -- TODO is this == n2sbs without Name?
-  in not (SBS.null sbs)           -- not empty
-     && sbs /= SBS.pack [46]      -- not "."
-     && sbs /= SBS.pack [46, 46]  -- not ".."
+isValidName :: Name -> Bool
+isValidName name =
+  -- let sbs = SOS.getPosixString (SOS.getOsString osStr) -- TODO is this == n2sbs without Name?
+  -- let sbs = _ name
+  let sbs = n2bytes name
+  in not (null sbs) -- not empty
+     && all isValidFilenameByte sbs
+     && sbs /= [46]      -- not "."
+     && sbs /= [46, 46]  -- not ".."
 
 
 -- * Convert paths to/from names
@@ -202,6 +205,9 @@ isValidName osStr =
 
 bytes2n :: [Word8] -> Name
 bytes2n bs = Name $ SOS.OsString $ SOS.PosixString $ SBS.pack bs
+
+n2bytes :: Name -> [Word8]
+n2bytes = SBS.unpack . SOS.getPosixString . SOS.getOsString . unName
 
 n2op :: Name -> SOS.OsString
 n2op = unName
@@ -226,9 +232,9 @@ fp2n :: FilePath -> IO (Either String Name)
 fp2n fp = do
   ns <- fp2ns fp -- TODO catch error here and wrap it in Left too
   return $ case ns of
-    []       -> Left "fp2n with null path"
-    [Name n] -> if isValidName n then Right (Name n) else Left $ "invalid name: " ++ show n
-    ns       -> Left "fp2n with slash in path"
+    []  -> Left "fp2n with null path"
+    [n] -> if isValidName n then Right n else Left $ "invalid name: " ++ show n
+    ns  -> Left "fp2n with slash in path"
 
 -- | Convert a `FilePath` to a list of `Name`s using the current filesystem's encoding.
 -- TODO or explain why the conversion failed?
