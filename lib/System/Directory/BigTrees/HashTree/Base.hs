@@ -24,7 +24,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2bs)
 import System.Info (os)
 import System.OsPath (OsPath)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat, vectorOf)
 import TH.Derive (Deriving, derive)
 
 -- import Debug.Trace
@@ -264,12 +264,22 @@ arbitraryFile = do
       }
     }
 
-arbitraryDirSized :: Int -> Gen TestTree
-arbitraryDirSized arbsize = do
-  n  <- arbitrary :: Gen Name
+arbitraryDirWithShape :: Double -> Gen TestTree  -- just widthBias
+arbitraryDirWithShape widthBias = sized $ \totalSize -> do
+  n <- arbitrary :: Gen Name
+
+  -- Allocate size budget between width and depth
+  let widthBudget = floor (fromIntegral totalSize * widthBias)
+      depthBudget = totalSize - widthBudget
+
+  numChildren <- choose (0, min widthBudget 20)  -- reasonable cap
+
+  let childSize = if numChildren == 0 then 0 else depthBudget `div` numChildren
+  !cs <- nubBy duplicateNames <$>
+         vectorOf numChildren (resize childSize arbitrary)
 
   -- TODO why does lowering the resize factor here to 2 cause giant failing test trees?
-  !cs <- nubBy duplicateNames <$> resize (arbsize `div` 16) (arbitrary :: Gen [TestTree])
+  -- !cs <- nubBy duplicateNames <$> resize (arbsize `div` 16) (arbitrary :: Gen [TestTree])
 
   let cs' = sortContentsByName cs
   !mt <- arbitrary :: Gen ModTime
@@ -286,6 +296,12 @@ arbitraryDirSized arbsize = do
       }
     }
 
+-- Usage in tests:
+-- prop_wide_trees = forAll (arbitraryDirWithShape 0.8) roundTripTest    -- 80% budget to width
+-- prop_deep_trees = forAll (arbitraryDirWithShape 0.2) roundTripTest    -- 80% budget to depth
+-- prop_balanced = forAll (arbitraryDirWithShape 0.5) roundTripTest      -- 50/50 split
+
+
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
 -- same arbitrary bytestring for the file content and its hash
 instance Arbitrary TestTree where
@@ -297,7 +313,8 @@ instance Arbitrary TestTree where
 
     if arbsize < 2 -- TODO can it go below 1?
       then arbitraryFile -- TODO also Link, Error etc?
-      else arbitraryDirSized arbsize
+      -- else arbitraryDirSized arbsize
+      else arbitraryDirWithShape 0.5
 
     -- n <- arbitrary :: Gen Name
     -- TODO there's got to be a better way, right?
