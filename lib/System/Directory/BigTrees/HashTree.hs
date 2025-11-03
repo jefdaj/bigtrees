@@ -69,7 +69,7 @@ import Control.Exception (evaluate)
 import Control.Exception.Safe (SomeException, try)
 import Control.Monad (unless)
 import qualified System.FilePath as SF
-import System.IO (IOMode (..), hClose, withBinaryFile)
+import System.IO (IOMode (..), withBinaryFile)
 import System.IO.Temp (withSystemTempDirectory, withSystemTempFile)
 import Test.QuickCheck
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
@@ -93,6 +93,7 @@ import System.Process (cwd, proc, readCreateProcess)
 import qualified Test.HUnit as HU
 
 import System.Directory.BigTrees.Util (propertyWithExceptions)
+import System.Directory.BigTrees.Util (getBlockSize)
 
 -- import qualified Data.ByteString.Char8 as B
 import Text.Pretty.Simple (pPrint)
@@ -155,16 +156,20 @@ bench_roundtrip_ProdTree_to_bigtree_file n = do
 roundtripProdTreeToBigtreeFile :: ProdTree -> IO ProdTree
 roundtripProdTreeToBigtreeFile t =
   withSystemTempFile "bigtrees" $ \path hdl -> do
-    path' <- encodeFS path
-    hClose hdl
-    let cfg = emptySearchConfig
-    writeTree cfg NoLog path' t -- TODO exclude defaultConfig?
-    -- TODO come up with a better way to inspect intermediate versions here
-    -- SDO.copyFile path' [osp|/tmp/roundtripfail.bigtree|]
-    tree <- readTree cfg NoLog path'
 
-    -- prevent race condition between reading the tree and tmpdir cleanup:
-    -- TODO remove? check if still needed after fixing round-trip below
+    let cfg = emptySearchConfig
+    hWriteTree cfg NoLog hdl t
+
+    -- TODO come up with a better way to inspect intermediate versions here
+    -- SDO.copyFile ospPath [osp|/tmp/roundtripfail.bigtree|]
+    -- tree <- readTree cfg NoLog ospPath
+
+    ospPath <- encodeFS path
+    blksize <- getBlockSize ospPath -- TODO just use some default here?
+    tree <- hReadTree cfg NoLog blksize hdl
+
+    -- prevent race condition between reading the tree and tmpdir cleanup
+    -- TODO check if still needed after fixing round-trip errors
     evaluate $ force tree
 
 -- TODO why is this failing but only very rarely? ~1 in 10-100K tests
