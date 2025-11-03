@@ -26,7 +26,7 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), Pr
                                                 hashDirContents, sortContentsByName, treeModTime,
                                                 treeNBytes, treeNNodes, treeName)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
-import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), addLogContext, log)
+import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), addLogContext, log, logUnsafe)
 import System.Directory.BigTrees.Name
 import qualified System.Directory.Internal as SDI
 import qualified System.Directory.OsPath as SDO
@@ -273,8 +273,14 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   -- this works, but doesn't affect memory usage:
   -- subTrees <- (if depth > 10 then M.forM else P.forM) cs hashSubtree
 
+  let debug = logUnsafe (addLogContext lCfg "buildTree'") DebugL -- TODO .Dir in context?
+
   subTrees <- P.forM cs' hashSubtree
-  let subTrees' = sortContentsByName subTrees
+  let subTrees' =
+        let cs = sortContentsByName subTrees
+            names = map treeName cs
+            msg = "'" <> op2bs root <> "' contents: " <> B8.pack (show names)
+        in debug msg cs -- TODO add hash to help find the relevant ones?
 
   -- csByH = sortBy (compare `on` hash) subTrees' -- no memory difference
 
