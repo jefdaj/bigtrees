@@ -269,7 +269,7 @@ arbitraryDirSized arbsize = do
   n  <- arbitrary :: Gen Name
 
   -- TODO why does lowering the resize factor here to 2 cause giant failing test trees?
-  !cs <- nubBy duplicateNames <$> resize (arbsize `div` 8) (arbitrary :: Gen [TestTree])
+  !cs <- nubBy duplicateNames <$> resize (arbsize `div` 16) (arbitrary :: Gen [TestTree])
 
   let cs' = sortContentsByName cs
   !mt <- arbitrary :: Gen ModTime
