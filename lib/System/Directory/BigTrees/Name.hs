@@ -103,6 +103,7 @@ import qualified System.OsPath.Internal as SOPI
 import qualified System.OsString as SOS
 import qualified System.OsString.Internal.Types as SOS
 import Test.QuickCheck.Instances.ByteString
+import qualified System.OsString.Posix as Posix
 
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
@@ -113,6 +114,7 @@ import Data.Attoparsec.Combinator (lookAhead, option, sepBy')
 import Data.Word (Word8)
 import System.OsPath (OsPath)
 
+import Data.Char (chr, isPrint)
 
 -- | An element in a FilePath. My `Name` type is defined as `OsPath` for
 -- efficiency, but what it really means is "OsPath without slashes". Based on
@@ -126,9 +128,25 @@ newtype Name
 
 deriving instance NFData Name
 
--- A hack to get Tasty to print usable test failures without garbling the Names by `show`ing them.
+-- A hack to get Tasty to print usable test failures without garbling the Names
 instance Show Name where
-  show name = "(b64Name \"" ++ B8.unpack (B64.encode $ n2bs name) ++ "\")"
+  show n@(Name osStr) =
+    if not (isSafeToShow n) then b64Show n
+    else case Posix.decodeUtf (SOS.getOsString osStr) of
+           Left  _   -> b64Show n -- Decoding failed, use base64
+           Right str -> show str  -- Safe UTF-8, show normally
+    where
+      b64Show name = "(b64Name \"" ++ B8.unpack (B64.encode $ n2bs name) ++ "\")"
+
+-- Check if a Name is safe to display normally
+-- (If not, it will need to be base-64 encoded)
+isSafeToShow :: Name -> Bool
+isSafeToShow name = BS.all isSafeWord8 $ n2bs name
+  where
+    isSafeWord8 :: Word8 -> Bool
+    isSafeWord8 w =
+      let c = chr (fromIntegral w)
+      in isPrint c && w < 128 && w /= 92  -- 92 is backslash
 
 -- Helper for the Show hack.
 -- Example usage:
