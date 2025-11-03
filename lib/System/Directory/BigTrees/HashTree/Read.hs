@@ -10,12 +10,13 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.List (partition, sortBy)
+import System.Directory.BigTrees.Hash (prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), ModTime (..),
                                            NBytes (..), NNodes (..), TreeType (..),
                                            hParseTreeFileRev, hashLineP, linesP, nullBreakP,
                                            parseHashLine, parseTreeFileRev)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree, TestTree,
-                                                sortContentsByName, treeNNodes, treeName)
+                                                sortContentsByName, treeNNodes, treeName, logDirContents)
 import System.Directory.BigTrees.HashTree.Build (buildTree)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Name (Name (..), n2bs)
@@ -205,9 +206,12 @@ accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t o
   -- TODO or is it unnecessary and slowing things down?
   D -> let (children, siblings) = partitionChildrenSiblings i cs
            children' = sortContentsByName $ map snd children -- TODO remove?
+           desc = prettyHash h <> " '" <> n2bs p <> "'"
+           lCfg' = addLogContext lCfg "accTrees"
+           cs' = logDirContents lCfg' DebugL desc children' children'
            recurse = accRecurseChildren cfg lCfg hl
            dir = Dir
-                   { dirContents = {-# SCC "DdirContents" #-} if recurse then children' else []
+                   { dirContents = {-# SCC "DdirContents" #-} if recurse then cs' else []
                    , nNodes = nn
                    , nodeData = {-# SCC "DNodeData" #-} NodeData
                      { name = p

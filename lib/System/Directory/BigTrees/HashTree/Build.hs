@@ -24,7 +24,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..)
                                            simplifyErrMsg)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
                                                 hashDirContents, sortContentsByName, treeModTime,
-                                                treeNBytes, treeNNodes, treeName)
+                                                treeNBytes, treeNNodes, treeName, logDirContents)
 import System.Directory.BigTrees.HashTree.Search (SearchConfig (..))
 import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), addLogContext, log, logUnsafe)
 import System.Directory.BigTrees.Name
@@ -276,11 +276,11 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   let debug = logUnsafe (addLogContext lCfg "buildTree'") DebugL -- TODO .Dir in context?
 
   subTrees <- P.forM cs' hashSubtree
-  let subTrees' =
-        let cs = sortContentsByName subTrees
-            names = map treeName cs
-            msg = "'" <> op2bs root <> "' contents: " <> B8.pack (show names)
-        in debug msg cs -- TODO add hash to help find the relevant ones?
+  let subTrees' = sortContentsByName subTrees
+      -- Note that we *don't* want the hash in desc because it would force evaluation!
+      desc = "'" <> op2bs root <> "'"
+      lCfg' = addLogContext lCfg "buildTree'"
+      subTrees'' = logDirContents lCfg' DebugL desc subTrees' subTrees'
 
   -- csByH = sortBy (compare `on` hash) subTrees' -- no memory difference
 
@@ -290,13 +290,13 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   s  <- getFileDirNBytes root
 
   return $ Dir
-            { dirContents = subTrees'
-            , nNodes  = sum $ 1 : map treeNNodes subTrees'
+            { dirContents = subTrees''
+            , nNodes  = sum $ 1 : map treeNNodes subTrees''
             , nodeData = NodeData
               { name     = Name n
-              , modTime  = maximum $ mt : map treeModTime subTrees'
-              , nBytes   = sum $ s : map treeNBytes subTrees'
-              , hash     = hashDirContents subTrees'
+              , modTime  = maximum $ mt : map treeModTime subTrees''
+              , nBytes   = sum $ s : map treeNBytes subTrees''
+              , hash     = hashDirContents subTrees''
               }
             }
 

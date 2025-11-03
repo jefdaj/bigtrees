@@ -22,6 +22,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..
                                            ModTime (..), NBytes (..), NNodes (..), TreeType (..),
                                            bsBytes)
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2bs)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), logUnsafe)
 import System.Info (os)
 import System.OsPath (OsPath)
 import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat, vectorOf, oneof)
@@ -367,3 +368,14 @@ confirmFileHashes (Link {linkData = l, nodeData=nd}) =
 
 prop_confirm_file_hashes :: TestTree -> Bool
 prop_confirm_file_hashes = confirmFileHashes
+
+-- Note that in my usage, contents is passed twice because it's also the return value
+-- TODO add hash to help when grepping for particular lines in a large log?
+-- TODO is there a more elegant thing to take than "description"? maybe hash + root name?
+-- TODO take a single Dir tree rather than separate root and contents?
+logDirContents :: LogCfg -> LogLevel -> B8.ByteString -> [HashTree a] -> b -> b
+logDirContents lCfg lLevel desc contents rtn = log' msg rtn
+  where
+    log' = logUnsafe lCfg lLevel -- TODO .Dir in context?
+    names = map treeName contents
+    msg = desc <> " contents: " <> B8.pack (show names)
