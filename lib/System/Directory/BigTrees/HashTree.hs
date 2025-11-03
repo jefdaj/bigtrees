@@ -162,10 +162,12 @@ roundtripProdTreeToBigtreeFile t =
     -- TODO come up with a better way to inspect intermediate versions here
     -- SDO.copyFile path' [osp|/tmp/roundtripfail.bigtree|]
     tree <- readTree cfg NoLog path'
+
     -- prevent race condition between reading the tree and tmpdir cleanup:
+    -- TODO remove? check if still needed after fixing round-trip below
     evaluate $ force tree
 
--- TODO fix failing assertion
+-- TODO why is this failing but only very rarely? ~1 in 10-100K tests
 prop_roundtrip_ProdTree_to_bigtree_file :: Property
 prop_roundtrip_ProdTree_to_bigtree_file = monadicIO $ do
   t1 <- pick arbitrary
