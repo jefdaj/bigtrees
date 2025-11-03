@@ -24,7 +24,7 @@ import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..
 import System.Directory.BigTrees.Name (Name (..), fp2n, n2bs)
 import System.Info (os)
 import System.OsPath (OsPath)
-import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat, vectorOf)
+import Test.QuickCheck (Arbitrary (..), Gen, choose, resize, sized, suchThat, vectorOf, oneof)
 import TH.Derive (Deriving, derive)
 
 -- import Debug.Trace
@@ -264,22 +264,19 @@ arbitraryFile = do
       }
     }
 
-arbitraryDirWithShape :: Double -> Gen TestTree  -- just widthBias
-arbitraryDirWithShape widthBias = sized $ \totalSize -> do
+arbitraryDir :: Int -> Double -> Gen TestTree
+arbitraryDir maxChildren widthBias = sized $ \totalSize -> do
   n <- arbitrary :: Gen Name
 
   -- Allocate size budget between width and depth
   let widthBudget = floor (fromIntegral totalSize * widthBias)
       depthBudget = totalSize - widthBudget
 
-  numChildren <- choose (0, min widthBudget 20)  -- reasonable cap
+  numChildren <- choose (0, min widthBudget maxChildren)
 
   let childSize = if numChildren == 0 then 0 else depthBudget `div` numChildren
   !cs <- nubBy duplicateNames <$>
          vectorOf numChildren (resize childSize arbitrary)
-
-  -- TODO why does lowering the resize factor here to 2 cause giant failing test trees?
-  -- !cs <- nubBy duplicateNames <$> resize (arbsize `div` 16) (arbitrary :: Gen [TestTree])
 
   let cs' = sortContentsByName cs
   !mt <- arbitrary :: Gen ModTime
@@ -296,32 +293,24 @@ arbitraryDirWithShape widthBias = sized $ \totalSize -> do
       }
     }
 
--- Usage in tests:
--- prop_wide_trees = forAll (arbitraryDirWithShape 0.8) roundTripTest    -- 80% budget to width
--- prop_deep_trees = forAll (arbitraryDirWithShape 0.2) roundTripTest    -- 80% budget to depth
--- prop_balanced = forAll (arbitraryDirWithShape 0.5) roundTripTest      -- 50/50 split
-
+-- TODO what should the bias and maxPossible bounds be?
+metaArbitraryDir :: Gen TestTree
+metaArbitraryDir = sized $ \arbsize -> do
+  bias <- choose (0.01, 0.99)
+  let maxPossible = max 1 $ min 20 $ arbsize `div` 2
+  maxChildren <- choose (0, maxPossible)
+  arbitraryDir maxChildren bias
 
 -- This is specialized to (HashTree B8.ByteString) because it needs to use the
 -- same arbitrary bytestring for the file content and its hash
 instance Arbitrary TestTree where
 
+  -- TODO also include errors?
   arbitrary :: Gen TestTree
-  arbitrary = sized $ \arbsize -> do
-
-    -- TODO should `Err`s be one of the choices here?
-
-    if arbsize < 2 -- TODO can it go below 1?
-      then arbitraryFile -- TODO also Link, Error etc?
-      -- else arbitraryDirSized arbsize
-      else arbitraryDirWithShape 0.5
-
-    -- n <- arbitrary :: Gen Name
-    -- TODO there's got to be a better way, right?
-    -- i <- choose (0,5 :: Int)
-    -- if i == 0
-      -- then arbitraryDirSized s
-      -- else arbitraryFile
+  arbitrary = oneof
+    [ arbitraryFile
+    , metaArbitraryDir
+    ]
 
   shrink :: TestTree -> [TestTree]
   shrink t = shrinkTreeStructure t ++ shrinkTreeContents t ++ shrinkTreeName t
