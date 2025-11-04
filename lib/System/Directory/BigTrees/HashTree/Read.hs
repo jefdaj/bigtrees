@@ -25,7 +25,7 @@ import System.Directory.BigTrees.Util (getBlockSize, hTakePrevUntil)
 import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
-                                         endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
+                                         endOfLine, isEndOfLine, manyTill, parseOnly, sepBy')
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes, fromJust)
@@ -163,6 +163,7 @@ accTrees cfg lCfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
     then (d, Err { errMsg = m, errName = n }):cs
     else cs
 
+-- TODO error case here!
 accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
 
   F -> let f = File
@@ -204,7 +205,7 @@ accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t o
 
   -- TODO was the sorting here important?
   -- TODO or is it unnecessary and slowing things down?
-  D -> let (children, others) = partitionChildrenSiblings i cs
+  D -> let (children, others) = partitionChildren lCfg desc i cs
            children' = sortContentsByName $ map snd children -- TODO fwd sort here?
            desc = prettyHash h <> " '" <> n2bs p <> "'"
            lCfg' = addLogContext lCfg "accTrees"
@@ -226,10 +227,30 @@ accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t o
 
 -- others will be siblings flattened along with their children recursively, so
 -- it's important not to mess up the order by sorting them. children can be sorted.
-partitionChildrenSiblings i cs = (children, others)
+partitionChildren
+  :: LogCfg -> B8.ByteString -> Int -> [(Depth, HashTree a)]
+  -> ( [(Depth, HashTree a)]
+     , [(Depth, HashTree a)]
+     )
+partitionChildren lCfg desc i cs = debug (B8.pack msg) (children', others)
   where
     children = takeWhile (\(Depth i2, _) -> i2 > i) cs
     others   = drop (length children) cs
+    debug    = logUnsafe (addLogContext lCfg "partitionChildren") DebugL
+    logE     = logUnsafe (addLogContext lCfg "partitionChildren") ErrorL
+    infoPair (Depth i2, c) = (i2, treeName c)
+    childInfo = map infoPair children
+    otherInfo = map infoPair $ take 3 others
+    msg = B8.unpack desc ++ " (depth " ++ show i ++ ") " ++
+          "children: " ++ show childInfo ++
+          " others: " ++ show otherInfo ++
+	  (if length others > 3 then "..." else "")
+    msg2 = "Bad child node depth! " ++
+	   B8.unpack desc ++ " (depth " ++ show i ++ ") " ++
+           "children: " ++ show childInfo
+    children' = if null children || (fst . head) children == (Depth i+1)
+                  then children
+		  else logE (B8.pack msg2) children
 
 readTestTree :: SearchConfig -> LogCfg -> OsPath -> IO TestTree
 readTestTree cfg lCfg = buildTree cfg SFO.readFile' lCfg
