@@ -68,7 +68,8 @@ initLogger initialContext minLogLevel = do
 -- This should be sprinkled around sections where ordering of the log lines is
 -- more important than performance.
 flushLogger :: LogCfg -> IO ()
-flushLogger = flushLogStr . lcLogger
+flushLogger NoLog = return ()
+flushLogger lCfg = flushLogStr $ lcLogger lCfg
 
 cleanupLogger :: LogCfg -> IO ()
 cleanupLogger NoLog = return ()
