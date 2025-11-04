@@ -204,7 +204,7 @@ hashFile _ path = hashFileContentsStreaming path
 -----------
 
 unit_hash_ByteString :: Assertion
-unit_hash_ByteString = unHash (hashBytes "a bytestring") @=? "onAPga6m8Ps7d7/B4JtNgsyiXIua3ReR"
+unit_hash_ByteString = unHash (hashBytes "a bytestring") @=? "onAPga6m8Ps7d7/B4JtNgs"
 
 -- TODO clean up tmpfile handling here
 unit_hash_empty_file :: Assertion
@@ -213,7 +213,7 @@ unit_hash_empty_file = do
   f' <- encodeFS f
   h <- hashFile NoLog f'
   SDO.removePathForcibly f'
-  unHash h @=? "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NM"
+  unHash h @=? "47DEQpj8HBSa+/TImW+5JC"
 
 -- TODO clean up tmpfile handling here
 unit_hash_file_contents :: Assertion
@@ -224,13 +224,13 @@ unit_hash_file_contents = do
   f' <- encodeFS f
   h <- hashFile NoLog f'
   SDO.removePathForcibly f'
-  unHash h @=? "FcNwa8hDqEVI6l8dN9p7yF6XH+besIn2"
+  unHash h @=? "FcNwa8hDqEVI6l8dN9p7yF"
 
 -- TODO should the source code really be used this way?
 unit_hash_image :: Assertion
 unit_hash_image = do
   h <- hashFile NoLog [OSP.osp|docs/src/images/bigtrees.png|]
-  unHash h @=? "d9fEjx3rlpQ9pDDYJIBAFSXd0jMiZ5HS"
+  unHash h @=? "d9fEjx3rlpQ9pDDYJIBAFS"
 
 -- TODO unit_hash_dir
 -- TODO unit_hash_dir_random_filenames
