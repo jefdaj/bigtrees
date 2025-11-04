@@ -531,10 +531,6 @@ makeReverseChunks lCfg blksize h end
         let start = max (end - fromIntegral blksize) 0
         hSeek h AbsoluteSeek (fromIntegral start)
         blk <- B8.hGet h blksize
-
-        -- TODO is this revealing a problem with reading the whole file, or creating the problem??
-        -- debug $ B8.pack $ "blk " ++ show start ++ "-" ++ show end ++ ": " ++ show blk
-
         rest <- makeReverseChunks lCfg blksize h start
         return $ blk : rest
 
@@ -590,15 +586,16 @@ strictRevChunkParse
   -> (Integer, Chunk)
   -> Either String ([HashLine], EndOfPrevChunk)
 strictRevChunkParse _ (Left m) _ = Left m -- TODO log error
-strictRevChunkParse lCfg (Right (_, eop)) (i, prev) =
+strictRevChunkParse lCfg (Right (_, eop)) (i, chunk) =
   let debug = logUnsafe (addLogContext lCfg "strictRevChunkParse") DebugL
-      prev' = B8.append prev $ B8.append eop "\NUL\n" -- TODO why is this needed?
-      res   = case parseOnly parseHashLinesFromChunk prev' of
+      chunk' = B8.append chunk $ B8.append eop "\NUL\n" -- TODO why is this needed?
+      res   = case parseOnly parseHashLinesFromChunk chunk' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 -- Left msg                -> trace ("Left " ++ show msg) (Left msg)
                 x                       -> x
-      msg = B8.pack $ "parsed chunk " ++ show i ++ ": " ++ show res
-  in deepseq (debug msg res) res -- TODO debug log here?
+      msg1 = "ready to parse chunk " <> B8.pack (show i) <> ": " <> chunk'
+      msg2 = B8.pack $ "parsed chunk " ++ show i ++ ": " ++ show res -- TODO pretty show?
+  in deepseq (debug msg1 $ debug msg2 res) res
 
 -- This returns a lazy list of chunk parse results, but each one will fully evaluate
 -- once accessed.
