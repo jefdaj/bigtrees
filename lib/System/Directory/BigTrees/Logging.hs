@@ -15,6 +15,7 @@ module System.Directory.BigTrees.Logging
   , die
   , logUnsafe
   , incLogProgressST
+  , flushLogger
   )
   where
 
@@ -63,6 +64,11 @@ initLogger initialContext minLogLevel = do
     , lcLogger  = loggerSet
     , lcTime    = timeCache
     }
+
+-- This should be sprinkled around sections where ordering of the log lines is
+-- more important than performance.
+flushLogger :: LogCfg -> IO ()
+flushLogger = flushLogStr . lcLogger
 
 cleanupLogger :: LogCfg -> IO ()
 cleanupLogger NoLog = return ()

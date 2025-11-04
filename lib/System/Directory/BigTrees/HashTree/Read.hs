@@ -163,7 +163,6 @@ accTrees cfg lCfg e@(ErrLine (d, m, n)) cs = {-# SCC "Eappend" #-}
     then (d, Err { errMsg = m, errName = n }):cs
     else cs
 
--- TODO error case here!
 accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t of
 
   F -> let f = File

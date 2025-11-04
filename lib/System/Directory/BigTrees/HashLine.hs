@@ -51,6 +51,7 @@ module System.Directory.BigTrees.HashLine
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
+import Prelude hiding (log, take)
 import Control.DeepSeq (NFData (..))
 import Control.Monad (void, when)
 import Data.Attoparsec.ByteString (skipWhile)
@@ -70,9 +71,8 @@ import Data.Functor ((<&>))
 import Data.Maybe (catMaybes)
 import Data.String (IsString (..))
 import GHC.Generics (Generic)
-import Prelude hiding (take)
 import System.Directory.BigTrees.Hash (Hash (Hash), digestLength, prettyHash)
-import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel(..), addLogContext, die, log, logUnsafe, flushLogger)
 import System.Directory.BigTrees.Name (Name (..), NamesRev, breadcrumbs2bs, bs2n, bs2op, n2bs,
                                        nameP, op2bs, sbs2op)
 import System.Directory.BigTrees.Util (getBlockSize)
@@ -591,13 +591,13 @@ strictRevChunkParse (Right (_, eop)) prev =
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 -- Left msg                -> trace ("Left " ++ show msg) (Left msg)
                 x                       -> x
-  in deepseq res res
+  in deepseq res res -- TODO debug log here?
 
 -- This returns a lazy list of chunk parse results, but each one will fully evaluate
 -- once accessed.
 -- WARNING once it hits an error (Left), it will keep repeating that error indefinitely
-lazyListOfStrictParsedChunks :: [Chunk] -> [Either String [HashLine]]
-lazyListOfStrictParsedChunks cs = tail $ map (fmap fst) $ scanl strictRevChunkParse initial cs
+lazyListOfParsedHashLines :: [Chunk] -> [Either String [HashLine]]
+lazyListOfParsedHashLines cs = tail $ map (fmap fst) $ scanl strictRevChunkParse initial cs
   where
     initial = Right ([], "")
 
@@ -616,8 +616,20 @@ parseTreeFileRev lCfg f = SFO.withFile f ReadMode $ \h -> do
 
   hParseTreeFileRev lCfg blksize h
 
+logYieldLine :: LogCfg -> HashLine -> IO HashLine
+logYieldLine lCfg hl = do
+  let debug = log (addLogContext lCfg "logYieldLine") DebugL
+  debug $ B8.pack $ show hl
+  flushLogger lCfg
+  return hl
+
 hParseTreeFileRev :: LogCfg -> Integer -> Handle -> IO [HashLine]
 hParseTreeFileRev lCfg blksize h = do
+
+  let lCfg' = addLogContext lCfg "hParseTreeFileRev"
+      dieFromBadParse = die lCfg' . B8.pack . show
+      logYieldLines = mapM $ logYieldLine lCfg'
+
   fileSizeBytes <- hFileSize h
   -- TODO does this help: when (fileSizeBytes == 0) $ return ()
   -- size rounded up to the next block:
@@ -631,7 +643,7 @@ hParseTreeFileRev lCfg blksize h = do
 
   -- parse chunks lazily, starting from the end, so they can be streamed into a
   -- tree structure without reading the entire file first
-  let hls = lazyListOfStrictParsedChunks chunks
+  let hls = lazyListOfParsedHashLines chunks
 
   -- for now, return parsed HashLines directly and error if any of the parses fail
-  fmap concat $ forM hls $ either (die (addLogContext lCfg "hParseTreeFileRev") . B8.pack . show) return
+  fmap concat $ forM hls $ either dieFromBadParse logYieldLines
