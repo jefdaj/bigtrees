@@ -286,11 +286,11 @@ hTakePrevUntil' cond maxChars hdl cs = do
     then return $ Just cs'
     else hTakePrevUntil' cond (maxChars-1) hdl cs'
 
--- TODO is 4096 a good default to assume when there really isn't any?
 getBlockSize :: OsPath -> IO Integer
 getBlockSize path = do
   stat <- getFileStatus =<< decodeFS path
-  return $ maybe 4096 toInteger (fileBlockSize stat)
+  let defaultBlockSizeBytes = 65536 -- 64KB
+  return $ maybe defaultBlockSizeBytes toInteger (fileBlockSize stat)
 
 --- catch exceptions during tests without disrupting shrinking ---
 
