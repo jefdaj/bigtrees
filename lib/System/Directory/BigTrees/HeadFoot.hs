@@ -82,7 +82,7 @@ instance FromJSON Header
 -- prev versions with git tags in order to implement upgrade fns later
 -- TODO use bigtrees version when it was changed instead of old date format?
 currentTreeFormat :: Int
-currentTreeFormat = 251025
+currentTreeFormat = 251103
 
 makeHeaderNow :: [String] -> IO Header
 makeHeaderNow es = do

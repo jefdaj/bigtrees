@@ -99,9 +99,15 @@ instance Arbitrary Hash where
   shrink :: Hash -> [Hash]
   shrink _ = []
 
--- TODO do some math instead of just being conservative here
+{-
+This is more than needed if we assume the program is for deduping files. But I
+may also want to extend it for use in recursive blockchain proof of existence.
+So I used 22 chars = 132 bits, which sounds reasonably hard to brute force.
+
+TODO revisit the math before actually implementing RPoE!
+-}
 digestLength :: Int
-digestLength = 32
+digestLength = 22
 
 -- TODO remove? looks like it might already be in the proper OsString format with unHash
 -- TODO actual Pretty instance
