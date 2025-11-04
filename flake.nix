@@ -12,7 +12,8 @@
     flake-utils.url = "github:numtide/flake-utils";
     # TODO consider removing the git submodule in favor of this
     directory-tree = {
-      url = github:jefdaj/directory-tree/add-no-follow-symlinks-option-again;
+      # url = github:jefdaj/directory-tree/add-no-follow-symlinks-option-again;
+      url = path:///home/jefdaj/myrepos/bigtrees/directory-tree;
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
