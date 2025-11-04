@@ -63,6 +63,7 @@ import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, e
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 
 import Data.Attoparsec.Combinator (lookAhead, sepBy')
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Short as SBS
@@ -80,7 +81,7 @@ import qualified System.OsPath as OSP
 import Test.QuickCheck (Arbitrary (..), Gen, Property, choose, generate, resize, suchThat)
 import TH.Derive ()
 -- import Data.List (intercalate)
-import Data.Char (isAlphaNum, isAsciiLower, isAsciiUpper, isSpace)
+import Data.Char (isAlphaNum, isAsciiLower, isAsciiUpper, isSpace, chr, isPrint)
 import Data.List (elem, intercalate, sortBy)
 import Data.List.Split (splitOn)
 import System.IO (utf8)
@@ -577,6 +578,25 @@ parseHashLinesFromChunk = do
 
   return (hls, eop)
 
+fixDoubleNull :: B8.ByteString -> B8.ByteString
+fixDoubleNull bs =
+    case B8.stripSuffix (B8.pack "\0\0\n") bs of
+        Just prefix -> prefix <> B8.pack "\0\n"
+        Nothing -> bs  -- doesn't end with "\0\0\n", leave unchanged
+
+debugEnd :: Int -> B8.ByteString -> String
+debugEnd n bs =
+    let bytes = B.unpack (B8.takeEnd n bs)
+        showByte b = show b ++ " (" ++ showChar b ++ ")"
+        showChar 0  = "\\0"
+        showChar 10 = "\\n"
+        showChar 13 = "\\r"
+        showChar 9  = "\\t"
+        showChar c  | c >= 32 && c <= 126 = [chr (fromIntegral c)]
+                    | otherwise = "\\x" ++ show c
+    in "last " ++ show n ++ " bytes: [" ++
+       unwords (map showByte bytes) ++ "]"
+
 -- The list of lines here is only used by scanl, not inside this fn;
 -- the end of prev chunk is only used inside this fn and ignored by scanl.
 -- TODO come up with a better way of handling Left besides infinite recursion
@@ -588,12 +608,13 @@ strictRevChunkParse
 strictRevChunkParse _ (Left m) _ = Left m -- TODO log error
 strictRevChunkParse lCfg (Right (_, eop)) (i, chunk) =
   let debug = logUnsafe (addLogContext lCfg "strictRevChunkParse") DebugL
-      chunk' = B8.append chunk $ B8.append eop "\NUL\n" -- TODO why is this needed?
-      res   = case parseOnly parseHashLinesFromChunk chunk' of
+      chunk' = fixDoubleNull $ chunk <> eop <> "\NUL\n" -- TODO why is this needed? TODO BUG HERE???
+      chunk'' = debug ("chunk " <> B8.pack (show i) <> " " <> B8.pack (debugEnd 10 chunk')) chunk'
+      res   = case parseOnly parseHashLinesFromChunk chunk'' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 -- Left msg                -> trace ("Left " ++ show msg) (Left msg)
                 x                       -> x
-      msg1 = "ready to parse chunk " <> B8.pack (show i) <> ": " <> chunk'
+      msg1 = "ready to parse chunk " <> B8.pack (show i) <> ": " <> chunk''
       msg2 = B8.pack $ "parsed chunk " ++ show i ++ ": " ++ show res -- TODO pretty show?
   in deepseq (debug msg1 $ debug msg2 res) res
 
