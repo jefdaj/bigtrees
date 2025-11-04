@@ -527,11 +527,15 @@ makeReverseChunks lCfg blksize h end
   | end == 0 = return []
   | end < 0  = die (addLogContext lCfg "makeReverseChunks") "negative file index"
   | otherwise   = do
+        let debug = log (addLogContext lCfg "makeReverseChunks") DebugL
         let start = max (end - fromIntegral blksize) 0
         hSeek h AbsoluteSeek (fromIntegral start)
         blk <- B8.hGet h blksize
+
+        -- TODO is this revealing a problem with reading the whole file, or creating the problem??
+        -- debug $ B8.pack $ "blk " ++ show start ++ "-" ++ show end ++ ": " ++ show blk
+
         rest <- makeReverseChunks lCfg blksize h start
-        -- return $ (trace ("blk " ++ show start ++ "-" ++ show end ++ ":" ++ show blk) blk) : rest
         return $ blk : rest
 
 type EndOfPrevChunk = B8.ByteString
@@ -581,23 +585,26 @@ parseHashLinesFromChunk = do
 -- the end of prev chunk is only used inside this fn and ignored by scanl.
 -- TODO come up with a better way of handling Left besides infinite recursion
 strictRevChunkParse
-  :: Either String ([HashLine], EndOfPrevChunk)
-  -> Chunk
+  :: LogCfg
   -> Either String ([HashLine], EndOfPrevChunk)
-strictRevChunkParse (Left m) _ = Left m
-strictRevChunkParse (Right (_, eop)) prev =
-  let prev' = B8.append prev $ B8.append eop "\NUL\n" -- TODO why is this needed?
+  -> (Integer, Chunk)
+  -> Either String ([HashLine], EndOfPrevChunk)
+strictRevChunkParse _ (Left m) _ = Left m -- TODO log error
+strictRevChunkParse lCfg (Right (_, eop)) (i, prev) =
+  let debug = logUnsafe (addLogContext lCfg "strictRevChunkParse") DebugL
+      prev' = B8.append prev $ B8.append eop "\NUL\n" -- TODO why is this needed?
       res   = case parseOnly parseHashLinesFromChunk prev' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 -- Left msg                -> trace ("Left " ++ show msg) (Left msg)
                 x                       -> x
-  in deepseq res res -- TODO debug log here?
+      msg = B8.pack $ "parsed chunk " ++ show i ++ ": " ++ show res
+  in deepseq (debug msg res) res -- TODO debug log here?
 
 -- This returns a lazy list of chunk parse results, but each one will fully evaluate
 -- once accessed.
 -- WARNING once it hits an error (Left), it will keep repeating that error indefinitely
-lazyListOfParsedHashLines :: [Chunk] -> [Either String [HashLine]]
-lazyListOfParsedHashLines cs = tail $ map (fmap fst) $ scanl strictRevChunkParse initial cs
+lazyListOfParsedHashLines :: LogCfg -> [(Integer, Chunk)] -> [Either String [HashLine]]
+lazyListOfParsedHashLines lCfg cs = tail $ map (fmap fst) $ scanl (strictRevChunkParse lCfg) initial cs
   where
     initial = Right ([], "")
 
@@ -621,29 +628,32 @@ logYieldLine lCfg hl = do
   let debug = log (addLogContext lCfg "logYieldLine") DebugL
   debug $ B8.pack $ show hl
   flushLogger lCfg
-  return hl
+  return $ deepseq hl hl
 
 hParseTreeFileRev :: LogCfg -> Integer -> Handle -> IO [HashLine]
 hParseTreeFileRev lCfg blksize h = do
 
   let lCfg' = addLogContext lCfg "hParseTreeFileRev"
+      debug = log lCfg' DebugL
       dieFromBadParse = die lCfg' . B8.pack . show
       logYieldLines = mapM $ logYieldLine lCfg'
 
   fileSizeBytes <- hFileSize h
+  debug $ B8.pack $ "fileSizeBytes: " ++ show fileSizeBytes
   -- TODO does this help: when (fileSizeBytes == 0) $ return ()
   -- size rounded up to the next block:
   let fileSizeBytesCeiling =
         ceiling (fromInteger fileSizeBytes / fromInteger blksize) * (fromInteger blksize)
+  debug $ B8.pack $ "fileSizeBytesCeiling: " ++ show fileSizeBytesCeiling
 
   -- read file in block-sized chunks starting from the end
   -- (the first chunk will be shorter than the others; seems not to matter)
   chunks <- makeReverseChunks lCfg (fromIntegral blksize) h (fromInteger fileSizeBytesCeiling)
-  -- putStrLn $ "n chunks: " ++ show (length chunks)
+  let chunks' = zip [1..] chunks -- number them for debugging
 
   -- parse chunks lazily, starting from the end, so they can be streamed into a
   -- tree structure without reading the entire file first
-  let hls = lazyListOfParsedHashLines chunks
+  let hls = lazyListOfParsedHashLines lCfg' chunks'
 
   -- for now, return parsed HashLines directly and error if any of the parses fail
   fmap concat $ forM hls $ either dieFromBadParse logYieldLines
