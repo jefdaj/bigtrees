@@ -204,8 +204,8 @@ accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t o
 
   -- TODO was the sorting here important?
   -- TODO or is it unnecessary and slowing things down?
-  D -> let (children, siblings) = partitionChildrenSiblings i cs
-           children' = sortContentsByName $ map snd children -- TODO remove?
+  D -> let (children, others) = partitionChildrenSiblings i cs
+           children' = sortContentsByName $ map snd children -- TODO fwd sort here?
            desc = prettyHash h <> " '" <> n2bs p <> "'"
            lCfg' = addLogContext lCfg "accTrees"
            cs' = logDirContents lCfg' DebugL desc children' children'
@@ -221,10 +221,11 @@ accTrees cfg lCfg hl@(HashLine (t, Depth i, h, mt, s, nn, p, mlt)) cs = case t o
                      }
                    }
        in {-# SCC "Dappend" #-} if recurse || accKeepLine cfg lCfg hl
-                                  then (Depth i, dir) : siblings
-                                  else siblings
+                                  then (Depth i, dir) : others
+                                  else others
 
--- partitionChildrenSiblings i = partition (\(Depth i2, _) -> i2 > i)
+-- others will be siblings flattened along with their children recursively, so
+-- it's important not to mess up the order by sorting them. children can be sorted.
 partitionChildrenSiblings i cs = (children, others)
   where
     children = takeWhile (\(Depth i2, _) -> i2 > i) cs

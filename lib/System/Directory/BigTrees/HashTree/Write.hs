@@ -73,7 +73,7 @@ flattenTree' lCfg (Depth d) (Dir  {nodeData=nd, dirContents=cs, nNodes=f})
   = subtrees ++ [wholeDir]
   where
     n = name nd
-    subtrees = concatMap (flattenTree' lCfg $ Depth $ d+1) (sortContentsByName cs) -- TODO reverse?
+    subtrees = concatMap (flattenTree' lCfg $ Depth $ d+1) (reverse $ sortContentsByName cs) -- TODO reverse?
     wholeDir = HashLine (D, Depth d, hash nd, modTime nd, nBytes nd, f, n, Nothing)
 
 -- this is to catch the case where it tries to write the same file twice
@@ -93,6 +93,8 @@ assertExists lCfg path = do
     die (addLogContext lCfg "assertExists") $ B8.pack $ "failed to write " ++ show path'
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
+ - Note that unlike the write-tree-to-lines functions above, this goes in forward order.
+ - (It has to, because root directories must be created before their children)
  - TODO should this be NoLog?
  -}
 writeTestTreeDir :: LogCfg -> OsPath -> TestTree -> IO ()

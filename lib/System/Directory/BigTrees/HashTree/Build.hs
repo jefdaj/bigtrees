@@ -12,7 +12,7 @@ import Control.Monad (filterM, unless, when)
 import qualified Control.Monad.Parallel as P
 import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (elem, intercalate)
+import Data.List (elem, intercalate, sortBy)
 import Data.List.Split (splitOn)
 import Data.Maybe (isJust)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -265,7 +265,7 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   -- let cs' = sortBy (compare `on` DT.name) cs -- reverse seems to make no difference
 
   -- TODO also do this while reading a tree, right? apply filters in a uniform way everywhere!
-  cs' <- regexFilterTrees cfg a cs
+  cs' <- regexFilterTrees cfg a $ reverse $ sortBy (compare `on` DT.name) cs -- TODO sort here?
   let root = a </> n
       -- bang t has no effect on memory usage
       hashSubtree t = unsafeInterleaveIO $ buildTree' cfg readFileFn lCfg (depth+1) $ root DT.:/ t
@@ -276,7 +276,7 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   let debug = logUnsafe (addLogContext lCfg "buildTree'") DebugL -- TODO .Dir in context?
 
   subTrees <- P.forM cs' hashSubtree
-  let subTrees' = sortContentsByName subTrees
+  let subTrees' = reverse $ sortContentsByName subTrees -- TODO sort here?
       -- Note that we *don't* want the hash in desc because it would force evaluation!
       desc = "'" <> op2bs root <> "'"
       lCfg' = addLogContext lCfg "buildTree'"
