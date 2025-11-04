@@ -160,13 +160,18 @@ roundtripProdTreeToBigtreeFile t =
     let cfg = emptySearchConfig
     hWriteTree cfg NoLog hdl t
 
-    -- TODO come up with a better way to inspect intermediate versions here
-    -- SDO.copyFile ospPath [osp|/tmp/roundtripfail.bigtree|]
-    -- tree <- readTree cfg NoLog ospPath
-
     ospPath <- encodeFS path
     blksize <- getBlockSize ospPath -- TODO just use some default here?
     tree <- hReadTree cfg NoLog blksize hdl
+
+    -- TODO come up with a better way to inspect intermediate versions here
+    -- when (tree /= t) $
+    --   SDO.copyFile ospPath [osp|/tmp/roundtripfail.bigtree|]
+    -- tree <- readTree cfg NoLog ospPath
+
+    unless (tree == t) $ do
+      writeTree cfg NoLog [osp|/tmp/roundtrip-t1.bigtree|] t
+      writeTree cfg NoLog [osp|/tmp/roundtrip-t2.bigtree|] tree
 
     -- prevent race condition between reading the tree and tmpdir cleanup
     -- TODO check if still needed after fixing round-trip errors
@@ -190,6 +195,11 @@ roundtripTestTreeToActualTmpdir lCfg tree =
     let treeRootDir = ospTmpDir </> (unName . treeName) tree
     writeTestTreeDir lCfg treeRootDir tree
     tree' <- (renameRoot $ treeName tree) <$> readTestTree emptySearchConfig lCfg treeRootDir
+
+    -- TODO remove
+    unless (treeEqIgnoringModTime tree' tree) $ do
+      writeTree emptySearchConfig NoLog [osp|/tmp/roundtrip-t1.bigtree|] tree
+      writeTree emptySearchConfig NoLog [osp|/tmp/roundtrip-t2.bigtree|] tree'
 
     -- This prevents a race condition between reading the tree and cleaning up the tmpdir
     evaluate $ force tree'
