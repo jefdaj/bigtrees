@@ -29,7 +29,8 @@ fileHeader keepOne =
   \# somewhere else, and that copy was used to generate the reference set.\n")
   <>
   "\n\
-  \rm_X() { rm $1 \"$3\" && echo \"OK $2 '$3'\" || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
+  \skip() { [[ ! -e \"$1\" ]] && echo \"SKIP '$1'\"; }\n\
+  \rm_X() { skip \"$3\" || { rm $1 \"$3\" && echo \"OK $2 '$3'\"; } || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
   \rm_d() { rm_X '-r' 'dir ' \"$1\"; }\n\
   \rm_f() { rm_X '' 'file' \"$1\"; }\n\
   \rm_l() { rm_X '' 'link' \"$1\"; }\n"
