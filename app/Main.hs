@@ -33,6 +33,7 @@ import Paths_bigtrees (version)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
 import System.OsPath (OsPath, encodeFS)
 import Text.Pretty.Simple (pShow)
+import Data.Char (toUpper)
 
 printVersion :: IO ()
 printVersion = putStrLn $ showVersion version
@@ -126,7 +127,7 @@ main = do
               , maxFiles   = NNodes  <$> optRead "max-files"
               , minModtime = ModTime <$> optRead "min-modtime"
               , maxModtime = ModTime <$> optRead "max-modtime"
-              , treeTypes      = map (\c -> read [c]) <$> optLong "types"
+              , treeTypes      = map (\c -> read [toUpper c]) <$> optLong "types"
               , hashExcludeRegexes = herList
               , excludeSetPaths = optLongs "exclude-set"
               , referenceSetPaths = optLongs "reference-set"
