@@ -33,7 +33,7 @@ escapeRsyncPathByte b
 renderRsyncFilter :: DupesRenderFn
 renderRsyncFilter keepOne md ls = do
   body <- mapM groupDupes ls
-  return $ B8.unlines $ fileHeader : body
+  return $ B8.unlines $ fileHeader : body ++ catchall
   where
 
     fileHeader = B8.pack $
@@ -57,8 +57,11 @@ renderRsyncFilter keepOne md ls = do
       \# Note that the trailing slashes in the rsync command above and the\n\
       \# leading slashes in each filename below are important.\n\
       \#\n\
-      \# You might want to try the command with --dry-run at the end first\n\
-      \# to make sure it does what you expected!\n"
+      \# The very last line is also important. It's a catchall rule that says\n\
+      \# 'copy everything not matching one of the exclude patterns'.\n\
+      \#\n\
+      \# You might want to try running the rsync command with --dry-run at the end\n\
+      \# first to make sure it does what you expected.\n"
 
     depthWarning Nothing  = ""
     depthWarning (Just (Depth d)) =
@@ -100,3 +103,9 @@ renderRsyncFilter keepOne md ls = do
     groupHeader h D nSaved nDirs  = explain h nSaved nDirs "folder"
     groupHeader h F nSaved nFiles = explain h nSaved nFiles "file"
     groupHeader h _ nSaved nLinks = explain h nSaved nLinks "link"
+
+    catchall :: [B8.ByteString]
+    catchall =
+      [ "# Finally, copy everything not matching one of the filters"
+      , "+ *"
+      ]
