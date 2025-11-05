@@ -175,8 +175,9 @@ addTreeToDupeMap'
     let recurse = dupesRecurseChildren cfg depth d -- TODO should this be depth+1?
     when keepNode $ do
       insertDupeSet cfg lCfg dm h (fs, h, D, S.singleton $ dir </> n) pr
-    when recurse $
-      mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
+      -- TODO would we ever want to recurse but not keep the current node?
+      when recurse $
+        mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
