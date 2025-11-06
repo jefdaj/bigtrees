@@ -31,7 +31,7 @@ escapeRsyncPathByte b
   | otherwise = B8.singleton b
 
 renderRsyncFilter :: DupesRenderFn
-renderRsyncFilter keepOne md ls = do
+renderRsyncFilter lCfg keepOne md ls = do
   body <- mapM groupDupes ls
   return $ B8.unlines $ fileHeader : body ++ catchall
   where
@@ -70,7 +70,7 @@ renderRsyncFilter keepOne md ls = do
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, h, t, paths) = do
       let paths'    = map (\(a, b) -> (a, replaceTopDirWithSlash b)) paths
-          paths''   = map (escapeRsyncPathBytes . op2bs . snd) $ sortPaths paths'
+          paths''   = map (escapeRsyncPathBytes . op2bs . snd) $ sortPaths lCfg paths'
           paths'''  = if t == D then map (<> "/") paths'' else paths''
           paths'''' = if not keepOne
                        then map ("- " <>) paths'''

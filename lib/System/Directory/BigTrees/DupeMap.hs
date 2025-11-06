@@ -317,8 +317,11 @@ comparePaths (ma, a) (mb, b) =
 
 -- TODO this probably needs to be OsPaths, right?
 --      maybe keep the original paths, but decorate with string versions for sorting?
-sortPaths :: [ModPath] -> [ModPath]
-sortPaths = L.sortBy comparePaths
+sortPaths :: LogCfg -> [ModPath] -> [ModPath]
+sortPaths lCfg ps =
+  let sorted = L.sortBy comparePaths ps
+      msg = B8.pack $ show sorted
+  in logUnsafe (addLogContext lCfg "sortPaths") DebugL msg sorted
 
 -------------------------- score sets for quicksorting ------------------------
 

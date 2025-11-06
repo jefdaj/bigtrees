@@ -56,7 +56,7 @@ addFnCall tt path = rm tt <> " " <> path
     rm _ = error $ "unexpected tree type " ++ show tt ++ " in path " ++ B8.unpack path
 
 renderDedupScript :: DupesRenderFn
-renderDedupScript keepOne md ls = do
+renderDedupScript lCfg keepOne md ls = do
   body <- mapM excludeLines ls
   return $ B8.unlines $ fileHeader keepOne : body
   where
@@ -67,7 +67,7 @@ renderDedupScript keepOne md ls = do
 
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
-      let paths'  = map (addFnCall t . quotePath . op2bs . snd) $ sortPaths paths
+      let paths'  = map (addFnCall t . quotePath . op2bs . snd) $ sortPaths lCfg paths
           paths'' = if keepOne
                        then ("# " <> head paths') : tail paths'
                        else paths'

@@ -8,7 +8,7 @@ import System.Directory.BigTrees
 import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 
 renderSuggestions :: DupesRenderFn
-renderSuggestions keepOne md ls = do
+renderSuggestions lCfg keepOne md ls = do
   body <- mapM excludeLines ls
   return $ B8.unlines $ fileHeader : body
   where
@@ -30,7 +30,7 @@ renderSuggestions keepOne md ls = do
     excludeLines (n, h, t, paths) = do
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : map (op2bs . snd) (sortPaths paths)
+             : map (op2bs . snd) (sortPaths lCfg paths)
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?

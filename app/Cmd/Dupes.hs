@@ -36,9 +36,9 @@ import Test.Tasty.Golden (goldenVsString)
 -- type DupesRenderFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
 -- TODO factor explainFn out here?
-hWriteDupes :: SearchConfig -> DupesRenderFn -> Bool -> Handle -> BT.SortedDupeLists -> IO ()
-hWriteDupes cfg explainFn keepOneDupe hdl groups = do
-  msg <- explainFn keepOneDupe (maxDepth cfg) groups
+hWriteDupes :: SearchConfig -> LogCfg -> DupesRenderFn -> Bool -> Handle -> BT.SortedDupeLists -> IO ()
+hWriteDupes cfg lCfg explainFn keepOneDupe hdl groups = do
+  msg <- explainFn lCfg keepOneDupe (maxDepth cfg) groups
   B8.hPutStr hdl msg
 
 cmdDupes :: AppConfig -> LogCfg -> OsPath -> IO ()
@@ -99,7 +99,7 @@ cmdDupes cfg lCfg path = bracket open close write
       let renderFn = fromJust $ lookup fmt dupesRenderFunctions
 
       debug $ "writing " <> B8.pack (show $ length ds) <> " DupeSets"
-      hWriteDupes (searchCfg cfg) renderFn keepOneDupe hdl ds
+      hWriteDupes (searchCfg cfg) lCfg renderFn keepOneDupe hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?

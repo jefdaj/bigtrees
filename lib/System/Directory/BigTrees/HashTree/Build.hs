@@ -289,6 +289,12 @@ buildTree' cfg readFileFn lCfg depth (a DT.:/ d@(DT.Dir n cs)) = handleAny (mkEr
   mt <- getFileDirModTime root
   s  <- getFileDirNBytes root
 
+  -- Note that my idea of modtime is the max of all modtimes in a tree. This
+  -- differs from what you'll get from `stat` or similar in a file manager. I
+  -- think mine is more useful because it gives the folder edited most
+  -- recently, but am open to critiques of that or requests to add a different
+  -- mode or something!
+
   return $ Dir
             { dirContents = subTrees''
             , nNodes  = sum $ 1 : map treeNNodes subTrees''
