@@ -12,6 +12,7 @@
 
 module System.Directory.BigTrees.DupeMap
   ( DupeMap
+  , ModPath
   , DupeSet
   , DupeList
   , SortedDupeLists
@@ -43,7 +44,7 @@ import qualified Data.List.Split as LS
 import qualified Data.Massiv.Array as A
 import Data.Ord (comparing)
 import System.Directory.BigTrees.Hash (Hash, prettyHash, unHash)
-import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..))
+import System.Directory.BigTrees.HashLine (Depth (..), NNodes (..), TreeType (..), ModTime(..))
 import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList, readHashList,
                                           setContainsHash)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree,
@@ -73,8 +74,9 @@ import System.Directory.BigTrees.Util (sbs2b8)
 -- TODO is DupeSet a Monoid?
 -- TODO store paths as NamesFwd/NamesRev instead of OsPath?
 -- TODO newtypes here? or strict data?
-type DupeSet  = (Int, Hash, TreeType, S.HashSet OsPath) -- TODO remove hash here?
-type DupeList = (Int, Hash, TreeType, [OsPath])
+type ModPath  = (ModTime, OsPath) -- for sorting newest or oldest first
+type DupeSet  = (Int, Hash, TreeType, S.HashSet ModPath) -- TODO remove hash here?
+type DupeList = (Int, Hash, TreeType, [ModPath])
 
 type DupeMap s = C.HashTable s Hash DupeSet
 
@@ -158,23 +160,26 @@ addTreeToDupeMap' _ _ _ _ dm dir _ _ (Err {}) = return ()
 -- corresponding dupeset.
 addTreeToDupeMap' cfg lCfg mrSet cle dm dir d pr l@(Link {nodeData=NodeData {hash=h}}) = do
   keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) d l
+  let newSet = S.singleton (treeModTime l, dir </> n2op (treeName l))
   when keepNode $
-    insertDupeSet cfg lCfg dm (treeHash l) (1, h, treeType l, S.singleton $ dir </> n2op (treeName l)) pr
+    insertDupeSet cfg lCfg dm (treeHash l) (1, h, treeType l, newSet) pr
 
 addTreeToDupeMap'
   cfg lCfg mrSet cle dm dir d pr
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
     keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) d f
+    let newSet = S.singleton (treeModTime f, dir </> n)
     when keepNode $
-      insertDupeSet cfg lCfg dm h (1, h, F, S.singleton $ dir </> n) pr
+      insertDupeSet cfg lCfg dm h (1, h, F, newSet) pr
 
 addTreeToDupeMap'
   cfg lCfg mrSet cle dm dir depth pr
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
     keepNode <- dupesKeepNode cfg lCfg mrSet cle (op2ns dir) depth d
     let recurse = dupesRecurseChildren cfg depth d -- TODO should this be depth+1?
+        newSet  = S.singleton (treeModTime d, dir </> n)
     when keepNode $ do
-      insertDupeSet cfg lCfg dm h (fs, h, D, S.singleton $ dir </> n) pr
+      insertDupeSet cfg lCfg dm h (fs, h, D, newSet) pr
       -- TODO would we ever want to recurse but not keep the current node?
       when recurse $
         mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
@@ -263,7 +268,7 @@ simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) l
 -- TODO double check that these can't have redundancies
 simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg ds
 
--- redundantSet :: LogCfg -> Hash -> [OsPath] -> DupeSet -> Bool
+redundantSet :: LogCfg -> Hash -> [ModPath] -> DupeList -> Bool
 redundantSet lCfg h1 fs (_,h2,_,fs') =
   let allRed = all redundant fs'
       showH1 = sbs2b8 $ unHash h1
@@ -273,9 +278,9 @@ redundantSet lCfg h1 fs (_,h2,_,fs') =
        then logUnsafe (addLogContext lCfg "redundantSet") DebugL msg allRed
        else allRed
   where
-    redundant e' = or [splitDirectories e
-                       `L.isPrefixOf`
-                       splitDirectories e' | e <- fs]
+    redundant (_, e') = or [splitDirectories e
+                            `L.isPrefixOf`
+                            splitDirectories e' | (_, e) <- fs]
 
 ---------------------------- pick which dupe to keep --------------------------
 
@@ -286,8 +291,8 @@ redundantSet lCfg h1 fs (_,h2,_,fs') =
 -- 2. fewer path components first
 -- 3. shorter names first
 -- 4. alphabetically as usual
-comparePaths :: OsPath -> OsPath -> Ordering
-comparePaths a b =
+comparePaths :: ModPath -> ModPath -> Ordering
+comparePaths (ma, a) (mb, b) =
 
   -- Compare as Strings, just because that's easier
   let a' = op2s a
@@ -308,7 +313,7 @@ comparePaths a b =
 
 -- TODO this probably needs to be OsPaths, right?
 --      maybe keep the original paths, but decorate with string versions for sorting?
-sortPaths :: [OsPath] -> [OsPath]
+sortPaths :: [ModPath] -> [ModPath]
 sortPaths = L.sortBy comparePaths
 
 -------------------------- score sets for quicksorting ------------------------

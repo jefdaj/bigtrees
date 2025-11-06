@@ -69,8 +69,8 @@ renderRsyncFilter keepOne md ls = do
 
     groupDupes :: DupeList -> IO B8.ByteString
     groupDupes (n, h, t, paths) = do
-      let paths'    = map replaceTopDirWithSlash paths
-          paths''   = map (escapeRsyncPathBytes . op2bs) $ sortPaths paths'
+      let paths'    = map (\(a, b) -> (a, replaceTopDirWithSlash b)) paths
+          paths''   = map (escapeRsyncPathBytes . op2bs . snd) $ sortPaths paths'
           paths'''  = if t == D then map (<> "/") paths'' else paths''
           paths'''' = if not keepOne
                        then map ("- " <>) paths'''

@@ -53,7 +53,7 @@ renderTestScript keepOne md ls = do
     excludeLines (n, h, t, paths) = do
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : map (addTest t . quotePath . op2bs) (sortPaths paths)
+             : map (addTest t . quotePath . op2bs . snd) (sortPaths paths)
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?

@@ -67,7 +67,7 @@ renderDedupScript keepOne md ls = do
 
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
-      let paths'  = map (addFnCall t . quotePath . op2bs) $ sortPaths paths
+      let paths'  = map (addFnCall t . quotePath . op2bs . snd) $ sortPaths paths
           paths'' = if keepOne
                        then ("# " <> head paths') : tail paths'
                        else paths'

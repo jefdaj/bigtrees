@@ -105,6 +105,7 @@ import Control.Monad (forM, replicateM)
 import System.Directory.BigTrees.HashLine.Base
 import System.Directory.BigTrees.HeadFoot (Footer (..), Header (..), footerP, headerP)
 import qualified System.File.OsPath as SFO
+import Data.Hashable (Hashable (..))
 
 -----------
 -- types --
@@ -127,7 +128,7 @@ newtype Depth
 instance NFData Depth
 
 newtype ModTime = ModTime Integer
-  deriving (Eq, Ord, Num, Read, Show, Generic)
+  deriving (Eq, Ord, Num, Read, Show, Generic, Hashable)
 
 instance Arbitrary ModTime where
   -- random time between 2000-01-01 and 2024-01-01
