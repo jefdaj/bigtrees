@@ -33,10 +33,10 @@
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> dupes <span class="st">&quot;</span><span class="va">$SRC</span><span class="st">&quot;</span> <span class="dt">\</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output</span> dedup-filters.txt <span class="dt">\</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--dupes-out-fmt</span> rsync-filter-script</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--dupes-out-fmt</span> rsync-filter-file</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">rsync</span> <span class="st">&quot;</span><span class="va">$SRC</span><span class="st">&quot;</span>/ <span class="st">&quot;</span><span class="va">$DST</span><span class="st">&quot;</span>/ <span class="dt">\</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-arv</span> <span class="at">--delete</span> <span class="at">--delete-excluded</span> <span class="at">--itemize-changes</span> <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-arv</span> <span class="at">--itemize-changes</span> <span class="dt">\</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">--filter</span> <span class="st">'merge dedup-filters.txt'</span></span></code></pre></div>
 
         </div>

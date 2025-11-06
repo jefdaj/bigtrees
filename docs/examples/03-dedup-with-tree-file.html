@@ -27,15 +27,15 @@
 </div>
 
 <p>This is useful any time you want to scan something now and use it later.
-That might be because:</p>
+That might be so you can:</p>
 <ul>
-<li>You want to diff the current state with a future one</li>
-<li>You want to search the tree later without plugging in the corresponding backup drive</li>
-<li>The scan takes a long time and you don’t want to have to repeat it</li>
+<li>diff the current state with a future one</li>
+<li>search the tree without plugging in the corresponding backup drive</li>
+<li>pre-run the long hashing step to speed up other operations</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="sourceCode .sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">FILES</span><span class="op">=</span><span class="st">&quot;/path/to/files/here&quot;</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> hash <span class="st">&quot;</span><span class="va">$FILES</span><span class="st">&quot;</span> <span class="at">--output</span> files.bigtree</span></code></pre></div>
-<p>Then you can use the <code>files.bigtree</code> file place of <code>$FILES</code> in most of the other commands:
+<p>You can use <code>files.bigtree</code> in place of <code>$FILES</code> in most of the other commands:
 <code>diff</code>, <code>set-add</code>, <code>find</code>, <code>dupes</code>, …</p>
 
         </div>

@@ -15,4 +15,4 @@ Some ideas...
 * Can you work with our developers to add a dedup step to our data pipeline?
 * Can you write a faster algorithm for our unique data format?
 
-I try to respond to all inquiries within 3 business days, and answer simple questions straightaway or set up a meeting to talk about more complex ones. If it's too much to figure out in one meeting, then it's probably a consulting job. Otherwise it's just a quick, free thing.
+I try to respond to all inquiries within 3 business days, and answer simple questions straightaway or set up a meeting to talk about more complex ones. If it's too much to figure out in one meeting, then it might be a consulting job.

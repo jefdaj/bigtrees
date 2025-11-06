@@ -12,9 +12,9 @@ DST="/path/to/destination/folder/here"
 
 bigtrees dupes "$SRC" \
   --output dedup-filters.txt \
-  --dupes-out-fmt rsync-filter-script
+  --dupes-out-fmt rsync-filter-file
 
 rsync "$SRC"/ "$DST"/ \
-  -arv --delete --delete-excluded --itemize-changes \
+  -arv --itemize-changes \
   --filter 'merge dedup-filters.txt'
 ```
