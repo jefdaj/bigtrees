@@ -32,7 +32,13 @@ escapeRsyncPathByte b
 
 renderRsyncFilter :: DupesRenderFn
 renderRsyncFilter lCfg keepOne md ls = do
-  body <- mapM groupDupes ls
+
+  -- The reverse here is important because rsync matches filter rules top
+  -- to bottom, so the smaller dupesets (with more specific rules) need
+  -- to come before the larger ones in case they overlap.
+  -- TODO add a separate sort step here once there are multiple sorting options
+  body <- mapM groupDupes $ reverse ls
+
   return $ B8.unlines $ fileHeader : body ++ catchall
   where
 
