@@ -115,11 +115,12 @@ executables:
   # bigtrees-docs-site:
   #   # Disable building the docs site by default, because it messes with the nix build.
   #   # It can still be done manually of course.
-  #   if: flag(build-docs-site)
   #   main: site.hs
   #   source-dirs: "docs/src"
   #   dependencies:
   #   - hakyll
+  #   when:
+  #     condition: flag(build-docs-site)
 
 tests:
 
