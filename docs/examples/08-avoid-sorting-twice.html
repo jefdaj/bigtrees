@@ -4,7 +4,7 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>BigTrees Remove files you have another copy of</title>
+        <title>BigTrees Avoid sorting the same files twice</title>
         <link rel="stylesheet" type="text/css" href="../css/default.css" />
         <link rel="stylesheet" type="text/css" href="../css/pygments.css" />
     </head>
@@ -21,7 +21,7 @@
         </div>
 
         <div id="content">
-            <h1>Remove files you have another copy of</h1>
+            <h1>Avoid sorting the same files twice</h1>
 
             <div class="info">
 </div>
@@ -42,16 +42,18 @@ BigTrees can show you which files on the new drive aren’t already included in 
 <li>Delete files on the new drive that <em>are</em> already in your collection, so you can add the rest</li>
 </ol>
 <div class="sourceCode" id="cb2"><pre class="sourceCode .sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2a: list unique files on the new drive</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> find <span class="st">&quot;</span><span class="va">$NEW</span><span class="st">&quot;</span> <span class="dt">\</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--exclude-set</span> main.bigset <span class="dt">\</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;</span> new-files-not-in-main.txt</span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> find <span class="st">&quot;</span><span class="va">$NEW</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--exclude-set</span> main.bigset <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;</span> new-files-not-in-main.txt</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="sourceCode .sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2b: delete duplicate files on the new drive</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> dupes <span class="st">&quot;</span><span class="va">$NEW</span><span class="st">&quot;</span> <span class="dt">\</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output</span> rm-files-already-in-main.sh <span class="dt">\</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--dupes-out-fmt</span> dedup-script <span class="dt">\</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--reference-set</span> main.bigset</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> rm-files-already-in-main.sh</span></code></pre></div>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> dupes <span class="st">&quot;</span><span class="va">$NEW</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output</span> rm-files-already-in-main.sh <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--dupes-out-fmt</span> dedup-script <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--reference-set</span> main.bigset</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> rm-files-already-in-main.sh</span></code></pre></div>
 
         </div>
     <!--
