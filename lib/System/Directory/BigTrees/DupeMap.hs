@@ -361,7 +361,7 @@ redundantFast prefixes (_, path) =
 -- TODO move to a util module
 
 -- Compare paths according to my (idiosyncratic) intuition so far:
--- ~~0. newer modtime first~~ removed for now
+-- 0. newer modtime first
 -- 1. non-hidden files first
 -- 2. fewer path components first
 -- 3. shorter names first
@@ -378,19 +378,16 @@ comparePaths (ma, a) (mb, b) =
       isHiddenPath p = any startsWithDot $ LS.splitOn "/" p
       countComponents path = length (LS.splitOn "/" path)
 
-  -- TODO put back option to score by newest as well:
-  -- in case comparing (0-) ma mb of
-  --      EQ -> rest of the logic below
-  --      ord -> ord
-
-  in case (isHiddenPath a', isHiddenPath b') of
-       (True, False) -> GT
-       (False, True) -> LT
-       _ -> case comparing countComponents a' b' of
-              EQ -> case comparing length a' b' of
-                      EQ  -> compare a' b'
+  in case comparing (0-) ma mb of
+       EQ -> case (isHiddenPath a', isHiddenPath b') of
+               (True, False) -> GT
+               (False, True) -> LT
+               _ -> case comparing countComponents a' b' of
+                      EQ -> case comparing length a' b' of
+                              EQ  -> compare a' b'
+                              ord -> ord
                       ord -> ord
-              ord -> ord
+       ord -> ord
 
 -- TODO this probably needs to be OsPaths, right?
 --      maybe keep the original paths, but decorate with string versions for sorting?
