@@ -38,7 +38,9 @@ main = hakyllWith config $ do
     create ["examples.html"] $ do
         route idRoute
         compile $ do
-            examples <- fmap reverse . recentFirst =<< loadAll "examples/*"
+	    -- can't do recent first when not giving them dates:
+            -- examples <- reverse . recentFirst =<< loadAll "examples/*"
+            examples <- loadAll "examples/*"
             let examplesCtx =
                     listField "examples" exampleCtx (return examples) `mappend`
                     constField "title" "Examples" `mappend`
@@ -56,7 +58,7 @@ main = hakyllWith config $ do
         route idRoute
         compile $ do
             -- examples <- fmap (take 3 .reverse) . recentFirst =<< loadAll "examples/*"
-            let indexCtx =
+	    let indexCtx =
                     -- listField "examples" exampleCtx (return examples) `mappend`
                     constField "title" ""                `mappend`
                     defaultContext
@@ -72,6 +74,5 @@ main = hakyllWith config $ do
 --------------------------------------------------------------------------------
 exampleCtx :: Context String
 exampleCtx =
-    dateField "date" "%B %e, %Y" `mappend`
+    -- dateField "date" "%B %e, %Y" `mappend`
     defaultContext
-

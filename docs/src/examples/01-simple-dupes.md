@@ -1,6 +1,6 @@
 ---
 title: Simple one-line dedup
----
+...
 
 ```.sh
 bigtrees dupes PATH --output dupes.txt
