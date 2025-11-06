@@ -1,3 +1,0 @@
----
-title: Dedup by copying
-...
