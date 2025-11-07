@@ -8,14 +8,18 @@
         ]
       },
       "locked": {
-        "lastModified": 1762227697,
-        "narHash": "sha256-IiqL39x4BTvEa7TQZIZpEDAPiFdtVh/1oueBb2QDE4c=",
-        "path": "/home/jefdaj/myrepos/bigtrees/directory-tree",
-        "type": "path"
+        "lastModified": 1762233478,
+        "narHash": "sha256-6eYqBqLGvqbcpe9oQWMP7+oW1R0xIJDjtsNZRCaHttI=",
+        "owner": "jefdaj",
+        "repo": "directory-tree",
+        "rev": "17df3eff0208829ff6f80f699fb3f6f30ba65271",
+        "type": "github"
       },
       "original": {
-        "path": "/home/jefdaj/myrepos/bigtrees/directory-tree",
-        "type": "path"
+        "owner": "jefdaj",
+        "ref": "bigtrees-revsort",
+        "repo": "directory-tree",
+        "type": "github"
       }
     },
     "flake-utils": {
