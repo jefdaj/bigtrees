@@ -227,15 +227,15 @@ type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 dupesByNegScore :: LogCfg -> ScoreFn -> Bool -> DupeMap s -> ST s SortedDupeLists
 dupesByNegScore lCfg scoreFn keepSingles dm = do
   let debug = logUnsafe (addLogContext lCfg "dupesByNegScore") DebugL
-  sets <- debug "scoring sets" <$> scoreSets scoreFn dm -- TODO separate scoring for ref set than within same tree
+  sets <- debug "scoring sets" <$> scoreSets lCfg scoreFn dm -- TODO separate scoring for ref set than within same tree
   let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par $ deepseq sets sets :: DupeSetVec
       sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute $ deepseq unsorted unsorted :: DupeSetVec
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList $ deepseq sorted sorted
       singles  = if keepSingles then sortedL else filter (\(_, _, _, ps) -> length ps > 1) sortedL
       fixElem (n, h, t, fs) = (negate n, h, t, L.sort $ S.toList fs) -- TODO n before h?
-      fixed    = Prelude.map fixElem $ deepseq singles singles
-      simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg $ deepseq fixed fixed -- TODO helps?
-  return simple
+      fixed    = Prelude.map fixElem singles
+      simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg fixed
+  return $ map (\x -> deepseq x x) simple -- TODO does deepseq help?
 
 {- Assumes a pre-sorted list of lists.
  - Removes lists whose elements are all inside elements of the first list.
@@ -331,9 +331,14 @@ sortPaths lCfg ps =
  - * negates scores so quicksort will put them in descending order
  - TODO should length-1 sets not be rejected?
  -}
-scoreSets :: ScoreFn -> C.HashTable s Hash DupeSet -> ST s SortedDupeSets
-scoreSets scoreFn = H.foldM (
-    \vs (_, v@(_,h,t,fs)) -> return $ (negate $ scoreFn v,h,t,fs):vs
+scoreSets :: LogCfg -> ScoreFn -> C.HashTable s Hash DupeSet -> ST s SortedDupeSets
+scoreSets lCfg scoreFn =
+  let debug = logUnsafe (addLogContext lCfg "scoreSets") DebugL
+  in H.foldM (
+    \vs (_, v@(_,h,t,fs)) ->
+      let v' = (negate $ scoreFn v,h,t,fs)
+          v'' = debug (B8.pack $ show v') v'
+      in return $ v'':vs
   ) []
   -- TODO is removing singletons important for performance? could turn on when not vs ref set
   -- return $ if length fs > 1 then (negate $ scoreFn v,h,t,fs):vs else vs) []
