@@ -284,20 +284,21 @@ simplifyDupes i lCfg (d:ds) = log msg $ (d:) $ simplifyDupes (i+1) lCfg ds
 redundantSet :: LogCfg -> Hash -> [ModPath] -> DupeList -> Bool
 redundantSet lCfg h1 fs (_,h2,_,fs') =
   let allRed = all redundant fs'
-      oldAllRed = all oldRedundant fs'
+      -- oldAllRed = all oldRedundant fs'
       showH1 = sbs2b8 $ unHash h1
       showH2 = sbs2b8 $ unHash h2
       showPs ps = concatMap (\p -> show p ++ "\n") (L.sort $ map snd ps)
       msg    = showH2 <> " is redundant with " <> showH1
-  in if (allRed /= oldAllRed) then error ("allRed /= oldAllRed:\nfs:" ++ showPs fs ++ "\nfs':" ++ showPs fs' ++ "\nallRed: " ++ show allRed ++ "\noldAllRed: " ++ show oldAllRed) else (if allRed
+  -- in if (allRed /= oldAllRed) then error ("allRed /= oldAllRed:\nfs:" ++ showPs fs ++ "\nfs':" ++ showPs fs' ++ "\nallRed: " ++ show allRed ++ "\noldAllRed: " ++ show oldAllRed) else (if allRed
+  in if allRed
        then logUnsafe (addLogContext lCfg "redundantSet") DebugL msg allRed
-       else allRed)
+       else allRed
   where
     prefixes = buildPrefixSet $ map snd fs
     redundant = redundantFast prefixes
-    oldRedundant (_, e') = or [splitDirectories e
-                              `L.isPrefixOf`
-                              splitDirectories e' | (_, e) <- fs]
+    -- oldRedundant (_, e') = or [splitDirectories e
+    --                           `L.isPrefixOf`
+    --                           splitDirectories e' | (_, e) <- fs]
 
 buildPrefixSet :: [OsPath] -> Set [OsPath]
 buildPrefixSet paths = Set.fromList [splitDirectories path | path <- paths]
