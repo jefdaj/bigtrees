@@ -254,16 +254,17 @@ simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) l
     showI = B8.pack $ show i
     showR = B8.pack $ show nRemain
     showD = B8.pack $ show nDrop
+    lCfg' = addLogContext lCfg "simplifyDupes"
     msg = "iteration " <> showI <>
           " drop " <> showD <>
           " sets redundant with " <> showH <> "; " <> showR <>
           " sets remain to process"
-    ds' = filter (not . redundantSet lCfg h fs) ds
+    ds' = filter (not . redundantSet lCfg' h fs) ds
     nRemain = length ds'
     nDrop = length ds - nRemain
     info msg x = if nDrop > 0
-       then logUnsafe (addLogContext lCfg "simplifyDupes") InfoL msg x
-                   else x
+       then logUnsafe lCfg' InfoL msg x
+       else x
 
 -- TODO double check that these can't have redundancies
 simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg ds
