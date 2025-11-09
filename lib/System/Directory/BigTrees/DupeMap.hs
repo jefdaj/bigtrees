@@ -28,6 +28,9 @@ module System.Directory.BigTrees.DupeMap
   , scoreSets
   , sortPaths
   , simplifyDupes
+  , redundantSet
+  , buildPrefixSet
+  , redundantFast
   )
   where
 
@@ -68,6 +71,8 @@ import Data.STRef (STRef (..), newSTRef, readSTRef, writeSTRef)
 import System.Directory.BigTrees.HashTree.Find (findLabelNode)
 import System.Directory.BigTrees.Util (sbs2b8)
 
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Control.Parallel.Strategies -- TODO be more specific
 
 -- TODO be able to serialize dupemaps for debugging
@@ -250,23 +255,24 @@ simplifyDupes :: Int -> LogCfg -> SortedDupeLists -> SortedDupeLists
 simplifyDupes _ _ [ ] = [ ]
 simplifyDupes _ _ [d] = [d]
 
-simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) lCfg ds'
+simplifyDupes i lCfg (d@(_,h,D,fs):ds) = log $ (d:) $ simplifyDupes (i+1) lCfg ds'
   where
     showH = sbs2b8 $ unHash h
     showI = B8.pack $ show i
     showR = B8.pack $ show nRemain
     showD = B8.pack $ show nDrop
     lCfg' = addLogContext lCfg "simplifyDupes"
-    msg = "iteration " <> showI <>
+    msg1 = "iteration " <> showI
+    msg2 = msg1 <>
           " drop " <> showD <>
           " sets redundant with " <> showH <> "; " <> showR <>
           " sets remain to process"
     ds' = filter (not . redundantSet lCfg' h fs) ds `using` parList rdeepseq
     nRemain = length ds'
     nDrop = length ds - nRemain
-    info msg x = if nDrop > 0
-       then logUnsafe lCfg' InfoL msg x
-       else x
+    log x = if nDrop > 0
+              then logUnsafe lCfg' InfoL  msg2 x
+              else logUnsafe lCfg' DebugL msg1 x
 
 -- TODO double check that these can't have redundancies
 simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg ds
@@ -281,9 +287,27 @@ redundantSet lCfg h1 fs (_,h2,_,fs') =
        then logUnsafe (addLogContext lCfg "redundantSet") DebugL msg allRed
        else allRed
   where
-    redundant (_, e') = or [splitDirectories e
-                            `L.isPrefixOf`
-                            splitDirectories e' | (_, e) <- fs]
+    prefixes = buildPrefixSet fs
+    redundant = redundantFast prefixes
+  -- where
+    -- TODO try doing both and error if they're never not equal to test it?
+    -- redundant (_, e') = or [splitDirectories e
+    --                         `L.isPrefixOf`
+    --                         splitDirectories e' | (_, e) <- fs]
+
+buildPrefixSet :: [(a, OsPath)] -> Set [OsPath]
+buildPrefixSet paths = Set.fromList
+  [ take n dirs
+  | (_, path) <- paths
+  , let dirs = splitDirectories path
+  , n <- [1..length dirs]  -- All possible prefixes
+  ]
+
+redundantFast :: Set [OsPath] -> ModPath -> Bool
+redundantFast prefixes (_, path) =
+  let dirs = splitDirectories path
+      allPrefixes = [take n dirs | n <- [1..length dirs]]
+  in all (`Set.member` prefixes) allPrefixes
 
 ---------------------------- pick which dupe to keep --------------------------
 

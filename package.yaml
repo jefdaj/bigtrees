@@ -21,6 +21,7 @@ dependencies:
 - base64-bytestring
 - bytestring
 - case-insensitive
+- containers
 - crypton
 - deepseq
 - directory

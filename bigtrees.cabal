@@ -57,6 +57,7 @@ library
     , base64-bytestring
     , bytestring
     , case-insensitive
+    , containers
     , crypton
     , deepseq
     , directory
@@ -140,6 +141,7 @@ executable bigtrees
     , bigtrees
     , bytestring
     , case-insensitive
+    , containers
     , crypton
     , deepseq
     , directory
@@ -226,6 +228,7 @@ test-suite test-app
     , bigtrees
     , bytestring
     , case-insensitive
+    , containers
     , crypton
     , deepseq
     , directory
@@ -314,6 +317,7 @@ test-suite test-lib
     , bigtrees
     , bytestring
     , case-insensitive
+    , containers
     , crypton
     , deepseq
     , directory
@@ -420,6 +424,7 @@ benchmark test-bench
     , bigtrees
     , bytestring
     , case-insensitive
+    , containers
     , crypton
     , deepseq
     , directory
