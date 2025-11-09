@@ -64,7 +64,8 @@ main = do
           optLongs n = D.getAllArgs args $ D.longOption n
           optRead  n = read <$> optLong n
 
-      lCfg :: LogCfg <- initLogger "main" $ if (flag "verbose") then DebugL else InfoL
+      -- TODO have more options than just debug or warning: info, error, debug with filter...
+      lCfg :: LogCfg <- initLogger "main" $ if (flag "verbose") then DebugL else WarningL
       let info  = log lCfg InfoL
           debug = log lCfg DebugL
 
