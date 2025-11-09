@@ -8,6 +8,7 @@ import Cmd.Dupes.Render (DupesRenderFn, dupesRenderFunctions)
 import Config (AppConfig (..), SearchConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import Control.Exception (bracket)
+import Control.DeepSeq (force)
 import Control.Monad (forM, (>=>))
 import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.ByteString.Char8 as B8
@@ -28,6 +29,7 @@ import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
+import Control.DeepSeq (deepseq)
 
 -- import Debug.Trace
 
@@ -38,8 +40,10 @@ import Test.Tasty.Golden (goldenVsString)
 hWriteDupes :: SearchConfig -> LogCfg -> DupesRenderFn -> Bool -> Handle -> BT.SortedDupeLists -> IO ()
 hWriteDupes cfg lCfg explainFn keepOneDupe hdl groups = do
   -- TODO rename line groups or similar?
-  lines <- explainFn lCfg keepOneDupe (maxDepth cfg) groups
-  mapM_ (B8.hPutStrLn hdl) lines -- TODO this will force evaluation line by line, right?
+  let debug = log (addLogContext lCfg "hWriteDupes") DebugL
+  lines <- map (\x -> deepseq x x) <$> explainFn lCfg keepOneDupe (maxDepth cfg) groups
+  debug "writing dupes to output handle"
+  mapM_ (\l -> B8.hPutStrLn hdl l >> hFlush hdl) lines -- TODO this will force evaluation line by line, right?
 
 cmdDupes :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdDupes cfg lCfg path = bracket open close write
@@ -89,8 +93,9 @@ cmdDupes cfg lCfg path = bracket open close write
             -- TODO DupesMode or similar type to make the null rList thing more obvious?
             let scoreFn = if keepOneDupe then BT.scoreSetSelf else BT.scoreSetRef
                 keepSingles = not keepOneDupe
-            res <- BT.dupesByNegScore lCfg scoreFn keepSingles ht
-            debugST $ "finished scoring " <> treeN <> " DupeSets" -- TODO but is this time ordered?
+            res <- map force <$> BT.dupesByNegScore lCfg scoreFn keepSingles ht
+            -- TODO does this print before it starts actually scoring sets?
+            debugST $ "finished scoring " <> treeN <> " DupeSets"
             return res
 
       -- TODO pull default from docopt instead of duplicating that here
