@@ -39,7 +39,7 @@ renderRsyncFilter lCfg keepOne md ls = do
   -- TODO add a separate sort step here once there are multiple sorting options
   body <- mapM groupDupes $ reverse ls
 
-  return $ B8.unlines $ fileHeader : body ++ catchall
+  return $ fileHeader : body ++ catchall
   where
 
     fileHeader = B8.pack $

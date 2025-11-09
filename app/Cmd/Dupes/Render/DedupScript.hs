@@ -58,7 +58,7 @@ addFnCall tt path = rm tt <> " " <> path
 renderDedupScript :: DupesRenderFn
 renderDedupScript lCfg keepOne md ls = do
   body <- mapM excludeLines ls
-  return $ B8.unlines $ fileHeader keepOne : body
+  return $ fileHeader keepOne : body
   where
 
     depthWarning Nothing  = ""

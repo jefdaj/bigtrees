@@ -35,11 +35,11 @@ import Test.Tasty.Golden (goldenVsString)
 -- TODO rename DupesRenderFn
 -- type DupesRenderFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
--- TODO factor explainFn out here?
 hWriteDupes :: SearchConfig -> LogCfg -> DupesRenderFn -> Bool -> Handle -> BT.SortedDupeLists -> IO ()
 hWriteDupes cfg lCfg explainFn keepOneDupe hdl groups = do
-  msg <- explainFn lCfg keepOneDupe (maxDepth cfg) groups
-  B8.hPutStr hdl msg
+  -- TODO rename line groups or similar?
+  lines <- explainFn lCfg keepOneDupe (maxDepth cfg) groups
+  mapM_ (B8.hPutStrLn hdl) lines -- TODO this will force evaluation line by line, right?
 
 cmdDupes :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdDupes cfg lCfg path = bracket open close write

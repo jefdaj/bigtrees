@@ -10,7 +10,7 @@ import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 renderSuggestions :: DupesRenderFn
 renderSuggestions lCfg keepOne md ls = do
   body <- mapM excludeLines ls
-  return $ B8.unlines $ fileHeader : body
+  return $ fileHeader : body
   where
 
     fileHeader = B8.pack $

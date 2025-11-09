@@ -42,7 +42,7 @@ addTest tt path = test tt <> " " <> path
 renderTestScript :: DupesRenderFn
 renderTestScript lCfg keepOne md ls = do
   body <- mapM excludeLines ls
-  return $ B8.unlines $ fileHeader : body
+  return $ fileHeader : body
   where
 
     depthWarning Nothing  = ""
