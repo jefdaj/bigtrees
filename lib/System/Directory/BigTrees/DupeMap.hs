@@ -68,6 +68,8 @@ import Data.STRef (STRef (..), newSTRef, readSTRef, writeSTRef)
 import System.Directory.BigTrees.HashTree.Find (findLabelNode)
 import System.Directory.BigTrees.Util (sbs2b8)
 
+import Control.Parallel.Strategies -- TODO be more specific
+
 -- TODO be able to serialize dupemaps for debugging
 -- TODO can Foldable or Traversable simplify these?
 
@@ -259,7 +261,7 @@ simplifyDupes i lCfg (d@(_,h,D,fs):ds) = info msg $ (d:) $ simplifyDupes (i+1) l
           " drop " <> showD <>
           " sets redundant with " <> showH <> "; " <> showR <>
           " sets remain to process"
-    ds' = filter (not . redundantSet lCfg' h fs) ds
+    ds' = filter (not . redundantSet lCfg' h fs) ds `using` parList rdeepseq
     nRemain = length ds'
     nDrop = length ds - nRemain
     info msg x = if nDrop > 0
