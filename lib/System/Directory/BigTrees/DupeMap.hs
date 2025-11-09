@@ -280,34 +280,35 @@ simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg ds
 redundantSet :: LogCfg -> Hash -> [ModPath] -> DupeList -> Bool
 redundantSet lCfg h1 fs (_,h2,_,fs') =
   let allRed = all redundant fs'
+      oldAllRed = all oldRedundant fs'
       showH1 = sbs2b8 $ unHash h1
       showH2 = sbs2b8 $ unHash h2
+      showPs ps = concatMap (\p -> show p ++ "\n") (L.sort $ map snd ps)
       msg    = showH2 <> " is redundant with " <> showH1
-  in if allRed
+  in if (allRed /= oldAllRed) then error ("allRed /= oldAllRed:\nfs:" ++ showPs fs ++ "\nfs':" ++ showPs fs' ++ "\nallRed: " ++ show allRed ++ "\noldAllRed: " ++ show oldAllRed) else (if allRed
        then logUnsafe (addLogContext lCfg "redundantSet") DebugL msg allRed
-       else allRed
+       else allRed)
   where
-    prefixes = buildPrefixSet fs
+    prefixes = buildPrefixSet $ map snd fs
     redundant = redundantFast prefixes
-  -- where
-    -- TODO try doing both and error if they're never not equal to test it?
-    -- redundant (_, e') = or [splitDirectories e
-    --                         `L.isPrefixOf`
-    --                         splitDirectories e' | (_, e) <- fs]
+    oldRedundant (_, e') = or [splitDirectories e
+                              `L.isPrefixOf`
+                              splitDirectories e' | (_, e) <- fs]
 
-buildPrefixSet :: [(a, OsPath)] -> Set [OsPath]
-buildPrefixSet paths = Set.fromList
-  [ take n dirs
-  | (_, path) <- paths
-  , let dirs = splitDirectories path
-  , n <- [1..length dirs]  -- All possible prefixes
-  ]
+buildPrefixSet :: [OsPath] -> Set [OsPath]
+buildPrefixSet paths = Set.fromList [splitDirectories path | path <- paths]
+-- buildPrefixSet paths = Set.fromList
+--   [ take n dirs
+--   | path <- paths
+--   , let dirs = splitDirectories path
+--   , n <- [1..length dirs]  -- All possible prefixes
+--   ]
 
 redundantFast :: Set [OsPath] -> ModPath -> Bool
 redundantFast prefixes (_, path) =
   let dirs = splitDirectories path
       allPrefixes = [take n dirs | n <- [1..length dirs]]
-  in all (`Set.member` prefixes) allPrefixes
+  in any (`Set.member` prefixes) allPrefixes
 
 ---------------------------- pick which dupe to keep --------------------------
 
