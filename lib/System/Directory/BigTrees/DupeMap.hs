@@ -253,7 +253,6 @@ dupesByNegScore lCfg scoreFn keepSingles dm = do
 simplifyDupes :: Int -> LogCfg -> SortedDupeLists -> SortedDupeLists
 
 simplifyDupes _ _ [ ] = [ ]
-simplifyDupes _ _ [d] = [d]
 
 simplifyDupes i lCfg (d@(_,h,D,fs):ds) = log $ (d:) $ simplifyDupes (i+1) lCfg ds'
   where
@@ -261,7 +260,7 @@ simplifyDupes i lCfg (d@(_,h,D,fs):ds) = log $ (d:) $ simplifyDupes (i+1) lCfg d
     showI = B8.pack $ show i
     showR = B8.pack $ show nRemain
     showD = B8.pack $ show nDrop
-    lCfg' = addLogContext lCfg "simplifyDupes"
+    lCfg' = addLogContext lCfg "simplifyDupes.D"
     msg1 = "iteration " <> showI
     msg2 = msg1 <>
           " drop " <> showD <>
@@ -275,7 +274,12 @@ simplifyDupes i lCfg (d@(_,h,D,fs):ds) = log $ (d:) $ simplifyDupes (i+1) lCfg d
               else logUnsafe lCfg' DebugL msg1 x
 
 -- TODO double check that these can't have redundancies
-simplifyDupes i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg ds
+simplifyDupes i lCfg (d:ds) = log msg $ (d:) $ simplifyDupes (i+1) lCfg ds
+  where
+    showI = B8.pack $ show i
+    msg = "iteration " <> showI
+    lCfg' = addLogContext lCfg "simplifyDupes._"
+    log = logUnsafe lCfg' DebugL
 
 redundantSet :: LogCfg -> Hash -> [ModPath] -> DupeList -> Bool
 redundantSet lCfg h1 fs (_,h2,_,fs') =
