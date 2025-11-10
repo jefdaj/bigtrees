@@ -11,7 +11,7 @@ import System.Info (arch, compilerName, fullCompilerVersion, os)
 -- import System.FilePath.Glob (Pattern)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 -- import Data.Time.Clock (secondsToDiffTime)
-import Control.Monad (forM, replicateM)
+import Control.Monad (forM, replicateM, when)
 import Data.Aeson (FromJSON, ToJSON, decode)
 import qualified Data.Aeson.Encode.Pretty as AP
 import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
@@ -24,7 +24,7 @@ import Data.String.Utils (replace)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.HashLine.Base
 import qualified System.File.OsPath as SFO
-import System.IO (Handle, IOMode (..), hGetLine)
+import System.IO (Handle, IOMode (..), hGetLine, hIsEOF)
 import System.OsPath (OsPath)
 import System.Directory.BigTrees.Logging (LogCfg(..), addLogContext, die)
 
@@ -163,12 +163,26 @@ parseFooter = decode . B8.fromStrict . B8.pack . unlines . map (replace "# " "")
 
 --- read header info from the beginning of the file ---
 
+readCommentLines :: Handle -> Int -> IO [String]
+readCommentLines h maxLines = readLines maxLines []
+  where
+    readLines 0 acc = return (reverse acc)
+    readLines n acc = do
+      eof <- hIsEOF h
+      if eof
+        then return (reverse acc)
+        else do
+          line <- hGetLine h
+          if isCommentLine line
+            then readLines (n-1) (line:acc)
+            else return (reverse acc)  -- Stop at first non-comment
+
 -- TODO document 100 line limit
 -- TODO SFO.withBinaryFile?
 readHeader :: LogCfg -> OsPath -> IO (Maybe Header)
 readHeader lCfg path =
   SFO.withBinaryFile path ReadMode $ \h -> do
-    commentLines <- takeWhile isCommentLine <$> replicateM 100 (hGetLine h)
+    commentLines <- readCommentLines h 100
     return $ parseHeader lCfg commentLines
 
 -- Header is the same, except we have to lob off the final header line

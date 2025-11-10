@@ -31,7 +31,7 @@ import Data.Either (fromRight)
 import Data.Maybe (catMaybes, fromJust)
 import System.Directory.BigTrees.HeadFoot (Footer, Header, commentLineP, footerP, headerP,
                                            readHeader, parseFooter, assertCompatibleTreeFormatHeader)
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, die, logUnsafe)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, die, log, logUnsafe)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
@@ -141,10 +141,13 @@ readTreeLines lCfg path = do
 -- TODO move somewhere else?
 assertCompatibleTreeFormat :: LogCfg -> OsPath -> IO ()
 assertCompatibleTreeFormat lCfg osp = do
-  mH <- readHeader lCfg osp
+  let lCfg' = addLogContext lCfg "assertCompatibleTreeFormat"
+      debug = log lCfg' DebugL
+  debug "reading header"
+  mH <- readHeader lCfg' osp
   case mH of
-    Nothing -> die lCfg "failed to parse header"
-    Just hdr -> assertCompatibleTreeFormatHeader lCfg hdr $ return ()
+    Nothing -> die lCfg' "failed to parse header"
+    Just hdr -> assertCompatibleTreeFormatHeader lCfg' hdr $ return ()
 
 readTree :: SearchConfig -> LogCfg -> OsPath -> IO ProdTree
 readTree cfg lCfg f = SFO.withFile f ReadMode $ \h -> do
