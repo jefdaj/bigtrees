@@ -9,6 +9,7 @@ module System.Directory.BigTrees.Delta
   , fixMoves
   , prettyDelta
   , printDeltas
+  , hPrintDeltas
   , writeDeltas
   , simDelta
   , simDeltas
@@ -21,7 +22,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.List (find)
 import Data.Maybe (fromJust)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, addSubTree,
-                                           dropTo, rmSubTree, treeName, treeHash)
+                                           dropTo, rmSubTree, treeName, treeType, treeHash)
 import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die, logUnsafe, LogLevel(..))
 import System.Directory.BigTrees.Name (Name (..), op2ns)
 import qualified System.OsPath as SOP
@@ -77,21 +78,23 @@ diff lCfg = diff' (addLogContext lCfg "diff") mempty
 -- TODO fix non-exhaustive patterns
 diff' :: (Eq a, Show a) => LogCfg -> OsPath -> HashTree a -> HashTree a -> [Delta a]
 
--- TODO is there a better way to handle when one is an error?
+-- Break and Fix
 diff' _ anchor e@(Err {}) t2 = [Fix   (anchor </> unName (treeName t2)) t2]
 diff' _ anchor t1 e@(Err {}) = [Break (anchor </> unName (treeName t1)) t1]
 
+-- Two Files
 diff' lCfg anchor t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (anchor </> f1) (anchor </> f2)]
   | f1 == f2 && h1 /= h2 = [Edit (if anchor == f1 then f1 else anchor </> f1) t1 t2]
   | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ show t1 ++ " " ++ show t2
 
-diff' _ anchor (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm anchor, Add (anchor </> d) t2]
-
+-- File <--> Dir
 -- TODO wait is this a Mv?
+diff' _ anchor (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm anchor        , Add (anchor </> d) t2]
 diff' _ anchor (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (anchor </> d), Add (anchor </> d) t2]
 
+-- Two Dirs
 diff' lCfg anchor t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
   -- | h1 == h2 = []
    = fixMoves lCfg t1 $ rms ++ adds ++ edits
@@ -101,18 +104,22 @@ diff' lCfg anchor t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {
     edits = concat [diff' lCfg (anchor </> unName (treeName o)) o n | o <- os, n <- ns,
                                                o /= n, treeName o == treeName n]
 
-diff' lCfg _ t1 t2
-  | treeHash t1 == treeHash t2 = [] -- TODO does this make sense?
+-- catchall
+-- TODO write a b64 encoding fn so you can show the anchor outside IO?
+diff' lCfg anchor t1 t2
+  | treeType t1 == treeType t2 && treeHash t1 == treeHash t2 = [] -- TODO remove?
   | otherwise =
-      let msg = "ERROR unexpected diff:\nt1:" <> B8.pack (show t1) <> "\nt2:\n" <> B8.pack (show t2)
-          logE = logUnsafe lCfg ErrorL
-      in logE msg [] -- TODO die here
-
--- diff' lCfg anchor t1 t2 = error $ "unexpected diff' comparison t1: " ++ show t1 ++ " t2: " ++ show t2
+      let msg = "ERROR unexpected diff' case:'\nt1 " <> showT t1 <> "\nt2 " <> showT t2
+          showT t = B8.pack $
+                    "name: '"  ++ show (treeName t) ++
+                    "' hash: " ++ show (treeHash t) ++
+                    " type: "  ++ show (treeType t)
+      in die lCfg msg
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
--- TODO need an initial tree too to check if the hashes match
+-- TODO should also work in reverse order, right?
 findMv :: (Eq a, Show a) => HashTree a -> Delta a -> Delta a -> Bool
+findMv t t1@(Add _ _) t2@(Rm _) = findMv t t2 t1 -- swap order to Rm then Add
 findMv t (Rm p) (Add _ t2) = case dropTo t (op2ns p) of
                                Nothing -> False
                                Just t3 -> t2 == t3
