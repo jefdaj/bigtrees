@@ -29,8 +29,9 @@ fileHeader keepOne =
   \# somewhere else, and that copy was used to generate the reference set.\n")
   <>
   "\n\
-  \keep() { [[ -e \"$1\" ]] && echo \"KEEP '$1'\" || { echo \"MISSING '$1'\" >&2; exit 1; }; }\n\
-  \skip() { [[ ! -e \"$1\" ]] && echo \"SKIP '$1'\"; }\n\
+  \skip_group=FALSE\n\
+  \verify() { [[ -e \"$1\" ]] && echo \"KEEP '$1'\" && skip_group=FALSE || { echo \"MISSING '$1'\" >&2; skip_group=TRUE; }; }\n\
+  \skip() { [[ $skip_group == TRUE || ! -e \"$1\" ]] && echo \"SKIP '$1'\"; }\n\
   \rm_X() { skip \"$3\" || { rm $1 \"$3\" && echo \"OK $2 '$3'\"; } || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
   \rm_d() { rm_X '-r' 'dir ' \"$1\"; }\n\
   \rm_f() { rm_X '' 'file' \"$1\"; }\n\
@@ -56,9 +57,9 @@ addRmCall tt path = rm tt <> " " <> path
     rm B = "rm_l"
     rm _ = error $ "unexpected tree type " ++ show tt ++ " in path " ++ B8.unpack path
 
--- convert an rm_X call to a keep call
-keepRatherThanRm :: B8.ByteString -> B8.ByteString
-keepRatherThanRm rmCall = "keep" <> B8.drop 4 (rmCall)
+-- convert an rm_X call to a verify call
+verifyRatherThanRm :: B8.ByteString -> B8.ByteString
+verifyRatherThanRm rmCall = "verify" <> B8.drop 4 (rmCall)
 
 renderDedupScript :: DupesRenderFn
 renderDedupScript lCfg keepOne md ls = do
@@ -74,7 +75,7 @@ renderDedupScript lCfg keepOne md ls = do
     excludeLines (n, h, t, paths) = do
       let paths'  = map (addRmCall t . quotePath . op2bs . snd) $ sortPaths lCfg paths
           paths'' = if keepOne
-                       then (keepRatherThanRm $ head paths') : tail paths'
+                       then (verifyRatherThanRm $ head paths') : tail paths'
                        else paths'
       return $ B8.unlines
              $ groupHeader h t n (length paths)
