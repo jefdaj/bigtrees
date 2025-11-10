@@ -41,7 +41,7 @@ dependencies:
 - MissingH
 - monad-parallel
 - os-string
-- parallel
+# - parallel
 - pretty-simple
 - process
 - QuickCheck

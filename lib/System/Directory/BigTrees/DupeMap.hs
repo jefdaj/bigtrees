@@ -34,7 +34,7 @@ module System.Directory.BigTrees.DupeMap
   )
   where
 
-import Control.DeepSeq (deepseq)
+import Control.DeepSeq (deepseq, NFData)
 import Control.Monad (when)
 import Control.Monad.ST (ST)
 import qualified Data.ByteString.Char8 as B8
@@ -73,7 +73,6 @@ import System.Directory.BigTrees.Util (sbs2b8)
 
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Control.Parallel.Strategies -- TODO be more specific
 
 -- TODO be able to serialize dupemaps for debugging
 -- TODO can Foldable or Traversable simplify these?
@@ -249,7 +248,7 @@ dupesByNegScore lCfg scoreFn keepSingles dm = do
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList sorted
       singles  = if keepSingles then sortedL else filter (\(_, _, _, ps) -> length ps > 1) sortedL
       fixElem (n, h, t, fs) = (negate n, h, t, L.sort $ S.toList fs) -- TODO n before h?
-      fixed    = debug "fixing up elements" $ Prelude.map fixElem singles -- TODO what if *this* is taking most of the time?
+      fixed    = debug "fixing up elements" $ Prelude.map fixElem singles
       simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg' fixed
       final = unsorted `deepseq` sorted `deepseq` sortedL `deepseq` singles `deepseq` fixed `deepseq` simple `deepseq` simple
   return final
@@ -277,48 +276,47 @@ simplifyDupes' i lCfg (d@(_,h,D,fs):ds) = log $ (d:) $ simplifyDupes (i+1) lCfg 
     showI = B8.pack $ show i
     showR = B8.pack $ show nRemain
     showD = B8.pack $ show nDrop
-    lCfg' = addLogContext lCfg "simplifyDupes.D"
+    lCfg' = addLogContext lCfg "simplifyDupes" -- TODO label this simplifyDupes'.D?
     msg = "iteration " <> showI <>
           " drop " <> showD <>
           " sets redundant with " <> showH <> "; " <> showR <>
           " sets remain to process"
-    ds' = filter (not . redundantSet lCfg' h fs) ds `using` parList rdeepseq
+    debug msg x = logSD lCfg' DebugL msg x
+    prefixes = buildPrefixSet $ map snd fs
+    -- ds' = debug "filtering redundant sets" (filter (not . redundantSet lCfg' h prefixes) ds `using` parList rdeepseq)
+    ds' = filter (not . redundantSet lCfg' h prefixes) ds
     nRemain = length ds'
     nDrop = length ds - nRemain
     log x = if nDrop > 0
               then logUnsafe lCfg' InfoL  msg x
               else x
 
--- TODO double check that these can't have redundancies
+-- TODO non-Dirs can't have redundancies, right?
 simplifyDupes' i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg ds
 
-redundantSet :: LogCfg -> Hash -> [ModPath] -> DupeList -> Bool
-redundantSet lCfg h1 fs (_,h2,_,fs') =
-  let allRed = all redundant fs'
+-- TODO confirm no bugs in fast implementation, then clean this up
+redundantSet :: LogCfg -> Hash -> Set [OsPath] -> DupeList -> Bool
+redundantSet lCfg h1 prefixes (_,h2,_,paths) =
+  let allRed = all (redundantFast prefixes) paths
       -- oldAllRed = all oldRedundant fs'
       showH1 = sbs2b8 $ unHash h1
       showH2 = sbs2b8 $ unHash h2
-      showPs ps = concatMap (\p -> show p ++ "\n") (L.sort $ map snd ps)
-      msg    = showH2 <> " is redundant with " <> showH1
+      -- showPs ps = concatMap (\p -> show p ++ "\n") (L.sort $ map snd ps)
+      debug = logUnsafe (addLogContext lCfg "redundantSet") DebugL
+      msg1 = showH2 <> " is redundant with " <> showH1
+      -- msg2 = showH2 <> " is not redundant with " <> showH1
   -- in if (allRed /= oldAllRed) then error ("allRed /= oldAllRed:\nfs:" ++ showPs fs ++ "\nfs':" ++ showPs fs' ++ "\nallRed: " ++ show allRed ++ "\noldAllRed: " ++ show oldAllRed) else (if allRed
   in if allRed
-       then logUnsafe (addLogContext lCfg "redundantSet") DebugL msg allRed
+       then debug msg1 allRed
        else allRed
-  where
-    prefixes = buildPrefixSet $ map snd fs
-    redundant = redundantFast prefixes
+  -- where
+    -- redundant = redundantFast prefixes
     -- oldRedundant (_, e') = or [splitDirectories e
     --                           `L.isPrefixOf`
     --                           splitDirectories e' | (_, e) <- fs]
 
 buildPrefixSet :: [OsPath] -> Set [OsPath]
 buildPrefixSet paths = Set.fromList [splitDirectories path | path <- paths]
--- buildPrefixSet paths = Set.fromList
---   [ take n dirs
---   | path <- paths
---   , let dirs = splitDirectories path
---   , n <- [1..length dirs]  -- All possible prefixes
---   ]
 
 redundantFast :: Set [OsPath] -> ModPath -> Bool
 redundantFast prefixes (_, path) =
