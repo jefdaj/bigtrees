@@ -23,9 +23,8 @@ import Data.List (find)
 import Data.Maybe (fromJust)
 import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTree, addSubTree,
                                            dropTo, rmSubTree, treeName, treeType, treeHash)
-import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die, logUnsafe, LogLevel(..))
+import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
 import System.Directory.BigTrees.Name (Name (..), op2ns)
-import qualified System.OsPath as SOP
 import System.OsPath (OsPath, decodeFS, (</>))
 import System.IO (Handle, IOMode(..))
 import qualified System.File.OsPath as SFO
@@ -50,7 +49,7 @@ data Delta a
 ------------------------
 
 -- TODO put the hashes back here?
-prettyDelta :: Show a => Delta a -> IO B.ByteString
+prettyDelta :: Delta a -> IO B.ByteString
 prettyDelta (Add     f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "added '"     ++ f' ++ "'"
 prettyDelta (Rm      f    ) = decodeFS f >>= \f' -> return $ B.pack $ "removed '"   ++ f' ++ "'"
 prettyDelta (Edit    f _ _) = decodeFS f >>= \f' -> return $ B.pack $ "edited '"    ++ f' ++ "'"
@@ -63,13 +62,13 @@ prettyDelta (Mv f1 f2) = do
   f2' <- decodeFS f2
   return $ B.pack $ "moved '"   ++ f1' ++ "' -> '" ++ f2' ++ "'"
 
-hPrintDeltas :: Show a => Handle -> [Delta a] -> IO ()
+hPrintDeltas :: Handle -> [Delta a] -> IO ()
 hPrintDeltas hdl ds = mapM prettyDelta ds >>= mapM_ (B.hPutStrLn hdl)
 
-writeDeltas :: Show a => OsPath -> [Delta a] -> IO ()
+writeDeltas :: OsPath -> [Delta a] -> IO ()
 writeDeltas osp ds = SFO.withBinaryFile osp WriteMode $ \hdl -> mapM prettyDelta ds >>= mapM_ (B.hPutStrLn hdl)
 
-printDeltas :: Show a => [Delta a] -> IO ()
+printDeltas :: [Delta a] -> IO ()
 printDeltas ds = mapM prettyDelta ds >>= mapM_ B.putStrLn
 
 diff :: (Eq a, Show a) => LogCfg -> HashTree a -> HashTree a -> [Delta a]
@@ -78,11 +77,15 @@ diff lCfg = diff' (addLogContext lCfg "diff") mempty
 -- TODO fix non-exhaustive patterns
 diff' :: (Eq a, Show a) => LogCfg -> OsPath -> HashTree a -> HashTree a -> [Delta a]
 
+-- TODO this is always true, right?
+diff' _ _ t1 t2 | treeType t1 == treeType t2 && treeHash t1 == treeHash t2 = []
+
 -- Break and Fix
-diff' _ anchor e@(Err {}) t2 = [Fix   (anchor </> unName (treeName t2)) t2]
-diff' _ anchor t1 e@(Err {}) = [Break (anchor </> unName (treeName t1)) t1]
+diff' _ anchor (Err {}) t2 = [Fix   (anchor </> unName (treeName t2)) t2]
+diff' _ anchor t1 (Err {}) = [Break (anchor </> unName (treeName t1)) t1]
 
 -- Two Files
+-- TODO rewrite with getter fns instead of pattern matching
 diff' lCfg anchor t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (anchor </> f1) (anchor </> f2)]
@@ -90,31 +93,30 @@ diff' lCfg anchor t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(Fi
   | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ show t1 ++ " " ++ show t2
 
 -- File <--> Dir
--- TODO wait is this a Mv?
-diff' _ anchor (File {}) t2@(Dir {nodeData=(NodeData {name=Name d})}) = [Rm anchor        , Add (anchor </> d) t2]
-diff' _ anchor (Dir {nodeData=(NodeData {name=Name d})}) t2@(File {}) = [Rm (anchor </> d), Add (anchor </> d) t2]
+diff' _ anchor f@(File {}) d@(Dir  {}) = [ Rm  (anchor </> unName (treeName f))
+                                         , Add (anchor </> unName (treeName d)) d]
+
+diff' _ anchor d@(Dir  {}) f@(File {}) = [ Rm  (anchor </> unName (treeName d))
+                                         , Add (anchor </> unName (treeName f)) f]
 
 -- Two Dirs
-diff' lCfg anchor t1@(Dir {nodeData=(NodeData{hash=h1}), dirContents=os}) (Dir {nodeData=(NodeData {hash=h2}), dirContents=ns})
-  -- | h1 == h2 = []
-   = fixMoves lCfg t1 $ rms ++ adds ++ edits
+diff' lCfg anchor t1@(Dir {}) t2@(Dir {}) = fixMoves lCfg t1 $ rms ++ adds ++ edits
   where
+    os = dirContents t1
+    ns = dirContents t2
     adds  = [Add (anchor </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
     rms   = [Rm  (anchor </> unName (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
-    edits = concat [diff' lCfg (anchor </> unName (treeName o)) o n | o <- os, n <- ns,
-                                               o /= n, treeName o == treeName n]
+    edits = concat [diff' lCfg (anchor </> unName (treeName o)) o n | o <- os, n <- ns, o /= n, treeName o == treeName n]
 
 -- catchall
 -- TODO write a b64 encoding fn so you can show the anchor outside IO?
-diff' lCfg anchor t1 t2
-  | treeType t1 == treeType t2 && treeHash t1 == treeHash t2 = [] -- TODO remove?
-  | otherwise =
-      let msg = "ERROR unexpected diff' case:'\nt1 " <> showT t1 <> "\nt2 " <> showT t2
-          showT t = B8.pack $
-                    "name: '"  ++ show (treeName t) ++
-                    "' hash: " ++ show (treeHash t) ++
-                    " type: "  ++ show (treeType t)
-      in die lCfg msg
+diff' lCfg _ t1 t2 =
+  let msg = "ERROR unexpected diff' case:'\nt1 " <> showT t1 <> "\nt2 " <> showT t2
+      showT t = B8.pack $
+                  "name: '"  ++ show (treeName t) ++
+                  "' hash: " ++ show (treeHash t) ++
+                  " type: "  ++ show (treeType t)
+  in die lCfg msg
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
 -- TODO should also work in reverse order, right?
