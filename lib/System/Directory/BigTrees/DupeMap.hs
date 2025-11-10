@@ -249,9 +249,10 @@ dupesByNegScore lCfg scoreFn keepSingles dm = do
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList sorted
       singles  = if keepSingles then sortedL else filter (\(_, _, _, ps) -> length ps > 1) sortedL
       fixElem (n, h, t, fs) = (negate n, h, t, L.sort $ S.toList fs) -- TODO n before h?
-      fixed    = Prelude.map fixElem singles
+      fixed    = debug "fixing up elements" $ Prelude.map fixElem singles -- TODO what if *this* is taking most of the time?
       simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg' fixed
-  return simple
+      final = unsorted `deepseq` sorted `deepseq` sortedL `deepseq` singles `deepseq` fixed `deepseq` simple `deepseq` simple
+  return final
 
 {- Assumes a pre-sorted list of lists.
  - Removes lists whose elements are all inside elements of the first list.
@@ -261,17 +262,23 @@ dupesByNegScore lCfg scoreFn keepSingles dm = do
  -}
 simplifyDupes :: Int -> LogCfg -> SortedDupeLists -> SortedDupeLists
 
-simplifyDupes _ _ [ ] = [ ]
+simplifyDupes i lCfg ds = log msg $ simplifyDupes' i lCfg ds
+  where
+    lCfg' = addLogContext lCfg "simplifyDupes"
+    showI = B8.pack $ show i
+    msg = "iteration " <> showI
+    log = logUnsafe lCfg' DebugL
 
-simplifyDupes i lCfg (d@(_,h,D,fs):ds) = log $ (d:) $ simplifyDupes (i+1) lCfg ds'
+simplifyDupes' _ _ [ ] = [ ]
+
+simplifyDupes' i lCfg (d@(_,h,D,fs):ds) = log $ (d:) $ simplifyDupes (i+1) lCfg ds'
   where
     showH = sbs2b8 $ unHash h
     showI = B8.pack $ show i
     showR = B8.pack $ show nRemain
     showD = B8.pack $ show nDrop
     lCfg' = addLogContext lCfg "simplifyDupes.D"
-    msg1 = "iteration " <> showI
-    msg2 = msg1 <>
+    msg = "iteration " <> showI <>
           " drop " <> showD <>
           " sets redundant with " <> showH <> "; " <> showR <>
           " sets remain to process"
@@ -279,16 +286,11 @@ simplifyDupes i lCfg (d@(_,h,D,fs):ds) = log $ (d:) $ simplifyDupes (i+1) lCfg d
     nRemain = length ds'
     nDrop = length ds - nRemain
     log x = if nDrop > 0
-              then logUnsafe lCfg' InfoL  msg2 x
-              else logUnsafe lCfg' DebugL msg1 x
+              then logUnsafe lCfg' InfoL  msg x
+              else x
 
 -- TODO double check that these can't have redundancies
-simplifyDupes i lCfg (d:ds) = log msg $ (d:) $ simplifyDupes (i+1) lCfg ds
-  where
-    showI = B8.pack $ show i
-    msg = "iteration " <> showI
-    lCfg' = addLogContext lCfg "simplifyDupes._"
-    log = logUnsafe lCfg' DebugL
+simplifyDupes' i lCfg (d:ds) = (d:) $ simplifyDupes (i+1) lCfg ds
 
 redundantSet :: LogCfg -> Hash -> [ModPath] -> DupeList -> Bool
 redundantSet lCfg h1 fs (_,h2,_,fs') =
