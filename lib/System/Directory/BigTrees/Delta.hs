@@ -74,22 +74,35 @@ printDeltas ds = mapM prettyDelta ds >>= mapM_ B.putStrLn
 diff :: (Eq a, Show a) => LogCfg -> HashTree a -> HashTree a -> [Delta a]
 diff lCfg = diff' (addLogContext lCfg "diff") mempty
 
--- TODO fix non-exhaustive patterns
+-- TODO does this expect the names to always be the same? should it?
 diff' :: (Eq a, Show a) => LogCfg -> OsPath -> HashTree a -> HashTree a -> [Delta a]
 
 -- TODO this is always true, right?
-diff' _ _ t1 t2 | treeType t1 == treeType t2 && treeHash t1 == treeHash t2 = []
+diff' _ _ t1 t2
+  |  treeType t1 == treeType t2
+  && treeHash t1 == treeHash t2
+  && treeName t1 == treeName t2 = [] -- TODO are names always the same?
 
 -- Break and Fix
 diff' _ anchor (Err {}) t2 = [Fix   (anchor </> unName (treeName t2)) t2]
 diff' _ anchor t1 (Err {}) = [Break (anchor </> unName (treeName t1)) t1]
 
+-- Two Links
+-- TODO is there a better way to DRY this out with the Files case?
+diff' lCfg anchor t1@(Link {nodeData=(NodeData {name=Name n1, hash=h1})})
+                  t2@(Link {nodeData=(NodeData {name=Name n2, hash=h2})})
+  | n1 == n2 && h1 == h2 = [] -- TODO remove?
+  | n1 /= n2 && h1 == h2 = [Mv (anchor </> n1) (anchor </> n2)]
+  | n1 == n2 && h1 /= h2 = [Edit (if anchor == n1 then n1 else anchor </> n1) t1 t2]
+  | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ show t1 ++ " " ++ show t2
+
 -- Two Files
 -- TODO rewrite with getter fns instead of pattern matching
-diff' lCfg anchor t1@(File {nodeData=(NodeData {name=Name f1, hash=h1})}) t2@(File {nodeData=(NodeData{name=Name f2, hash=h2})})
-  | f1 == f2 && h1 == h2 = []
-  | f1 /= f2 && h1 == h2 = [Mv (anchor </> f1) (anchor </> f2)]
-  | f1 == f2 && h1 /= h2 = [Edit (if anchor == f1 then f1 else anchor </> f1) t1 t2]
+diff' lCfg anchor t1@(File {nodeData=(NodeData {name=Name n1, hash=h1})})
+                  t2@(File {nodeData=(NodeData {name=Name n2, hash=h2})})
+  | n1 == n2 && h1 == h2 = [] -- TODO remove?
+  | n1 /= n2 && h1 == h2 = [Mv (anchor </> n1) (anchor </> n2)]
+  | n1 == n2 && h1 /= h2 = [Edit (if anchor == n1 then n1 else anchor </> n1) t1 t2]
   | otherwise = die (addLogContext lCfg "diff'") $ B8.pack $ show t1 ++ " " ++ show t2
 
 -- File <--> Dir
@@ -107,6 +120,9 @@ diff' lCfg anchor t1@(Dir {}) t2@(Dir {}) = fixMoves lCfg t1 $ rms ++ adds ++ ed
     adds  = [Add (anchor </> unName (treeName x)) x | x <- ns, treeName x `notElem` map treeName os]
     rms   = [Rm  (anchor </> unName (treeName x))   | x <- os, treeName x `notElem` map treeName ns]
     edits = concat [diff' lCfg (anchor </> unName (treeName o)) o n | o <- os, n <- ns, o /= n, treeName o == treeName n]
+
+diff' _ anchor f@(File {}) l@(Link {}) | treeHash f == treeHash l = [Annex   (anchor <> unName (treeName l)) l]
+diff' _ anchor l@(Link {}) f@(File {}) | treeHash l == treeHash f = [Unannex (anchor <> unName (treeName f)) f]
 
 -- catchall
 -- TODO write a b64 encoding fn so you can show the anchor outside IO?
