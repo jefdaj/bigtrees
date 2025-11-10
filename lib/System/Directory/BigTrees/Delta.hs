@@ -9,6 +9,7 @@ module System.Directory.BigTrees.Delta
   , fixMoves
   , prettyDelta
   , printDeltas
+  , writeDeltas
   , simDelta
   , simDeltas
   )
@@ -34,6 +35,8 @@ import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
 import System.Directory.BigTrees.Name (Name (..), op2ns)
 import qualified System.OsPath as SOP
 import System.OsPath (OsPath, decodeFS, (</>))
+import System.IO (Handle, IOMode(..))
+import qualified System.File.OsPath as SFO
 
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
@@ -56,12 +59,18 @@ prettyDelta :: Show a => Delta a -> IO B.ByteString
 prettyDelta (Add  f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "added '"   ++ f' ++ "'"
 prettyDelta (Rm   f    ) = decodeFS f >>= \f' -> return $ B.pack $ "removed '" ++ f' ++ "'"
 prettyDelta (Edit f _ _) = decodeFS f >>= \f' -> return $ B.pack $ "edited '"  ++ f' ++ "'"
-prettyDelta (Broke f   ) = decodeFS f >>= \f' -> return $ B.pack $ "broke '"   ++ f' ++ "'"
-prettyDelta (Fixed f   ) = decodeFS f >>= \f' -> return $ B.pack $ "fixed '"   ++ f' ++ "'"
-prettyDelta (Mv   f1 f2) = do
+prettyDelta (Broke f) = decodeFS f >>= \f' -> return $ B.pack $ "broke '"   ++ f' ++ "'"
+prettyDelta (Fixed f) = decodeFS f >>= \f' -> return $ B.pack $ "fixed '"   ++ f' ++ "'"
+prettyDelta (Mv f1 f2) = do
   f1' <- decodeFS f1
   f2' <- decodeFS f2
   return $ B.pack $ "moved '"   ++ f1' ++ "' -> '" ++ f2' ++ "'"
+
+hPrintDeltas :: Show a => Handle -> [Delta a] -> IO ()
+hPrintDeltas hdl ds = mapM prettyDelta ds >>= mapM_ (B.hPutStrLn hdl)
+
+writeDeltas :: Show a => OsPath -> [Delta a] -> IO ()
+writeDeltas osp ds = SFO.withBinaryFile osp WriteMode $ \hdl -> mapM prettyDelta ds >>= mapM_ (B.hPutStrLn hdl)
 
 printDeltas :: Show a => [Delta a] -> IO ()
 printDeltas ds = mapM prettyDelta ds >>= mapM_ B.putStrLn

@@ -111,6 +111,7 @@ module System.Directory.BigTrees
   , diff
   , prettyDelta
   , printDeltas
+  , writeDeltas
   , simDelta
   , simDeltas
   -- , safeDelta
@@ -149,7 +150,7 @@ module System.Directory.BigTrees
 import Prelude hiding (log)
 
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
-                                        simDelta, simDeltas)
+                                        writeDeltas, simDelta, simDeltas)
 import System.Directory.BigTrees.DupeMap (AddTreeProgress, DupeList, DupeMap, DupeSet,
                                           SortedDupeLists, SortedDupeSets, addTreeToDupeMap,
                                           dupesByNegScore, mergeDupeSets, pathsByHash, scoreSetRef,
