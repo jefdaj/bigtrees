@@ -72,6 +72,7 @@ module System.Directory.BigTrees
   , readTreeLines
   , getTreeSize
   , zeroModTime
+  , assertCompatibleTreeFormat
 
   -- search
   , Search(..)
@@ -101,10 +102,13 @@ module System.Directory.BigTrees
   , writeHashList
   , hashSetDataFromLine
   , linesP
-  , headerP
   , note2bs
   , s2note
   , setContainsHash
+
+  -- headfoot
+  , headerP
+  , readHeader
 
   -- delta
   , Delta(..)
@@ -172,7 +176,7 @@ import System.Directory.BigTrees.HashTree.Build (buildProdTree, buildTree)
 import System.Directory.BigTrees.HashTree.Edit (addSubTree, rmSubTree)
 import System.Directory.BigTrees.HashTree.Find (listTreePaths)
 import System.Directory.BigTrees.HashTree.Read (getTreeSize, readLastHashLineAndFooter, readTree,
-                                                readTreeLines)
+                                                readTreeLines, assertCompatibleTreeFormat)
 import System.Directory.BigTrees.HashTree.Search (CompiledLabeledSearches, CompiledSearch (..),
                                                   LabeledSearches, Search (..), SearchConfig (..),
                                                   SearchLabel, compileLabeledSearches,
@@ -185,7 +189,7 @@ import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, b64Name, b
                                        bytes2n, debugName, fp2n, fp2ns, joinNames, n2bs, n2sbs,
                                        nameP, names2bs, op2bs, op2ns, op2s, os2ns, sbs2n)
 
-import System.Directory.BigTrees.HeadFoot (headerP)
+import System.Directory.BigTrees.HeadFoot (headerP, parseHeader, readHeader)
 
 import System.Directory.BigTrees.Logging (LogCfg (..), LogContext, LogLevel (..), addLogContext,
                                           cleanupLogger, die, incLogProgressST, initLogger, log,

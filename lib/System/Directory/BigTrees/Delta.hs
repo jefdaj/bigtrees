@@ -53,7 +53,7 @@ prettyDelta :: Delta a -> IO B.ByteString
 prettyDelta (Add     f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "added '"     ++ f' ++ "'"
 prettyDelta (Rm      f    ) = decodeFS f >>= \f' -> return $ B.pack $ "removed '"   ++ f' ++ "'"
 prettyDelta (Edit    f _ _) = decodeFS f >>= \f' -> return $ B.pack $ "edited '"    ++ f' ++ "'"
-prettyDelta (Break   f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "broke '"     ++ f' ++ "'"
+prettyDelta (Break   f e  ) = decodeFS f >>= \f' -> return $ B.pack $ "ERROR broke '"     ++ f' ++ "'. Error message: '" ++ show (errMsg e) ++ "'"
 prettyDelta (Fix     f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "fixed '"     ++ f' ++ "'"
 prettyDelta (Annex   f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "annexed '"   ++ f' ++ "'"
 prettyDelta (Unannex f _  ) = decodeFS f >>= \f' -> return $ B.pack $ "unannexed '" ++ f' ++ "'"
@@ -78,6 +78,7 @@ diff lCfg = diff' (addLogContext lCfg "diff") mempty
 diff' :: (Eq a, Show a) => LogCfg -> OsPath -> HashTree a -> HashTree a -> [Delta a]
 
 -- TODO this is always true, right?
+-- TODO this also catches the case where both have an Err, right?
 diff' _ _ t1 t2
   |  treeType t1 == treeType t2
   && treeHash t1 == treeHash t2
@@ -85,7 +86,7 @@ diff' _ _ t1 t2
 
 -- Break and Fix
 diff' _ anchor (Err {}) t2 = [Fix   (anchor </> unName (treeName t2)) t2]
-diff' _ anchor t1 (Err {}) = [Break (anchor </> unName (treeName t1)) t1]
+diff' _ anchor t1 e@(Err {}) = [Break (anchor </> unName (treeName e)) e]
 
 -- Two Links
 -- TODO is there a better way to DRY this out with the Files case?

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Cmd.Find
@@ -9,6 +10,7 @@ module Cmd.Find
 
 -- TODO use the actual path passed as the first breadcrumb? would match unix find
 
+import Prelude hiding (log)
 import Config (AppConfig (..), defaultAppConfig)
 import Control.Concurrent.Thread.Delay (delay)
 import Data.List (sort)
@@ -33,18 +35,32 @@ import System.OsPath (OsPath, decodeFS, encodeFS, osp, (</>))
 
 cmdFind :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdFind cfg lCfg path = do
+  let lCfg' = addLogContext lCfg "cmdFind"
+      debug = log lCfg' DebugL
+
+  debug "reading tree"
   tree <- readOrBuildTree (searchCfg cfg) lCfg path
-  let fmt   = fromMaybe "" $ findOutFormat cfg
+  debug "done reading tree"
+
 
   -- I think hashes have to be removed here rather than above in the read/build
   -- step (when building, not reading), because we don't want to alter the dir hashes.
   -- TODO should the exclude regexes also not be done at first? Think about pros/cons
   -- TODO is this a reason to separate read from build more definitively?
-  paths <- listTreePaths (searchCfg cfg) lCfg fmt tree
+  debug "listing paths"
+  let fmt = fromMaybe "" $ findOutFormat cfg
+  paths <- listTreePaths (searchCfg cfg) lCfg' fmt tree
+  debug "done listing paths"
 
   case outFile cfg of
-    Nothing -> mapM_ B8.putStrLn paths
-    Just p  -> SFO.writeFile p $ B8.fromStrict $ B8.unlines paths
+    Nothing -> do
+      -- TODO avoid forcing with length here?
+      debug $ "writing " <> B8.pack (show $ length paths) <> " paths to file"
+      mapM_ B8.putStrLn paths
+    Just p  -> do
+      -- TODO avoid forcing with length here?
+      debug $ "writing " <> B8.pack (show $ length paths) <> " paths to file"
+      SFO.writeFile p $ B8.fromStrict $ B8.unlines paths
 
 readAndSortLines :: OsPath -> IO B8.ByteString
 readAndSortLines path = SFO.readFile' path <&> (B8.unlines . sort . B8.lines)

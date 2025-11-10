@@ -30,7 +30,7 @@ import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Either (fromRight)
 import Data.Maybe (catMaybes, fromJust)
 import System.Directory.BigTrees.HeadFoot (Footer, Header, commentLineP, footerP, headerP,
-                                           parseFooter)
+                                           readHeader, parseFooter, assertCompatibleTreeFormatHeader)
 import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, die, logUnsafe)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
@@ -126,10 +126,11 @@ getTreeSize path = readLastHashLineAndFooter path <&> getN
 
 -- TODO does this stream, or does it read all the lines at once?
 -- TODO pass on the Left rather than throwing IO error here?
+-- TODO assert compatible format here?
 readTreeLines :: LogCfg -> OsPath -> IO [HashLine]
 readTreeLines lCfg path = do
   bs <- SFO.readFile' path
-  let eSL = parseOnly (headerP *> linesP Nothing) bs
+  let eSL = parseOnly (headerP lCfg *> linesP Nothing) bs
   case eSL of
     Left msg -> die (addLogContext lCfg "readTreeLines") $ B8.pack $ "failed to parse " ++ show path ++ ": " ++ show msg
     Right ls -> return ls
@@ -137,17 +138,29 @@ readTreeLines lCfg path = do
 
 --- read the main tree ---
 
+-- TODO move somewhere else?
+assertCompatibleTreeFormat :: LogCfg -> OsPath -> IO ()
+assertCompatibleTreeFormat lCfg osp = do
+  mH <- readHeader lCfg osp
+  case mH of
+    Nothing -> die lCfg "failed to parse header"
+    Just hdr -> assertCompatibleTreeFormatHeader lCfg hdr $ return ()
+
 readTree :: SearchConfig -> LogCfg -> OsPath -> IO ProdTree
 readTree cfg lCfg f = SFO.withFile f ReadMode $ \h -> do
+  assertCompatibleTreeFormat lCfg f
   blksize <- getBlockSize f
   hReadTree cfg lCfg blksize h
 
--- TODO log an error in case of Err here?
+-- TODO die rather than just log error here?
 hReadTree :: SearchConfig -> LogCfg -> Integer -> Handle -> IO ProdTree
 hReadTree cfg lCfg blksize hdl = do
   hls <- hParseTreeFileRev lCfg blksize hdl
+  let logE = logUnsafe (addLogContext lCfg "hReadTree") ErrorL
   return $ case foldr (accTrees cfg lCfg) [] hls of
-    []            -> Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg "no HashLines parsed" }
+    [] ->
+      let msg = "no HashLines parsed"
+      in logE msg $ Err { errName = Name [osstr|hReadTree|], errMsg = ErrMsg (B8.unpack msg) }
     ((_, tree):_) -> tree
 
 {- This one is confusing! It accumulates a list of trees and their depth,
@@ -271,9 +284,9 @@ readTestTree cfg lCfg = buildTree cfg SFO.readFile' lCfg
 -- kept longer than necesary. Might as well force it as soon as we have the
 -- data in `NFData` structures.
 -- TODO warn about using linesP separately? Or put a deepseq in there too?
-fileP :: Maybe Int -> Parser (Header, [HashLine], Footer)
-fileP md = do
-  h <- headerP
+fileP :: LogCfg -> Maybe Int -> Parser (Header, [HashLine], Footer)
+fileP lCfg md = do
+  h <- headerP lCfg
   b <- linesP md
   f <- footerP
   let res = (h, b, f)

@@ -17,7 +17,7 @@ import System.OsPath (OsPath, encodeFS)
 
 cmdInfo :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdInfo cfg lCfg path = do
-  mH  <- readHeader path
+  mH  <- readHeader lCfg path
   mLF <- readLastHashLineAndFooter path
   case (mH, mLF) of
     (Just h, Just (l, f)) -> printInfo path h f l

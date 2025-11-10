@@ -540,8 +540,8 @@ type EndOfPrevChunk = B8.ByteString
 type Chunk          = B8.ByteString
 
 -- TODO pass maybe max depth here
-parseHashLinesFromChunk :: Parser ([HashLine], EndOfPrevChunk)
-parseHashLinesFromChunk = do
+parseHashLinesFromChunk :: LogCfg -> Parser ([HashLine], EndOfPrevChunk)
+parseHashLinesFromChunk lCfg = do
 
   -- if this is the first chunk in the file (last in iteration),
   -- there will be a header to skip before the lines start.
@@ -549,7 +549,7 @@ parseHashLinesFromChunk = do
   -- this was working better before when it was just sepBy' commentLineP endOfLine,
   -- but i worry that might swallow any line that happens to start with '#'
   --
-  _ <- option undefined headerP -- TODO undefined should be safe here, no?
+  _ <- option undefined (headerP lCfg) -- TODO undefined should be safe here, no?
   _ <- option undefined $ char '\n' -- TODO why is this needed? lexeme not being handled? :(
 
   -- If this is the second-to-last chunk and it happens to start in the middle of the header,
@@ -611,7 +611,7 @@ strictRevChunkParse lCfg (Right (_, eop)) (i, chunk) =
   let debug = logUnsafe (addLogContext lCfg "strictRevChunkParse") DebugL
       chunk' = fixDoubleNull $ chunk <> eop <> "\NUL\n" -- TODO why is this needed? TODO BUG HERE???
       chunk'' = debug ("chunk " <> B8.pack (show i) <> " " <> B8.pack (debugEnd 10 chunk')) chunk'
-      res   = case parseOnly parseHashLinesFromChunk chunk'' of
+      res   = case parseOnly (parseHashLinesFromChunk lCfg) chunk'' of
                 Left "not enough input" -> Right ([], "") -- TODO only allow in last position of list
                 -- Left msg                -> trace ("Left " ++ show msg) (Left msg)
                 x                       -> x

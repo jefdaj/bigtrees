@@ -26,6 +26,7 @@ import System.Directory.BigTrees.HashLine.Base
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hGetLine)
 import System.OsPath (OsPath)
+import System.Directory.BigTrees.Logging (LogCfg(..), addLogContext, die)
 
 {- Header + footer info to write before and after HashLines, respectively.
  - The initial format is to read/write JSON delimited from other lines by '#'.
@@ -162,19 +163,19 @@ parseFooter = decode . B8.fromStrict . B8.pack . unlines . map (replace "# " "")
 
 --- read header info from the beginning of the file ---
 
--- TODO close file bug here :/
 -- TODO document 100 line limit
 -- TODO SFO.withBinaryFile?
-readHeader :: OsPath -> IO (Maybe Header)
-readHeader path =
+readHeader :: LogCfg -> OsPath -> IO (Maybe Header)
+readHeader lCfg path =
   SFO.withBinaryFile path ReadMode $ \h -> do
     commentLines <- takeWhile isCommentLine <$> replicateM 100 (hGetLine h)
-    return $ parseHeader commentLines
+    return $ parseHeader lCfg commentLines
 
 -- Header is the same, except we have to lob off the final header line
 -- TODO also confirm it looks as expected? tree format should be enough tho
-parseHeader :: [String] -> Maybe Header
-parseHeader s = case s of
+-- TODO DRY this out vs headerP below
+parseHeader :: LogCfg -> [String] -> Maybe Header
+parseHeader _ s = case s of
   [ ] -> Nothing -- should never happen, right?
   [l] -> Nothing -- should never happen, right?
   ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ map (replace "# " "") $ init ls
@@ -187,9 +188,21 @@ commentLineP = do
   _ <- char '#'
   manyTill anyChar $ lookAhead endOfLine
 
-headerP = do
+-- TODO come up with a policy for how far back old formats will be supported
+assertCompatibleTreeFormatHeader :: LogCfg -> Header -> a -> a
+assertCompatibleTreeFormatHeader lCfg hdr rtn =
+  let oldestOk = 251103
+      lCfg' = addLogContext lCfg "assertCompatibleTreeFormat"
+      showF = B8.pack $ show $ treeFormat hdr
+      msg = "file is in old tree format " <> showF <> ", which will fail to parse"
+  in if (treeFormat hdr < oldestOk)
+    then die lCfg' msg
+    else rtn
+
+-- TODO assert compatible here too?
+headerP lCfg = do
   -- TODO handle \NUL here, right?
   headerLines <- sepBy' commentLineP endOfLine <* endOfLine
-  case parseHeader headerLines of
+  case parseHeader lCfg headerLines of
     Nothing -> fail "failed to parse header"
     Just h  -> return h
