@@ -233,15 +233,16 @@ type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 -- TODO is that the cleanest way to do it, or should both negates be in this fn?
 dupesByNegScore :: LogCfg -> ScoreFn -> Bool -> DupeMap s -> ST s SortedDupeLists
 dupesByNegScore lCfg scoreFn keepSingles dm = do
-  let debug = logUnsafe (addLogContext lCfg "dupesByNegScore") DebugL
-  sets <- debug "scoring sets" <$> scoreSets lCfg scoreFn dm -- TODO separate scoring for ref set than within same tree
+  let lCfg' = addLogContext lCfg "dupesByNegScore"
+  let debug = logUnsafe lCfg' DebugL
+  sets <- debug "scoring sets" <$> scoreSets lCfg' scoreFn dm -- TODO separate scoring for ref set than within same tree
   let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par $ deepseq sets sets :: DupeSetVec
       sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute $ deepseq unsorted unsorted :: DupeSetVec
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList $ deepseq sorted sorted
       singles  = if keepSingles then sortedL else filter (\(_, _, _, ps) -> length ps > 1) sortedL
       fixElem (n, h, t, fs) = (negate n, h, t, L.sort $ S.toList fs) -- TODO n before h?
       fixed    = Prelude.map fixElem singles
-      simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg fixed
+      simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg' fixed
   return $ map (\x -> deepseq x x) simple -- TODO does deepseq help?
 
 {- Assumes a pre-sorted list of lists.

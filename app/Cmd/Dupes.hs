@@ -49,8 +49,9 @@ cmdDupes :: AppConfig -> LogCfg -> OsPath -> IO ()
 cmdDupes cfg lCfg path = bracket open close write
   where
 
-    debug = log (addLogContext lCfg "cmdDupes") DebugL
-    debugST msg = logUnsafe (addLogContext lCfg "cmdDupes") DebugL msg (return ())
+    lCfg' = (addLogContext lCfg "cmdDupes")
+    debug = log lCfg' DebugL
+    debugST msg = logUnsafe lCfg' DebugL msg (return ())
 
     open = case outFile cfg of
              Nothing -> return stdout
@@ -58,12 +59,12 @@ cmdDupes cfg lCfg path = bracket open close write
 
     write :: Handle -> IO ()
     write hdl = do
-      tree <- BT.readOrBuildTree (searchCfg cfg) lCfg path
+      tree <- BT.readOrBuildTree (searchCfg cfg) lCfg' path
 
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
       debug $ "loading reference sets " <> B8.pack (show rListPaths)
-      rList <- fmap concat $ forM rListPaths (encodeFS >=> BT.readHashList lCfg)
+      rList <- fmap concat $ forM rListPaths (encodeFS >=> BT.readHashList lCfg')
       debug $ "loaded " <> B8.pack (show $ length rList) <> " reference hashes"
 
       let searches = dupesExcludeSearches $ searchCfg cfg
@@ -87,13 +88,13 @@ cmdDupes cfg lCfg path = bracket open close write
                 treeN = B8.pack $ show $ (\(BT.NNodes n ) -> n) $ BT.treeNNodes tree
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
-            BT.addTreeToDupeMap (searchCfg cfg) lCfg mrSet cle ht tree
+            BT.addTreeToDupeMap (searchCfg cfg) lCfg' mrSet cle ht tree
             debugST $ "added all " <> treeN <> " tree nodes to DupeMap"
             if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             -- TODO DupesMode or similar type to make the null rList thing more obvious?
             let scoreFn = if keepOneDupe then BT.scoreSetSelf else BT.scoreSetRef
                 keepSingles = not keepOneDupe
-            res <- map force <$> BT.dupesByNegScore lCfg scoreFn keepSingles ht
+            res <- map force <$> BT.dupesByNegScore lCfg' scoreFn keepSingles ht
             -- TODO does this print before it starts actually scoring sets?
             debugST $ "finished scoring " <> treeN <> " DupeSets"
             return res
@@ -104,7 +105,7 @@ cmdDupes cfg lCfg path = bracket open close write
       let renderFn = fromJust $ lookup fmt dupesRenderFunctions
 
       debug $ "writing " <> B8.pack (show $ length ds) <> " DupeSets"
-      hWriteDupes (searchCfg cfg) lCfg renderFn keepOneDupe hdl ds
+      hWriteDupes (searchCfg cfg) lCfg' renderFn keepOneDupe hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?
