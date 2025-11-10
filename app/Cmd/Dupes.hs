@@ -78,6 +78,7 @@ cmdDupes cfg lCfg path = bracket open close write
       let keepOneDupe = null rList
 
       -- TODO should this all be one function exported from DupeMap?
+      -- TODO these debugST calls do *NOT* work at the right times; replace
       let ds = runST $ do
             debugST "runST starting"
             mrSet <- if keepOneDupe

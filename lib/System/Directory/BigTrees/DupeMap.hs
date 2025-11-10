@@ -229,21 +229,29 @@ mergeHashAndType (h1, t1) (h2, t2)
 -- TODO is this reasonable?
 type DupeSetVec = A.Array A.BN A.Ix1 DupeSet
 
+-- TODO add to Util? use instead of (or rename to) debugST?
+-- TODO name something that implies it does more than just log? order may be important
+logSD :: NFData a => LogCfg -> LogLevel -> B8.ByteString -> a -> a
+logSD lCfg lvl desc rtn =
+  logUnsafe lCfg lvl ("start " <> desc) ()
+  `seq`
+  (rtn `deepseq` logUnsafe lCfg lvl ("done " <> desc) rtn)
+
 -- The negate here undoes the one in scoreSets below, leaving a positive score.
 -- TODO is that the cleanest way to do it, or should both negates be in this fn?
 dupesByNegScore :: LogCfg -> ScoreFn -> Bool -> DupeMap s -> ST s SortedDupeLists
 dupesByNegScore lCfg scoreFn keepSingles dm = do
   let lCfg' = addLogContext lCfg "dupesByNegScore"
-  let debug = logUnsafe lCfg' DebugL
+  let debug desc rtn = logSD lCfg' DebugL desc rtn
   sets <- debug "scoring sets" <$> scoreSets lCfg' scoreFn dm -- TODO separate scoring for ref set than within same tree
-  let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par $ deepseq sets sets :: DupeSetVec
-      sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute $ deepseq unsorted unsorted :: DupeSetVec
-      sortedL  = debug "converting DupeSetVec back to list" $ A.toList $ deepseq sorted sorted
+  let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par sets :: DupeSetVec
+      sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute unsorted :: DupeSetVec
+      sortedL  = debug "converting DupeSetVec back to list" $ A.toList sorted
       singles  = if keepSingles then sortedL else filter (\(_, _, _, ps) -> length ps > 1) sortedL
       fixElem (n, h, t, fs) = (negate n, h, t, L.sort $ S.toList fs) -- TODO n before h?
       fixed    = Prelude.map fixElem singles
       simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg' fixed
-  return $ map (\x -> deepseq x x) simple -- TODO does deepseq help?
+  return simple
 
 {- Assumes a pre-sorted list of lists.
  - Removes lists whose elements are all inside elements of the first list.
