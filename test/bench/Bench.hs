@@ -9,10 +9,13 @@ import System.Directory.BigTrees.HashLine (bench_roundtrip_HashLines_to_ByteStri
 import System.Directory.BigTrees.HashTree (bench_roundtrip_ProdTree_to_bigtree_file)
 import System.IO (hFlush, stdout)
 
--- range from 1 to 7481
--- TODO either go a lot higher or be precise with expected timing
+-- TODO empirically test how arbsize relates to number of nodes in the tree
+-- TODO test dupes command, because that's the one that takes the most RAM
+
+-- Up to ~16 million for now because that's what my old Thinkpad x220 can handle.
+-- TODO go back to powers of 1.5? was that significantly more accurate?
 testSizes :: [Int]
-testSizes = [floor (1.5^(n :: Int)) | n <- [0..22]]
+testSizes = [floor (2^(n :: Int)) | n <- [0..24]]
 
 -- https://old.reddit.com/r/haskell/comments/qy990/suggestion_for_flip_map/
 -- TODO move somewhere more reusable
@@ -22,7 +25,7 @@ for = flip fmap
 genTestHashLines :: IO [(Int, B8.ByteString)]
 genTestHashLines = forM testSizes $ \n -> do
   bs <- genHashLinesBS n
-  putStrLn $ deepseq bs $ "generated " ++ show n ++ " size-" ++ show n ++ " HashLines"
+  putStrLn $ deepseq bs $ "generated " ++ show n ++ " size " ++ show n ++ " HashLines"
   hFlush stdout
   return (n, bs)
 
@@ -31,26 +34,28 @@ main = do
 
   -- There's probably a cleaner way to do this, but for now I like that it
   -- clearly happens before any of the benchmark timing stuff.
-  testHashLines <- genTestHashLines
+  -- testHashLines <- genTestHashLines
 
   -- TODO also generate the ProdTrees here the same way?
 
   Test.Tasty.Bench.defaultMain $
 
-    for testHashLines (\(n, bs) -> bench
-      ("parse " ++ show n ++ " size-" ++ show n ++ " HashLines")
-      (nf parseHashLinesBS bs))
+    -- TODO works, but is it necessary?
+    -- for testHashLines (\(n, bs) -> bench
+    --   ("parse " ++ show n ++ " size " ++ show n ++ " HashLines")
+    --   (nf parseHashLinesBS bs))
 
-    ++
+    -- ++
 
-    for testHashLines (\(n, bs) -> bench
-      ("round-trip " ++ show n ++ " size-" ++ show n ++ " HashLines to ByteString ")
-      (nfIO $ bench_roundtrip_HashLines_to_ByteString bs))
+    -- TODO works, but is it necessary?
+    -- for testHashLines (\(n, bs) -> bench
+    --   ("round-trip " ++ show n ++ " size " ++ show n ++ " HashLines to ByteString ")
+    --   (nfIO $ bench_roundtrip_HashLines_to_ByteString bs))
 
-    ++
+    -- ++
 
     for testSizes (\n -> bench
-      ("round-trip " ++ show n ++ "-node ProdTree to .bigtree file ")
+      ("round-trip size " ++ show n ++ " ProdTree to .bigtree file ")
       (nfIO $ bench_roundtrip_ProdTree_to_bigtree_file n))
 
     -- old stuff for reference:
