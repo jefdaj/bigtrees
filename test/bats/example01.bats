@@ -6,8 +6,6 @@ setup_file() {
   DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )"
   export TEST_TARBALL="${DIR}/example01.tar.xz"
 
-  export DOCS_DIR="${DIR}/../../docs/src/snippets"
-
   # set up test data for this example
   export TEST_EXAMPLE_DIR="$(temp_make)"
   cd "$TEST_EXAMPLE_DIR"
@@ -25,7 +23,6 @@ setup() {
   load 'helpers/bats-support/load'
   load 'helpers/bats-assert/load'
   load 'helpers/bats-file/load'
-  load 'helpers/bats-snippets'
 
   # add bigtrees to path
   # TODO ensure it gets built first?
@@ -38,16 +35,16 @@ setup() {
 @test "example 01 step 1: find dupes" {
   # TODO save this to a snippet somehow for the docs site
   # TODO use an example01.tar to make linking from docs easier?
-  run_snippet \
-    "${DOCS_DIR}/example01-step1.sh" \
-    bigtrees dupes example01 --output dedup.sh --dupes-out-fmt dedup-script
+  run bigtrees dupes example01 \
+    --output dedup.sh \
+    --dupes-out-fmt dedup-script
   assert_exists dedup.sh
   assert_exists example01/files
   assert_exists example01/files_copy
 }
 
 @test "example 01 step 2: rm dupes" {
-  run_snippet "${DOCS_DIR}/example01-step2.sh" bash dedup.sh
+  run bash dedup.sh
   assert_exists     example01/files
   assert_not_exists example01/files_copy
 }
