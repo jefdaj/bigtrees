@@ -13,7 +13,7 @@ setup() {
 
 @test "bigtrees version" {
   run bigtrees version
-  assert_output "0.26.5"
+  assert_output "0.27"
 }
 
 @test "rsync version" {
