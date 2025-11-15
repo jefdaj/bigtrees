@@ -133,9 +133,10 @@
           hPkgs.weeder
           hPkgs.stan
 
-          # test
+          # tests/examples
           pkgsDynamic.tree
           pkgsDynamic.bats
+          pkgsDynamic.rsync
 
         ];
 

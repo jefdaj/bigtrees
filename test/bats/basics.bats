@@ -15,3 +15,8 @@ setup() {
   run bigtrees version
   assert_output "0.26.5"
 }
+
+@test "rsync version" {
+  run rsync --version
+  assert_output -p "rsync  version 3.4.1  protocol version 32"
+}
