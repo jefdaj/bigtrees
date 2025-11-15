@@ -135,6 +135,7 @@
 
           # test
           pkgsDynamic.tree
+          pkgsDynamic.bats
 
         ];
 
