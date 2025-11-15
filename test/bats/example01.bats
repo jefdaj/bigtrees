@@ -1,6 +1,7 @@
 # TODO write example 02
 # TODO factor out common setup
 # TODO factor out setup_example, teardown_example
+# TODO separate examples/ from test/?
 
 setup_file() {
 
