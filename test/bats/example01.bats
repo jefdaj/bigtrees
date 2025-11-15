@@ -1,3 +1,7 @@
+# TODO write example 02
+# TODO factor out common setup
+# TODO factor out setup_example, teardown_example
+
 setup_file() {
 
   load 'helpers/bats-support/load'
@@ -45,6 +49,7 @@ setup() {
 
 @test "example 01 step 2: rm dupes" {
   run bash dedup.sh
+  assert_output -p "KEEP 'example01/files'"
   assert_exists     example01/files
   assert_not_exists example01/files_copy
 }
