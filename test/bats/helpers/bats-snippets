@@ -1,0 +1,6 @@
+run_snippet() {
+  snippet_outfile="$1"; shift
+  snippet_text="$@"
+  echo "$snippet_text" > "$snippet_outfile"
+  run $snippet_text
+}
