@@ -1,3 +1,7 @@
+# TODO start from a small number of actual example files in the repo,
+#      and have a function in each example to elaborate it out into something duplicated.
+#      much more efficient that way, and also easier to change
+
 setup_file() {
   load 'helpers/bats-example'
   setup_example_file 'example01'
@@ -12,12 +16,14 @@ teardown_file() {
   teardown_example_file 'example01'
 }
 
-@test "example 1 step 1: find dupes from dir" {
+@test "example 3 step 1: hash to .bigtree file" {
+  run bigtrees hash example01 --output example03.bigtree
+  assert_exists example03.bigtree
+}
 
-  # TODO save this to a snippet somehow for the docs site
-  # TODO use an example01.tar to make linking from docs easier?
+@test "example 3 step 2: find dupes from .bigtree file" {
 
-  run bigtrees dupes example01 \
+  run bigtrees dupes example03.bigtree \
     --output dedup.sh \
     --dupes-out-fmt dedup-script
 
@@ -27,7 +33,7 @@ teardown_file() {
 
 }
 
-@test "example 1 step 2: rm dupes" {
+@test "example 3 step 3: rm dupes" {
 
   run bash dedup.sh
 
