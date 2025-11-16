@@ -58,6 +58,22 @@ setup_example_step() {
 
 }
 
+# TODO separate bats-snippet from bats-example
+
+text_snippet() {
+  # Takes a snippet name and some text, saves text to snippet.
+  snippet_basename="$1"
+  snippet_name="$(echo "$snippet_basename" | cut -d'.' -f1)"
+  snippet_lang="$(echo "$snippet_basename" | cut -d'.' -f2)" # may be empty
+  [[ -z "$snippet_lang" ]] || snippet_lang=".${snippet_lang}"
+  snippet_path="${SNIPPETS_DIR}/${TEST_EXAMPLE_BASENAME}_${snippet_name}.md"
+  snippet_text="$2"
+  snippet_block="""\`\`\`${snippet_lang}
+${snippet_text}
+\`\`\`"""
+   echo "$snippet_block" > "$snippet_path"
+ }
+
 run_snippet() {
   # Takes a snippet name and command, saves command to snippet, runs command.
   snippet_basename="$1"
