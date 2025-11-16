@@ -14,6 +14,10 @@
 set -e
 
 echo "### TESTING STATIC BINARY WITH BATS ###"
+echo "note that downloading 72M test-files might take a few minutes..."
+# Useful for debugging:
+#   BATSLIB_TEMP_PRESERVE=1 bats ...
+#   sudo find /tmp | grep bats
 nix build
 nix develop -c bash -c 'bats test/bats'
 

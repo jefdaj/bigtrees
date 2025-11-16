@@ -1,10 +1,18 @@
-# TODO start from a small number of actual example files in the repo,
-#      and have a function in each example to elaborate it out into something duplicated.
-#      much more efficient that way, and also easier to change
+gen_example03_data() {
+  # This expects that we've already extracted test files to ./test-files
+  mkdir example03
+  mv test-files/mp3/*.mp3 example03/
+  for n in {1..3}; do
+    cp example03/mozart.mp3 "example03/mozart (copy ${n}).mp3"
+    cp -r test-files/pdf "example03/pdf_${n}"
+  done
+  rm -r test-files
+}
 
 setup_file() {
   load 'helpers/bats-example'
-  setup_example_file 'example01'
+  setup_example_file 'example03'
+  gen_example03_data
 }
 
 setup() {
@@ -13,11 +21,11 @@ setup() {
 }
 
 teardown_file() {
-  teardown_example_file 'example01'
+  teardown_example_file 'example03'
 }
 
 @test "example 3 step 1: hash dir to .bigtree file" {
-  run bigtrees hash example01 --output example03.bigtree
+  run bigtrees hash example03 --output example03.bigtree
   assert_exists example03.bigtree
 }
 
@@ -28,17 +36,27 @@ teardown_file() {
     --dupes-out-fmt dedup-script
 
   assert_exists dedup.sh
-  assert_exists example01/files
-  assert_exists example01/files_copy
 
 }
 
 @test "example 3 step 3: rm dupes using dedup.sh" {
 
+  assert_exists example03
+  assert_exists example03/pdf_1
+  assert_exists example03/pdf_2
+  assert_exists example03/pdf_3
+  assert_exists 'example03/mozart (copy 1).mp3'
+  assert_exists 'example03/mozart (copy 2).mp3'
+  assert_exists 'example03/mozart (copy 3).mp3'
+
   run bash dedup.sh
 
-  assert_output -p "KEEP 'example01/files'"
-  assert_exists     example01/files
-  assert_not_exists example01/files_copy
+  assert_exists     example03
+  assert_exists     example03/pdf_1
+  assert_not_exists example03/pdf_2
+  assert_not_exists example03/pdf_3
+  assert_exists     'example03/mozart (copy 1).mp3'
+  assert_not_exists 'example03/mozart (copy 2).mp3'
+  assert_not_exists 'example03/mozart (copy 3).mp3'
 
 }

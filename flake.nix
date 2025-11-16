@@ -137,6 +137,7 @@
           pkgsDynamic.tree
           pkgsDynamic.bats
           pkgsDynamic.rsync
+          pkgsDynamic.curl
 
         ];
 
