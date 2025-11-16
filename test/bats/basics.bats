@@ -3,6 +3,7 @@ setup() {
   load 'helpers/bats-support/load'
   load 'helpers/bats-assert/load'
   load 'helpers/bats-file/load'
+  load 'helpers/bats-example'
 
   # add bigtrees to path
   # TODO ensure it gets built first?
@@ -11,12 +12,18 @@ setup() {
 
 }
 
-@test "bigtrees version" {
+@test "check bigtrees version" {
   run bigtrees version
   assert_output "0.27"
 }
 
-@test "rsync version" {
+@test "check rsync version" {
   run rsync --version
   assert_output -p "rsync  version 3.4.1  protocol version 32"
+}
+
+@test "download test files" {
+  # TODO is this reasonable? prevents UI freezing on rsync test above
+  download_test_files
+  assert_exists "$TEST_FILES_ZIP"
 }
