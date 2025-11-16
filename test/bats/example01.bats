@@ -26,9 +26,6 @@ teardown_file() {
 
 @test "example 1 step 1: find dupes directly from dir" {
 
-  # TODO save this to a snippet somehow for the docs site
-  # TODO use an example01.tar to make linking from docs easier?
-
   run_snippet 'step1_cmd.sh' '''bigtrees dupes example01 \
     --output dedup.sh \
     --dupes-out-fmt dedup-script'''
@@ -50,8 +47,8 @@ teardown_file() {
   assert_exists 'example01/mozart (copy 3).mp3'
 
   file_snippet 'step2_dedup.sh' 'dedup.sh'
-  run_snippet  'step2_cmd.sh' 'bash dedup.sh'
-  text_snippet 'step3_out.txt' "$output"
+  run_snippet  'step2_cmd.sh'   'bash dedup.sh'
+  text_snippet 'step3_out.txt'  "$output"
 
   assert_exists     example01
   assert_exists     example01/pdf_1

@@ -13,15 +13,15 @@ fileHeader :: Bool -> B8.ByteString
 fileHeader keepOne =
   "#!/usr/bin/env bash\n\
   \\n\
-  \# This is the 'dedup-script' output format.\n\
+  \# This is the dedup-script output format.\n\
   \# Be careful with this! Don't just run it without at least skimming...\n\
   \\n\
   \# You can comment, uncomment, or delete lines in your text editor\n\
   \# to change how specific files/dirs/links are handled.\n\
   \\n"
   <> (if keepOne then
-  "# For each set of dupes, it will leave the first (commented out) one alone and\n\
-  \# delete all the others in place by default.\n"
+  "# For each set of dupes, it will confirm that the first one exists and\n\
+  \# then delete all the others.\n"
   else
   "# !!! WARNING !!!\n\
   \# Since you're deduping vs a reference set, this script will delete ALL dupes\n\
@@ -30,9 +30,9 @@ fileHeader keepOne =
   <>
   "\n\
   \skip_group=FALSE\n\
-  \keep() { [[ -e \"$1\" ]] && echo \"KEEP '$1'\" && skip_group=FALSE || { echo \"MISSING '$1'\" >&2; skip_group=TRUE; }; }\n\
+  \keep() { [[ -e \"$1\" ]] && echo \"KEEP    '$1'\" && skip_group=FALSE || { echo \"MISSING '$1'\" >&2; skip_group=TRUE; }; }\n\
   \skip() { [[ $skip_group == TRUE || ! -e \"$1\" ]] && echo \"SKIP '$1'\"; }\n\
-  \rm_X() { skip \"$3\" || { rm $1 \"$3\" && echo \"OK $2 '$3'\"; } || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
+  \rm_X() { skip \"$3\" || { rm $1 \"$3\" && echo \"rm $2 '$3'\"; } || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
   \rm_d() { rm_X '-r' 'dir ' \"$1\"; }\n\
   \rm_f() { rm_X '' 'file' \"$1\"; }\n\
   \rm_l() { rm_X '' 'link' \"$1\"; }\n"
