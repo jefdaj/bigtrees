@@ -1,5 +1,5 @@
 gen_example03_data() {
-  # This expects that we've already extracted test files to ./test-files
+  # This expects that setup_example_file has unzipped ./test-files
   mkdir example03
   mv test-files/mp3/*.mp3 example03/
   for n in {1..3}; do
@@ -25,15 +25,16 @@ teardown_file() {
 }
 
 @test "example 3 step 1: hash dir to .bigtree file" {
-  run bigtrees hash example03 --output example03.bigtree
+  run_snippet 'step1_cmd.sh' '''bigtrees hash example03 \
+    --output example03.bigtree'''
   assert_exists example03.bigtree
 }
 
 @test "example 3 step 2: find dupes from .bigtree file" {
 
-  run bigtrees dupes example03.bigtree \
+  run_snippet 'step2_cmd.sh' '''bigtrees dupes example03.bigtree \
     --output dedup.sh \
-    --dupes-out-fmt dedup-script
+    --dupes-out-fmt dedup-script'''
 
   assert_exists dedup.sh
 
@@ -49,7 +50,7 @@ teardown_file() {
   assert_exists 'example03/mozart (copy 2).mp3'
   assert_exists 'example03/mozart (copy 3).mp3'
 
-  run bash dedup.sh
+  run_snippet 'step3_cmd.sh' 'bash dedup.sh'
 
   assert_exists     example03
   assert_exists     example03/pdf_1

@@ -22,19 +22,15 @@ setup_example_file() {
   download_test_files
   assert_exists "$TEST_FILES_ZIP"
 
-  # TODO can we get away without naming them?
-  example_basename="$1"
+  # TODO name them here, or in all the snippets?
+  export TEST_EXAMPLE_BASENAME="$1"
 
   DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )"
 
-  export TEST_EXAMPLE_DIR="$(temp_make --prefix "$example_basename")"
-  cd "$TEST_EXAMPLE_DIR"
+  export SNIPPETS_DIR="${DIR}/../../docs/src/snippets"
 
-  # TODO replace this with a generic set of base test files and custom elaboration fn
-  # TODO no need to export either?
-  # export TEST_TARBALL="${DIR}/${example_basename}.tar.xz"
-  # tar -xf "$TEST_TARBALL"
-  # assert_exists "$example_basename"
+  export TEST_EXAMPLE_DIR="$(temp_make --prefix "$TEST_EXAMPLE_BASENAME")"
+  cd "$TEST_EXAMPLE_DIR"
 
   unzip "$TEST_FILES_ZIP"
   mv test-files-* test-files
@@ -60,4 +56,18 @@ setup_example_step() {
   # always start in the tmpdir for the example
   cd "$TEST_EXAMPLE_DIR"
 
+}
+
+run_snippet() {
+  snippet_basename="$1"
+  snippet_name="$(echo "$snippet_basename" | cut -d'.' -f1)"
+  snippet_lang="$(echo "$snippet_basename" | cut -d'.' -f2)" # may be empty
+  [[ -z "$snippet_lang" ]] || snippet_lang=".${snippet_lang}"
+  snippet_path="${SNIPPETS_DIR}/${TEST_EXAMPLE_BASENAME}_${snippet_name}.md"
+  snippet_text="$2" # TODO take all remaining args?
+  snippet_block="""\`\`\`${snippet_lang}
+${snippet_text}
+\`\`\`"""
+  echo "$snippet_block" > "$snippet_path"
+  eval "run $snippet_text"
 }

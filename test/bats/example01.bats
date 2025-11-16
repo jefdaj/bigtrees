@@ -1,5 +1,5 @@
 gen_example01_data() {
-  # This expects that we've already extracted test files to ./test-files
+  # This expects that setup_example_file has unzipped ./test-files
   mkdir example01
   mv test-files/mp3/*.mp3 example01/
   for n in {1..3}; do
@@ -29,9 +29,9 @@ teardown_file() {
   # TODO save this to a snippet somehow for the docs site
   # TODO use an example01.tar to make linking from docs easier?
 
-  run bigtrees dupes example01 \
+  run_snippet 'step1_cmd.sh' '''bigtrees dupes example01 \
     --output dedup.sh \
-    --dupes-out-fmt dedup-script
+    --dupes-out-fmt dedup-script'''
 
   assert_exists dedup.sh
   assert_exists 'example01/mozart (copy 1).mp3'
@@ -48,7 +48,7 @@ teardown_file() {
   assert_exists 'example01/mozart (copy 2).mp3'
   assert_exists 'example01/mozart (copy 3).mp3'
 
-  run bash dedup.sh
+  run_snippet 'step2_cmd.sh' 'bash dedup.sh'
 
   assert_exists     example01
   assert_exists     example01/pdf_1
