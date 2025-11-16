@@ -16,7 +16,7 @@ teardown_file() {
   teardown_example_file 'example01'
 }
 
-@test "example 3 step 1: hash to .bigtree file" {
+@test "example 3 step 1: hash dir to .bigtree file" {
   run bigtrees hash example01 --output example03.bigtree
   assert_exists example03.bigtree
 }
@@ -33,7 +33,7 @@ teardown_file() {
 
 }
 
-@test "example 3 step 3: rm dupes" {
+@test "example 3 step 3: rm dupes using dedup.sh" {
 
   run bash dedup.sh
 

@@ -12,7 +12,7 @@ teardown_file() {
   teardown_example_file 'example01'
 }
 
-@test "example 1 step 1: find dupes from dir" {
+@test "example 1 step 1: find dupes directly from dir" {
 
   # TODO save this to a snippet somehow for the docs site
   # TODO use an example01.tar to make linking from docs easier?
@@ -27,7 +27,7 @@ teardown_file() {
 
 }
 
-@test "example 1 step 2: rm dupes" {
+@test "example 1 step 2: rm dupes using dedup.sh" {
 
   run bash dedup.sh
 
