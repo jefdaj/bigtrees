@@ -46,6 +46,7 @@ teardown_file() {
   assert_exists example03/pdf_1
   assert_exists example03/pdf_2
   assert_exists example03/pdf_3
+  assert_exists 'example03/mozart.mp3'
   assert_exists 'example03/mozart (copy 1).mp3'
   assert_exists 'example03/mozart (copy 2).mp3'
   assert_exists 'example03/mozart (copy 3).mp3'
@@ -58,7 +59,8 @@ teardown_file() {
   assert_exists     example03/pdf_1
   assert_not_exists example03/pdf_2
   assert_not_exists example03/pdf_3
-  assert_exists     'example03/mozart (copy 1).mp3'
+  assert_exists     'example03/mozart.mp3'
+  assert_not_exists 'example03/mozart (copy 1).mp3'
   assert_not_exists 'example03/mozart (copy 2).mp3'
   assert_not_exists 'example03/mozart (copy 3).mp3'
 
