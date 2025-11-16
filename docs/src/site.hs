@@ -2,6 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Data.Monoid (mappend)
 import Hakyll
+-- import qualified Data.Text as T
+-- import qualified Data.Text.IO as TIO
+import System.FilePath (takeBaseName, (</>))
+import Data.List (isPrefixOf, isSuffixOf)
 
 config :: Configuration
 config = defaultConfiguration
@@ -10,6 +14,33 @@ config = defaultConfiguration
   , storeDirectory = ".hakyll-cache"
   , inMemoryCache = True
   }
+
+--------------------------------------------------------------------------------
+
+includeSnippetsCompiler :: Compiler (Item String)
+includeSnippetsCompiler = do
+  content <- getResourceString
+  processedContent <- unsafeCompiler $ processIncludes (itemBody content)
+  makeItem processedContent
+
+processIncludes :: String -> IO String
+processIncludes content = do
+  let includeLines = lines content
+  processedLines <- mapM processLine includeLines
+  return $ unlines processedLines
+
+processLine :: String -> IO String
+processLine line
+  | ("{{include:" :: String) `isPrefixOf` line && ("}}" :: String) `isSuffixOf` line = do
+      let snippetPath = extractSnippetPath line
+      snippetContent <- readFile snippetPath
+      return snippetContent
+  | otherwise = return line
+
+extractSnippetPath :: String -> FilePath
+extractSnippetPath line =
+  let stripped = drop (length ("{{include:" :: String)) line
+  in take (length stripped - length ("}}" :: String)) stripped
 
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -30,7 +61,9 @@ main = hakyllWith config $ do
 
     match "examples/*" $ do
         route $ setExtension "html"
-        compile $ pandocCompiler
+        compile $
+            includeSnippetsCompiler
+            >>= renderPandoc
             >>= loadAndApplyTemplate "templates/example.html" exampleCtx
             >>= loadAndApplyTemplate "templates/default.html" exampleCtx
             >>= relativizeUrls
