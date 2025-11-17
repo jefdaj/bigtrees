@@ -28,8 +28,4 @@ this time using the tree file:
 
 {{snippets/example03_step3_cmd.md}}
 
-<!-- TODO make this available to click on, but don't display by default?
-{{snippets/example03_step3_dedup.md}}
--->
-
 {{snippets/example03_step3_out.md}}
