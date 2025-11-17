@@ -30,7 +30,9 @@ teardown_file() {
     --output example03.bigtree'''
 
   assert_exists example03.bigtree
-  file_snippet 'step1_bigtree.code' 'example03.bigtree'
+
+  # TODO remove comment line and explain in prose instead?
+  text_snippet 'step1_bigtree.txt' "$(grep --text -E '^(F|D|L|B|E|# type)' example03.bigtree)"
 
 }
 

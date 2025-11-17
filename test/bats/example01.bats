@@ -32,6 +32,7 @@ teardown_file() {
 
   assert_exists dedup.sh
   assert_exists 'example01/mozart (copy 1).mp3'
+  text_snippet 'step1_dedup.bash' "$(sed '1,19d' dedup.sh)"
 
 }
 
@@ -46,7 +47,6 @@ teardown_file() {
   assert_exists 'example01/mozart (copy 2).mp3'
   assert_exists 'example01/mozart (copy 3).mp3'
 
-  file_snippet 'step2_dedup.sh' 'dedup.sh'
   run_snippet  'step2_cmd.sh'   'bash dedup.sh'
   text_snippet 'step3_out.txt'  "$output"
 
