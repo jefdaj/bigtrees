@@ -9,10 +9,17 @@ That might be so you can:
 * search the tree without plugging in the corresponding backup drive
 * pre-run the long hashing step to speed up other operations
 
-```.sh
-FILES="/path/to/files/here"
-bigtrees hash "$FILES" --output files.bigtree
-```
+{{snippets/example03_step1_cmd.md}}
+
+<!-- TODO how to make this not look terrible?
+snippets/example03_step1_bigtree.md
+-->
+
+{{snippets/example03_step2_cmd.md}}
+
+{{snippets/example03_step3_dedup.md}}
+
+{{snippets/example03_step3_out.md}}
 
 You can use `files.bigtree` in place of `$FILES` in most of the other commands:
 `diff`, `set-add`, `find`, `dupes`, ...

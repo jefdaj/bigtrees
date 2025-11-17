@@ -38,7 +38,7 @@ processIncludes srcDir content = do
 processLine :: FilePath -> String -> IO String
 processLine srcDir line
   | includeStart `isPrefixOf` line && includeEnd `isSuffixOf` line = do
-      let relPath  = extractSnippetPath line
+      let relPath  = extractIncludePath line
           fullPath = srcDir </> relPath
       exists <- doesFileExist fullPath
       if exists
@@ -48,8 +48,8 @@ processLine srcDir line
           return line
   | otherwise = return line
 
-extractSnippetPath :: String -> FilePath
-extractSnippetPath line =
+extractIncludePath :: String -> FilePath
+extractIncludePath line =
   let stripped = drop (length includeStart) line
   in take (length stripped - length includeEnd) stripped
 

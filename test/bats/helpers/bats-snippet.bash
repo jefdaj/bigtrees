@@ -35,9 +35,8 @@ file_snippet() {
   [[ -z "$snippet_lang" ]] || snippet_lang=".${snippet_lang}"
   snippet_path="${SNIPPETS_DIR}/${TEST_EXAMPLE_BASENAME}_${snippet_name}.md"
   snippet_src="$2"
+  # TODO put back? ${snippet_src}
   snippet_block="""\`\`\`${snippet_lang}
-# ${snippet_src}
-
 $(cat "$snippet_src")
 \`\`\`"""
   echo "$snippet_block" > "$snippet_path"

@@ -25,9 +25,13 @@ teardown_file() {
 }
 
 @test "example 3 step 1: hash dir to .bigtree file" {
+
   run_snippet 'step1_cmd.sh' '''bigtrees hash example03 \
     --output example03.bigtree'''
+
   assert_exists example03.bigtree
+  file_snippet 'step1_bigtree.code' 'example03.bigtree'
+
 }
 
 @test "example 3 step 2: find dupes from .bigtree file" {

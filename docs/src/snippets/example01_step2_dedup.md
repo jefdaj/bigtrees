@@ -1,6 +1,4 @@
 ```.sh
-# dedup.sh
-
 #!/usr/bin/env bash
 
 # This is the dedup-script output format.
