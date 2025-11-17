@@ -4,12 +4,8 @@ title: Simple two-step dedup
 
 BigTrees generates a shell script, which you can look through and optionally tweak before running.
 
-```.sh
-FILES="/path/to/files/to/dedup/here"
+{{snippets/example01_step1_cmd.md}}
 
-bigtrees dupes "$FILES" \
-  --output dedup.sh \
-  --dupes-out-fmt dedup-script
+{{snippets/example01_step2_dedup.md}}
 
-bash dedup.sh
-```
+{{snippets/example01_step3_out.md}}

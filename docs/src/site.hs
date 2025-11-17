@@ -4,7 +4,9 @@ import Data.Monoid (mappend)
 import Hakyll
 -- import qualified Data.Text as T
 -- import qualified Data.Text.IO as TIO
-import System.FilePath (takeBaseName, (</>))
+import System.FilePath (takeBaseName, takeDirectory, (</>))
+import System.Directory (getCurrentDirectory, doesFileExist)
+import Data.Maybe (fromMaybe)
 import Data.List (isPrefixOf, isSuffixOf)
 
 config :: Configuration
@@ -17,30 +19,39 @@ config = defaultConfiguration
 
 --------------------------------------------------------------------------------
 
-includeSnippetsCompiler :: Compiler (Item String)
-includeSnippetsCompiler = do
+includeStart = "{{" :: String
+includeEnd   = "}}" :: String
+
+includesCompiler :: Compiler (Item String)
+includesCompiler = do
+  let srcDir = providerDirectory config -- TODO make an arg if distributing this
   content <- getResourceString
-  processedContent <- unsafeCompiler $ processIncludes (itemBody content)
+  processedContent <- unsafeCompiler $ processIncludes srcDir $ itemBody content
   makeItem processedContent
 
-processIncludes :: String -> IO String
-processIncludes content = do
+processIncludes :: FilePath -> String -> IO String
+processIncludes srcDir content = do
   let includeLines = lines content
-  processedLines <- mapM processLine includeLines
+  processedLines <- mapM (processLine srcDir) includeLines
   return $ unlines processedLines
 
-processLine :: String -> IO String
-processLine line
-  | ("{{include:" :: String) `isPrefixOf` line && ("}}" :: String) `isSuffixOf` line = do
-      let snippetPath = extractSnippetPath line
-      snippetContent <- readFile snippetPath
-      return snippetContent
+processLine :: FilePath -> String -> IO String
+processLine srcDir line
+  | includeStart `isPrefixOf` line && includeEnd `isSuffixOf` line = do
+      let relPath  = extractSnippetPath line
+          fullPath = srcDir </> relPath
+      exists <- doesFileExist fullPath
+      if exists
+	 then readFile fullPath
+         else do
+	  putStrLn $ "ERROR included path does not exist:\n" ++ line
+          return line
   | otherwise = return line
 
 extractSnippetPath :: String -> FilePath
 extractSnippetPath line =
-  let stripped = drop (length ("{{include:" :: String)) line
-  in take (length stripped - length ("}}" :: String)) stripped
+  let stripped = drop (length includeStart) line
+  in take (length stripped - length includeEnd) stripped
 
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -62,7 +73,7 @@ main = hakyllWith config $ do
     match "examples/*" $ do
         route $ setExtension "html"
         compile $
-            includeSnippetsCompiler
+            includesCompiler
             >>= renderPandoc
             >>= loadAndApplyTemplate "templates/example.html" exampleCtx
             >>= loadAndApplyTemplate "templates/default.html" exampleCtx
