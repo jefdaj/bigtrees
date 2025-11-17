@@ -2,13 +2,13 @@
 title: Download
 ...
 
-The latest version is `v0.18`. It's a _pre-release_, suitable for adventerous
+The latest version is `v0.27`. It's a _pre-release_, suitable for adventerous
 users willing to double check things themselves. Here are the binaries:
 
-* [Linux x86_64](https://github.com/jefdaj/bigtrees/releases/download/v0.18/bigtrees-x86_64-linux)
+* [Linux x86_64](https://github.com/jefdaj/bigtrees/releases/download/v0.27/bigtrees-x86_64-linux)
 * MacOS coming soon
 
-See the [GitHub release page](https://github.com/jefdaj/bigtrees/releases/tag/v0.18) for details.
+See the [GitHub release page](https://github.com/jefdaj/bigtrees/releases/tag/v0.27) for details.
 
 Download the binary file for your system,
 give it e<b>x</b>ecute permission, and move it somewhere on your `PATH`.
