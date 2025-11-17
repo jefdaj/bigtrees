@@ -2,8 +2,9 @@
 
 ### BigTrees
 
-A re-imagining of [gander](https://github.com/jefdaj/gander) that gives up on
-some aspirational "easy mode" features in favor of simplicity for power users.
+Performant hash trees to dedup large collections of files.
+See [the website](https://jefdaj.github.io/bigtrees) for downloads, examples, and user-facing docs.
+The rest of this readme is about development.
 
 ``` .sh
 git clone https://github.com/jefdaj/bigtrees
@@ -103,6 +104,5 @@ stack exec bigtrees-docs-site build
 
 ``` .sh
 # benchmarking
-# TODO still works?
 stack bench --ba --baseline=test/bench/bench.csv --timeout=60s
 ```
