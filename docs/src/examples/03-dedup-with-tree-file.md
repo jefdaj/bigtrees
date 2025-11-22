@@ -18,8 +18,8 @@ That might be so you can:
 You can use `.bigtree` files in place of scanned folders in many of the
 other commands (`diff`, `set-add`, `find`, and `dupes`).
 
-Here's the same process from [the first example][ex1] again,
-this time using the tree file:
+Here's the same process we used in [the first example][ex1],
+except this time without having to re-hash everything to find dupes:
 
 <!-- TODO how to finish this example? maybe just link to the first one again? -->
 <!-- TODO or show the tree? need some new css for that -->
