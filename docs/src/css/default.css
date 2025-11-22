@@ -103,7 +103,7 @@ pre {
   margin-left: 1em;
 }
 
-.sourceCode, .stdout {
+.sourceCode, .stdout, .tree {
   border-radius: 15px;
   overflow: auto;
 }
@@ -121,6 +121,12 @@ pre.stdout {
   padding-top: 0; /* scrunch up to preceding code block */
   line-height: initial;
   font-style: italic;
+}
+
+/* tree command output */
+pre.tree {
+  background: #edffff;
+  line-height: initial;
 }
 
 h1 {

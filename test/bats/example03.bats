@@ -26,6 +26,8 @@ teardown_file() {
 
 @test "example 3 step 1: hash dir to .bigtree file" {
 
+  text_snippet 'step0_before.tree' "$(tree example03 | head -n -2)"
+
   run_snippet 'step1_cmd.sh' '''bigtrees hash example03 \
     --output example03.bigtree'''
 
@@ -68,5 +70,7 @@ teardown_file() {
   assert_not_exists 'example03/mozart (copy 1).mp3'
   assert_not_exists 'example03/mozart (copy 2).mp3'
   assert_not_exists 'example03/mozart (copy 3).mp3'
+
+  text_snippet 'step3_after.tree' "$(tree example03 | head -n -2)"
 
 }
