@@ -27,7 +27,7 @@
 </div>
 
 <p>Step 1: Tell BigTrees to scan your drive/folder and generate a dedup script.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode .sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> dupes example01 <span class="dt">\</span></span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> dupes example01 <span class="dt">\</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">--output</span> dedup.sh <span class="dt">\</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--dupes-out-fmt</span> dedup-script</span></code></pre></div>
 <p>Step 2: skim the script to make sure it’s categorized the duplicates the way you want.
@@ -46,8 +46,8 @@ BigTrees sorts each set of dupes, putting its best guess about which copy you’
 <p>You can edit the script now to pick different files if you want.
 Just be sure to move any new <code>keep</code> lines to the top of their groups.</p>
 <p>Step 3: When you’re ready, go ahead and run it:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode .sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> dedup.sh</span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode .txt"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>KEEP    'example01/pdf_1'</span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> dedup.sh</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode txt"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>KEEP    'example01/pdf_1'</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>rm dir  'example01/pdf_2'</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>rm dir  'example01/pdf_3'</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>KEEP    'example01/mozart.mp3'</span>

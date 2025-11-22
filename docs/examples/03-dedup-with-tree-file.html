@@ -33,9 +33,9 @@ That might be so you can:</p>
 <li>search the tree without plugging in the corresponding backup drive</li>
 <li>pre-run the long hashing step to speed up other operations</li>
 </ul>
-<div class="sourceCode" id="cb1"><pre class="sourceCode .sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> hash example03 <span class="dt">\</span></span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> hash example03 <span class="dt">\</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">--output</span> example03.bigtree</span></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode .txt"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a># type	depth	hash	modtime	nbytes	nfiles	name</span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode txt"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a># type	depth	hash	modtime	nbytes	nfiles	name</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>F	2	tI3o1uovy6ruP0NQVdubqK	1763401239	197597	1	scans.pdf</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>F	2	ECxxis6WQ/mK8R01yWrY79	1763401239	890714	1	ocr.pdf</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>F	2	etwnD5VGdg7T2UP2l48bFs	1763401239	4991	1	different-dimensions.pdf</span>
@@ -61,17 +61,17 @@ other commands (<code>diff</code>, <code>set-add</code>, <code>find</code>, and 
 this time using the tree file:</p>
 <!-- TODO how to finish this example? maybe just link to the first one again? -->
 <!-- TODO or show the tree? need some new css for that -->
-<div class="sourceCode" id="cb3"><pre class="sourceCode .sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> dupes example03.bigtree <span class="dt">\</span></span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> dupes example03.bigtree <span class="dt">\</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">--output</span> dedup.sh <span class="dt">\</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--dupes-out-fmt</span> dedup-script</span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode .sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> dedup.sh</span></code></pre></div>
-<div class="sourceCode" id="cb5"><pre class="sourceCode .txt"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>KEEP    'example03/pdf_1'</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>rm dir  'example03/pdf_2'</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>rm dir  'example03/pdf_3'</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>KEEP    'example03/mozart.mp3'</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>rm file 'example03/mozart (copy 1).mp3'</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>rm file 'example03/mozart (copy 2).mp3'</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>rm file 'example03/mozart (copy 3).mp3'</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> dedup.sh</span></code></pre></div>
+<pre class="stdout"><code>KEEP    'example03/pdf_1'
+rm dir  'example03/pdf_2'
+rm dir  'example03/pdf_3'
+KEEP    'example03/mozart.mp3'
+rm file 'example03/mozart (copy 1).mp3'
+rm file 'example03/mozart (copy 2).mp3'
+rm file 'example03/mozart (copy 3).mp3'</code></pre>
 
         </div>
     <!--

@@ -1,4 +1,4 @@
-```.txt
+``` txt
 # type	depth	hash	modtime	nbytes	nfiles	name
 F	2	tI3o1uovy6ruP0NQVdubqK	1763401239	197597	1	scans.pdf
 F	2	ECxxis6WQ/mK8R01yWrY79	1763401239	890714	1	ocr.pdf

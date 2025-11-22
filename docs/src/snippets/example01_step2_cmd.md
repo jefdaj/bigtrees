@@ -1,3 +1,3 @@
-```.sh
+``` sh
 bash dedup.sh
 ```
