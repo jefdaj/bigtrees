@@ -64,7 +64,7 @@ div#nav li {
 }
 
 div#nav a {
-    margin: 0;
+    margin: 2pt;
 }
 
 div#nav a:hover {
@@ -105,6 +105,7 @@ pre {
 
 .sourceCode, .stdout {
   border-radius: 15px;
+  overflow: auto;
 }
 
 /* Remove margin between command and output */
@@ -182,14 +183,14 @@ div.info {
     }
 
     body {
-        font-size: 20px;
+        font-size: 12pt;
         margin-left: auto;
         margin-right: auto;
         padding-left: 0;
     }
 
     div#content {
-        margin-top: 3.5em;
+        margin-top: 5em;
         margin-left: 10px;
         margin-right: 10px;
         padding-left: 0;
@@ -243,7 +244,7 @@ div.info {
 
 @media (max-width: 600px) {
     div#nav a {
-        font-size: 12pt;
+        /* font-size: 12pt; */
     }
 }
 
@@ -259,7 +260,7 @@ div.info {
     }
 
     div#nav a {
-        font-size: 10pt;
+        /* font-size: 10pt; */
     }
 
     div#content {
