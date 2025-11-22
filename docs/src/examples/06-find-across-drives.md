@@ -7,7 +7,7 @@ For example they might be on a cloud backup service or a bunch of hard drives.
 
 You scan each one once to a `.bigtree` file, then search through the scans.
 
-```.sh
+``` bash
 mkdir backup-drive-scans
 for drive_name in backupA backupB backupC backupD; do
   read -p "mount ${drive_name} drive and press ENTER"
@@ -17,16 +17,19 @@ for drive_name in backupA backupB backupC backupD; do
 done
 ```
 
-```.sh
+``` bash
 tree backup-drive-scans
-# backup-drive-scans
-# ├── backupA.bigtree
-# ├── backupB.bigtree
-# ├── backupC.bigtree
-# └── backupD.bigtree
 ```
 
-```.sh
+``` stdout
+backup-drive-scans
+├── backupA.bigtree
+├── backupB.bigtree
+├── backupC.bigtree
+└── backupD.bigtree
+```
+
+``` bash
 for drive_name in backupA backupB backupC backupD; do
   echo "searching ${drive_name}..."
   bigtrees find \

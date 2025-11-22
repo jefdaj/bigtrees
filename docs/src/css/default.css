@@ -91,6 +91,7 @@ p > code, .sourceCode {
 
 p > code {
     padding: 3pt;
+    border-radius: 10px;
 }
 
 .sourceCode {
@@ -100,6 +101,10 @@ p > code {
 
 pre {
   margin-left: 1em;
+}
+
+.sourceCode, .stdout {
+  border-radius: 15px;
 }
 
 /* Remove margin between command and output */
@@ -114,6 +119,7 @@ pre.stdout {
   padding: 1em;
   padding-top: 0; /* scrunch up to preceding code block */
   line-height: initial;
+  font-style: italic;
 }
 
 h1 {

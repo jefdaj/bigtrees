@@ -47,8 +47,8 @@ teardown_file() {
   assert_exists 'example01/mozart (copy 2).mp3'
   assert_exists 'example01/mozart (copy 3).mp3'
 
-  run_snippet  'step2_cmd.sh'   'bash dedup.sh'
-  text_snippet 'step3_out.txt'  "$output"
+  run_snippet  'step2_cmd.bash' 'bash dedup.sh'
+  text_snippet 'step3_out.stdout' "$output"
 
   assert_exists     example01
   assert_exists     example01/pdf_1

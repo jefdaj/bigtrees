@@ -14,7 +14,7 @@ Download the binary file for your system,
 give it e<b>x</b>ecute permission, and move it somewhere on your `PATH`.
 For example:
 
-```.sh
+``` bash
 chmod +x ~/Downloads/bigtrees-x86_64-linux
 mv ~/Downloads/bigtrees-x86_64-linux ~/.local/bin/bigtrees
 which bigtrees

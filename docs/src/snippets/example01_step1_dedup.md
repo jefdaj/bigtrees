@@ -1,4 +1,4 @@
-```.bash
+``` bash
 # 3 duplicate directories with hash yefChv7y4LiL0Lw+vjmXOm
 keep 'example01/pdf_1'
 rm_d 'example01/pdf_2'

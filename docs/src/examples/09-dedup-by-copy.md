@@ -6,7 +6,7 @@ This is useful if you want to be conservative and test the dedup process without
 
 _Warning: rsync filter output is experimental and could use some more testing._
 
-```.sh
+``` bash
 SRC="/path/to/source/folder/here"
 DST="/path/to/destination/folder/here"
 

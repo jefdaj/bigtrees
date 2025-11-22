@@ -1,4 +1,4 @@
-``` txt
+``` stdout
 KEEP    'example01/pdf_1'
 rm dir  'example01/pdf_2'
 rm dir  'example01/pdf_3'
