@@ -71,12 +71,26 @@
           };
         });
 
-        # also works, except also has the fix-point bug:
+        # attempt at cross compilation for macos...
+        pkgsDynamic = pkgsDynamicOptions.${system};
+        mkPkgsDynamic = targetArch:
+          let attrs = { system = "x86_64-linux"; overlays = [ haskellOverlay ]; };
+          in import nixpkgs (
+            if targetArch == "x86_64-linux"
+              then attrs
+              else (attrs // { crossSystem = { config = targetArch; }; })
+          );
+        pkgsDynamicOptions =
+          builtins.listToAttrs
+            (map (t: { name = t; value = mkPkgsDynamic t; })
+            flake-utils.lib.defaultSystems);
+
+        # these both work (on x86_64-linux only) and seem equivalent:
         # pkgsDynamic = nixpkgs.legacyPackages.${system}.extend haskellOverlay;
-        pkgsDynamic = (import nixpkgs {
-          inherit system;
-          overlays = [ haskellOverlay ];
-        });
+        # pkgsDynamic = (import nixpkgs {
+        #   inherit system;
+        #   overlays = [ haskellOverlay ];
+        # });
 
         # Wrap Stack to work with our Nix integration. We don't want to modify
         # stack.yaml so non-Nix users don't notice anything.
