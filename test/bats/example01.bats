@@ -26,6 +26,8 @@ teardown_file() {
 
 @test "example 1 step 1: find dupes directly from dir" {
 
+  text_snippet 'step0_before.tree' "$(tree example01 | head -n -2)"
+
   run_snippet 'step1_cmd.sh' '''bigtrees dupes example01 \
     --output dedup.sh \
     --dupes-out-fmt dedup-script'''
@@ -58,5 +60,7 @@ teardown_file() {
   assert_not_exists 'example01/mozart (copy 1).mp3'
   assert_not_exists 'example01/mozart (copy 2).mp3'
   assert_not_exists 'example01/mozart (copy 3).mp3'
+
+  text_snippet 'step3_after.tree' "$(tree example01 | head -n -2)"
 
 }
