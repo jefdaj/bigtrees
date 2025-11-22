@@ -61,19 +61,23 @@ addRmCall tt path = rm tt <> " " <> path
 keepRatherThanRm :: B8.ByteString -> B8.ByteString
 keepRatherThanRm rmCall = "keep" <> B8.drop 4 (rmCall)
 
--- This is important for dedup-scripts because if the larger sets of duplicate
--- files come before any directories, it's possible that this will happen:
+-- Dirs before all others is important for dedup-scripts because if the larger
+-- sets of duplicate files come before any directories, it's possible that this
+-- will happen:
 -- 1. all but one of a set of file dupes is deleted
 -- 2. all but one of a set of dir dupes is deleted,
 --    and the one remaining copy of the file was in one of the deleted dirs!
-sortDirsFirst :: SortedDupeLists -> SortedDupeLists
-sortDirsFirst lists = dirs ++ nonDirs
+-- Larger dirs before smaller ones is also important for similar reasons.
+-- TODO explain that part better
+sortForSafeDedup :: SortedDupeLists -> SortedDupeLists
+sortForSafeDedup lists = largestFirst dirs ++ nonDirs
   where
     (dirs, nonDirs) = L.partition (\(_,_,t,_) -> t == D) lists
+    largestFirst    = L.sortOn $ \(n, _, _, _) -> n
 
 renderDedupScript :: DupesRenderFn
 renderDedupScript lCfg keepOne md ls = do
-  let ls' = sortDirsFirst ls
+  let ls' = sortForSafeDedup ls
   body <- mapM excludeLines ls'
   return $ fileHeader keepOne : body
   where

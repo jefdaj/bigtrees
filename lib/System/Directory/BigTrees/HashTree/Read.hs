@@ -9,7 +9,6 @@ import Prelude hiding (log)
 import qualified Data.ByteString.Char8 as B8
 import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (partition, sortBy)
 import System.Directory.BigTrees.Hash (prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), HashLine (..), ModTime (..),
                                            NBytes (..), NNodes (..), TreeType (..),
