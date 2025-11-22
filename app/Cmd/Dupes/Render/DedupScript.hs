@@ -9,6 +9,7 @@ import Data.Word (Word8)
 import System.Directory.BigTrees
 import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 
+-- TODO remove initial skip_group line?
 fileHeader :: Bool -> B8.ByteString
 fileHeader keepOne =
   "#!/usr/bin/env bash\n\
@@ -31,7 +32,7 @@ fileHeader keepOne =
   "\n\
   \skip_group=FALSE\n\
   \keep() { [[ -e \"$1\" ]] && echo \"KEEP    '$1'\" && skip_group=FALSE || { echo \"MISSING '$1'\" >&2; skip_group=TRUE; }; }\n\
-  \skip() { [[ $skip_group == TRUE || ! -e \"$1\" ]] && echo \"SKIP '$1'\"; }\n\
+  \skip() { [[ $skip_group == TRUE ]] && echo \"SKIP    '$1'\"; [[ $skip_group == TRUE || ! -e \"$1\" ]] && return 0; }\n\
   \rm_X() { skip \"$3\" || { rm $1 \"$3\" && echo \"rm $2 '$3'\"; } || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
   \rm_d() { rm_X '-r' 'dir ' \"$1\"; }\n\
   \rm_f() { rm_X '' 'file' \"$1\"; }\n\
