@@ -25,7 +25,7 @@
     let crossTargets = {
       "armv7l-linux"   = "raspberryPi";
       "aarch64-linux"  = "aarch64-multiplatform"; 
-      # "x86_64-windows" = "mingwW64";
+      # TODO macos here!
     };
 
     # TODO remove this if never building from something other than x86_64-linux?
@@ -167,7 +167,10 @@
         ];
 
       # Static by default, but allow pkgsDynamic to be referenced explicitly for dev tools.
-      # in with pkgsDynamic.pkgsStatic;
+      #
+      # Note that you have to pass the dynamic (or cross) package set because
+      # within it I look for myHaskellPackages rather than haskellPackages, because of
+      # the fixpoint bug.
       bigtreesStatic = pkgs: devTools:
         with pkgs.pkgsStatic;
         let
@@ -208,6 +211,8 @@
       #   ) crossTargets;
 
       # Fixed: Use lazy evaluation and proper cross-compilation
+      # TODO flatten out packages since they're all weirdly under x86_64-linux now?
+      # TODO add x86_64-linux by name too? and remove static since they're all static?
       mkCrossPackages = system: basePkgs:
         let
           # Only enable cross-compilation from x86_64-linux
@@ -226,7 +231,7 @@
           ) crossTargets
         );
 
-      in rec {
+      in {
 
         # The dev tools could probably also be static, but why rebuild them?
         # devShells.default = pkgs.mkShell {
@@ -255,16 +260,7 @@
         # packages.pkg = bigtreesStatic [ ];
         # defaultPackage = self.packages.${system}.pkg;
         packages = {
-
-          default = bigtreesStatic pkgsDynamic myDevTools;
-
-          # Add your native static build
-          # TODO is this extra name helpful?
-          static = bigtreesStatic pkgsDynamic [];
-
-          # default to the current arch native pkg
-          # default = self.${system}.pkg;
-
+          default = bigtreesStatic pkgsDynamic [];
         } // (mkCrossPackages system pkgsDynamic);
 
       });
