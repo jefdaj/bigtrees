@@ -185,7 +185,7 @@
             '';
           });
 
-        in pkgs.haskellPackages.developPackage {
+        in myHaskellPackages.developPackage {
           # root = lib.sourceFilesBySuffices ./. [ ".cabal" ".hs" ".txt" ];
           root = lib.cleanSource ./.;
           name = "bigtrees";
@@ -259,7 +259,8 @@
           default = bigtreesStatic pkgsDynamic myDevTools;
 
           # Add your native static build
-          static = bigtreesStatic pkgsDynamic.pkgsStatic [];
+          # TODO is this extra name helpful?
+          static = bigtreesStatic pkgsDynamic [];
 
           # default to the current arch native pkg
           # default = self.${system}.pkg;
