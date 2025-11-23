@@ -185,7 +185,7 @@
             '';
           });
 
-        in myHaskellPackages.developPackage {
+        in pkgs.haskellPackages.developPackage {
           # root = lib.sourceFilesBySuffices ./. [ ".cabal" ".hs" ".txt" ];
           root = lib.cleanSource ./.;
           name = "bigtrees";
