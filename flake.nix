@@ -29,7 +29,7 @@
     };
 
     # TODO remove this if never building from something other than x86_64-linux?
-    in flake-utils.lib.eachDefaultSystem (system:
+    in flake-utils.lib.eachSystem ["x86_64-linux"] (system:
       let
 
         haskellOverlay = (final: prev: {
@@ -168,7 +168,7 @@
 
       # Static by default, but allow pkgsDynamic to be referenced explicitly for dev tools.
       # in with pkgsDynamic.pkgsStatic;
-      project = pkgs: devTools:
+      bigtreesStatic = pkgs: devTools:
         with pkgs.pkgsStatic;
         let
           addBuildTools = lib.trivial.flip haskell.lib.addBuildTools devTools;
@@ -202,11 +202,29 @@
         };
 
       # Helper function to generate cross packages
-      mkCrossPackages = system: pkgs:
-        builtins.mapAttrs (targetName: crossTarget: 
-          # pkgs.pkgsCross.${crossTarget}.callPackage ./package.nix {}
-          project pkgs []
-        ) crossTargets;
+      # mkCrossPackages = system: pkgs:
+      #   builtins.mapAttrs (targetName: crossTarget: 
+      #     bigtreesStatic pkgs []
+      #   ) crossTargets;
+
+      # Fixed: Use lazy evaluation and proper cross-compilation
+      mkCrossPackages = system: basePkgs:
+        let
+          # Only enable cross-compilation from x86_64-linux
+          canCrossCompile = system == "x86_64-linux";
+        in
+        nixpkgs.lib.optionalAttrs canCrossCompile (
+          builtins.mapAttrs (targetSystem: nixCrossTarget:
+            let
+              # Get the actual cross-compilation package set
+              crossPkgs = basePkgs.pkgsCross.${nixCrossTarget};
+            in
+            # Return a function that builds when called, not the derivation itself
+            crossPkgs.callPackage ({ lib, ... }: 
+              bigtreesStatic crossPkgs []
+            ) {}
+          ) crossTargets
+        );
 
       in rec {
 
@@ -234,12 +252,17 @@
         };
 
         # empty devTools tells it to build the package
-        # packages.pkg = project [ ];
+        # packages.pkg = bigtreesStatic [ ];
         # defaultPackage = self.packages.${system}.pkg;
         packages = {
 
+          default = bigtreesStatic pkgsDynamic myDevTools;
+
+          # Add your native static build
+          static = bigtreesStatic pkgsDynamic.pkgsStatic [];
+
           # default to the current arch native pkg
-          default = self.${system}.pkg;
+          # default = self.${system}.pkg;
 
         } // (mkCrossPackages system pkgsDynamic);
 
