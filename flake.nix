@@ -19,7 +19,23 @@
   };
 
   outputs = { self, nixpkgs, flake-utils, directory-tree }:
-    flake-utils.lib.eachDefaultSystem (system:
+
+    # TODO what should the names be really?
+    # TODO how does x86_64-linux fit in here? should it be on the list?
+    let crossTargets = {
+      "armv7l-linux"   = "raspberryPi";
+      "aarch64-linux"  = "aarch64-multiplatform"; 
+      "x86_64-windows" = "mingwW64";
+    };
+
+    # Helper function to generate cross packages
+    mkCrossPackages = system: pkgs:
+      builtins.mapAttrs (targetName: crossTarget: 
+        pkgs.pkgsCross.${crossTarget}.callPackage ./package.nix {}
+      ) crossTargets;
+
+    # TODO remove this if never building from something other than x86_64-linux?
+    in flake-utils.lib.eachDefaultSystem (system:
       let
 
         haskellOverlay = (final: prev: {
@@ -72,25 +88,26 @@
         });
 
         # attempt at cross compilation for macos...
-        pkgsDynamic = pkgsDynamicOptions.${system};
-        mkPkgsDynamic = targetArch:
-          let attrs = { system = "x86_64-linux"; overlays = [ haskellOverlay ]; };
-          in import nixpkgs (
-            if targetArch == "x86_64-linux"
-              then attrs
-              else (attrs // { crossSystem = { config = targetArch; }; })
-          );
-        pkgsDynamicOptions =
-          builtins.listToAttrs
-            (map (t: { name = t; value = mkPkgsDynamic t; })
-            flake-utils.lib.defaultSystems);
+        # see lib.attrNames pkgsCross for possibilities here
+#         pkgsDynamic = pkgsDynamicOptions.${system};
+#         mkPkgsDynamic = targetArch:
+#           let attrs = { system = "x86_64-linux"; overlays = [ haskellOverlay ]; };
+#           in import nixpkgs (
+#             if targetArch == "x86_64-linux"
+#               then attrs
+#               else (attrs // { crossSystem = { config = targetArch; }; })
+#           );
+#         pkgsDynamicOptions =
+#           builtins.listToAttrs # TODO cleaner way to do this now that using all system options?
+#             (map (t: { name = t; value = mkPkgsDynamic t; })
+#             supportedSystems);
 
         # these both work (on x86_64-linux only) and seem equivalent:
         # pkgsDynamic = nixpkgs.legacyPackages.${system}.extend haskellOverlay;
-        # pkgsDynamic = (import nixpkgs {
-        #   inherit system;
-        #   overlays = [ haskellOverlay ];
-        # });
+        pkgsDynamic = (import nixpkgs {
+          inherit system;
+          overlays = [ haskellOverlay ];
+        });
 
         # Wrap Stack to work with our Nix integration. We don't want to modify
         # stack.yaml so non-Nix users don't notice anything.
@@ -187,15 +204,11 @@
             haskell.lib.justStaticExecutables
             haskell.lib.disableLibraryProfiling
             haskell.lib.disableExecutableProfiling
-            confirmStaticBinaries
+            confirmStaticBinaries # TODO remove when cross compiling? or still good?
           ];
         };
 
       in rec {
-        # empty devTools tells it to build the package
-        packages.pkg = project [ ];
-
-        defaultPackage = self.packages.${system}.pkg;
 
         # The dev tools could probably also be static, but why rebuild them?
         # devShells.default = pkgs.mkShell {
@@ -219,6 +232,11 @@
           # TODO still?
           TASTY_NUM_THREADS = 1;
         };
+
+        # empty devTools tells it to build the package
+        # packages.pkg = project [ ];
+        # defaultPackage = self.packages.${system}.pkg;
+        packages = {};
 
       });
 }

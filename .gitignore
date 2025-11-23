@@ -22,3 +22,5 @@ result*
 
 # misc logfiles
 *.log
+
+release-v*/
