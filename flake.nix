@@ -23,8 +23,11 @@
     # TODO what should the names be really?
     # TODO how does x86_64-linux fit in here? should it be on the list?
     let crossTargets = {
-      "armv7l-linux"   = "raspberryPi";
+      # "armv7l-hf-multiplatform" = "raspberryPi";
+      "raspberryPi" = "armv7l-hf-multiplatform"; # TODO if this is also broken, go back to -linux?
       "aarch64-linux"  = "aarch64-multiplatform"; 
+      "mac-intel"      = "x86_64-darwin";
+      "mac-silicon"    = "aarch64-darwin";
       # TODO macos here!
     };
 

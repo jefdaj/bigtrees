@@ -5,16 +5,18 @@
 
 set -x
 
-# broken? armv7l-linux \
-# armv7l-hf-multiplatform \
+# broken:
+# armv7l-linux
+# raspberryPi
+# aarch64-linux
 for arch in \
 	x86_64-linux \
-	armv7l-linux \
-	aarch64-linux \
+	mac-intel \
+	mac-silicon \
   ; do
 
   rm -f result
-  nix build ".#${arch}" || continue
+  nix build ".#${arch}" --keep-going || continue
 
   if [[ -z "$version" ]]; then
     version="$(./result/bin/bigtrees version)"
@@ -26,4 +28,4 @@ for arch in \
   [[ -e "$outfile" ]] && rm -f "$outfile"
   cp result/bin/bigtrees "$outfile"
 
-done
+done 2>&1 | tee release.log
