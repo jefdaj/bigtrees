@@ -259,8 +259,9 @@
         # empty devTools tells it to build the package
         # packages.pkg = bigtreesStatic [ ];
         # defaultPackage = self.packages.${system}.pkg;
-        packages = {
+        packages = rec {
           default = bigtreesStatic pkgsDynamic [];
+          "x86_64-linux" = default; # TODO remove? non standard but intuitive to me
         } // (mkCrossPackages system pkgsDynamic);
 
       });

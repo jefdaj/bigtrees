@@ -6,13 +6,15 @@
 set -x
 
 # broken? armv7l-linux \
+# armv7l-hf-multiplatform \
 for arch in \
 	x86_64-linux \
-	armv7l-hf-multiplatform \
+	armv7l-linux \
+	aarch64-linux \
   ; do
 
   rm -f result
-  nix build ".#packages.${arch}.pkg" || continue
+  nix build ".#${arch}" || continue
 
   if [[ -z "$version" ]]; then
     version="$(./result/bin/bigtrees version)"
