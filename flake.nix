@@ -28,12 +28,6 @@
       "x86_64-windows" = "mingwW64";
     };
 
-    # Helper function to generate cross packages
-    mkCrossPackages = system: pkgs:
-      builtins.mapAttrs (targetName: crossTarget: 
-        pkgs.pkgsCross.${crossTarget}.callPackage ./package.nix {}
-      ) crossTargets;
-
     # TODO remove this if never building from something other than x86_64-linux?
     in flake-utils.lib.eachDefaultSystem (system:
       let
@@ -173,10 +167,9 @@
         ];
 
       # Static by default, but allow pkgsDynamic to be referenced explicitly for dev tools.
-      in with pkgsDynamic.pkgsStatic;
-      let
-
-        project = devTools:
+      # in with pkgsDynamic.pkgsStatic;
+      project = pkgs: devTools:
+        with pkgs.pkgsStatic;
         let
           addBuildTools = lib.trivial.flip haskell.lib.addBuildTools devTools;
           confirmStaticBinaries = lib.trivial.flip haskell.lib.overrideCabal (old: {
@@ -208,6 +201,13 @@
           ];
         };
 
+      # Helper function to generate cross packages
+      mkCrossPackages = system: pkgs:
+        builtins.mapAttrs (targetName: crossTarget: 
+          # pkgs.pkgsCross.${crossTarget}.callPackage ./package.nix {}
+          project pkgs []
+        ) crossTargets;
+
       in rec {
 
         # The dev tools could probably also be static, but why rebuild them?
@@ -236,7 +236,12 @@
         # empty devTools tells it to build the package
         # packages.pkg = project [ ];
         # defaultPackage = self.packages.${system}.pkg;
-        packages = {};
+        packages = {
+
+          # default to the current arch native pkg
+          default = self.${system}.pkg;
+
+        } // (mkCrossPackages system pkgsDynamic);
 
       });
 }
