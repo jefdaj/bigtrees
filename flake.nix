@@ -25,7 +25,7 @@
     let crossTargets = {
       "armv7l-linux"   = "raspberryPi";
       "aarch64-linux"  = "aarch64-multiplatform"; 
-      "x86_64-windows" = "mingwW64";
+      # "x86_64-windows" = "mingwW64";
     };
 
     # TODO remove this if never building from something other than x86_64-linux?
