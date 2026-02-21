@@ -38,10 +38,10 @@ import Control.DeepSeq (deepseq)
 -- type DupesRenderFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
 hWriteDupes :: SearchConfig -> LogCfg -> DupesRenderFn -> Bool -> Handle -> BT.SortedDupeLists -> IO ()
-hWriteDupes cfg lCfg explainFn keepOneDupe hdl groups = do
+hWriteDupes cfg lCfg explainFn noRefSets hdl groups = do
   -- TODO rename line groups or similar?
   let debug = log (addLogContext lCfg "hWriteDupes") DebugL
-  lines <- map (\x -> deepseq x x) <$> explainFn lCfg keepOneDupe (maxDepth cfg) groups
+  lines <- map (\x -> deepseq x x) <$> explainFn lCfg noRefSets (maxDepth cfg) groups
   debug "writing dupes to output handle"
   mapM_ (\l -> B8.hPutStrLn hdl l >> hFlush hdl) lines -- TODO this will force evaluation line by line, right?
 
@@ -74,28 +74,30 @@ cmdDupes cfg lCfg path = bracket open close write
       -- normally, we want to be sure not to delete all copies of a file!
       -- but in the special case of dupes vs a reference set, it should be ok
       -- TODO any good way to warn the user if their ref set looks like it's inside the dupes?
-      -- TODO better name for this since it controls multiple parts of the algorithm
-      let keepOneDupe = null rList
+      let noRefSets = null rListPaths
 
       -- TODO should this all be one function exported from DupeMap?
       -- TODO these debugST calls do *NOT* work at the right times; replace
       let ds = runST $ do
             debugST "runST starting"
-            mrSet <- if keepOneDupe
-                       then return Nothing
+            mrSet <- if noRefSets
+                       then debugST "no ref sets" >> return Nothing
                        else Just <$> BT.hashSetFromList rList
             let init  = max (length mrSet) 1000 -- TODO better defaults?
                 initB = B8.pack $ show init
                 treeN = B8.pack $ show $ (\(BT.NNodes n ) -> n) $ BT.treeNNodes tree
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
+            -- nBefore <- BT.dmSize ht
             BT.addTreeToDupeMap (searchCfg cfg) lCfg' mrSet cle ht tree
+            -- nAfter <- BT.dmSize ht
+            -- debugST $ "hashtable size " <> B8.pack (show nBefore) <> " -> " <> B8.pack (show nAfter)
             debugST $ "added all " <> treeN <> " tree nodes to DupeMap"
-            if null rList then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
+            if noRefSets then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             -- TODO DupesMode or similar type to make the null rList thing more obvious?
-            let scoreFn = if keepOneDupe then BT.scoreSetSelf else BT.scoreSetRef
-                keepSingles = not keepOneDupe
-            res <- map force <$> BT.dupesByNegScore lCfg' scoreFn keepSingles ht
+            let scoreFn = if noRefSets then BT.scoreSetSelf else BT.scoreSetRef
+                singlesAreDupes = not noRefSets
+            res <- map force <$> BT.dupesByNegScore lCfg' scoreFn singlesAreDupes ht
             -- TODO does this print before it starts actually scoring sets?
             debugST $ "finished scoring " <> treeN <> " DupeSets"
             return res
@@ -106,7 +108,7 @@ cmdDupes cfg lCfg path = bracket open close write
       let renderFn = fromJust $ lookup fmt dupesRenderFunctions
 
       debug $ "writing " <> B8.pack (show $ length ds) <> " DupeSets"
-      hWriteDupes (searchCfg cfg) lCfg' renderFn keepOneDupe hdl ds
+      hWriteDupes (searchCfg cfg) lCfg' renderFn noRefSets hdl ds
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?

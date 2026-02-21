@@ -18,6 +18,7 @@ module System.Directory.BigTrees.DupeMap
   , SortedDupeLists
   , SortedDupeSets
   , AddTreeProgress
+  , dmSize
   , addTreeToDupeMap
   , dupesByNegScore
   , insertDupeSet
@@ -85,6 +86,9 @@ type DupeSet  = (Int, Hash, TreeType, S.HashSet ModPath) -- TODO remove hash her
 type DupeList = (Int, Hash, TreeType, [ModPath])
 
 type DupeMap s = C.HashTable s Hash DupeSet
+
+dmSize :: DupeMap s -> ST s Integer
+dmSize = H.foldM (\n _ -> pure (n+1)) 0
 
 -- TODO newtypes?
 type SortedDupeSets  = [DupeSet]
@@ -186,9 +190,8 @@ addTreeToDupeMap'
         newSet  = S.singleton (treeModTime d, dir </> n)
     when keepNode $ do
       insertDupeSet cfg lCfg dm h (fs, h, D, newSet) pr
-      -- TODO would we ever want to recurse but not keep the current node?
-      when recurse $
-        mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
+    when recurse $
+      mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
@@ -239,14 +242,15 @@ logSD lCfg lvl desc rtn =
 -- The negate here undoes the one in scoreSets below, leaving a positive score.
 -- TODO is that the cleanest way to do it, or should both negates be in this fn?
 dupesByNegScore :: LogCfg -> ScoreFn -> Bool -> DupeMap s -> ST s SortedDupeLists
-dupesByNegScore lCfg scoreFn keepSingles dm = do
+dupesByNegScore lCfg scoreFn singlesAreDupes dm = do
   let lCfg' = addLogContext lCfg "dupesByNegScore"
   let debug desc rtn = logSD lCfg' DebugL desc rtn
-  sets <- debug "scoring sets" <$> scoreSets lCfg' scoreFn dm -- TODO separate scoring for ref set than within same tree
+  sets <- debug "scoring sets" <$> scoreSets lCfg' scoreFn dm
   let unsorted = debug "creating DupeSetVec" $ A.fromList A.Par sets :: DupeSetVec
       sorted   = debug "quicksorting DupeSetVec" $ A.quicksort $ A.compute unsorted :: DupeSetVec
       sortedL  = debug "converting DupeSetVec back to list" $ A.toList sorted
-      singles  = if keepSingles then sortedL else filter (\(_, _, _, ps) -> length ps > 1) sortedL
+      -- TODO could this be sped up by looking for score 0 instead of length?
+      singles  = if singlesAreDupes then sortedL else filter (\(_, _, _, ps) -> length ps > 1) sortedL
       fixElem (n, h, t, fs) = (negate n, h, t, L.sort $ S.toList fs) -- TODO n before h?
       fixed    = debug "fixing up elements" $ Prelude.map fixElem singles
       simple = debug "simplifying dupes" $ simplifyDupes 1 lCfg' fixed
@@ -437,18 +441,23 @@ dupesKeepNode cfg lCfg _ cle ns d e@(Err {}) = do
 
 dupesKeepNode cfg lCfg mrSet cle ns d t = do
   let hash = treeHash t
+  let info  = logUnsafe (addLogContext lCfg "dupesKeepNode") InfoL
+  let debug = logUnsafe (addLogContext lCfg "dupesKeepNode") DebugL
 
-  includeHash <- case mrSet of
-                   Nothing   -> return True
-                   Just rSet -> setContainsHash rSet hash
+  let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
+
+  let rsetDupeMsg = "dupe by ref set hash " <> prettyHash hash <> ": '" <> wholeName <> "'"
+  guardRefSet <- case mrSet of
+                   Nothing   -> return True -- no ref set, so keep everything
+                   Just rSet -> do
+                     rsetDupe <- setContainsHash rSet hash
+                     if rsetDupe
+                       then debug rsetDupeMsg $ return True -- hash is in ref set
+                       else return False -- hash is not in ref set
 
   let mExcludeLabel = B8.pack <$> findLabelNode cle (reverse ns) t
 
-  let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
   let excludeMsg l = "exclude node labeled '" <> l <> "' : '" <> wholeName <> "'"
-  let includeMsg   =     "dupe by ref set hash " <> prettyHash hash <> ": '" <> wholeName <> "'"
-  let info = logUnsafe (addLogContext lCfg "dupesKeepNode") InfoL
-  let debug = logUnsafe (addLogContext lCfg "dupesKeepNode") DebugL
 
   return $ and
     [ maybe True (d >=) $ minDepth cfg
@@ -460,7 +469,7 @@ dupesKeepNode cfg lCfg mrSet cle ns d t = do
     , maybe True (treeModTime t >=) $ minModtime cfg
     , maybe True (treeModTime t <=) $ maxModtime cfg
     , maybe True (treeType t `elem`) $ treeTypes cfg
-    , includeHash && debug includeMsg True
+    , guardRefSet
     -- works: , isNothing mExcludeLabel
     -- works: , maybe True (\l -> traceV verbose (excludeMsg l) False) mExcludeLabel
     , maybe True (\l -> info (excludeMsg l) False) mExcludeLabel

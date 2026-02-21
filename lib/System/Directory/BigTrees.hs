@@ -130,6 +130,7 @@ module System.Directory.BigTrees
   , DupeList
   , SortedDupeSets
   , SortedDupeLists
+  , dmSize
   , addTreeToDupeMap
   , dupesByNegScore
   , mergeDupeSets
@@ -157,7 +158,7 @@ import Prelude hiding (log)
 import System.Directory.BigTrees.Delta (Delta (..), assertSameTrees, diff, prettyDelta, printDeltas,
                                         hPrintDeltas, writeDeltas, simDelta, simDeltas)
 import System.Directory.BigTrees.DupeMap (AddTreeProgress, DupeList, DupeMap, DupeSet,
-                                          SortedDupeLists, SortedDupeSets, addTreeToDupeMap,
+                                          SortedDupeLists, SortedDupeSets, dmSize, addTreeToDupeMap,
                                           dupesByNegScore, mergeDupeSets, pathsByHash, scoreSetRef,
                                           scoreSetSelf, scoreSets, sortPaths)
 import System.Directory.BigTrees.Hash (Hash (..), hashBytes, hashFile, prettyHash)

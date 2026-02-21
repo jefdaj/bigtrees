@@ -3,6 +3,7 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 {-|
 Similar in structure to `DupeMap`, but a `HashSet` doesn't care about paths or
@@ -82,7 +83,7 @@ import System.Directory.BigTrees.HashLine (HashLine (..), NBytes (..), NNodes (.
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
                                                 TestTree (..), treeHash, treeNBytes, treeNNodes,
                                                 treeName)
-import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die)
+import System.Directory.BigTrees.Logging (LogCfg (..), addLogContext, die, logUnsafe, LogLevel(..))
 import System.Directory.BigTrees.Name (Name (..), bs2op)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..))
@@ -297,13 +298,15 @@ parseHashList bs = parseHashSetLines bs <&> map f
   where
     f (HashSetLine (h, nn, nb, n)) = (h, SetData nn nb n)
 
--- TODO any reason to pass on the Either rather than making it an error?
+-- TODO this should die when passed the path to another .big* file type
 readHashList :: LogCfg -> OsPath -> IO HashList
 readHashList lCfg path = do
   eHL <- SFO.readFile' path <&> parseHashList
+  let lCfg' = addLogContext lCfg "readHashList"
+  let debug = logUnsafe lCfg' InfoL
   case eHL of
-    Left msg -> die (addLogContext lCfg "readHashList") $ B8.pack $ "failed to read hashset: " ++ msg
-    Right hl -> return hl
+    Left msg -> die lCfg' $ B8.pack $ "failed to read hashset: " ++ msg
+    Right hl -> debug ("read " <> B8.pack (show $ length hl) <> " hashes") $ return hl
 
 -- TODO is this the beginning of a transformer stack?
 readHashSet :: LogCfg -> OsPath -> IO (ST s (HashSet s))
