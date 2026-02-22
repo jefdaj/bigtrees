@@ -190,8 +190,8 @@ addTreeToDupeMap'
         newSet  = S.singleton (treeModTime d, dir </> n)
     when keepNode $ do
       insertDupeSet cfg lCfg dm h (fs, h, D, newSet) pr
-    when recurse $
-      mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
+      when recurse $
+        mapM_ (addTreeToDupeMap' cfg lCfg mrSet cle dm (dir </> n) (depth+1) pr) cs
 
 -- inserts one node into an existing dupemap
 -- TODO any reason not to pass the tree here instead? then all the "keepNode" stuff can go here
@@ -443,6 +443,11 @@ dupesKeepNode cfg lCfg mrSet cle ns d t = do
 
   let wholeName = breadcrumbs2bs $ treeName t : (reverse ns)
 
+  -- guardRefSet should be True when the hash *is* in the ref set,
+  -- meaning the file *will* be considered a dupe. If there's no ref set,
+  -- then all files are potentially dupes by this measure at least.
+  -- (In that case we'll remove the dupesets with only single things in them later)
+  -- TODO factor this out into a separate function?
   let rsetDupeMsg = "dupe by ref set hash " <> prettyHash hash <> ": '" <> wholeName <> "'"
   guardRefSet <- case mrSet of
                    Nothing   -> return True -- no ref set, so keep everything
