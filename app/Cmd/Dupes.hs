@@ -8,7 +8,7 @@ import Cmd.Dupes.Render (DupesRenderFn, dupesRenderFunctions)
 import Config (AppConfig (..), SearchConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import Control.Exception (bracket)
-import Control.DeepSeq (force)
+import Control.DeepSeq (force, deepseq)
 import Control.Monad (forM, (>=>))
 import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.ByteString.Char8 as B8
@@ -38,10 +38,10 @@ import Control.DeepSeq (deepseq)
 -- type DupesRenderFn = Maybe Depth -> SortedDupeLists -> IO B8.ByteString
 
 hWriteDupes :: SearchConfig -> LogCfg -> DupesRenderFn -> Bool -> Handle -> BT.SortedDupeLists -> IO ()
-hWriteDupes cfg lCfg explainFn noRefSets hdl groups = do
+hWriteDupes cfg lCfg explainFn noRefSet hdl groups = do
   -- TODO rename line groups or similar?
   let debug = log (addLogContext lCfg "hWriteDupes") DebugL
-  lines <- map (\x -> deepseq x x) <$> explainFn lCfg noRefSets (maxDepth cfg) groups
+  lines <- map (\x -> deepseq x x) <$> explainFn lCfg noRefSet (maxDepth cfg) groups
   debug "writing dupes to output handle"
   mapM_ (\l -> B8.hPutStrLn hdl l >> hFlush hdl) lines -- TODO this will force evaluation line by line, right?
 
@@ -59,44 +59,48 @@ cmdDupes cfg lCfg path = bracket open close write
 
     write :: Handle -> IO ()
     write hdl = do
-      tree <- BT.readOrBuildTree (searchCfg cfg) lCfg' path
-
-      -- TODO move some of this to DupeMap?
-      let rListPaths = referenceSetPaths $ searchCfg cfg
-      debug $ "loading reference sets " <> B8.pack (show rListPaths)
-      rList <- fmap concat $ forM rListPaths (encodeFS >=> BT.readHashList lCfg')
-      debug $ "loaded " <> B8.pack (show $ length rList) <> " reference hashes"
 
       let searches = dupesExcludeSearches $ searchCfg cfg
       debug $ "compiling " <> B8.pack (show $ length searches) <> " labeled searches "
       cle <- BT.compileLabeledSearches searches
 
-      -- normally, we want to be sure not to delete all copies of a file!
-      -- but in the special case of dupes vs a reference set, it should be ok
-      -- TODO any good way to warn the user if their ref set looks like it's inside the dupes?
-      let noRefSets = null rListPaths
+      -- TODO move some of this to DupeMap?
+      let rListPaths = referenceSetPaths $ searchCfg cfg
+          noRefSet = null rListPaths
+      debug $ "loading reference sets " <> B8.pack (show rListPaths)
+      rList <- fmap concat $ forM rListPaths (encodeFS >=> BT.readHashList lCfg')
+      debug $ "loaded " <> B8.pack (show $ length rList) <> " reference hashes"
+
+      tree <- BT.readOrBuildTree (searchCfg cfg) lCfg' path
 
       -- TODO should this all be one function exported from DupeMap?
       -- TODO these debugST calls do *NOT* work at the right times; replace
       let ds = runST $ do
             debugST "runST starting"
-            mrSet <- if noRefSets
+
+            -- normally, we want to be sure not to delete all copies of a file!
+            -- but in the special case of dupes vs a reference set, it should be ok
+            -- TODO any good way to warn the user if their ref set looks like it's inside the dupes?
+            mrSet <- if noRefSet
                        then debugST "no ref sets" >> return Nothing
                        else Just <$> BT.hashSetFromList rList
+
             let init  = max (length mrSet) 1000 -- TODO better defaults?
                 initB = B8.pack $ show init
                 treeN = B8.pack $ show $ (\(BT.NNodes n ) -> n) $ BT.treeNNodes tree
+ 
+
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
             -- nBefore <- BT.dmSize ht
-            BT.addTreeToDupeMap (searchCfg cfg) lCfg' mrSet cle ht tree
+	    BT.addTreeToDupeMap (searchCfg cfg) lCfg' mrSet cle ht tree
             -- nAfter <- BT.dmSize ht
             -- debugST $ "hashtable size " <> B8.pack (show nBefore) <> " -> " <> B8.pack (show nAfter)
             debugST $ "added all " <> treeN <> " tree nodes to DupeMap"
-            if noRefSets then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
+            if noRefSet then debugST "scoring dupes" else debugST "scoring dupes vs reference set"
             -- TODO DupesMode or similar type to make the null rList thing more obvious?
-            let scoreFn = if noRefSets then BT.scoreSetSelf else BT.scoreSetRef
-                singlesAreDupes = not noRefSets
+            let scoreFn = if noRefSet then BT.scoreSetSelf else BT.scoreSetRef
+                singlesAreDupes = not noRefSet
             res <- map force <$> BT.dupesByNegScore lCfg' scoreFn singlesAreDupes ht
             -- TODO does this print before it starts actually scoring sets?
             debugST $ "finished scoring " <> treeN <> " DupeSets"
@@ -107,8 +111,12 @@ cmdDupes cfg lCfg path = bracket open close write
 
       let renderFn = fromJust $ lookup fmt dupesRenderFunctions
 
-      debug $ "writing " <> B8.pack (show $ length ds) <> " DupeSets"
-      hWriteDupes (searchCfg cfg) lCfg' renderFn noRefSets hdl ds
+      -- TODO does this help force the overall evaluation order?
+      -- TODO try force instead?
+      let ds' = rList `deepseq` ds
+
+      debug $ "writing " <> B8.pack (show $ length ds') <> " DupeSets"
+      hWriteDupes (searchCfg cfg) lCfg' renderFn noRefSet hdl ds'
 
     -- TODO why is this required? shouldn't hClose be OK?
     -- TODO maybe close it, but only if /= stdout?
