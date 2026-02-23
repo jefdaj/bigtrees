@@ -14,6 +14,12 @@ download_test_files() {
   fi
 }
 
+set_modtimes_to_2020() {
+  # static modtimes so .bigtree files don't change each run
+  find $@ -type f -exec touch -t 202001010000.00 {} +
+  find $@ -type d -exec touch -t 202001010000.00 {} +
+}
+
 setup_example_file() {
 
   load 'helpers/bats-support/load'
@@ -35,8 +41,10 @@ setup_example_file() {
   unzip "$TEST_FILES_ZIP"
   mv test-files-* test-files
   assert_exists "test-files"
+
   export TEST_FILES_DIR="${TEST_EXAMPLE_DIR}/test-files"
 
+  set_modtimes_to_2020 "$TEST_FILES_DIR"
 }
 
 teardown_example_file() {

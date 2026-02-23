@@ -14,7 +14,7 @@ setup() {
 
 @test "check bigtrees version" {
   run bigtrees version
-  assert_output "0.27.2"
+  assert_output "0.27.3"
 }
 
 @test "check rsync version" {
@@ -23,7 +23,6 @@ setup() {
 }
 
 @test "download test files" {
-  # TODO is this reasonable? prevents UI freezing on rsync test above
   download_test_files
   assert_exists "$TEST_FILES_ZIP"
 }

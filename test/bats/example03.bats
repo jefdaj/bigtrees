@@ -6,6 +6,7 @@ gen_example03_data() {
     cp example03/mozart.mp3 "example03/mozart (copy ${n}).mp3"
     cp -r test-files/pdf "example03/pdf_${n}"
   done
+  set_modtimes_to_2020 example03
   rm -r test-files
 }
 
