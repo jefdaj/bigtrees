@@ -282,10 +282,10 @@ n2bs = SBS.fromShort . n2sbs
 bs2n :: B8.ByteString -> Name
 bs2n = sbs2n . SBS.toShort
 
-os2ns :: SOS.OsString -> [Name]
+os2ns :: SOS.OsString -> NamesFwd
 os2ns = map Name . SOP.splitDirectories
 
-op2ns :: SOP.OsPath -> [Name]
+op2ns :: SOP.OsPath -> NamesFwd
 op2ns = os2ns
 
 -- | Extra type alias to distinguish lists of Names representing a path in

@@ -56,7 +56,7 @@ import System.Directory.BigTrees.HashTree (HashTree (..), NodeData (..), ProdTre
                                            treeNNodes, treeName, treeType)
 import System.Directory.BigTrees.Logging (LogCfg (..), LogContext, LogLevel (..), addLogContext,
                                           die, logUnsafe)
-import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, n2op, op2ns, op2s)
+import System.Directory.BigTrees.Name (Name (..), NamesFwd, NamesRev, breadcrumbs2bs, n2op, op2ns, op2s)
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..))
 import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
@@ -138,7 +138,23 @@ pathsByHash cfg lCfg mrSet cle tree = do
   -- H.mapM_ (\(k,_) -> H.mutate dm k removeNonDupes) dm
   return dm
 
--- inserts all nodes from a tree into an existing dupemap
+dupesKeepLeafNode
+  :: SearchConfig
+  -> LogCfg
+  -> Maybe (HashSet s)
+  -> CompiledLabeledSearches
+  -> OsPath
+  -> Depth
+  -> HashTree a
+  -> ST s Bool
+dupesKeepLeafNode cfg lCfg mrSet cle dir d t = do
+  notErrNode <- dupesKeepNodeByErrors cfg lCfg cle (op2ns dir) d t
+  keepBasics <- dupesKeepNodeByBasics cfg d t
+  notLabeled <- dupesKeepNodeByLabels lCfg cle (op2ns dir) d t
+  refSetOK   <- dupesKeepNodeByRefSet lCfg mrSet (op2ns dir) d t
+  return $ and [notErrNode, keepBasics, notLabeled, refSetOK]
+
+ -- inserts all nodes from a tree into an existing dupemap
 -- TODO The empty string (mempty) behaves right, right? (disappears)
 addTreeToDupeMap
   :: SearchConfig -> LogCfg -> Maybe (HashSet s) -> CompiledLabeledSearches
@@ -171,11 +187,7 @@ addTreeToDupeMap' _ _ _ _ dm dir _ _ (Err {}) = return ()
 addTreeToDupeMap'
   cfg lCfg mrSet cle dm dir d pr
   l@(Link {nodeData=NodeData {hash=h}}) = do
-    notErrNode <- dupesKeepNodeByErrors cfg lCfg mrSet cle (op2ns dir) d l
-    keepBasics <- dupesKeepNodeByBasics cfg lCfg mrSet cle (op2ns dir) d l
-    notLabeled <- dupesKeepNodeByLabels cfg lCfg mrSet cle (op2ns dir) d l
-    refSetOK   <- dupesKeepNodeByRefSet cfg lCfg mrSet cle (op2ns dir) d l
-    let keepNode = and [notErrNode, keepBasics, notLabeled, refSetOK]
+    keepNode <- dupesKeepLeafNode cfg lCfg mrSet cle dir d l
     when keepNode $ do
       let newSet = S.singleton (treeModTime l, dir </> n2op (treeName l))
       insertDupeSet cfg lCfg dm (treeHash l) (1, h, treeType l, newSet) pr
@@ -183,11 +195,7 @@ addTreeToDupeMap'
 addTreeToDupeMap'
   cfg lCfg mrSet cle dm dir d pr
   f@(File {nodeData=(NodeData{name=Name n, hash=h})}) = do
-    notErrNode <- dupesKeepNodeByErrors cfg lCfg mrSet cle (op2ns dir) d f
-    keepBasics <- dupesKeepNodeByBasics cfg lCfg mrSet cle (op2ns dir) d f
-    notLabeled <- dupesKeepNodeByLabels cfg lCfg mrSet cle (op2ns dir) d f
-    refSetOK   <- dupesKeepNodeByRefSet cfg lCfg mrSet cle (op2ns dir) d f
-    let keepNode = and [notErrNode, keepBasics, notLabeled, refSetOK]
+    keepNode <- dupesKeepLeafNode cfg lCfg mrSet cle dir d f
     when keepNode $ do
       let newSet = S.singleton (treeModTime f, dir </> n)
       insertDupeSet cfg lCfg dm h (1, h, F, newSet) pr
@@ -196,10 +204,10 @@ addTreeToDupeMap'
   cfg lCfg mrSet cle dm dir depth pr
   d@(Dir {nodeData=(NodeData{name=Name n, hash=h}), dirContents=cs, nNodes=(NNodes fs)}) = do
 
-    notErrNode <- dupesKeepNodeByErrors cfg lCfg mrSet cle (op2ns dir) depth d
-    keepBasics <- dupesKeepNodeByBasics cfg lCfg mrSet cle (op2ns dir) depth d
-    notLabeled <- dupesKeepNodeByLabels cfg lCfg mrSet cle (op2ns dir) depth d
-    refSetOK   <- dupesKeepNodeByRefSet cfg lCfg mrSet cle (op2ns dir) depth d
+    notErrNode <- dupesKeepNodeByErrors cfg lCfg cle (op2ns dir) depth d
+    keepBasics <- dupesKeepNodeByBasics cfg depth d
+    notLabeled <- dupesKeepNodeByLabels lCfg cle (op2ns dir) depth d
+    refSetOK   <- dupesKeepNodeByRefSet lCfg mrSet (op2ns dir) depth d
     let keepNode = and [notErrNode, keepBasics, notLabeled, refSetOK]
 
     when keepNode $ do
@@ -428,7 +436,6 @@ scoreSetSelf (n, _, _, _ ) = n - 1
 dupesKeepNodeByErrors
   :: SearchConfig
   -> LogCfg
-  -> Maybe (HashSet s)
   -> CompiledLabeledSearches
   -> [Name]
   -> Depth
@@ -438,7 +445,7 @@ dupesKeepNodeByErrors
 -- When the tree is an error, go as far as we can without inspecting it.
 -- Then if needed, print an error saying we don't know whether it should be included.
 -- (And don't include it, because it doesn't have a hash)
-dupesKeepNodeByErrors cfg lCfg _ cle ns d e@(Err {}) = do
+dupesKeepNodeByErrors cfg lCfg cle ns d e@(Err {}) = do
   let lCfg' = addLogContext lCfg "dupesKeepNodeByErrors"
   let info = logUnsafe lCfg' InfoL
   let err  = logUnsafe lCfg' ErrorL
@@ -459,7 +466,7 @@ dupesKeepNodeByErrors cfg lCfg _ cle ns d e@(Err {}) = do
     ]
 
 -- Not an error, so potentially a useful dupe.
-dupesKeepNodeByErrors cfg lCfg mrSet cle ns d t = return True
+dupesKeepNodeByErrors _ _ _ _ _ _ = return True
 
 -- True if this node is a potential dupe based on fast checks like tree
 -- structure. Note that this will be False for anything shallower than
@@ -468,14 +475,10 @@ dupesKeepNodeByErrors cfg lCfg mrSet cle ns d t = return True
 -- just immediately reject the root of the tree.
 dupesKeepNodeByBasics
   :: SearchConfig
-  -> LogCfg
-  -> Maybe (HashSet s)
-  -> CompiledLabeledSearches
-  -> [Name]
   -> Depth
   -> HashTree a
   -> ST s Bool
-dupesKeepNodeByBasics cfg _ _ _ _ d t = return $ and
+dupesKeepNodeByBasics cfg d t = return $ and
   [ maybe True (d >=) $ minDepth cfg
   , maybe True (d <=) $ maxDepth cfg
   , maybe True (treeNBytes  t >=) $ minBytes cfg
@@ -489,15 +492,13 @@ dupesKeepNodeByBasics cfg _ _ _ _ d t = return $ and
 
 -- True if this node does *not* match any of the exclude labels.
 dupesKeepNodeByLabels
-  :: SearchConfig
-  -> LogCfg
-  -> Maybe (HashSet s)
+  :: LogCfg
   -> CompiledLabeledSearches
   -> [Name]
   -> Depth
   -> HashTree a
   -> ST s Bool
-dupesKeepNodeByLabels _ lCfg _ cle ns d t = do
+dupesKeepNodeByLabels lCfg cle ns d t = do
   let path  = breadcrumbs2bs $ treeName t : (reverse ns)
       info  = logUnsafe (addLogContext lCfg "dupesKeepNodeByLabels") InfoL
       msg l = "exclude node labeled '" <> l <> "' : '" <> path <> "'"
@@ -506,21 +507,19 @@ dupesKeepNodeByLabels _ lCfg _ cle ns d t = do
 
 -- True if there's no ref set, or if this node's hash is included in the ref set.
 dupesKeepNodeByRefSet
-  :: SearchConfig
-  -> LogCfg
+  :: LogCfg
   -> Maybe (HashSet s)
-  -> CompiledLabeledSearches
-  -> [Name]
+  -> NamesFwd
   -> Depth
   -> HashTree a
   -> ST s Bool
-dupesKeepNodeByRefSet _ lCfg mrSet _ ns d t =
+dupesKeepNodeByRefSet lCfg mrSet ns d t =
   case mrSet of
     Nothing -> return True -- no ref set, so keep everything
     Just rSet -> do
       let debug = logUnsafe (addLogContext lCfg "dupesKeepNodeByRefSet") DebugL
           hash  = treeHash t
-          path  = breadcrumbs2bs $ treeName t : (reverse ns)
+          path  = breadcrumbs2bs $ treeName t : (reverse ns) -- TODO is this weird?
           msg   = "dupe by ref set hash " <> prettyHash hash <> ": '" <> path <> "'"
       isDupe <- setContainsHash rSet hash
       if isDupe
