@@ -9,7 +9,8 @@ import Data.Word (Word8)
 import System.Directory.BigTrees
 import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 
--- TODO remove initial skip_group line?
+-- TODO flag for whether to delete last copy, and set FALSE when keepOne
+
 fileHeader :: Bool -> B8.ByteString
 fileHeader keepOne =
   "#!/usr/bin/env bash\n\
@@ -17,7 +18,7 @@ fileHeader keepOne =
   \# This is the dedup-script output format.\n\
   \# Be careful with this! Don't just run it without at least skimming...\n\
   \\n\
-  \# You can comment, uncomment, or delete lines in your text editor\n\
+  \# You can comment or delete lines in your text editor\n\
   \# to change how specific files/dirs/links are handled.\n\
   \\n"
   <> (if keepOne then
@@ -30,13 +31,31 @@ fileHeader keepOne =
   \# somewhere else, and that copy was used to generate the reference set.\n")
   <>
   "\n\
-  \skip_group=FALSE\n\
-  \keep() { [[ -e \"$1\" ]] && echo \"KEEP    '$1'\" && skip_group=FALSE || { echo \"MISSING '$1'\" >&2; skip_group=TRUE; }; }\n\
-  \skip() { [[ $skip_group == TRUE ]] && echo \"SKIP    '$1'\"; [[ $skip_group == TRUE || ! -e \"$1\" ]] && return 0; }\n\
-  \rm_X() { skip \"$3\" || { rm $1 \"$3\" && echo \"rm $2 '$3'\"; } || { echo \"ERROR $2 '$3'\" >&2; return $?; }; }\n\
-  \rm_d() { rm_X '-r' 'dir ' \"$1\"; }\n\
-  \rm_f() { rm_X '' 'file' \"$1\"; }\n\
-  \rm_l() { rm_X '' 'link' \"$1\"; }\n"
+  \# Set to 0 to actually delete things:\n\
+  \DRY_RUN=1\n\
+  \\n\
+  \set -euo pipefail\n\
+  \keeper=\"\" set_hash=\"\" set_type=\"\" set_total=0 set_skipped=0 set_removed=0 n_removed=0 n_errors=0\n\
+  \dupe_set() {\n\
+  \  [[ -n \"$keeper\" ]] && echo \"$set_hash $set_total $set_type: skip $set_skipped, rm $set_removed, keep '$keeper'\"\n\
+  \  keeper=\"\"; set_hash=\"$1\"; set_type=\"$2\"; set_total=0; set_skipped=0; set_removed=0\n\
+  \}\n\
+  \dupe() {\n\
+  \  ((set_total++)) ||:\n\
+  \  if [[ ! -e \"$1\" ]]; then\n\
+  \    ((set_skipped++)) ||:;\n\
+  \  elif [[ -z \"$keeper\" ]]; then\n\
+  \    keeper=\"$1\"\n\
+  \  elif [[ $DRY_RUN ]]; then\n\
+  \    echo \"rm -r $1\"\n\
+  \    ((set_removed++)) ||:; ((n_removed++)) ||:\n\
+  \  elif rm -r \"$1\" 2>/dev/null; then\n\
+  \    ((set_removed++)) ||:; ((n_removed++)) ||:\n\
+  \  else\n\
+  \    ((n_errors++)) ||:; echo \"⚠ ERROR removing: $1\" >&2\n\
+  \  fi\n\
+  \}\n\
+  \trap 'dupe_set \"\" \"\"; echo; echo \"Total: $n_removed removed, $n_errors errors\"' EXIT\n"
 
 escapePathByte :: Char -> B8.ByteString
 escapePathByte b
@@ -49,18 +68,14 @@ escapePath path = B8.concatMap escapePathByte path
 quotePath :: B8.ByteString -> B8.ByteString
 quotePath path =  B8.singleton '\'' <> escapePath path <> B8.singleton '\''
 
-addRmCall :: TreeType -> B8.ByteString -> B8.ByteString
-addRmCall tt path = rm tt <> " " <> path
+addDupeCall :: TreeType -> B8.ByteString -> B8.ByteString
+addDupeCall tt path = rm tt <> " " <> path
   where
-    rm D = "rm_d"
-    rm F = "rm_f"
-    rm L = "rm_l" -- TODO need anything to guard against deleting target?
-    rm B = "rm_l"
+    rm D = "dupe"
+    rm F = "dupe"
+    rm L = "dupe" -- TODO need anything to guard against deleting target?
+    rm B = "dupe"
     rm _ = error $ "unexpected tree type " ++ show tt ++ " in path " ++ B8.unpack path
-
--- convert an rm_X call to a keep call
-keepRatherThanRm :: B8.ByteString -> B8.ByteString
-keepRatherThanRm rmCall = "keep" <> B8.drop 4 (rmCall)
 
 -- Dirs before all others is important for dedup-scripts because if the larger
 -- sets of duplicate files come before any directories, it's possible that this
@@ -83,34 +98,20 @@ renderDedupScript lCfg keepOne md ls = do
   return $ fileHeader keepOne : body
   where
 
-    depthWarning Nothing  = ""
-    depthWarning (Just (Depth d)) =
-      " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
+    -- TODO rewrite to work with current script?
+    -- depthWarning Nothing  = ""
+    -- depthWarning (Just (Depth d)) =
+    --   " (up to " `B8.append` B8.pack (show d) `B8.append` " levels deep)"
 
     excludeLines :: DupeList -> IO B8.ByteString
     excludeLines (n, h, t, paths) = do
-      let paths'  = map (addRmCall t . quotePath . op2bs . snd) $ sortPaths lCfg paths
-          paths'' = if keepOne
-                       then (keepRatherThanRm $ head paths') : tail paths'
-                       else paths'
+      let paths'  = map (addDupeCall t . quotePath . op2bs . snd) $ sortPaths lCfg paths
       return $ B8.unlines
              $ groupHeader h t n (length paths)
-             : paths''
+             : paths'
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?
-    groupHeader h D nSaved nDirs = B8.intercalate " "
-      [ "#", B8.pack (show nDirs)
-      , "duplicate directories with hash"
-      , prettyHash h `B8.append` (depthWarning md)
-      ]
-    groupHeader h F nSaved nFiles = B8.intercalate " "
-      [ "#", B8.pack (show nFiles)
-      , "duplicate files with hash"
-      , prettyHash h `B8.append` (depthWarning md)
-      ]
-    groupHeader h _ nSaved nLinks = B8.intercalate " "
-      [ "#", B8.pack (show nLinks)
-      , "duplicate links with hash"
-      , prettyHash h `B8.append` (depthWarning md)
-      ]
+    groupHeader h D nSaved nDirs  = "dupe_set '" <> prettyHash h <> "' 'dirs'"
+    groupHeader h F nSaved nFiles = "dupe_set '" <> prettyHash h <> "' 'files'"
+    groupHeader h _ nSaved nLinks = "dupe_set '" <> prettyHash h <> "' 'links'"
