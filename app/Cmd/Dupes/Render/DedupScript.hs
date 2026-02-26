@@ -22,37 +22,44 @@ fileHeader keepOne =
   \# to change how specific files/dirs/links are handled.\n\
   \\n"
   <> (if keepOne then
-  "# For each set of dupes, it will confirm that the first one exists and\n\
-  \# then delete all the others.\n"
+  "# For each set of dupes, confirm that one copy exists and\n\
+  \# then delete all the others. You probably don't want to change this.\n\
+  \KEEP_ONE=TRUE\n"
   else
   "# !!! WARNING !!!\n\
   \# Since you're deduping vs a reference set, this script will delete ALL dupes\n\
   \# listed below. The assumption is that you already have another copy saved\n\
-  \# somewhere else, and that copy was used to generate the reference set.\n")
+  \# somewhere else, and that copy was used to generate the reference set.\n\
+  \KEEP_ONE=FALSE\n")
   <>
   "\n\
-  \# Set to 0 to actually delete things:\n\
-  \DRY_RUN=1\n\
+  \# Set this to TRUE to print what would be deleted rather than actually deleting it.\n\
+  \DRY_RUN=FALSE\n\
   \\n\
   \set -euo pipefail\n\
   \keeper=\"\" set_hash=\"\" set_type=\"\" set_total=0 set_skipped=0 set_removed=0 n_removed=0 n_errors=0\n\
-  \dupe_set() {\n\
-  \  [[ -n \"$keeper\" ]] && echo \"$set_hash $set_total $set_type: skip $set_skipped, rm $set_removed, keep '$keeper'\"\n\
-  \  keeper=\"\"; set_hash=\"$1\"; set_type=\"$2\"; set_total=0; set_skipped=0; set_removed=0\n\
+  \ dupe_set() {\n\
+  \ if [[ \"$set_total\" > 0 ]]; then\n\
+  \   echo -n \"$set_hash $set_total $set_type: skip $set_skipped, rm $set_removed\"\n\
+  \   if [[ -z \"$keeper\" ]]; then\n\
+  \     echo \", keep 0\"\n\
+  \   else\n\
+  \     echo \", keep '$keeper'\"\n\
+  \   fi\n\
+  \ fi\n\
+  \ keeper=\"\"; set_hash=\"$1\"; set_type=\"$2\"; set_total=0; set_skipped=0; set_removed=0\n\
   \}\n\
   \dupe() {\n\
   \  ((set_total++)) ||:\n\
   \  if [[ ! -e \"$1\" ]]; then\n\
   \    ((set_skipped++)) ||:;\n\
-  \  elif [[ -z \"$keeper\" ]]; then\n\
+  \  elif [[ $KEEP_ONE != FALSE && -z \"$keeper\" ]]; then\n\
   \    keeper=\"$1\"\n\
-  \  elif [[ $DRY_RUN ]]; then\n\
-  \    echo \"rm -r $1\"\n\
+  \  elif [[ $DRY_RUN != FALSE ]] || rm -r \"$1\" 2>/dev/null; then\n\
   \    ((set_removed++)) ||:; ((n_removed++)) ||:\n\
-  \  elif rm -r \"$1\" 2>/dev/null; then\n\
-  \    ((set_removed++)) ||:; ((n_removed++)) ||:\n\
+  \    [[ $DRY_RUN != FALSE ]] && echo \"rm -r '$1'\"\n\
   \  else\n\
-  \    ((n_errors++)) ||:; echo \"⚠ ERROR removing: $1\" >&2\n\
+  \    ((n_errors++)) ||:; echo \"  ERROR removing: $1\" >&2\n\
   \  fi\n\
   \}\n\
   \trap 'dupe_set \"\" \"\"; echo; echo \"Total: $n_removed removed, $n_errors errors\"' EXIT\n"
