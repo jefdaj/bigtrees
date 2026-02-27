@@ -57,7 +57,7 @@ fileHeader keepOne =
   \    keeper=\"$1\"\n\
   \  elif [[ $DRY_RUN != FALSE ]] || rm -r \"$1\" 2>/dev/null; then\n\
   \    ((set_removed++)) ||:; ((n_removed++)) ||:\n\
-  \    [[ $DRY_RUN != FALSE ]] && echo \"rm -r '$1'\"\n\
+  \    if [[ $DRY_RUN != FALSE ]]; then echo \"rm -r '$1'\"; fi\n\
   \  else\n\
   \    ((n_errors++)) ||:; echo \"  ERROR removing: $1\" >&2\n\
   \  fi\n\
