@@ -11,14 +11,14 @@ Step 1: Tell BigTrees to scan them and generate a dedup script.
 {{snippets/example01_step1_cmd.md}}
 
 Step 2: Skim the script to make sure it's categorized the duplicates the way you want.
-BigTrees sorts each set of dupes, putting its best guess about which copy you'd prefer to keep at the top. The script will confirm the first one still exists, then delete the others.
+BigTrees sorts each set of dupes, putting its best guess about which copy you'd prefer to keep at the top. The script will confirm that one still exists before deleting the others.
 
 Here are the relevant lines for our example:
 
 {{snippets/example01_step1_dedup.md}}
 
-You can edit the script now to pick different files if you want.
-Just be sure to move any new `keep` lines to the top of their groups.
+You can edit the script now if you want to pick specific files to keep.
+Just move them to the tops of their sets.
 
 Step 3: When you're ready, go ahead and run it:
 
