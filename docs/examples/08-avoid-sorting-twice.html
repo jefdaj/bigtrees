@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>BigTrees Avoid sorting the same files twice</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <link rel="stylesheet" type="text/css" href="../css/pygments.css" />
+    </head>
+    <body>
+        <div id="nav">
+        <ul>
+            <li><a href="../">BigTrees</a></li>
+            <li><a href="../download.html">Download</a></li>
+            <li><a href="../examples.html">Examples</a></li>
+            <li><a href="../questions.html">Questions</a></li>
+            <li><a href="https://cryptoisland.blog/tags/bigtrees.html">Blog</a></li>
+        </ul>
+            <img id="logo" src="../images/bigtrees.png" />
+        </div>
+
+        <div id="content">
+            <h1>Avoid sorting the same files twice</h1>
+
+            <div class="info">
+</div>
+
+<p>Say you’re looking through your backups, and you have many/most of them sorted already.
+But then you discover another drive you forgot about!
+BigTrees can show you which files on the new drive aren’t already included in your main collection.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: make a reference set of all</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># hashes in your existing collection</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">MAIN</span><span class="op">=</span><span class="st">&quot;/path/to/your/main/collection/here&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">NEW</span><span class="op">=</span><span class="st">&quot;/path/to/new/files/here&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> set-add <span class="at">--set</span> main.bigset <span class="st">&quot;</span><span class="va">$MAIN</span><span class="st">&quot;</span></span></code></pre></div>
+<p>Now there are two ways you could go:</p>
+<ol type="a">
+<li>Find files on the new drive that <em>aren’t</em> already in your collection so you can add them</li>
+<li>Delete files on the new drive that <em>are</em> already in your collection, so you can add the rest</li>
+</ol>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2a: list unique files on the new drive</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> find <span class="st">&quot;</span><span class="va">$NEW</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--exclude-set</span> main.bigset <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;</span> new-files-not-in-main.txt</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2b: delete duplicate files on the new drive</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bigtrees</span> dupes <span class="st">&quot;</span><span class="va">$NEW</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--output</span> rm-files-already-in-main.sh <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--dupes-out-fmt</span> dedup-script <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--reference-set</span> main.bigset</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> rm-files-already-in-main.sh</span></code></pre></div>
+
+        </div>
+    <!--
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </div>
+    -->
+    </body>
+</html>
