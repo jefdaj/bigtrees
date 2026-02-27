@@ -22,14 +22,15 @@ fileHeader keepOne =
   \# to change how specific files/dirs/links are handled.\n\
   \\n"
   <> (if keepOne then
-  "# For each set of dupes, confirm that one copy exists and\n\
-  \# then delete all the others. You probably don't want to change this.\n\
+  "# For each dupe set, pick one 'keeper' and confirm it exists before\n\
+  \# deleting the rest. You probably don't want to change this.\n\
   \KEEP_ONE=TRUE\n"
   else
   "# !!! WARNING !!!\n\
   \# Since you're deduping vs a reference set, this script will delete ALL dupes\n\
   \# listed below. The assumption is that you already have another copy saved\n\
   \# somewhere else, and that copy was used to generate the reference set.\n\
+  \# If you want to keep one copy from each set instead, set this to TRUE.\n\
   \KEEP_ONE=FALSE\n")
   <>
   "\n\
@@ -62,7 +63,7 @@ fileHeader keepOne =
   \    ((n_errors++)) ||:; echo \"  ERROR removing: $1\" >&2\n\
   \  fi\n\
   \}\n\
-  \trap 'dupe_set \"\" \"\"; echo; echo \"Total: $n_removed removed, $n_errors errors\"' EXIT\n"
+  \trap 'dupe_set \"\" \"\"; echo \"total: $n_removed removed, $n_errors errors\"' EXIT\n"
 
 escapePathByte :: Char -> B8.ByteString
 escapePathByte b
