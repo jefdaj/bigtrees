@@ -20,10 +20,20 @@ import System.IO (IOMode (..), withFile)
 import System.OsPath (OsPath)
 import Text.Pretty.Simple (pPrint)
 
+-- TODO where should this live?
+hashSetKeepLine :: Config -> HashLine -> Bool
+hashSetKeepLine _ (ErrLine {}) = False
+hashSetKeepLine cfg (HashLine (_,d,_,_,_,_,_,_)) = and
+  [ maybe True (d >=) $ minDepth cfg
+  , maybe True (d <=) $ maxDepth cfg
+  -- TODO finish other conditions here
+  ]
+
 readTreeHashList :: AppConfig -> LogCfg -> Maybe Note -> OsPath -> IO HashList
 readTreeHashList cfg lCfg mn path = do
   ls <- readTreeLines lCfg path
-  let hl = mapMaybe (hashSetDataFromLine mn) ls
+  let ls' = filter (hashSetKeepLine cfg) ls
+      hl  = mapMaybe (hashSetDataFromLine mn) ls'
   -- log cfg $ "adding hashes from " ++ show path
   return hl
 
