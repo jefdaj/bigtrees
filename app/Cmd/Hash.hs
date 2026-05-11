@@ -1,4 +1,8 @@
-module Cmd.Hash where
+module Cmd.Hash
+  ( cmdHash
+  , test_hash_tarxz
+  )
+  where
 
 -- TODO guess and check hashes
 
@@ -8,12 +12,12 @@ import Control.Exception (bracket)
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import Data.List (isPrefixOf, sort)
 import qualified System.Directory as SD
-import System.Directory.BigTrees (buildProdTree, hWriteTree, printTree)
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, log, logUnsafe)
+import System.Directory.BigTrees (buildProdTree, hWriteTree)
+import System.Directory.BigTrees.Logging (LogCfg (..))
 import qualified System.File.OsPath as SFO
 import System.FilePath (dropExtension, takeBaseName, (<.>), (</>))
 import System.Info (os)
-import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
+import System.IO (IOMode (..), hFlush, stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
 import System.OsPath (OsPath, encodeFS)

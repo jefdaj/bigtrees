@@ -67,28 +67,28 @@ module System.Directory.BigTrees.Name
   where
 
 import Test.QuickCheck
-import Test.QuickCheck.Gen
+-- import Test.QuickCheck.Gen
 
 import Control.DeepSeq (NFData)
 import Control.Monad (when)
-import Control.Monad.IO.Class (liftIO)
-import qualified Data.ByteString.Char8 as B
-import Data.List (isInfixOf, isPrefixOf, nub)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import qualified Filesystem.Path.CurrentOS as OS
+-- import Control.Monad.IO.Class (liftIO)
+-- import qualified Data.ByteString.Char8 as B
+-- import Data.List (isInfixOf, isPrefixOf, nub)
+-- import qualified Data.Text as T
+-- import qualified Data.Text.Encoding as TE
+-- import qualified Filesystem.Path.CurrentOS as OS
 import GHC.Generics (Generic)
 import Prelude hiding (log)
-import qualified System.Directory.Tree as DT
+-- import qualified System.Directory.Tree as DT
 -- import qualified System.FilePath as SF
-import System.Info (os)
+-- import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
-import System.Path.NameManip (absolute_path, guess_dotdot)
-import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
+-- import System.Path.NameManip (absolute_path, guess_dotdot)
+-- import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 import Test.QuickCheck.Arbitrary ()
 import Test.QuickCheck.Instances ()
 import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
-import TH.Derive (Deriving, derive)
+-- import TH.Derive (Deriving, derive)
 
 -- attempt at proper new string types:
 -- import System.FilePath ((</>))
@@ -99,18 +99,16 @@ import qualified Data.ByteString.Short as SBS
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import qualified System.OsPath as SOP
-import qualified System.OsPath.Internal as SOPI
+-- import qualified System.OsPath.Internal as SOPI
 import qualified System.OsString as SOS
 import qualified System.OsString.Internal.Types as SOS
-import Test.QuickCheck.Instances.ByteString
+-- import Test.QuickCheck.Instances.ByteString
 import qualified System.OsString.Posix as Posix
 
-import Data.Attoparsec.ByteString (skipWhile)
-import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
-                                         endOfLine, isEndOfLine, manyTill, parseOnly, take,
-                                         takeTill)
-import qualified Data.Attoparsec.ByteString.Char8 as A8
-import Data.Attoparsec.Combinator (lookAhead, option, sepBy')
+-- import Data.Attoparsec.ByteString (skipWhile)
+import Data.Attoparsec.ByteString.Char8 (Parser, char, takeTill)
+-- import qualified Data.Attoparsec.ByteString.Char8 as A8
+-- import Data.Attoparsec.Combinator (lookAhead, option, sepBy')
 import Data.Word (Word8)
 import System.OsPath (OsPath)
 
@@ -262,7 +260,7 @@ fp2n fp = do
   return $ case ns of
     []  -> Left "fp2n with null path"
     [n] -> if isValidName n then Right n else Left $ "invalid name: " ++ show n
-    ns  -> Left "fp2n with slash in path"
+    _   -> Left "fp2n with slash in path"
 
 -- | Convert a `FilePath` to a list of `Name`s using the current filesystem's encoding.
 -- TODO or explain why the conversion failed?
@@ -345,13 +343,13 @@ nameP = do
 -- TODO is there a standard variant of `all` that works like this?
 --
 roundtripNameToActualFileName :: Bool -> Name -> IO Bool
-roundtripNameToActualFileName verbose n =
+roundtripNameToActualFileName v n =
   withSystemTempDirectory "bigtrees" $ \d -> do
     d' <- SOP.encodeFS d
     let f = d' SOP.</> unName n
     let txt = "this is a test"
     SFO.writeFile f txt
-    when verbose $ print f
+    when v $ print f
     txt' <- SFO.readFile f
     return $ txt == txt'
 
@@ -362,12 +360,12 @@ prop_roundtrip_Name_to_actual_file_name = monadicIO $ do
   assert ok
 
 roundtripNameToActualDirName :: Bool -> Name -> IO Bool
-roundtripNameToActualDirName verbose n =
+roundtripNameToActualDirName v n =
   withSystemTempDirectory "bigtrees" $ \tmpDir -> do
     tmpDir' <- SOP.encodeFS tmpDir
     let testDir = tmpDir' SOP.</> unName n
     SDO.createDirectory testDir
-    when verbose $ print testDir
+    when v $ print testDir
     cs <- SDO.getDirectoryContents tmpDir'
     return $ (unName n) `elem` cs
 

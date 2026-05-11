@@ -12,22 +12,22 @@ module Cmd.Find
 
 import Prelude hiding (log)
 import Config (AppConfig (..), defaultAppConfig)
-import Control.Concurrent.Thread.Delay (delay)
+-- import Control.Concurrent.Thread.Delay (delay)
 import Data.List (sort)
 import System.Directory.BigTrees (TestTree, listTreePaths, readOrBuildTree, treeName, unName,
                                   writeTestTreeDir)
-import System.FilePath (takeBaseName, takeDirectory)
-import System.IO (stderr, stdout)
-import System.IO.Silently (hCapture)
+-- import System.FilePath (takeBaseName, takeDirectory)
+-- import System.IO (stderr, stdout)
+-- import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Process (cwd, proc, readCreateProcess)
-import Test.QuickCheck (Property, arbitrary)
-import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
+import Test.QuickCheck (Property)
+-- import Test.QuickCheck.Monadic (assert, monadicIO, pick, run)
 -- import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B8
 import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
-import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, log, logUnsafe)
+import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, log)
 import System.Directory.BigTrees.Util (propertyWithExceptions)
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
@@ -90,7 +90,7 @@ cmdFindUnixFind lCfg t =
     -- TODO extra test-tree wrapper dir prevents encoding errors in the command line args?
     osUnixOutput <- decodeFS unixOutput
     _ <- flip readCreateProcess "" $
-	   (proc "find" ["test-tree", "-fprint", osUnixOutput])
+           (proc "find" ["test-tree", "-fprint", osUnixOutput])
            {cwd = Just osTmpDir}
 
     -- return both versions for comparison

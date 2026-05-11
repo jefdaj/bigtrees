@@ -2,11 +2,11 @@
 
 module System.Directory.BigTrees.HashTree.Write where
 
-import qualified Control.Concurrent.Thread.Delay as D
+-- import qualified Control.Concurrent.Thread.Delay as D
 import Control.Monad (unless, when)
 import qualified Data.ByteString.Char8 as B8
 import Data.Maybe (isNothing)
-import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), NNodes (..), TreeType (..),
+import System.Directory.BigTrees.HashLine (Depth (Depth), HashLine (..), TreeType (..),
                                            prettyLine)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), TestTree, renameRoot,
                                                 sortContentsByName)
@@ -17,7 +17,7 @@ import System.Directory.BigTrees.Name (Name (..), unName)
 import qualified System.Directory.OsPath as SDO
 import qualified System.File.OsPath as SFO
 import System.IO (Handle, IOMode (..), hFlush, stdout)
-import System.OsPath (OsPath, decodeFS, splitPath, takeBaseName, takeDirectory, (</>))
+import System.OsPath (OsPath, decodeFS, takeBaseName, takeDirectory, (</>))
 
 -- import Debug.Trace
 

@@ -29,6 +29,7 @@ import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
 -- | All the info relevant to searching a tree. Used in different ways when
 -- building a tree, reading it from a .bigtree file, finding paths in it, and
 -- making a dupe map.
+-- TODO prefix so these don't conflict with other modules
 data SearchConfig = SearchConfig
   { minBytes             :: Maybe NBytes
   , maxBytes             :: Maybe NBytes

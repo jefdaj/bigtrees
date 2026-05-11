@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Cmd.Dupes where
+module Cmd.Dupes
+  ( hWriteDupes
+  , cmdDupes
+  , dupesTarXz
+  , test_demo_dupes
+  )
+  where
 
 -- TODO guess and check hashes
 
@@ -10,26 +16,26 @@ import qualified Control.Concurrent.Thread.Delay as D
 import Control.Exception (bracket)
 import Control.DeepSeq (force, deepseq)
 import Control.Monad (forM, (>=>))
-import Control.Monad.ST.Strict (ST, runST)
+import Control.Monad.ST.Strict (runST)
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified Data.HashTable.Class as H
 import Data.Maybe (fromJust, fromMaybe)
-import Prelude hiding (log)
+import Prelude hiding (log, init, lines)
 import qualified System.Directory as SD
 import qualified System.Directory.BigTrees as BT
 import System.Directory.BigTrees.Logging (LogCfg (..), LogLevel (..), addLogContext, log, logUnsafe)
 import qualified System.File.OsPath as SFO
 import System.FilePath (dropExtension, takeBaseName, (</>))
-import System.IO (Handle, IOMode (..), hClose, hFlush, openBinaryFile, stderr, stdout)
+import System.IO (Handle, IOMode (..), hFlush, stderr, stdout)
 import System.IO.Silently (hCapture)
 import System.IO.Temp (withSystemTempDirectory)
-import System.IO.Unsafe (unsafePerformIO)
+-- import System.IO.Unsafe (unsafePerformIO)
 import System.OsPath (OsPath, encodeFS)
 import System.Process (cwd, proc, readCreateProcess)
 import Test.Tasty (TestTree)
 import Test.Tasty.Golden (goldenVsString)
-import Control.DeepSeq (deepseq)
+-- import Control.DeepSeq (deepseq)
 
 -- import Debug.Trace
 
@@ -60,9 +66,9 @@ cmdDupes cfg lCfg path = bracket open close write
     write :: Handle -> IO ()
     write hdl = do
 
-      let searches = dupesExcludeSearches $ searchCfg cfg
-      debug $ "compiling " <> B8.pack (show $ length searches) <> " labeled searches "
-      cle <- BT.compileLabeledSearches searches
+      let ss = dupesExcludeSearches $ searchCfg cfg
+      debug $ "compiling " <> B8.pack (show $ length ss) <> " labeled searches "
+      cle <- BT.compileLabeledSearches ss
 
       -- TODO move some of this to DupeMap?
       let rListPaths = referenceSetPaths $ searchCfg cfg
@@ -93,7 +99,7 @@ cmdDupes cfg lCfg path = bracket open close write
             debugST $ "creating DupeMap sized " <> initB
             ht <- H.newSized init
             -- nBefore <- BT.dmSize ht
-	    BT.addTreeToDupeMap (searchCfg cfg) lCfg' mrSet cle ht tree
+            BT.addTreeToDupeMap (searchCfg cfg) lCfg' mrSet cle ht tree
             -- nAfter <- BT.dmSize ht
             -- debugST $ "hashtable size " <> B8.pack (show nBefore) <> " -> " <> B8.pack (show nAfter)
             debugST $ "added all " <> treeN <> " tree nodes to DupeMap"

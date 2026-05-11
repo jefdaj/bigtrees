@@ -1,7 +1,23 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module System.Directory.BigTrees.HeadFoot where
+module System.Directory.BigTrees.HeadFoot
+  ( commentLineP
+  , scanSeconds
+
+  , Header (..)
+  , headerP
+  , parseHeader
+  , readHeader
+  , assertCompatibleTreeFormatHeader
+  , hWriteHeader
+
+  , Footer (..)
+  , footerP
+  , parseFooter
+  , hWriteFooter
+  )
+  where
 
 import Control.DeepSeq (NFData)
 import Data.Version (showVersion)
@@ -11,12 +27,11 @@ import System.Info (arch, compilerName, fullCompilerVersion, os)
 -- import System.FilePath.Glob (Pattern)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 -- import Data.Time.Clock (secondsToDiffTime)
-import Control.Monad (forM, replicateM, when)
+-- import Control.Monad (forM, replicateM, when)
 import Data.Aeson (FromJSON, ToJSON, decode)
 import qualified Data.Aeson.Encode.Pretty as AP
-import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, choice, digit, endOfInput,
-                                         endOfLine, isEndOfLine, manyTill, parseOnly, sepBy', take)
-import qualified Data.Attoparsec.ByteString.Char8 as A8
+import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, endOfLine, manyTill, sepBy')
+-- import qualified Data.Attoparsec.ByteString.Char8 as A8
 import Data.Attoparsec.Combinator (lookAhead)
 import qualified Data.ByteString.Char8 as B8
 import Data.Functor ((<&>))
@@ -182,8 +197,8 @@ readCommentLines h maxLines = readLines maxLines []
 readHeader :: LogCfg -> OsPath -> IO (Maybe Header)
 readHeader lCfg path =
   SFO.withBinaryFile path ReadMode $ \h -> do
-    commentLines <- readCommentLines h 100
-    return $ parseHeader lCfg commentLines
+    ls <- readCommentLines h 100
+    return $ parseHeader lCfg ls
 
 -- Header is the same, except we have to lob off the final header line
 -- TODO also confirm it looks as expected? tree format should be enough tho
@@ -191,13 +206,14 @@ readHeader lCfg path =
 parseHeader :: LogCfg -> [String] -> Maybe Header
 parseHeader _ s = case s of
   [ ] -> Nothing -- should never happen, right?
-  [l] -> Nothing -- should never happen, right?
+  [_] -> Nothing -- should never happen, right?
   ls  -> decode $ B8.fromStrict $ B8.pack $ unlines $ map (replace "# " "") $ init ls
 
 isCommentLine :: String -> Bool
 isCommentLine ('#':_) = True
 isCommentLine _       = False
 
+-- commentLineP :: Parser B8.ByteString [Char]
 commentLineP = do
   _ <- char '#'
   manyTill anyChar $ lookAhead endOfLine

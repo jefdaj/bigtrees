@@ -11,7 +11,7 @@ import Config (AppConfig (..), defaultAppConfig)
 import qualified Control.Concurrent.Thread.Delay as D
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified System.Directory as SD
-import System.Directory.BigTrees (Name (..), SearchConfig (..), diff, printDeltas, writeDeltas, readOrBuildTree,
+import System.Directory.BigTrees (Name (..), diff, printDeltas, writeDeltas, readOrBuildTree,
                                   renameRoot)
 import System.Directory.BigTrees.Logging (LogCfg (..))
 import System.FilePath (dropExtension, takeBaseName, (</>))
@@ -25,9 +25,9 @@ import Test.Tasty.Golden (goldenVsString)
 
 cmdDiff :: AppConfig -> LogCfg -> OsPath -> OsPath -> IO ()
 cmdDiff cfg lCfg old new = do
-  old <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (searchCfg cfg) lCfg old
-  new <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (searchCfg cfg) lCfg new
-  let deltas = diff lCfg old new
+  old' <- renameRoot (Name [osp|old|]) <$> readOrBuildTree (searchCfg cfg) lCfg old
+  new' <- renameRoot (Name [osp|new|]) <$> readOrBuildTree (searchCfg cfg) lCfg new
+  let deltas = diff lCfg old' new'
   case outFile cfg of
     Nothing -> printDeltas deltas
     Just p  -> writeDeltas p deltas

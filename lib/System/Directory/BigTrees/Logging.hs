@@ -19,19 +19,19 @@ module System.Directory.BigTrees.Logging
   )
   where
 
-import Control.DeepSeq (deepseq)
+-- import Control.DeepSeq (deepseq)
 import Control.Monad (when)
 import Control.Monad.ST.Strict (ST)
 import qualified Data.ByteString.Char8 as B8
 import Data.Char (toUpper)
 import qualified Data.List as L
-import Data.STRef (STRef (..), newSTRef, readSTRef, writeSTRef)
-import Debug.Trace (trace)
+import Data.STRef (STRef, readSTRef, writeSTRef)
+-- import Debug.Trace (trace)
 import Prelude hiding (log)
-import System.IO (hFlush, hPutStrLn, stderr)
+-- import System.IO (hFlush, hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Log.FastLogger
-import System.Log.FastLogger.LoggerSet (rmLoggerSet)
+-- import System.Log.FastLogger.LoggerSet (rmLoggerSet)
 
 type LogContext = String
 
@@ -94,20 +94,20 @@ die cfg@(LogCfg {..}) msg =
     error $ lcContext ++ " " ++ B8.unpack msg
 
 -- TODO remove once new logging works in the main program
-testLogger :: IO ()
-testLogger = do
-  cfg :: LogCfg <- initLogger "testLogger" DebugL
-  log cfg   DebugL   "testing log with DebugL"
-  log cfg   InfoL   "testing log with InfoL"
-  log (addLogContext cfg "moreContext") DebugL   "testing log with DebugL"
-  log NoLog DebugL   "testing log with DebugL and NoLog"
-  log cfg   WarningL "testing log with WarningL"
-  die cfg "testing die"
-  die cfg "testing die"
-  die cfg "testing die"
-  die cfg "testing die"
-  log cfg   ErrorL   "testing log with ErrorL"
-  return ()
+-- testLogger :: IO ()
+-- testLogger = do
+--   cfg :: LogCfg <- initLogger "testLogger" DebugL
+--   log cfg   DebugL   "testing log with DebugL"
+--   log cfg   InfoL   "testing log with InfoL"
+--   log (addLogContext cfg "moreContext") DebugL   "testing log with DebugL"
+--   log NoLog DebugL   "testing log with DebugL and NoLog"
+--   log cfg   WarningL "testing log with WarningL"
+--   die cfg "testing die"
+--   die cfg "testing die"
+--   die cfg "testing die"
+--   die cfg "testing die"
+--   log cfg   ErrorL   "testing log with ErrorL"
+--   return ()
 
 formatLogLine :: LogLevel -> LogContext -> B8.ByteString -> FormattedTime -> LogStr
 formatLogLine level context msg timestamp =

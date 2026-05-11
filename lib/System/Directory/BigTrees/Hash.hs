@@ -48,10 +48,10 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Short as SBS
-import Data.Functor ((<&>))
+-- import Data.Functor ((<&>))
 import Data.Hashable (Hashable (..))
-import Data.List (isInfixOf, isPrefixOf)
-import Data.List.Split (splitOn)
+-- import Data.List (isInfixOf, isPrefixOf)
+-- import Data.List.Split (splitOn)
 import GHC.Generics (Generic)
 import Streaming (Of, Stream)
 import qualified Streaming.ByteString.Char8 as Q
@@ -59,18 +59,18 @@ import qualified Streaming.Prelude as S
 import qualified System.Directory.OsPath as SDO
 import System.FilePath (takeFileName)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
-import System.OsPath (decodeFS, encodeFS, takeBaseName, takeDirectory, (</>))
+import System.OsPath (decodeFS, encodeFS, takeDirectory, (</>))
 -- import System.Posix.Files (readSymbolicLink)
 import System.Directory.BigTrees.Logging (LogCfg (..))
 import qualified System.File.OsPath as SFO
 import qualified System.OsPath as OSP
 import System.OsPath (OsPath)
-import System.OsString.Internal.Types
+-- import System.OsString.Internal.Types
 import Test.HUnit (Assertion, (@=?))
-import Test.QuickCheck (Arbitrary (..), Gen, arbitrary, choose, resize, sized, suchThat)
+import Test.QuickCheck (Arbitrary (..), Gen, arbitrary)
 import Test.QuickCheck.Instances.ByteString ()
 import Text.Regex.TDFA ((=~))
-import TH.Derive (Deriving, derive)
+-- import TH.Derive (Deriving, derive)
 import qualified Data.ByteArray as BA
 
 

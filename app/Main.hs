@@ -2,7 +2,11 @@
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Main where
+module Main
+  ( printVersion
+  , main
+  )
+  where
 
 -- TODO sort by how many links deduping would save: files per dupe * (dupes - 1)
 -- TODO figure out how to read files + compute hashes in parallel
@@ -19,20 +23,20 @@ import Config (AppConfig (..), SearchConfig (..), defaultAppConfig, defaultSearc
 import Data.Functor ((<&>))
 import Prelude hiding (log)
 import qualified System.Console.Docopt as D
-import System.Directory.BigTrees (Depth (..), LogCfg (..), LogContext, LogLevel (..), ModTime (..),
-                                  NBytes (..), NNodes (..), Search (..), TreeType (..),
+import System.Directory.BigTrees (Depth (..), LogCfg (..), LogLevel (..), ModTime (..),
+                                  NBytes (..), NNodes (..), Search (..),
                                   cleanupLogger, die, initLogger, log)
 import System.Environment (getArgs, setEnv)
 -- import System.FilePath.Glob (compile)
-import Control.Monad (when)
+-- import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B8
-import Data.Maybe (fromJust, maybe)
-import qualified Data.Text.Lazy as TL
+import Data.Maybe (fromJust)
+-- import qualified Data.Text.Lazy as TL
 import Data.Version (showVersion)
 import Paths_bigtrees (version)
 import System.Locale.SetLocale (Category (LC_ALL), setLocale)
-import System.OsPath (OsPath, encodeFS)
-import Text.Pretty.Simple (pShow)
+import System.OsPath (encodeFS)
+-- import Text.Pretty.Simple (pShow)
 import Data.Char (toUpper)
 
 printVersion :: IO ()
@@ -66,8 +70,8 @@ main = do
 
       -- TODO have more options than just debug or warning: info, error, debug with filter...
       lCfg :: LogCfg <- initLogger "main" $ if (flag "verbose") then DebugL else WarningL
-      let info  = log lCfg InfoL
-          debug = log lCfg DebugL
+      -- let info  = log lCfg InfoL
+      let debug = log lCfg DebugL
 
       debug $ B8.pack $ "bigtrees version " ++ showVersion version
 

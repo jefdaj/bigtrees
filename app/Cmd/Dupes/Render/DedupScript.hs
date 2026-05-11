@@ -5,9 +5,9 @@ module Cmd.Dupes.Render.DedupScript where
 import Cmd.Dupes.Render.Types
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.List as L
-import Data.Word (Word8)
+-- import Data.Word (Word8)
 import System.Directory.BigTrees
-import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
+-- import System.OsPath (OsPath, decodeFS, joinPath, splitDirectories, (</>))
 
 -- TODO flag for whether to delete last copy, and set FALSE when keepOne
 
@@ -120,6 +120,6 @@ renderDedupScript lCfg keepOne md ls = do
 
     groupHeader :: Hash -> TreeType -> Int -> Int -> B8.ByteString
     groupHeader _ E _ _ = "" -- TODO is that a good idea?
-    groupHeader h D nSaved nDirs  = "dupe_set '" <> prettyHash h <> "' 'dirs'"
-    groupHeader h F nSaved nFiles = "dupe_set '" <> prettyHash h <> "' 'files'"
-    groupHeader h _ nSaved nLinks = "dupe_set '" <> prettyHash h <> "' 'links'"
+    groupHeader h D _ _  = "dupe_set '" <> prettyHash h <> "' 'dirs'"
+    groupHeader h F _ _ = "dupe_set '" <> prettyHash h <> "' 'files'"
+    groupHeader h _ _ _ = "dupe_set '" <> prettyHash h <> "' 'links'"

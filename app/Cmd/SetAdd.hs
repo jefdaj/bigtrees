@@ -3,12 +3,13 @@ module Cmd.SetAdd (cmdSetAdd) where
 import Config (AppConfig (..))
 import Control.DeepSeq (force)
 import Control.Monad (foldM, forM, forM_)
-import Data.Attoparsec.ByteString.Char8 (char, parseOnly)
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.HashTable.Class as H
+-- import Data.Attoparsec.ByteString.Char8 (char, parseOnly)
+-- import qualified Data.ByteString.Char8 as B8
+-- import qualified Data.HashTable.Class as H
 import Data.Maybe (catMaybes, mapMaybe)
 import Prelude hiding (log)
-import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToHashSet,
+import System.Directory.BigTrees (HashLine (..), HashList, Note (..), SearchConfig (..),
+                                  addNodeToHashSet,
                                   addTreeToHashSet, getTreeSize, hashSetDataFromLine,
                                   hashSetFromList, headerP, linesP, readHashList,
                                   readLastHashLineAndFooter, readOrBuildTree, readTreeLines, s2note,
@@ -16,16 +17,16 @@ import System.Directory.BigTrees (HashLine (..), HashList, Note (..), addNodeToH
 import System.Directory.BigTrees.HashSet (emptyHashSet)
 import System.Directory.BigTrees.Logging (LogCfg)
 import qualified System.Directory.OsPath as SDO
-import System.IO (IOMode (..), withFile)
+-- import System.IO (IOMode (..), withFile)
 import System.OsPath (OsPath)
-import Text.Pretty.Simple (pPrint)
+-- import Text.Pretty.Simple (pPrint)
 
 -- TODO where should this live?
-hashSetKeepLine :: Config -> HashLine -> Bool
+hashSetKeepLine :: AppConfig -> HashLine -> Bool
 hashSetKeepLine _ (ErrLine {}) = False
 hashSetKeepLine cfg (HashLine (_,d,_,_,_,_,_,_)) = and
-  [ maybe True (d >=) $ minDepth cfg
-  , maybe True (d <=) $ maxDepth cfg
+  [ maybe True (d >=) $ minDepth $ searchCfg cfg
+  , maybe True (d <=) $ maxDepth $ searchCfg cfg
   -- TODO finish other conditions here
   ]
 
@@ -38,7 +39,7 @@ readTreeHashList cfg lCfg mn path = do
   return hl
 
 readHashListIO :: AppConfig -> LogCfg -> OsPath -> IO HashList
-readHashListIO cfg lCfg path = do
+readHashListIO _ lCfg path = do
   -- log cfg $ "adding hashes from " ++ show path
   readHashList lCfg path
 

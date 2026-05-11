@@ -7,15 +7,15 @@ module System.Directory.BigTrees.HashTree.Find where
   -- )
   -- where
 
-import Control.Monad (forM, when, (>=>))
+import Control.Monad (forM, (>=>))
 import Control.Monad.ST.Strict (ST, runST)
 import qualified Data.ByteString.Char8 as B8
 import Data.List (nub)
 import Data.Maybe (fromMaybe, mapMaybe)
-import System.Directory.BigTrees.Hash (Hash, prettyHash)
+import System.Directory.BigTrees.Hash (prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ModTime (..), NBytes (..), NNodes (..),
-                                           TreeType (..), sepChar)
-import System.Directory.BigTrees.HashSet (HashSet, emptyHashSet, hashSetFromList, readHashList,
+                                           sepChar)
+import System.Directory.BigTrees.HashSet (HashSet, hashSetFromList, readHashList,
                                           setContainsHash)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), sortContentsByName,
                                                 treeHash, treeModTime, treeNBytes, treeNNodes,
@@ -25,11 +25,11 @@ import System.Directory.BigTrees.HashTree.Search (CompiledLabeledSearches, Compi
                                                   SearchLabel, compileLabeledSearches,
                                                   treeContainsPath)
 import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), addLogContext, die, logUnsafe)
-import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, fp2ns, n2bs)
-import System.IO (hFlush, stdout)
+import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, n2bs)
+-- import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
 import Text.Regex.TDFA
-import Text.Regex.TDFA.ByteString
+-- import Text.Regex.TDFA.ByteString
 
 ----------------
 -- list paths --
@@ -48,7 +48,7 @@ listTreePaths cfg lCfg fmt tree = do
   -- TODO is it a problem allocating memory for this list in addition to the hashset?
   eLists <- forM (excludeSetPaths cfg) (encodeFS >=> readHashList lCfg)
   return $ case mkLineMetaFormatter lCfg fmt of
-    (Left  errMsg) -> die (addLogContext lCfg "listTreePaths") $ B8.pack errMsg
+    (Left  msg   ) -> die (addLogContext lCfg "listTreePaths") $ B8.pack msg
     (Right fmtFn ) -> runST $ do
       eSet <- hashSetFromList $ concat eLists
       listTreePaths' cfg lCfg cls eSet fmtFn (Depth 0) [] tree

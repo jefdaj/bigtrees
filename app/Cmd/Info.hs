@@ -1,22 +1,21 @@
 module Cmd.Info where
 
 import Config (AppConfig (..))
-import Control.Exception.Safe
-import System.IO
+-- import Control.Exception.Safe
+-- import System.IO
 -- import System.Directory.BigTrees.HashTree
-import Control.Monad (forM)
+-- import Control.Monad (forM)
 import qualified Data.ByteString.Char8 as B8
-import System.Directory.BigTrees.Hash (Hash (..), prettyHash)
-import System.Directory.BigTrees.HashLine (ErrMsg (..), HashLine (..), ModTime (..), NBytes (..),
-                                           NNodes (..), parseHashLine)
-import System.Directory.BigTrees.HashTree (HashTree (..), readLastHashLineAndFooter)
+import System.Directory.BigTrees.Hash (prettyHash)
+import System.Directory.BigTrees.HashLine (ErrMsg (..), HashLine (..), NBytes (..), NNodes (..))
+import System.Directory.BigTrees.HashTree (readLastHashLineAndFooter)
 import System.Directory.BigTrees.HeadFoot (Footer, Header (..), readHeader, scanSeconds)
 -- import qualified Data.ByteString.Short as BS
 import System.Directory.BigTrees.Logging (LogCfg (..), die)
-import System.OsPath (OsPath, encodeFS)
+import System.OsPath (OsPath)
 
 cmdInfo :: AppConfig -> LogCfg -> OsPath -> IO ()
-cmdInfo cfg lCfg path = do
+cmdInfo _ lCfg path = do
   mH  <- readHeader lCfg path
   mLF <- readLastHashLineAndFooter path
   case (mH, mLF) of
@@ -29,7 +28,7 @@ printInfo path header footer lastLine = do
   let seconds = scanSeconds (header, footer)
       lineInfo = case lastLine of
         (ErrLine (_, ErrMsg m,_)) -> ["ERROR: " ++ m]
-        (HashLine (_, _, h, ModTime m, NBytes b, NNodes n, _, _)) ->
+        (HashLine (_, _, h, _, NBytes b, NNodes n, _, _)) ->
           [ "contains info on " ++ show n ++ " files totaling " ++ show b ++ " bytes"
           , "overall hash is " ++ B8.unpack (prettyHash h)
           -- TODO is this accurate/useful? "modified " ++ show m

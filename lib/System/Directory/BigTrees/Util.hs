@@ -41,33 +41,33 @@ module System.Directory.BigTrees.Util
   where
 
 import Control.Exception.Safe (SomeException, handleAnyDeep, try)
-import Control.Monad.IO.Class (liftIO)
+-- import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as B
 import Data.List (isInfixOf, isPrefixOf)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
+-- import qualified Data.Text as T
+-- import qualified Data.Text.Encoding as TE
 -- import qualified Filesystem.Path.CurrentOS as OS
-import GHC.Generics (Generic)
+-- import GHC.Generics (Generic)
 import Prelude hiding (log)
 import qualified System.Directory.OsPath as SDO
-import qualified System.Directory.Tree as DT
-import System.Info (os)
+-- import qualified System.Directory.Tree as DT
+-- import System.Info (os)
 import System.IO (Handle, SeekMode (..), hGetChar, hSeek)
-import System.IO.Temp (withSystemTempDirectory)
+-- import System.IO.Temp (withSystemTempDirectory)
 import qualified System.OsPath as SF
-import System.OsPath (OsPath, osp, (</>))
-import System.Path.NameManip (absolute_path, guess_dotdot)
+import System.OsPath (OsPath)
+-- import System.Path.NameManip (absolute_path, guess_dotdot)
 -- import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 import qualified Data.ByteString.Short as SBS
-import Data.Maybe (fromMaybe)
-import Debug.Trace
+-- import Data.Maybe (fromMaybe)
+-- import Debug.Trace
 import System.OsPath (decodeFS)
 import System.Posix.Files (fileBlockSize, getFileStatus)
-import Test.HUnit (Assertion, (@=?))
-import Test.QuickCheck (Arbitrary (..), Gen, Property, Testable, property, ioProperty, forAll, listOf, oneof, suchThat, counterexample)
+-- import Test.HUnit (Assertion, (@=?))
+import Test.QuickCheck (Arbitrary (..), Property, property, counterexample)
 import Test.QuickCheck.Instances ()
-import Test.QuickCheck.Monadic (assert, monadicIO, pick, run, monitor)
-import TH.Derive (Deriving, derive)
+import Test.QuickCheck.Monadic (assert, monadicIO, run, monitor)
+-- import TH.Derive (Deriving, derive)
 
 
 -- describe "Util" $ do
@@ -101,6 +101,7 @@ import TH.Derive (Deriving, derive)
 --                  $ SF.splitPath f
 
 -- TODO why did I need my own version again?
+pathComponents :: OsPath -> [OsPath]
 pathComponents = SF.splitPath
 
 -- n2bs :: Name -> BU.ByteString
