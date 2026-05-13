@@ -161,6 +161,7 @@ buildTree' _ _ lCfg _  (a DT.:/ (DT.Failed n e )) = mkErrTree lCfg a n e
 -- Note that readFileFn and hashFile both read the file, but in practice that
 -- isn't a problem because readFileFn is a no-op in production.
 buildTree' _ readFileFn lCfg depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTree lCfg a n) $ do
+  let debug = log (addLogContext lCfg "buildTree'") DebugL
   let fPath = a </> n
   fPath' <- SOP.decodeFS fPath
   -- TODO clean up this funny logic, being careful not to cause regressions
@@ -237,8 +238,12 @@ buildTree' _ readFileFn lCfg depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTre
       -- try to get hash from annex path, or hash if needed
       tmp <- hashFromAnnexPath fPath
       !h <- case tmp of
-              Just h  -> return h
-              Nothing -> unsafeInterleaveIO $ hashFile lCfg fPath
+              Nothing -> do
+	        debug ("failed to get hash from annex path " <> B8.pack (show fPath))
+                unsafeInterleaveIO $ hashFile lCfg fPath
+              Just h  -> do
+	        debug ("got hash " <> (B8.pack $ show h) <> " from annex path " <> B8.pack (show fPath))
+                return h
 
       !fd <- unsafeInterleaveIO $ readFileFn fPath
       -- seems not to help with memory usage?
