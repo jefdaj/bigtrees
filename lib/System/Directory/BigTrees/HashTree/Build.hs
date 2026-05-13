@@ -190,7 +190,17 @@ buildTree' _ readFileFn lCfg depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTre
           let mt = max mt1 mt2
 
           !s  <- unsafeInterleaveIO $ getSymlinkTargetNBytes fPath
-          !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
+
+          -- !h  <- unsafeInterleaveIO $ hashSymlinkTarget fPath
+          tmp <- hashFromAnnexPath target
+          !h <- case tmp of
+                  Nothing -> do
+	            debug ("failed to get hash from annex path " <> B8.pack (show fPath))
+                    unsafeInterleaveIO $ hashSymlinkTarget fPath
+                  Just h  -> do
+	            debug ("got hash " <> (B8.pack $ show h) <> " from annex path " <> B8.pack (show fPath))
+                    return h
+
           !fd <- unsafeInterleaveIO $ readFileFn fPath
           return $ Link
             { nodeData = NodeData

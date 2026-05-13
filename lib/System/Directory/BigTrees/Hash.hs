@@ -169,6 +169,7 @@ looksLikeAnnexPath p = takeFileName p =~ annexRegex
 hashFromAnnexPath :: OsPath -> IO (Maybe Hash)
 hashFromAnnexPath p = do
   p' <- decodeFS p
+  -- TODO why not use looksLikeAnnexPath here?
   return $ case takeFileName p' =~ annexRegex :: (String, String, String, [String]) of
     (_, _, _, (hexHash:_)) -> hexToHash hexHash
     _ -> Nothing
