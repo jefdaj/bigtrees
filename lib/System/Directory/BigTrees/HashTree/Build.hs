@@ -19,7 +19,7 @@ import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Foreign.C.Types (CTime (..))
 -- import System.Directory (doesPathExist, getFileSize, getModificationTime, pathIsSymbolicLink)
 import System.Directory.BigTrees.Hash (hashFile, hashFromAnnexPath, hashSymlinkLiteral,
-                                       hashSymlinkTarget)
+                                       hashSymlinkTarget, prettyHash)
 import System.Directory.BigTrees.HashLine (Depth (..), ErrMsg (..), ModTime (..), NBytes (..),
                                            simplifyErrMsg)
 import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), ProdTree,
@@ -198,7 +198,7 @@ buildTree' _ readFileFn lCfg depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTre
 	            debug ("failed to get hash from annex path " <> B8.pack (show fPath))
                     unsafeInterleaveIO $ hashSymlinkTarget fPath
                   Just h  -> do
-	            debug ("got hash " <> (B8.pack $ show h) <> " from annex path " <> B8.pack (show fPath))
+	            debug ("got hash " <> prettyHash h <> " from annex path " <> B8.pack (show fPath))
                     return h
 
           !fd <- unsafeInterleaveIO $ readFileFn fPath
@@ -252,7 +252,7 @@ buildTree' _ readFileFn lCfg depth (a DT.:/ (DT.File n _)) = handleAny (mkErrTre
 	        debug ("failed to get hash from annex path " <> B8.pack (show fPath))
                 unsafeInterleaveIO $ hashFile lCfg fPath
               Just h  -> do
-	        debug ("got hash " <> (B8.pack $ show h) <> " from annex path " <> B8.pack (show fPath))
+	        debug ("got hash " <> prettyHash h <> " from annex path " <> B8.pack (show fPath))
                 return h
 
       !fd <- unsafeInterleaveIO $ readFileFn fPath
