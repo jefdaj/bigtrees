@@ -175,8 +175,8 @@ hashFromAnnexPath p = do
   p' <- decodeFS p
   let fileName = B8.pack (takeFileName p')
   return $ case scan annexRegex fileName of
-    ((_, hexHash:_):_) -> hexToHash (B8.unpack hexHash)
-    _                  -> Nothing
+    [(_, hexHash:_)] -> hexToHash (B8.unpack hexHash)
+    _                -> Nothing
   where
     hexToHash hexStr = case B16.decode (B.pack hexStr) of
       Right rawBytes -> Just $ Hash $ compress rawBytes

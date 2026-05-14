@@ -41,8 +41,11 @@ import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Posix.Files (getFileStatus, isRegularFile, readSymbolicLink)
 import System.PosixCompat.Files (fileSize, getSymbolicLinkStatus, modificationTime)
-import Text.Regex.TDFA
-import Text.Regex.TDFA.ByteString
+
+-- import Text.Regex.TDFA
+-- import Text.Regex.TDFA.ByteString
+import Text.Regex.PCRE.Heavy (Regex, compileM, (=~))
+import Text.Regex.PCRE.Light (caseless, utf8)
 
 -- import Debug.Trace
 
@@ -70,16 +73,26 @@ instance Show BuildError where
 
 instance Exception BuildError
 
--- TODO double check the breadcrumbs aren't backward
-keepPath :: SearchConfig -> OsPath -> IO Bool
-keepPath cfg p = do
+-- TODO is this much faster for large searches?
+type CompiledExcludes = [Regex]
+
+keepPath :: CompiledExcludes -> OsPath -> IO Bool
+keepPath excludes p = do
   path <- decodeFS p
-  return $ not $ any (path =~) (hashExcludeRegexes cfg)
+  -- return $ not $ any (path =~) (hashExcludeRegexes cfg)
+  return $ not $ any (path =~) excludes
+
+compileExcludes :: [String] -> [Regex]
+compileExcludes = map $ \pat ->
+  case compileM (B8.pack pat) [caseless, utf8] of
+    Right rx -> rx
+    Left err -> error $ "Bad exclude regex: " ++ pat ++ " (" ++ err ++ ")"
 
 regexFilterTrees :: SearchConfig -> OsPath -> [DT.DirTree a] -> IO [DT.DirTree a]
 regexFilterTrees cfg rootDir trees = filterM noExclude trees
   where
-    noExclude t = keepPath cfg $ rootDir </> (DT.name t)
+    excludes = compileExcludes $ hashExcludeRegexes cfg
+    noExclude t = keepPath excludes $ rootDir </> (DT.name t)
 
 -- TODO hey is this not that hard to swap out for my new version?
 -- TODO have this apply to the whole paths, not just one name/component?
