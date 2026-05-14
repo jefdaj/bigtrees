@@ -69,9 +69,11 @@ import System.OsPath (OsPath)
 import Test.HUnit (Assertion, (@=?))
 import Test.QuickCheck (Arbitrary (..), Gen, arbitrary)
 import Test.QuickCheck.Instances.ByteString ()
-import Text.Regex.TDFA ((=~))
 -- import TH.Derive (Deriving, derive)
 import qualified Data.ByteArray as BA
+
+-- import Text.Regex.TDFA ((=~))
+import Text.Regex.PCRE.Heavy (Regex, compileM, scan, (=~))
 
 
 {- Checksum (sha256sum?) of a file or folder.
@@ -158,25 +160,27 @@ hashSymlinkTarget path = do
   let p' = takeDirectory path </> target
   hashFileContentsStreaming p'
 
-annexRegex :: String
-annexRegex = "^SHA256E-[a-z0-9]{2,}--([0-9a-f]{64})(\\..*)?"
-
 -- TODO Was the .git/annex/objects prefix important?
 --      If not, don't want to make matching the actual content files any harder by adding it
 looksLikeAnnexPath :: FilePath -> Bool
 looksLikeAnnexPath p = takeFileName p =~ annexRegex
 
+annexRegex :: Regex
+annexRegex = case compileM "^SHA256E-[a-z0-9]{2,}--([0-9a-f]{64})(\\..*)?" [] of
+  Right rx -> rx
+  Left err -> error $ "annexRegex: " ++ err
+
 hashFromAnnexPath :: OsPath -> IO (Maybe Hash)
 hashFromAnnexPath p = do
   p' <- decodeFS p
-  -- TODO why not use looksLikeAnnexPath here?
-  return $ case takeFileName p' =~ annexRegex :: (String, String, String, [String]) of
-    (_, _, _, (hexHash:_)) -> hexToHash hexHash
-    _ -> Nothing
+  let fileName = B8.pack (takeFileName p')
+  return $ case scan annexRegex fileName of
+    ((_, hexHash:_):_) -> hexToHash (B8.unpack hexHash)
+    _                  -> Nothing
   where
     hexToHash hexStr = case B16.decode (B.pack hexStr) of
       Right rawBytes -> Just $ Hash $ compress rawBytes
-      Left _ -> Nothing
+      Left _         -> Nothing
 
 -- see: https://stackoverflow.com/a/30537010
 -- hashFileContents :: OsPath -> IO Hash
