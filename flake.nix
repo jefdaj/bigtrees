@@ -139,6 +139,9 @@
           pkgsDynamic.rsync
           pkgsDynamic.curl
 
+          # TODO where should this actually go? this works but feels odd
+          pkgsDynamic.pcre
+
         ];
 
       # Static by default, but allow pkgsDynamic to be referenced explicitly for dev tools.

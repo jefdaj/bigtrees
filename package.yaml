@@ -48,6 +48,8 @@ dependencies:
 - quickcheck-instances
 - quickcheck-unicode
 - regex-tdfa
+- pcre-light
+- pcre-heavy
 - safe-exceptions
 - setlocale
 - silently

@@ -74,6 +74,8 @@ library
     , memory
     , monad-parallel
     , os-string
+    , pcre-heavy
+    , pcre-light
     , pretty-simple
     , process
     , quickcheck-instances
@@ -157,6 +159,8 @@ executable bigtrees
     , memory
     , monad-parallel
     , os-string
+    , pcre-heavy
+    , pcre-light
     , pretty-simple
     , process
     , quickcheck-instances
@@ -243,6 +247,8 @@ test-suite test-app
     , memory
     , monad-parallel
     , os-string
+    , pcre-heavy
+    , pcre-light
     , pretty-simple
     , process
     , quickcheck-instances
@@ -331,6 +337,8 @@ test-suite test-lib
     , memory
     , monad-parallel
     , os-string
+    , pcre-heavy
+    , pcre-light
     , pretty-simple
     , process
     , quickcheck-instances
@@ -437,6 +445,8 @@ benchmark test-bench
     , memory
     , monad-parallel
     , os-string
+    , pcre-heavy
+    , pcre-light
     , pretty-simple
     , process
     , quickcheck-instances

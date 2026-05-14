@@ -21,15 +21,18 @@ import System.Directory.BigTrees.HashTree.Base (HashTree (..), NodeData (..), so
                                                 treeHash, treeModTime, treeNBytes, treeNNodes,
                                                 treeName, treeType)
 import System.Directory.BigTrees.HashTree.Search (CompiledLabeledSearches, CompiledSearch (..),
-                                                  LabeledSearches, Search (..), SearchConfig (..),
+                                                  SearchConfig (..),
                                                   SearchLabel, compileLabeledSearches,
                                                   treeContainsPath)
 import System.Directory.BigTrees.Logging (LogCfg, LogLevel (..), addLogContext, die, logUnsafe)
 import System.Directory.BigTrees.Name (Name (..), breadcrumbs2bs, n2bs)
 -- import System.IO (hFlush, stdout)
 import System.OsPath (encodeFS)
-import Text.Regex.TDFA
--- import Text.Regex.TDFA.ByteString
+
+-- TODO remove if pcre-heavy is better:
+-- import Text.Regex.TDFA
+
+import Text.Regex.PCRE.Heavy ((=~))
 
 ----------------
 -- list paths --
@@ -141,10 +144,15 @@ findLabelNode ((l, cs):css) ns t = if anySearchMatches then Just l else findLabe
     baseName  = n2bs $ treeName t
     wholeName = breadcrumbs2bs $ treeName t : ns
     anySearchMatches = any searchMatches cs
+    -- searchMatches c = and
+    --   [ fromMaybe True $ (treeContainsPath t      ) <$> cDirContainsPath c
+    --   , fromMaybe True $ (flip matchTest baseName ) <$> cBaseNameMatchesRegex c
+    --   , fromMaybe True $ (flip matchTest wholeName) <$> cWholeNameMatchesRegex c
+    --   ]
     searchMatches c = and
-      [ fromMaybe True $ (treeContainsPath t      ) <$> cDirContainsPath c
-      , fromMaybe True $ (flip matchTest baseName ) <$> cBaseNameMatchesRegex c
-      , fromMaybe True $ (flip matchTest wholeName) <$> cWholeNameMatchesRegex c
+      [ fromMaybe True $ (treeContainsPath t) <$> cDirContainsPath c
+      , fromMaybe True $ ((=~ ) baseName ) <$> cBaseNameMatchesRegex c
+      , fromMaybe True $ ((=~ ) wholeName) <$> cWholeNameMatchesRegex c
       ]
 
 

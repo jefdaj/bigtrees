@@ -17,8 +17,12 @@ import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
 import System.Directory.BigTrees.HashTree.Base
 
-import Text.Regex.TDFA
-import Text.Regex.TDFA.ByteString
+-- TODO remove if pcre-heavy is better:
+-- import Text.Regex.TDFA
+-- import Text.Regex.TDFA.ByteString
+
+import Text.Regex.PCRE.Heavy (Regex, compileM)
+import Text.Regex.PCRE.Light (caseless, utf8) -- TODO remove utf8? may not be needed
 
 import qualified Data.ByteString.Char8 as B8
 
@@ -147,11 +151,17 @@ treeContainsHash (Dir  {nodeData=nd1, dirContents=cs}) h2
 -- | These are optimized for speed at the cost of not supporting capture groups.
 -- They haven't been tested enough for me to be confident that's necessary though.
 -- TODO would case sensitive be a better default? it does NOT seem faster so far
+-- compileRegex :: String -> Regex
+-- compileRegex = makeRegexOpts cOpt eOpt
+--   where
+--     cOpt = defaultCompOpt { caseSensitive = False, lastStarGreedy = False }
+--     eOpt = defaultExecOpt { captureGroups = False }
+
 compileRegex :: String -> Regex
-compileRegex = makeRegexOpts cOpt eOpt
-  where
-    cOpt = defaultCompOpt { caseSensitive = False, lastStarGreedy = False }
-    eOpt = defaultExecOpt { captureGroups = False }
+compileRegex pat =
+  case compileM (B8.pack pat) [caseless, utf8] of
+    Left  err -> error $ "Invalid regex: " ++ pat ++ " (" ++ err ++ ")"
+    Right rx  -> rx
 
 data CompiledSearch = CompiledSearch
   { cDirContainsPath       :: Maybe [Name]
