@@ -1,4 +1,4 @@
-<img align="right" src="docs/src/images/bigtrees.png"></img>
+<img src="docs/src/images/bigtrees.png"></img>
 
 ### BigTrees
 
